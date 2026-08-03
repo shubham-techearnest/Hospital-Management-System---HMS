@@ -1,0 +1,18 @@
+# Development overrides — hot reload via host mounts (optional)
+services:
+  api:
+    build:
+      context: ../backend/health360-api
+      dockerfile: Dockerfile
+    volumes: []  # mount source for Spring DevTools in local IDE dev
+
+  web:
+    build:
+      context: ../frontend/health360-web
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${WEB_PORT:-3000}:5173"
+    volumes:
+      - ../frontend/health360-web:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0

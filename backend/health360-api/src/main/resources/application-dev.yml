@@ -1,0 +1,9 @@
+# Optional dev profile alias — same as local for IDE runs without env vars
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+logging:
+  level:
+    com.health360: DEBUG

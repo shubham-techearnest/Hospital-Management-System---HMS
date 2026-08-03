@@ -1,0 +1,25 @@
+# Local development profile — extends base datasource from application.yml
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+logging:
+  level:
+    com.health360: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+
+health360:
+  app-base-url: ${APP_BASE_URL:http://localhost:5173}

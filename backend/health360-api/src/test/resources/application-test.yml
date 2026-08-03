@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/health360_test
+    username: test
+    password: test
+
+  jpa:
+    show-sql: false
+
+  flyway:
+    enabled: true
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+
+logging:
+  level:
+    root: WARN
