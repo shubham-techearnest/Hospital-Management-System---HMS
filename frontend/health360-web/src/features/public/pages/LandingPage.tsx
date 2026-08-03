@@ -1,4 +1,5 @@
 import { Link as RouterLink } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import {
   Box,
   Button,
@@ -13,10 +14,14 @@ import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import PersonIcon from '@mui/icons-material/Person';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import type { RootState } from '@/app/store';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
+import { LandingHero } from '@/features/public/components/LandingHero';
 import { PublicCareDiscovery } from '@/features/public/components/PublicCareDiscovery';
 import { AppLayout } from '@/shared/layout/AppLayout';
 import { pageSpacing } from '@/shared/layout/pageSpacing';
+import { getRoleDashboardPathFromRoles } from '@/shared/auth/roleNavigation';
 
 const PORTALS = [
   {
@@ -37,33 +42,23 @@ const PORTALS = [
 ];
 
 export function LandingPage() {
+  const auth = useSelector((state: RootState) => state.auth);
+  const storedToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const isAuthenticated = Boolean(auth.accessToken || storedToken);
+  const isPatient = auth.user?.roles?.includes('PATIENT') ?? false;
+  const dashboardPath = getRoleDashboardPathFromRoles(auth.user?.roles);
+
   return (
     <AppLayout>
-      <Container maxWidth="lg" sx={pageSpacing.container}>
+      <Container maxWidth="lg" sx={{ ...pageSpacing.container, pt: { xs: 2, md: 3 } }}>
         <AnimatedPage>
-          <Stack
-            spacing={2}
-            alignItems="center"
-            textAlign="center"
-            sx={{ mb: { xs: 3, md: 4 }, px: { xs: 0.5, sm: 0 } }}
-          >
-            <Typography variant="h3" component="h1" fontWeight={700} color="secondary.main" sx={{ lineHeight: 1.2 }}>
-              Health360 AI
-            </Typography>
-            <Typography variant="h6" color="text.secondary" maxWidth={640} sx={{ lineHeight: 1.7, px: 1 }}>
-              Enterprise digital healthcare for patients, doctors, and hospitals — secure access after sign in.
-            </Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ pt: 1, width: { xs: '100%', sm: 'auto' } }}>
-              <Button component={RouterLink} to="/login" variant="contained" size="large" fullWidth sx={{ maxWidth: { sm: 200 } }}>
-                Sign in
-              </Button>
-              <Button component={RouterLink} to="/register" variant="outlined" size="large" fullWidth sx={{ maxWidth: { sm: 220 } }}>
-                Create account
-              </Button>
-            </Stack>
-          </Stack>
+          <LandingHero
+            isAuthenticated={isAuthenticated}
+            displayName={auth.user?.firstName}
+            roles={auth.user?.roles}
+          />
 
-          <PublicCareDiscovery />
+          <PublicCareDiscovery isAuthenticated={isAuthenticated} showPatientActions={isPatient} />
 
           <Typography variant="h5" fontWeight={700} gutterBottom sx={{ mb: 2 }}>
             Who we serve
@@ -102,12 +97,33 @@ export function LandingPage() {
                     </Typography>
                   </Stack>
                   <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                    Dashboards, scheduling, and health records open after authentication. You are routed to the portal for your role.
+                    {isAuthenticated
+                      ? 'You are signed in. Open your dashboard for scheduling, health records, and portal tools matched to your role.'
+                      : 'Dashboards, scheduling, and health records open after authentication. You are routed to the portal for your role.'}
                   </Typography>
                 </Box>
-                <Button component={RouterLink} to="/login" variant="contained" size="large" sx={{ flexShrink: 0, width: { xs: '100%', sm: 'auto' } }}>
-                  Sign in
-                </Button>
+                {isAuthenticated ? (
+                  <Button
+                    component={RouterLink}
+                    to={dashboardPath}
+                    variant="contained"
+                    size="large"
+                    endIcon={<ArrowForwardIcon />}
+                    sx={{ flexShrink: 0, width: { xs: '100%', sm: 'auto' } }}
+                  >
+                    Open dashboard
+                  </Button>
+                ) : (
+                  <Button
+                    component={RouterLink}
+                    to="/login"
+                    variant="contained"
+                    size="large"
+                    sx={{ flexShrink: 0, width: { xs: '100%', sm: 'auto' } }}
+                  >
+                    Sign in
+                  </Button>
+                )}
               </Stack>
             </CardContent>
           </Card>

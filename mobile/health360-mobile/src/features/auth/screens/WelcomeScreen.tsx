@@ -3,9 +3,9 @@ import { Button, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BrandHeader } from '@/shared/components/BrandHeader';
 import { AppCard } from '@/shared/components/AppCard';
 import { CareDiscoveryCards } from '@/features/auth/components/CareDiscoveryCards';
+import { LandingHero } from '@/features/auth/components/LandingHero';
 import { appColors, layout } from '@/shared/theme';
 import type { AuthStackParamList } from '@/navigation/types';
 
@@ -29,6 +29,7 @@ const PORTALS = [
   },
 ] as const;
 
+/** Pre-login welcome only — authenticated users never reach this screen. */
 export function WelcomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
@@ -44,10 +45,7 @@ export function WelcomeScreen({ navigation }: Props) {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <BrandHeader
-        title="Enterprise Digital Healthcare"
-        subtitle="One platform for patients, doctors, and hospitals — secure and role-based."
-      />
+      <LandingHero navigation={navigation} />
 
       <CareDiscoveryCards navigation={navigation} />
 
@@ -68,21 +66,15 @@ export function WelcomeScreen({ navigation }: Props) {
         <Text variant="bodySmall" style={styles.securityText}>
           Sign in to open the portal matched to your account — patient, doctor, or hospital admin.
         </Text>
-      </AppCard>
-
-      <View style={styles.actions}>
         <Button
           mode="contained"
           onPress={() => navigation.navigate('Login')}
-          style={styles.primaryBtn}
+          style={styles.securityBtn}
           contentStyle={styles.btnContent}
         >
           Sign in
         </Button>
-        <Button mode="outlined" onPress={() => navigation.navigate('Register')} style={styles.secondaryBtn}>
-          Create an account
-        </Button>
-      </View>
+      </AppCard>
     </ScrollView>
   );
 }
@@ -116,7 +108,6 @@ const styles = StyleSheet.create({
   securityCard: {
     alignItems: 'center',
     gap: 8,
-    marginBottom: layout.sectionGap,
   },
   securityTitle: {
     fontWeight: '700',
@@ -129,10 +120,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     paddingHorizontal: 8,
   },
-  actions: {
-    gap: layout.stackGap,
+  securityBtn: {
+    borderRadius: 12,
+    marginTop: 4,
+    alignSelf: 'stretch',
   },
-  primaryBtn: { borderRadius: 12 },
-  secondaryBtn: { borderRadius: 12 },
   btnContent: { paddingVertical: 6 },
 });

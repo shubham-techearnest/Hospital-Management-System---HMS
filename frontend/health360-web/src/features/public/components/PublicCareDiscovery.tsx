@@ -17,37 +17,58 @@ const CARE_OPTIONS = [
   {
     key: 'doctor',
     title: 'Find a Doctor',
-    description: 'Search verified doctors by specialty, city, availability, and patient ratings. View profiles and book appointments after sign in.',
+    guestDescription:
+      'Search verified doctors by specialty, city, availability, and patient ratings. View profiles and book appointments after sign in.',
+    authDescription:
+      'Search verified doctors by specialty, city, availability, and patient ratings. View profiles and book appointments.',
     icon: <MedicalServicesIcon sx={{ fontSize: 40 }} color="primary" />,
     chips: ['Specialty search', 'Available today', 'Nearby & travel time', 'Book online'],
+    authPath: '/patient/book',
     loginState: {
       redirectTo: '/patient/book',
       message: 'Sign in to search doctors and book appointments.',
     },
-    buttonLabel: 'Sign in to find doctors',
+    guestButtonLabel: 'Sign in to find doctors',
+    authButtonLabel: 'Find doctors',
   },
   {
     key: 'hospital',
     title: 'Find a Hospital',
-    description: 'Discover hospitals by department, emergency services, ICU availability, and location. View facilities before you visit.',
+    guestDescription:
+      'Discover hospitals by department, emergency services, ICU availability, and location. View facilities before you visit.',
+    authDescription:
+      'Discover hospitals by department, emergency services, ICU availability, and location. View facilities and branch details.',
     icon: <LocalHospitalIcon sx={{ fontSize: 40 }} color="primary" />,
     chips: ['Departments', '24×7 emergency', 'ICU info', 'Branch locations'],
+    authPath: '/patient/hospitals',
     loginState: {
       redirectTo: '/patient/hospitals',
       message: 'Sign in to search hospitals and view detailed profiles.',
     },
-    buttonLabel: 'Sign in to find hospitals',
+    guestButtonLabel: 'Sign in to find hospitals',
+    authButtonLabel: 'Find hospitals',
   },
 ] as const;
 
-export function PublicCareDiscovery() {
+interface PublicCareDiscoveryProps {
+  isAuthenticated?: boolean;
+  showPatientActions?: boolean;
+}
+
+export function PublicCareDiscovery({ isAuthenticated = false, showPatientActions = false }: PublicCareDiscoveryProps) {
+  if (isAuthenticated && !showPatientActions) {
+    return null;
+  }
+
   return (
     <Box sx={{ mb: { xs: 3, md: 5 } }}>
       <Typography variant="h5" fontWeight={700} gutterBottom sx={{ px: { xs: 0.5, sm: 0 } }}>
         Find care near you
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 720, lineHeight: 1.7 }}>
-        Explore doctors and hospitals on Health360. Create a free account or sign in to search, compare, and book.
+        {isAuthenticated
+          ? 'Search doctors and hospitals on Health360, compare options, and book visits from your patient portal.'
+          : 'Explore doctors and hospitals on Health360. Create a free account or sign in to search, compare, and book.'}
       </Typography>
       <Grid container spacing={{ xs: 2, md: 3 }}>
         {CARE_OPTIONS.map((option) => (
@@ -88,7 +109,7 @@ export function PublicCareDiscovery() {
                       {option.title}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                      {option.description}
+                      {isAuthenticated ? option.authDescription : option.guestDescription}
                     </Typography>
                   </Box>
                 </Stack>
@@ -97,28 +118,41 @@ export function PublicCareDiscovery() {
                     <Chip key={chip} label={chip} size="small" variant="outlined" color="primary" />
                   ))}
                 </Stack>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 'auto' }}>
+                {isAuthenticated ? (
                   <Button
                     component={RouterLink}
-                    to="/login"
-                    state={option.loginState}
+                    to={option.authPath}
                     variant="contained"
                     size="large"
                     endIcon={<ArrowForwardIcon />}
-                    sx={{ alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+                    sx={{ mt: 'auto', alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
                   >
-                    {option.buttonLabel}
+                    {option.authButtonLabel}
                   </Button>
-                  <Button
-                    component={RouterLink}
-                    to="/register"
-                    variant="outlined"
-                    size="large"
-                    sx={{ alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
-                  >
-                    Create free account
-                  </Button>
-                </Stack>
+                ) : (
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 'auto' }}>
+                    <Button
+                      component={RouterLink}
+                      to="/login"
+                      state={option.loginState}
+                      variant="contained"
+                      size="large"
+                      endIcon={<ArrowForwardIcon />}
+                      sx={{ alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+                    >
+                      {option.guestButtonLabel}
+                    </Button>
+                    <Button
+                      component={RouterLink}
+                      to="/register"
+                      variant="outlined"
+                      size="large"
+                      sx={{ alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+                    >
+                      Create free account
+                    </Button>
+                  </Stack>
+                )}
               </CardContent>
             </Card>
           </Grid>

@@ -5,6 +5,7 @@ import { LandingPage } from '@/features/public/pages/LandingPage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
 import { VerifyEmailPage } from '@/features/auth/pages/VerifyEmailPage';
+import { GuestOnlyRoute } from '@/features/auth/components/GuestOnlyRoute';
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
 import { RoleRoute } from '@/features/auth/components/RoleRoute';
 import { AccountSettingsPage } from '@/features/settings/pages/AccountSettingsPage';
@@ -168,8 +169,8 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<GuestOnlyRoute><LoginPage /></GuestOnlyRoute>} />
+        <Route path="/register" element={<GuestOnlyRoute><RegisterPage /></GuestOnlyRoute>} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/doctors/:doctorId" element={<LazyPage><PublicDoctorProfilePage /></LazyPage>} />
         <Route path="/hospitals/:hospitalId" element={<LazyPage><PublicHospitalProfilePage /></LazyPage>} />
