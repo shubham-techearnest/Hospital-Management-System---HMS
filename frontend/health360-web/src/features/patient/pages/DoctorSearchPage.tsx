@@ -13,11 +13,13 @@ import {
 } from '@mui/material';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { Link as RouterLink } from 'react-router-dom';
-import { detectUserLocation } from '@/features/location/api/locationApi';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DoctorListCard } from '@/features/search/components/DoctorListCard';
 import { useDoctorSearch } from '@/features/search/hooks/useDoctorSearch';
 import { parseApiError } from '@/shared/api/errorUtils';
+import { CollapsibleFilterPanel } from '@/shared/filters/CollapsibleFilterPanel';
+import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
+import { detectUserLocation } from '@/features/location/api/locationApi';
 
 const PAGE_SIZE = 20;
 
@@ -86,164 +88,120 @@ export function DoctorSearchPage() {
 
   return (
     <AnimatedPage>
-      <Typography variant="h4" sx={{ mb: 1 }}>Find a Doctor</Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>
-        Browse verified doctors in our network, or search by name, specialty, hospital, city, rating, and fee.
-      </Typography>
-      <Button component={RouterLink} to="/patient/search" size="small" sx={{ mb: 2 }}>
-        Try unified search (doctors + hospitals)
-      </Button>
+      <DashboardPageHeader
+        title="Find a Doctor"
+        subtitle="Browse verified doctors or search by name, specialty, city, rating, and fee."
+        actions={
+          <Button component={RouterLink} to="/patient/search" size="small" variant="outlined">
+            Unified search
+          </Button>
+        }
+      />
 
-      <Stack spacing={2} sx={{ mb: 3, maxWidth: 720 }}>
-        <TextField
-          label="Search"
-          value={q}
-          onChange={(e) => {
-            setQ(e.target.value);
-            setPage(0);
-          }}
-          placeholder="Doctor name, hospital, specialty"
-          fullWidth
-        />
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <TextField
-            label="Specialty"
-            value={specialization}
-            onChange={(e) => {
-              setSpecialization(e.target.value);
-              setPage(0);
-            }}
-            fullWidth
-          />
-          <TextField
-            label="City"
-            value={city}
-            onChange={(e) => {
-              setCity(e.target.value);
-              setPage(0);
-            }}
-            fullWidth
-          />
-        </Stack>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <TextField label="Language" value={language} onChange={(e) => { setLanguage(e.target.value); setPage(0); }} fullWidth />
-          <TextField label="Min rating (1–5)" type="number" inputProps={{ min: 1, max: 5, step: 0.1 }} value={minRating} onChange={(e) => { setMinRating(e.target.value); setPage(0); }} fullWidth />
-          <TextField label="Max fee (INR)" type="number" value={maxFee} onChange={(e) => { setMaxFee(e.target.value); setPage(0); }} fullWidth />
-        </Stack>
-        <TextField select label="Sort by" value={sort} onChange={(e) => setSort(e.target.value)} sx={{ maxWidth: 280 }}>
-          <MenuItem value="RELEVANCE">Relevance</MenuItem>
-          <MenuItem value="NEAREST" disabled={!coords}>Nearest</MenuItem>
-          <MenuItem value="HIGHEST_RATED">Highest rated</MenuItem>
-          <MenuItem value="MOST_EXPERIENCED">Most experienced</MenuItem>
-          <MenuItem value="LOWEST_FEE">Lowest fee</MenuItem>
-        </TextField>
-        <Button
-          variant="outlined"
-          startIcon={<MyLocationIcon />}
-          onClick={async () => {
-            try {
-              setCoords(await detectUserLocation());
-              setSort('NEAREST');
-            } catch {
-              setCoords(null);
-            }
-          }}
-        >
-          {coords ? 'Using your location' : 'Use my location for nearest results'}
-        </Button>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={availableToday}
-                onChange={(e) => {
-                  setAvailableToday(e.target.checked);
-                  setPage(0);
-                }}
+      <CollapsibleFilterPanel
+        primary={
+          <>
+            <TextField
+              label="Search"
+              size="small"
+              value={q}
+              onChange={(e) => { setQ(e.target.value); setPage(0); }}
+              placeholder="Doctor name, hospital, specialty"
+              fullWidth
+            />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+              <TextField label="Specialty" size="small" value={specialization} onChange={(e) => { setSpecialization(e.target.value); setPage(0); }} fullWidth />
+              <TextField label="City" size="small" value={city} onChange={(e) => { setCity(e.target.value); setPage(0); }} fullWidth />
+            </Stack>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1}>
+              <FormControlLabel
+                control={<Switch size="small" checked={availableToday} onChange={(e) => { setAvailableToday(e.target.checked); setPage(0); }} />}
+                label="Available today"
               />
-            }
-            label="Available today"
-          />
-          {filtersActive ? (
-            <Button size="small" onClick={clearFilters}>
-              Clear filters
-            </Button>
-          ) : null}
-        </Stack>
-      </Stack>
+              <Button size="small" variant="outlined" startIcon={<MyLocationIcon />} onClick={async () => {
+                try {
+                  setCoords(await detectUserLocation());
+                  setSort('NEAREST');
+                } catch {
+                  setCoords(null);
+                }
+              }}>
+                {coords ? 'Location on' : 'Near me'}
+              </Button>
+              {filtersActive ? <Button size="small" onClick={clearFilters}>Clear</Button> : null}
+            </Stack>
+          </>
+        }
+        advanced={
+          <>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+              <TextField label="Language" size="small" value={language} onChange={(e) => { setLanguage(e.target.value); setPage(0); }} fullWidth />
+              <TextField label="Min rating" size="small" type="number" inputProps={{ min: 1, max: 5, step: 0.1 }} value={minRating} onChange={(e) => { setMinRating(e.target.value); setPage(0); }} fullWidth />
+              <TextField label="Max fee (INR)" size="small" type="number" value={maxFee} onChange={(e) => { setMaxFee(e.target.value); setPage(0); }} fullWidth />
+            </Stack>
+            <TextField select label="Sort by" size="small" value={sort} onChange={(e) => setSort(e.target.value)} sx={{ maxWidth: 240 }}>
+              <MenuItem value="RELEVANCE">Relevance</MenuItem>
+              <MenuItem value="NEAREST" disabled={!coords}>Nearest</MenuItem>
+              <MenuItem value="HIGHEST_RATED">Highest rated</MenuItem>
+              <MenuItem value="MOST_EXPERIENCED">Most experienced</MenuItem>
+              <MenuItem value="LOWEST_FEE">Lowest fee</MenuItem>
+            </TextField>
+          </>
+        }
+      />
 
       {parsedError ? <Alert severity="error" sx={{ mb: 2 }}>{parsedError.message}</Alert> : null}
       {isLoading ? <Typography sx={{ mb: 2 }}>Loading doctors…</Typography> : null}
 
       {!isLoading && !parsedError ? (
         <>
-          <Typography variant="h6" sx={{ mb: 2 }}>{listHeading}</Typography>
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1.5 }}>{listHeading}</Typography>
 
           {results.length === 0 && !filtersActive ? (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              No verified doctors are listed yet. Check back soon or contact your hospital administrator.
-            </Alert>
+            <Alert severity="info" sx={{ mb: 2 }}>No verified doctors are listed yet.</Alert>
           ) : null}
 
           {showSearchEmpty ? (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              No doctors match your search. Browse all available doctors below or try different filters.
-            </Alert>
+            <Alert severity="info" sx={{ mb: 2 }}>No doctors match your search. Browse all available doctors below.</Alert>
           ) : null}
 
-          <Stack spacing={2}>
+          <Stack spacing={1.5}>
             {results.map((doctor) => (
               <DoctorListCard key={doctor.doctorId} doctor={doctor} />
             ))}
           </Stack>
 
           {totalPages > 1 ? (
-            <Stack direction="row" alignItems="center" justifyContent="center" gap={2} sx={{ mt: 3 }}>
-              <Button disabled={page <= 0} onClick={() => setPage((p) => p - 1)}>
-                Previous
-              </Button>
-              <Typography variant="body2" color="text.secondary">
-                Page {page + 1} of {totalPages}
-              </Typography>
-              <Button disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                Next
-              </Button>
+            <Stack direction="row" alignItems="center" justifyContent="center" gap={2} sx={{ mt: 2 }}>
+              <Button size="small" disabled={page <= 0} onClick={() => setPage((p) => p - 1)}>Previous</Button>
+              <Typography variant="body2" color="text.secondary">Page {page + 1} of {totalPages}</Typography>
+              <Button size="small" disabled={page + 1 >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
             </Stack>
           ) : null}
         </>
       ) : null}
 
       {showSearchEmpty && !browseQuery.isLoading && browseDoctors.length > 0 ? (
-        <Box sx={{ mt: 4 }}>
-          <Divider sx={{ mb: 3 }} />
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            All available doctors ({browseTotal})
-          </Typography>
-          <Stack spacing={2}>
+        <Box sx={{ mt: 3 }}>
+          <Divider sx={{ mb: 2 }} />
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1.5 }}>All available doctors ({browseTotal})</Typography>
+          <Stack spacing={1.5}>
             {browseDoctors.map((doctor) => (
               <DoctorListCard key={`browse-${doctor.doctorId}`} doctor={doctor} />
             ))}
           </Stack>
           {browseTotalPages > 1 ? (
-            <Stack direction="row" alignItems="center" justifyContent="center" gap={2} sx={{ mt: 3 }}>
-              <Button disabled={browsePage <= 0} onClick={() => setBrowsePage((p) => p - 1)}>
-                Previous
-              </Button>
-              <Typography variant="body2" color="text.secondary">
-                Page {browsePage + 1} of {browseTotalPages}
-              </Typography>
-              <Button disabled={browsePage + 1 >= browseTotalPages} onClick={() => setBrowsePage((p) => p + 1)}>
-                Next
-              </Button>
+            <Stack direction="row" alignItems="center" justifyContent="center" gap={2} sx={{ mt: 2 }}>
+              <Button size="small" disabled={browsePage <= 0} onClick={() => setBrowsePage((p) => p - 1)}>Previous</Button>
+              <Typography variant="body2" color="text.secondary">Page {browsePage + 1} of {browseTotalPages}</Typography>
+              <Button size="small" disabled={browsePage + 1 >= browseTotalPages} onClick={() => setBrowsePage((p) => p + 1)}>Next</Button>
             </Stack>
           ) : null}
         </Box>
       ) : null}
 
       {isFetching && !isLoading ? (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-          Updating results…
-        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>Updating results…</Typography>
       ) : null}
     </AnimatedPage>
   );

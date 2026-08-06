@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { DoctorDashboardScreen } from '@/features/doctor/screens/DoctorDashboardScreen';
 import { DoctorProfileScreen } from '@/features/doctor/screens/DoctorProfileScreen';
 import { DoctorVerificationScreen } from '@/features/doctor/screens/DoctorVerificationScreen';
 import { DoctorHospitalAssociationsScreen } from '@/features/doctor/screens/DoctorHospitalAssociationsScreen';
@@ -14,6 +15,18 @@ const Tab = createBottomTabNavigator<DoctorTabParamList>();
 export function DoctorTabNavigator() {
   return (
     <Tab.Navigator screenOptions={tabBarOptions}>
+      <Tab.Screen
+        name="Overview"
+        component={DoctorDashboardScreen}
+        options={{
+          headerShown: true,
+          title: 'Practice Overview',
+          tabBarLabel: 'Overview',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="view-dashboard" color={color} size={size} />
+          ),
+        }}
+      />
       <Tab.Screen
         name="Profile"
         component={DoctorProfileScreen}
@@ -32,7 +45,7 @@ export function DoctorTabNavigator() {
         options={{
           headerShown: true,
           title: 'Verification',
-          tabBarLabel: 'Verification',
+          tabBarLabel: 'Verify',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="file-certificate" color={color} size={size} />
           ),
@@ -68,7 +81,7 @@ export function DoctorTabNavigator() {
         options={{
           headerShown: false,
           title: 'Appointments',
-          tabBarLabel: 'Appointments',
+          tabBarLabel: 'Visits',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="calendar-check" color={color} size={size} />
           ),

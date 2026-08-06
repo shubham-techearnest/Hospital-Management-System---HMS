@@ -4,7 +4,7 @@ Enterprise Digital Healthcare Ecosystem — Phase 1 Foundation.
 
 ## Documentation
 
-Architecture and requirements live in [`docs/`](docs/). Start with [DOC-00 Project Memory](docs/00-PROJECT-MEMORY.md).
+Architecture and requirements live in [`docs/`](docs/). Start with [Documentation Index](docs/README.md) or [DOC-00 Project Memory](docs/00-PROJECT-MEMORY.md).
 
 | Layer | Path |
 |-------|------|
@@ -48,7 +48,7 @@ cd backend/health360-api
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-**Mobile** (Expo SDK 52 — see [Mobile Setup Guide](docs/mobile/MOBILE_SETUP.md)):
+**Mobile** (Expo SDK 52 — see [Mobile Setup Guide](docs/phase-1/mobile/MOBILE_SETUP.md)):
 
 ```powershell
 .\scripts\doctor-mobile.ps1   # validate Node, Android SDK, Expo Doctor
@@ -66,7 +66,9 @@ npm run android
 
 ```
 health360-ai/
-├── docs/                 # DOC-00 – DOC-16 specifications
+├── docs/                 # Documentation — see docs/README.md
+│   ├── phase-1/          # Requirements, architecture, delivery, mobile
+│   └── phase-2/          # Future phase placeholder
 ├── backend/health360-api/  # Spring Boot 3 modular monolith
 ├── frontend/health360-web/ # React 19 + TypeScript + MUI
 ├── mobile/health360-mobile/ # React Native + Expo (S1–S7)
@@ -80,11 +82,11 @@ health360-ai/
 - **Modules:** IAM, Patient, Doctor, Hospital, Scheduling, Location, Analytics
 - **Stack:** Java 21, Spring Boot 3, PostgreSQL 16, Redis 7, React 19, React Native
 
-See [DOC-11 System Architecture](docs/11-SYSTEM-ARCHITECTURE-DOCUMENT.md).
+See [DOC-11 System Architecture](docs/phase-1/architecture/11-SYSTEM-ARCHITECTURE-DOCUMENT.md).
 
 ## Development Roadmap
 
-Implementation follows [DOC-15 Development Roadmap](docs/15-DEVELOPMENT-ROADMAP.md):
+Implementation follows [DOC-15 Development Roadmap](docs/phase-1/delivery/15-DEVELOPMENT-ROADMAP.md):
 
 | Sprint | Focus |
 |--------|-------|

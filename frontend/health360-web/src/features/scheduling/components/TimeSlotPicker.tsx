@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
+  Chip,
   FormControl,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
   Stack,
   Typography,
@@ -116,8 +116,8 @@ export function TimeSlotPicker({
   }
 
   return (
-    <Stack spacing={3}>
-      <FormControl fullWidth>
+    <Stack spacing={1.5}>
+      <FormControl fullWidth size="small">
         <InputLabel id="consultation-type-label">Appointment type</InputLabel>
         <Select
           labelId="consultation-type-label"
@@ -135,7 +135,7 @@ export function TimeSlotPicker({
       </FormControl>
 
       <Box>
-        <Typography variant="subtitle2" gutterBottom>Select a date from the calendar</Typography>
+        <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>Select a date</Typography>
         <AvailabilityCalendar
           availableDates={availableDates}
           slotCounts={slotCounts}
@@ -148,39 +148,36 @@ export function TimeSlotPicker({
       </Box>
 
       {selectedDate ? (
-        <FormControl fullWidth disabled={slotsForDate.length === 0}>
-          <InputLabel id="time-slot-label">Time slot</InputLabel>
-          <Select
-            labelId="time-slot-label"
-            label="Time slot"
-            value={selectedSlotId}
-            onChange={(e) => onSelectSlot(e.target.value)}
-          >
-            {slotsForDate.length === 0 ? (
-              <MenuItem disabled value="">
-                No slots for {formatConsultationType(consultationType)} on this date
-              </MenuItem>
-            ) : (
-              slotsForDate.map((slot) => (
-                <MenuItem key={slot.id} value={slot.id}>
-                  {slotLabel(slot)}
-                </MenuItem>
-              ))
-            )}
-          </Select>
-        </FormControl>
+        <Box>
+          <Typography variant="caption" color="text.secondary" display="block" mb={0.75}>
+            Time slots · {formatDateLabel(selectedDate)}
+          </Typography>
+          {slotsForDate.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No slots for {formatConsultationType(consultationType)} on this date
+            </Typography>
+          ) : (
+            <Stack direction="row" flexWrap="wrap" gap={0.75}>
+              {slotsForDate.map((slot) => (
+                <Chip
+                  key={slot.id}
+                  label={slotLabel(slot)}
+                  size="small"
+                  color={selectedSlotId === slot.id ? 'primary' : 'default'}
+                  variant={selectedSlotId === slot.id ? 'filled' : 'outlined'}
+                  onClick={() => onSelectSlot(slot.id)}
+                  sx={{ height: 28 }}
+                />
+              ))}
+            </Stack>
+          )}
+        </Box>
       ) : null}
 
       {selectedSlot ? (
-        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'success.50', borderColor: 'success.light' }}>
-          <Typography variant="subtitle2" color="success.dark">Selected appointment</Typography>
-          <Typography fontWeight={600}>
-            {formatDateLabel(selectedDate)} · {slotLabel(selectedSlot)}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {formatConsultationType(selectedSlot.consultationType)}
-          </Typography>
-        </Paper>
+        <Typography variant="body2" color="success.dark" sx={{ px: 1 }}>
+          Selected: {formatDateLabel(selectedDate)} · {slotLabel(selectedSlot)} · {formatConsultationType(selectedSlot.consultationType)}
+        </Typography>
       ) : null}
     </Stack>
   );

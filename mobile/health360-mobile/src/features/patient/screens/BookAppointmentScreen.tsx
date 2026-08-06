@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Button, Card, Snackbar, Text, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Button, Chip, Snackbar, Text, TextInput } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SelectField } from '@/features/patient/components/SelectField';
 import { TimeSlotPicker } from '@/features/scheduling/components/TimeSlotPicker';
@@ -10,11 +10,15 @@ import {
   useDoctorBookingLocations,
 } from '@/features/scheduling/hooks/useSchedulingQueries';
 import { AppCard } from '@/shared/components/AppCard';
+import { PageHero } from '@/shared/components/PageHero';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
 import { isValidUuid } from '@/shared/utils/uuid';
+import { appColors, layout } from '@/shared/theme';
 import type { CareStackParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<CareStackParamList, 'BookAppointment'>;
+
+const STEPS = ['Schedule', 'Details', 'Confirm'] as const;
 
 function buildReasonForVisit(symptoms: string, contactPhone: string, notes: string) {
   const parts: string[] = [];
@@ -30,6 +34,7 @@ export function BookAppointmentScreen({ route, navigation }: Props) {
   const { data: locations = [], isLoading: locationsLoading } = useDoctorBookingLocations(doctorId, validDoctorId);
   const bookMutation = useBookAppointment();
 
+  const [step, setStep] = useState(0);
   const [locationKey, setLocationKey] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedSlotId, setSelectedSlotId] = useState('');
@@ -74,6 +79,9 @@ export function BookAppointmentScreen({ route, navigation }: Props) {
     return day?.slots.find((s) => s.id === selectedSlotId && s.status === 'AVAILABLE');
   }, [availableDays, selectedDate, selectedSlotId]);
 
+  const canNextFromSchedule = Boolean(selectedLocation && selectedSlotId);
+  const canSubmit = canNextFromSchedule;
+
   const handleBook = async () => {
     if (!selectedLocation || !selectedSlot) {
       setError('Select a hospital location, date, and time slot.');
@@ -94,6 +102,7 @@ export function BookAppointmentScreen({ route, navigation }: Props) {
       setSymptoms('');
       setContactPhone('');
       setReasonForVisit('');
+      setStep(0);
     } catch (e: unknown) {
       setError(getApiErrorMessage(e, 'Booking failed.'));
     }
@@ -114,94 +123,106 @@ export function BookAppointmentScreen({ route, navigation }: Props) {
 
   return (
     <>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text variant="bodyMedium" style={styles.subtitle}>
-          Select a hospital, pick a date and time, then add visit details.
-        </Text>
-        {locations.length === 0 ? (
-          <Text>No active hospital locations for this doctor.</Text>
-        ) : (
-          <AppCard>
-            <SelectField
-              label="Hospital location"
-              value={locationKey}
-              options={locations.map((l) => ({
-                value: `${l.hospitalId}:${l.branchId}`,
-                label: `${l.hospitalName} — ${l.branchName} (${l.city})`,
-              }))}
-              onChange={(v) => {
-                setLocationKey(v);
-                setSelectedDate('');
-                setSelectedSlotId('');
-              }}
-            />
-          </AppCard>
-        )}
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <PageHero compact subtitle="Pick a slot, add visit details, and submit your request." />
 
-        {availabilityLoading ? <ActivityIndicator style={styles.loader} /> : null}
-
-        {selectedLocation && !availabilityLoading ? (
-          <AppCard style={styles.card}>
-            <TimeSlotPicker
-              days={availableDays}
-              selectedDate={selectedDate}
-              selectedSlotId={selectedSlotId}
-              onSelectDate={(date) => {
-                setSelectedDate(date);
-                setSelectedSlotId('');
+        <View style={styles.steps}>
+          {STEPS.map((label, index) => (
+            <Chip
+              key={label}
+              compact
+              selected={step === index}
+              onPress={() => {
+                if (index === 1 && !canNextFromSchedule) return;
+                if (index === 2 && !canNextFromSchedule) return;
+                setStep(index);
               }}
-              onSelectSlot={setSelectedSlotId}
-            />
-          </AppCard>
+              style={styles.stepChip}
+            >
+              {index + 1}. {label}
+            </Chip>
+          ))}
+        </View>
+
+        {step === 0 ? (
+          <>
+            {locations.length === 0 ? (
+              <Text>No active hospital locations for this doctor.</Text>
+            ) : (
+              <AppCard style={styles.card}>
+                <SelectField
+                  label="Hospital location"
+                  value={locationKey}
+                  options={locations.map((l) => ({
+                    value: `${l.hospitalId}:${l.branchId}`,
+                    label: `${l.hospitalName} — ${l.branchName} (${l.city})`,
+                  }))}
+                  onChange={(v) => {
+                    setLocationKey(v);
+                    setSelectedDate('');
+                    setSelectedSlotId('');
+                  }}
+                />
+              </AppCard>
+            )}
+            {availabilityLoading ? <ActivityIndicator style={styles.loader} /> : null}
+            {selectedLocation && !availabilityLoading ? (
+              <AppCard style={styles.card}>
+                <TimeSlotPicker
+                  days={availableDays}
+                  selectedDate={selectedDate}
+                  selectedSlotId={selectedSlotId}
+                  onSelectDate={(date) => {
+                    setSelectedDate(date);
+                    setSelectedSlotId('');
+                  }}
+                  onSelectSlot={setSelectedSlotId}
+                />
+              </AppCard>
+            ) : null}
+            <Button mode="contained" disabled={!canNextFromSchedule} onPress={() => setStep(1)}>
+              Continue to details
+            </Button>
+          </>
         ) : null}
 
-        {selectedSlot ? (
-          <Card style={styles.summaryCard} mode="outlined">
-            <Card.Content>
-              <Text variant="labelLarge">Selected slot</Text>
-              <Text>{selectedDate} · {selectedSlot.startTime.slice(0, 5)} – {selectedSlot.endTime.slice(0, 5)}</Text>
-              <Text variant="bodySmall" style={styles.muted}>
-                {selectedSlot.consultationType.replace(/_/g, ' ')} · Pending doctor confirmation after booking
-              </Text>
-            </Card.Content>
-          </Card>
+        {step === 1 ? (
+          <>
+            <TextInput label="Symptoms or chief complaint" mode="outlined" dense value={symptoms} onChangeText={setSymptoms} multiline style={styles.input} />
+            <TextInput label="Contact phone for this visit" mode="outlined" dense value={contactPhone} onChangeText={setContactPhone} keyboardType="phone-pad" style={styles.input} />
+            <TextInput label="Additional notes (optional)" mode="outlined" dense value={reasonForVisit} onChangeText={setReasonForVisit} multiline style={styles.input} />
+            <View style={styles.navRow}>
+              <Button mode="outlined" onPress={() => setStep(0)}>Back</Button>
+              <Button mode="contained" onPress={() => setStep(2)}>Review</Button>
+            </View>
+          </>
         ) : null}
 
-        <TextInput
-          label="Symptoms or chief complaint"
-          mode="outlined"
-          value={symptoms}
-          onChangeText={setSymptoms}
-          multiline
-          style={styles.input}
-        />
-        <TextInput
-          label="Contact phone for this visit"
-          mode="outlined"
-          value={contactPhone}
-          onChangeText={setContactPhone}
-          keyboardType="phone-pad"
-          style={styles.input}
-        />
-        <TextInput
-          label="Additional notes (optional)"
-          mode="outlined"
-          value={reasonForVisit}
-          onChangeText={setReasonForVisit}
-          multiline
-          style={styles.input}
-        />
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <Button
-          mode="contained"
-          onPress={handleBook}
-          disabled={!selectedSlotId || bookMutation.isPending}
-          loading={bookMutation.isPending}
-        >
-          Submit booking request
-        </Button>
+        {step === 2 ? (
+          <>
+            <AppCard style={styles.card}>
+              <Text variant="labelLarge" style={styles.summaryTitle}>Booking summary</Text>
+              {selectedLocation ? (
+                <Text variant="bodySmall" style={styles.summaryLine}>
+                  {selectedLocation.hospitalName} — {selectedLocation.branchName}
+                </Text>
+              ) : null}
+              {selectedSlot ? (
+                <Text variant="bodySmall" style={styles.summaryLine}>
+                  {selectedDate} · {selectedSlot.startTime.slice(0, 5)} – {selectedSlot.endTime.slice(0, 5)} · {selectedSlot.consultationType.replace(/_/g, ' ')}
+                </Text>
+              ) : null}
+              {symptoms.trim() ? <Text variant="bodySmall" style={styles.summaryLine}>Symptoms: {symptoms.trim()}</Text> : null}
+            </AppCard>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            <View style={styles.navRow}>
+              <Button mode="outlined" onPress={() => setStep(1)}>Back</Button>
+              <Button mode="contained" onPress={handleBook} disabled={!canSubmit || bookMutation.isPending} loading={bookMutation.isPending}>
+                Submit request
+              </Button>
+            </View>
+          </>
+        ) : null}
       </ScrollView>
       <Snackbar visible={Boolean(snack)} onDismiss={() => setSnack(null)} duration={5000}>{snack}</Snackbar>
     </>
@@ -209,12 +230,14 @@ export function BookAppointmentScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 32 },
-  loader: { marginVertical: 24 },
-  subtitle: { opacity: 0.7, marginBottom: 12 },
-  card: { marginBottom: 12 },
-  summaryCard: { marginBottom: 12 },
-  muted: { opacity: 0.7, marginTop: 4 },
-  input: { marginBottom: 12 },
-  error: { color: '#b00020', marginBottom: 8 },
+  container: { padding: layout.screenPaddingX, paddingBottom: layout.screenPaddingBottom },
+  loader: { marginVertical: 16 },
+  card: { marginBottom: layout.stackGap },
+  steps: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: layout.stackGap },
+  stepChip: { height: 30 },
+  input: { marginBottom: 8 },
+  navRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, marginTop: layout.stackGap },
+  summaryTitle: { fontWeight: '600', marginBottom: 4 },
+  summaryLine: { color: appColors.textSecondary, marginTop: 2 },
+  error: { color: appColors.error, marginBottom: 8 },
 });

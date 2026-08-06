@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
@@ -115,7 +115,6 @@ export function AppointmentDetailScreen({ route, navigation }: Props) {
 
   return (
     <ScreenContainer>
-      <ScrollView contentContainerStyle={styles.content}>
         <AppCard>
           <Chip style={styles.chip}>{appointment.status}</Chip>
           <Text variant="headlineSmall">{appointment.doctor.name}</Text>
@@ -152,7 +151,6 @@ export function AppointmentDetailScreen({ route, navigation }: Props) {
             </Button>
           ) : null}
         </View>
-      </ScrollView>
 
       <Portal>
         <Dialog visible={cancelVisible} onDismiss={() => setCancelVisible(false)}>

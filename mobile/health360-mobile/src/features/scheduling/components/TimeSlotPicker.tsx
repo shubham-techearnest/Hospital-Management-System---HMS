@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Text } from 'react-native-paper';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Chip, Text } from 'react-native-paper';
 import type { DayAvailability, SlotAvailability } from '@/features/scheduling/api/schedulingApi';
 import { CONSULTATION_TYPES } from '@/features/scheduling/api/schedulingApi';
 import { AvailabilityCalendar } from '@/features/scheduling/components/AvailabilityCalendar';
-import { SelectField } from '@/features/patient/components/SelectField';
 import { formatEnumLabel } from '@/features/patient/utils/patientUtils';
+import { appColors, layout } from '@/shared/theme';
 
 interface TimeSlotPickerProps {
   days: DayAvailability[];
@@ -110,20 +110,24 @@ export function TimeSlotPicker({
 
   return (
     <View style={styles.container}>
-      <SelectField
-        label="Appointment type"
-        value={consultationType}
-        options={availableTypes.map((type) => ({
-          value: type,
-          label: consultationLabel(type),
-        }))}
-        onChange={(value) => {
-          setConsultationType(value);
-          onSelectSlot('');
-        }}
-      />
+      <Text variant="labelMedium" style={styles.label}>Appointment type</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+        {availableTypes.map((type) => (
+          <Chip
+            key={type}
+            compact
+            selected={consultationType === type}
+            onPress={() => {
+              setConsultationType(type);
+              onSelectSlot('');
+            }}
+            style={styles.chip}
+          >
+            {consultationLabel(type)}
+          </Chip>
+        ))}
+      </ScrollView>
 
-      <Text variant="labelLarge" style={styles.heading}>Select a date from the calendar</Text>
       <AvailabilityCalendar
         availableDates={availableDates}
         slotCounts={slotCounts}
@@ -135,15 +139,26 @@ export function TimeSlotPicker({
       />
 
       {selectedDate ? (
-        <SelectField
-          label="Time slot"
-          value={selectedSlotId}
-          options={slotsForDate.map((slot) => ({
-            value: slot.id,
-            label: slotLabel(slot),
-          }))}
-          onChange={onSelectSlot}
-        />
+        <>
+          <Text variant="labelMedium" style={styles.label}>Time slots · {formatDateLabel(selectedDate)}</Text>
+          {slotsForDate.length === 0 ? (
+            <Text variant="bodySmall" style={styles.empty}>No slots for this type on the selected date.</Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+              {slotsForDate.map((slot) => (
+                <Chip
+                  key={slot.id}
+                  compact
+                  selected={selectedSlotId === slot.id}
+                  onPress={() => onSelectSlot(slot.id)}
+                  style={styles.chip}
+                >
+                  {slotLabel(slot)}
+                </Chip>
+              ))}
+            </ScrollView>
+          )}
+        </>
       ) : null}
 
       {selectedSlotId ? (
@@ -156,8 +171,10 @@ export function TimeSlotPicker({
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 12 },
-  heading: { fontWeight: '600' },
-  empty: { opacity: 0.7 },
-  selectedHint: { opacity: 0.7, textAlign: 'center' },
+  container: { gap: 8 },
+  label: { fontWeight: '600', color: appColors.textPrimary },
+  chipRow: { flexDirection: 'row', gap: 6, paddingVertical: 2 },
+  chip: { height: 30 },
+  empty: { color: appColors.textSecondary },
+  selectedHint: { color: appColors.textSecondary, textAlign: 'center', marginTop: layout.stackGap / 2 },
 });

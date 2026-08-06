@@ -8,6 +8,8 @@ export const layout = {
   cardRadius: 16,
   stackGap: 12,
   textLineHeight: 22,
+  tabBarHeight: 62,
+  listItemGap: 12,
 };
 
 export const mainContentStyle = {

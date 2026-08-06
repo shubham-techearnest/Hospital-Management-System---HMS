@@ -3,17 +3,24 @@ import {
   associateDoctor,
   createBranch,
   createDepartment,
+  createFacility,
   createHospitalProfile,
   deleteBranch,
   deleteDepartment,
+  deleteFacility,
+  deleteGalleryImage,
   getHospitalProfile,
   listBranches,
   listDepartments,
+  listFacilities,
+  listGalleryImages,
   listHospitalDoctors,
   removeHospitalDoctor,
   searchDoctors,
   updateEmergencyInfo,
+  updateFacility,
   updateHospitalProfile,
+  uploadGalleryImage,
 } from '@/features/hospital/api/hospitalApi';
 
 export const hospitalKeys = {
@@ -21,6 +28,8 @@ export const hospitalKeys = {
   branches: ['hospital', 'branches'] as const,
   departments: ['hospital', 'departments'] as const,
   doctors: ['hospital', 'doctors'] as const,
+  facilities: ['hospital', 'facilities'] as const,
+  gallery: ['hospital', 'gallery'] as const,
 };
 
 export function useHospitalProfile() {
@@ -137,5 +146,54 @@ export function useRemoveHospitalDoctor() {
       queryClient.invalidateQueries({ queryKey: hospitalKeys.doctors });
       queryClient.invalidateQueries({ queryKey: hospitalKeys.profile });
     },
+  });
+}
+
+export function useFacilities() {
+  return useQuery({ queryKey: hospitalKeys.facilities, queryFn: listFacilities });
+}
+
+export function useCreateFacility() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: createFacility,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: hospitalKeys.facilities }),
+  });
+}
+
+export function useUpdateFacility() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Parameters<typeof updateFacility>[1] }) =>
+      updateFacility(id, payload),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: hospitalKeys.facilities }),
+  });
+}
+
+export function useDeleteFacility() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: deleteFacility,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: hospitalKeys.facilities }),
+  });
+}
+
+export function useGalleryImages() {
+  return useQuery({ queryKey: hospitalKeys.gallery, queryFn: listGalleryImages });
+}
+
+export function useUploadGalleryImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: uploadGalleryImage,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: hospitalKeys.gallery }),
+  });
+}
+
+export function useDeleteGalleryImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: deleteGalleryImage,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: hospitalKeys.gallery }),
   });
 }

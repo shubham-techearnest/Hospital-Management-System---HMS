@@ -17,7 +17,6 @@ import { AdminPortalLayout } from '@/features/admin/layout/AdminPortalLayout';
 import { HospitalPortalLayout } from '@/features/hospital/layout/HospitalPortalLayout';
 import { LabPortalLayout } from '@/features/lab/layout/LabPortalLayout';
 import { PharmacyPortalLayout } from '@/features/pharmacy/layout/PharmacyPortalLayout';
-import { PlaceholderPage } from '@/shared/pages/PlaceholderPage';
 
 const DashboardPage = lazy(() =>
   import('@/features/patient/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -81,6 +80,12 @@ const DoctorSearchPage = lazy(() =>
 );
 const UnifiedSearchPage = lazy(() =>
   import('@/features/patient/pages/UnifiedSearchPage').then((m) => ({ default: m.UnifiedSearchPage })),
+);
+const PatientPrescriptionsPage = lazy(() =>
+  import('@/features/patient/pages/PatientPrescriptionsPage').then((m) => ({ default: m.PatientPrescriptionsPage })),
+);
+const PatientPaymentsPage = lazy(() =>
+  import('@/features/patient/pages/PatientPaymentsPage').then((m) => ({ default: m.PatientPaymentsPage })),
 );
 const HospitalSearchPage = lazy(() =>
   import('@/features/patient/pages/HospitalSearchPage').then((m) => ({ default: m.HospitalSearchPage })),
@@ -262,8 +267,8 @@ export function AppRouter() {
           <Route path="reports" element={<LazyPage><HealthDocumentsPage /></LazyPage>} />
           <Route path="lab-values" element={<LazyPage><LabValuesPage /></LazyPage>} />
           <Route path="timeline" element={<LazyPage><HealthTimelinePage /></LazyPage>} />
-          <Route path="prescriptions" element={<LazyPage><PlaceholderPage title="Prescriptions" /></LazyPage>} />
-          <Route path="payments" element={<LazyPage><PlaceholderPage title="Payments" /></LazyPage>} />
+          <Route path="prescriptions" element={<LazyPage><PatientPrescriptionsPage /></LazyPage>} />
+          <Route path="payments" element={<LazyPage><PatientPaymentsPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
           <Route path="settings/notifications" element={<LazyPage><NotificationPreferencesPage /></LazyPage>} />
           <Route

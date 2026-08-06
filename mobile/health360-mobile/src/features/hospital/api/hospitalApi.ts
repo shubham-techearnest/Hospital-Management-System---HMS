@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '@/config';
 import { apiClient } from '@/shared/api/client';
 import type { ApiEnvelope } from '@/features/auth/api/authApi';
 
@@ -165,4 +166,85 @@ export async function listHospitalCatalog() {
 
 export function isHospitalProfileNotFound(error: unknown): boolean {
   return (error as { response?: { status?: number } })?.response?.status === 404;
+}
+
+export interface Facility {
+  id: string;
+  branchId?: string;
+  name: string;
+  category: string;
+  description?: string;
+  available: boolean;
+}
+
+export interface GalleryImage {
+  id: string;
+  caption?: string;
+  displayOrder: number;
+  fileSizeBytes: number;
+  mimeType: string;
+  imageUrl: string;
+}
+
+export const FACILITY_CATEGORIES = ['DIAGNOSTIC', 'SURGICAL', 'EMERGENCY', 'ICU', 'PHARMACY', 'PARKING', 'OTHER'] as const;
+
+export async function listFacilities() {
+  const { data } = await apiClient.get<ApiEnvelope<Facility[]>>('/hospitals/me/facilities');
+  return data.data ?? [];
+}
+
+export async function createFacility(payload: {
+  name: string;
+  category: string;
+  description?: string;
+  branchId?: string;
+  available?: boolean;
+}) {
+  const { data } = await apiClient.post<ApiEnvelope<Facility>>('/hospitals/me/facilities', payload);
+  return data.data;
+}
+
+export async function updateFacility(
+  id: string,
+  payload: { name: string; category: string; description?: string; branchId?: string; available?: boolean },
+) {
+  const { data } = await apiClient.put<ApiEnvelope<Facility>>(`/hospitals/me/facilities/${id}`, payload);
+  return data.data;
+}
+
+export async function deleteFacility(id: string) {
+  await apiClient.delete(`/hospitals/me/facilities/${id}`);
+}
+
+export async function listGalleryImages() {
+  const { data } = await apiClient.get<ApiEnvelope<GalleryImage[]>>('/hospitals/me/gallery');
+  return data.data ?? [];
+}
+
+export async function uploadGalleryImage(payload: {
+  uri: string;
+  name: string;
+  mimeType: string;
+  caption?: string;
+  displayOrder?: number;
+}) {
+  const form = new FormData();
+  form.append('file', { uri: payload.uri, name: payload.name, type: payload.mimeType } as unknown as Blob);
+  if (payload.caption) form.append('caption', payload.caption);
+  if (payload.displayOrder != null) form.append('displayOrder', String(payload.displayOrder));
+  const { data } = await apiClient.post<ApiEnvelope<GalleryImage>>('/hospitals/me/gallery', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data.data;
+}
+
+export async function deleteGalleryImage(imageId: string) {
+  await apiClient.delete(`/hospitals/me/gallery/${imageId}`);
+}
+
+export function galleryImageSrc(imageUrl: string) {
+  if (imageUrl.startsWith('http')) return imageUrl;
+  const base = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+  if (imageUrl.startsWith('/api/')) return `${base}${imageUrl}`;
+  return `${API_BASE_URL.replace(/\/$/, '')}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
 }

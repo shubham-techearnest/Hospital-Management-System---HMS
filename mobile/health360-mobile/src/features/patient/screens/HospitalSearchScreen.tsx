@@ -1,21 +1,17 @@
 import { useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Button, Chip, Searchbar, Switch, Text, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Button, Chip, Searchbar, Text, TextInput } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useHospitalSearch } from '@/features/search/hooks/useHospitalSearch';
 import { useUserLocation } from '@/features/location/hooks/useUserLocation';
 import { AppCard } from '@/shared/components/AppCard';
+import { PageHero } from '@/shared/components/PageHero';
 import { ScreenContainer } from '@/shared/components/ScreenContainer';
-import { appColors } from '@/shared/theme';
+import { appColors, layout } from '@/shared/theme';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
 import type { CareStackParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<CareStackParamList, 'HospitalSearch'>;
-
-function travelEstimateMinutes(distanceKm?: number) {
-  if (distanceKm == null) return null;
-  return Math.round(distanceKm * 2.5);
-}
 
 export function HospitalSearchScreen({ navigation }: Props) {
   const [q, setQ] = useState('');
@@ -23,6 +19,7 @@ export function HospitalSearchScreen({ navigation }: Props) {
   const [department, setDepartment] = useState('');
   const [emergency24x7, setEmergency24x7] = useState(false);
   const [useNearby, setUseNearby] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const { coords, loading: locLoading, detect } = useUserLocation();
 
   const { data, isLoading, error, refetch } = useHospitalSearch({
@@ -36,54 +33,61 @@ export function HospitalSearchScreen({ navigation }: Props) {
   });
 
   const results = data?.content ?? [];
-
   const runSearch = () => setQuery(q.trim());
 
   const listHeader = (
     <View style={styles.header}>
-      <Text variant="headlineSmall" style={styles.title}>Find a Hospital</Text>
-      <Text variant="bodyMedium" style={styles.subtitle}>
-        Search by hospital name, department, or emergency facilities.
-      </Text>
+      <PageHero compact subtitle="Search hospitals by name, department, or emergency services." />
+
       <Searchbar
-        placeholder="Search hospitals..."
+        placeholder="Hospital name, department..."
         value={q}
         onChangeText={setQ}
         onSubmitEditing={runSearch}
+        onIconPress={runSearch}
         style={styles.search}
+        inputStyle={styles.searchInput}
       />
-      <TextInput label="Department" mode="outlined" value={department} onChangeText={setDepartment} style={styles.input} />
-      <View style={styles.row}>
-        <Text>24×7 Emergency</Text>
-        <Switch value={emergency24x7} onValueChange={setEmergency24x7} />
-      </View>
-      <View style={styles.row}>
-        <Text>Sort by nearby</Text>
-        <Switch
-          value={useNearby}
-          onValueChange={(v) => {
-            setUseNearby(v);
-            if (v && !coords) void detect();
+
+      <View style={styles.quickFilters}>
+        <Chip compact selected={emergency24x7} onPress={() => setEmergency24x7((v) => !v)} style={styles.filterChip}>
+          24×7
+        </Chip>
+        <Chip
+          compact
+          selected={useNearby}
+          onPress={() => {
+            setUseNearby((v) => {
+              const next = !v;
+              if (next && !coords) void detect();
+              return next;
+            });
           }}
-        />
+          style={styles.filterChip}
+        >
+          Near me
+        </Chip>
+        <Chip compact selected={filtersOpen} onPress={() => setFiltersOpen((v) => !v)} icon="tune-variant" style={styles.filterChip}>
+          Filters
+        </Chip>
+        <Button mode="contained" compact onPress={runSearch}>Search</Button>
       </View>
-      {useNearby && locLoading ? <Text style={styles.locHint}>Detecting location…</Text> : null}
-      {useNearby && coords ? <Chip compact icon="map-marker" style={styles.locChip}>Using your location</Chip> : null}
-      <Button mode="contained" onPress={runSearch} style={styles.btn}>Search</Button>
-      <Button mode="text" onPress={() => navigation.navigate('DoctorSearch')}>Find doctors instead</Button>
+
+      {filtersOpen ? (
+        <TextInput label="Department" mode="outlined" dense value={department} onChangeText={setDepartment} style={styles.input} />
+      ) : null}
+
+      {useNearby && locLoading ? <Text style={styles.hint}>Detecting location…</Text> : null}
+      <Button mode="text" compact onPress={() => navigation.navigate('DoctorSearch')}>Find doctors instead</Button>
 
       {error ? (
         <AppCard style={styles.card}>
           <Text style={styles.error}>{getApiErrorMessage(error, 'Unable to load hospitals.')}</Text>
-          <Button onPress={() => refetch()}>Retry</Button>
+          <Button compact onPress={() => refetch()}>Retry</Button>
         </AppCard>
       ) : null}
-
       {isLoading ? <ActivityIndicator style={styles.loader} /> : null}
-
-      {!isLoading && !error && results.length === 0 ? (
-        <Text style={styles.empty}>No hospitals found.</Text>
-      ) : null}
+      {!isLoading && !error && results.length === 0 ? <Text style={styles.empty}>No hospitals found.</Text> : null}
     </View>
   );
 
@@ -98,20 +102,14 @@ export function HospitalSearchScreen({ navigation }: Props) {
         keyboardShouldPersistTaps="handled"
         renderItem={({ item }) => (
           <AppCard style={styles.card}>
-            <Text variant="titleMedium">{item.name}</Text>
-            <Text variant="bodySmall">{[item.branchName, item.city].filter(Boolean).join(' · ')}</Text>
+            <Text variant="titleSmall">{item.name}</Text>
+            <Text variant="bodySmall" style={styles.meta}>{[item.branchName, item.city].filter(Boolean).join(' · ')}</Text>
             <View style={styles.chips}>
-              {item.distanceKm != null ? <Chip compact>{item.distanceKm} km</Chip> : null}
-              {travelEstimateMinutes(item.distanceKm) != null ? (
-                <Chip compact>~{travelEstimateMinutes(item.distanceKm)} min</Chip>
-              ) : null}
+              {item.emergencyAvailable24x7 ? <Chip compact style={styles.metaChip}>24×7</Chip> : null}
+              {item.icuAvailable ? <Chip compact style={styles.metaChip}>ICU</Chip> : null}
+              {item.distanceKm != null ? <Chip compact style={styles.metaChip}>{item.distanceKm} km</Chip> : null}
             </View>
-            {item.emergencyAvailable24x7 ? <Text style={styles.badge}>24×7 Emergency</Text> : null}
-            {item.icuAvailable ? <Text style={styles.badge}>ICU</Text> : null}
-            <Button
-              mode="outlined"
-              onPress={() => navigation.navigate('PublicHospitalProfile', { hospitalId: item.hospitalId })}
-            >
+            <Button mode="outlined" compact onPress={() => navigation.navigate('PublicHospitalProfile', { hospitalId: item.hospitalId })}>
               View profile
             </Button>
           </AppCard>
@@ -124,19 +122,18 @@ export function HospitalSearchScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   list: { flex: 1 },
   listContent: { paddingBottom: 32 },
-  header: { paddingBottom: 4 },
-  title: { fontWeight: '700', marginBottom: 4, color: appColors.textPrimary },
-  subtitle: { color: appColors.textSecondary, marginBottom: 12 },
-  search: { marginBottom: 8 },
-  input: { marginBottom: 8 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  btn: { marginBottom: 4 },
-  loader: { marginTop: 24, marginBottom: 12 },
-  card: { marginTop: 12, gap: 4 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 4 },
-  locChip: { alignSelf: 'flex-start', marginBottom: 8 },
-  badge: { color: appColors.success, fontWeight: '600' },
-  empty: { textAlign: 'center', color: appColors.textSecondary, marginTop: 24, marginBottom: 12 },
-  error: { color: appColors.error, marginBottom: 8 },
-  locHint: { color: appColors.textSecondary, marginBottom: 8 },
+  header: { gap: 0 },
+  search: { marginBottom: 6, height: 44 },
+  searchInput: { minHeight: 0, fontSize: 14 },
+  quickFilters: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginBottom: 6 },
+  filterChip: { height: 30 },
+  input: { marginBottom: 6 },
+  hint: { color: appColors.textSecondary, fontSize: 12 },
+  loader: { marginVertical: 12 },
+  card: { marginTop: 8, gap: 4 },
+  meta: { color: appColors.textSecondary },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  metaChip: { height: 26 },
+  empty: { textAlign: 'center', color: appColors.textSecondary, marginTop: 12 },
+  error: { color: appColors.error },
 });

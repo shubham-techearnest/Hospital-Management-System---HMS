@@ -4,6 +4,7 @@ import com.health360.iam.domain.UserStatus;
 import com.health360.iam.infrastructure.persistence.entity.UserEntity;
 import com.health360.iam.infrastructure.persistence.repository.UserRepository;
 import com.health360.iam.infrastructure.persistence.repository.UserRoleRepository;
+import com.health360.iam.infrastructure.persistence.spec.AdminUserSpecifications;
 import com.health360.iam.presentation.dto.request.UpdateUserStatusRequest;
 import com.health360.iam.presentation.dto.response.AdminUserResponse;
 import com.health360.shared.application.AuditLogService;
@@ -37,8 +38,30 @@ public class AdminUserService {
             String role,
             String status,
             Pageable pageable) {
-        return userRepository.searchAdminUsers(tenantId, email, name, role, status, pageable)
+        return userRepository.findAll(
+                        AdminUserSpecifications.search(
+                                tenantId,
+                                toLikePattern(email),
+                                toLikePattern(name),
+                                blankToNull(role),
+                                blankToNull(status)),
+                        pageable)
                 .map(this::toResponse);
+    }
+
+    private static String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private static String toLikePattern(String value) {
+        String normalized = blankToNull(value);
+        if (normalized == null) {
+            return null;
+        }
+        return "%" + normalized.toLowerCase() + "%";
     }
 
     @Transactional(readOnly = true)

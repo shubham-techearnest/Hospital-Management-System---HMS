@@ -1,6 +1,6 @@
 # Health360 Mobile (React Native + Expo)
 
-Expo-based React Native app aligned with [MOBILE-STRAT-001](../../docs/mobile/MOBILE_DEVELOPMENT_STRATEGY.md).
+Expo-based React Native app aligned with [MOBILE-STRAT-001](../../docs/phase-1/mobile/MOBILE_DEVELOPMENT_STRATEGY.md).
 
 ## Status — S7 Complete (Catch-Up)
 
@@ -11,11 +11,11 @@ Expo-based React Native app aligned with [MOBILE-STRAT-001](../../docs/mobile/MO
 | Doctor profile + verification (S5–S6) | ✅ |
 | Hospital admin + doctor associations (S7) | ✅ |
 
-Track progress: [MOBILE_SPRINT_STATUS.md](../../docs/mobile/MOBILE_SPRINT_STATUS.md)
+Track progress: [MOBILE_SPRINT_STATUS.md](../../docs/phase-1/mobile/MOBILE_SPRINT_STATUS.md)
 
 ## Setup (Read This First)
 
-**Full setup guide:** [MOBILE_SETUP.md](../../docs/mobile/MOBILE_SETUP.md)
+**Full setup guide:** [MOBILE_SETUP.md](../../docs/phase-1/mobile/MOBILE_SETUP.md)
 
 Quick start from repo root:
 
@@ -39,7 +39,7 @@ Quick start from repo root:
 
 - Node.js 20+
 - Android Studio + SDK (for emulator / `expo run:android`)
-- See [MOBILE_SETUP.md](../../docs/mobile/MOBILE_SETUP.md) for ANDROID_HOME, adb, and emulator setup
+- See [MOBILE_SETUP.md](../../docs/phase-1/mobile/MOBILE_SETUP.md) for ANDROID_HOME, adb, and emulator setup
 
 ## Run Locally
 

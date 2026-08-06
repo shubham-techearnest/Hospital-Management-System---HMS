@@ -9,8 +9,6 @@ import {
   Chip,
   Skeleton,
   Stack,
-  Tab,
-  Tabs,
   Typography,
 } from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
@@ -18,6 +16,8 @@ import { useDoctorAppointments } from '@/features/scheduling/hooks/useScheduling
 import type { AppointmentFilter } from '@/features/scheduling/api/schedulingApi';
 import { APPOINTMENT_FILTERS, formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
 import { parseApiError } from '@/shared/api/errorUtils';
+import { CompactFilterChips } from '@/shared/filters/CompactFilterChips';
+import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 
 export function DoctorAppointmentsPage() {
   const [filter, setFilter] = useState<AppointmentFilter>('upcoming');
@@ -26,29 +26,24 @@ export function DoctorAppointmentsPage() {
 
   return (
     <AnimatedPage>
-      <Typography variant="h4" sx={{ mb: 1 }}>Appointments</Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>
-        Manage upcoming patient visits and review past appointments.
-      </Typography>
+      <DashboardPageHeader
+        title="Appointments"
+        subtitle="Manage upcoming patient visits and review past appointments."
+      />
 
-      <Tabs value={filter} onChange={(_, v) => setFilter(v)} sx={{ mb: 3 }}>
-        {APPOINTMENT_FILTERS.map((f) => (
-          <Tab key={f.value} label={f.label} value={f.value} />
-        ))}
-      </Tabs>
+      <CompactFilterChips value={filter} options={APPOINTMENT_FILTERS} onChange={setFilter} />
 
       {parsedError ? (
         <Alert severity="error" sx={{ mb: 2 }}>
           {parsedError.message}
           {parsedError.kind === 'session' ? ' Please sign in again.' : null}
-          {parsedError.kind === 'forbidden' ? ' Try signing out and back in to refresh permissions.' : null}
         </Alert>
       ) : null}
 
       {isLoading ? (
-        <Stack spacing={2}>
-          <Skeleton variant="rounded" height={100} />
-          <Skeleton variant="rounded" height={100} />
+        <Stack spacing={1.5}>
+          <Skeleton variant="rounded" height={88} />
+          <Skeleton variant="rounded" height={88} />
         </Stack>
       ) : null}
 
@@ -56,28 +51,23 @@ export function DoctorAppointmentsPage() {
         <Alert severity="info">No appointments in this view.</Alert>
       ) : null}
 
-      <Stack spacing={2}>
+      <Stack spacing={1.5}>
         {appointments.map((appt) => (
           <Card key={appt.appointmentId} variant="outlined">
-            <CardContent>
-              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={2}>
+            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1.5}>
                 <Box>
-                  <Typography variant="h6">{appt.patient.name}</Typography>
-                  <Typography sx={{ mt: 1 }}>{formatAppointmentDate(appt.scheduledAt)}</Typography>
-                  <Typography color="text.secondary">
+                  <Typography variant="subtitle1" fontWeight={600}>{appt.patient.name}</Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>{formatAppointmentDate(appt.scheduledAt)}</Typography>
+                  <Typography variant="body2" color="text.secondary">
                     {appt.hospital.name} — {appt.hospital.branchName}
                   </Typography>
-                  <Typography color="text.secondary">{appt.consultationType}</Typography>
+                  <Typography variant="body2" color="text.secondary">{appt.consultationType}</Typography>
                 </Box>
-                <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1}>
+                <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.75}>
                   <Chip label={appt.status} color={statusColor(appt.status)} size="small" />
-                  <Button
-                    component={RouterLink}
-                    to={`/doctor/appointments/${appt.appointmentId}`}
-                    size="small"
-                    variant="outlined"
-                  >
-                    View details
+                  <Button component={RouterLink} to={`/doctor/appointments/${appt.appointmentId}`} size="small" variant="outlined">
+                    Details
                   </Button>
                 </Stack>
               </Stack>

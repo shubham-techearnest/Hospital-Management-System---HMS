@@ -1,6 +1,6 @@
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import {
-  AppBar, Avatar, Box, Button, Divider, ListItemIcon, ListItemText, Menu, MenuItem, Toolbar, Typography,
+  AppBar, Avatar, Box, Button, Divider, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Toolbar, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useState } from 'react';
@@ -25,20 +25,33 @@ interface AppNavbarProps {
   portalRole?: AppRole;
 }
 
+function readStoredUser(): RootState['auth']['user'] {
+  try {
+    const raw = localStorage.getItem('user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function AppNavbar({ portalRole }: AppNavbarProps) {
+  const theme = useTheme();
+  const isCompact = useMediaQuery(theme.breakpoints.down('sm'));
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const auth = useSelector((state: RootState) => state.auth);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const isAuthenticated = Boolean(auth.accessToken && auth.user);
-  const role = portalRole ?? resolvePrimaryRole(auth.user?.roles);
+  const accessToken = auth.accessToken ?? localStorage.getItem('accessToken');
+  const user = auth.user ?? readStoredUser();
+  const isAuthenticated = Boolean(accessToken && user);
+  const role = portalRole ?? resolvePrimaryRole(user?.roles);
   const homePath = role ? getRoleDashboardPath(role) : '/';
 
   const handleLogout = async () => {
     setMenuAnchor(null);
     try {
-      if (auth.accessToken) {
-        await logoutApi(auth.accessToken, auth.refreshToken ?? undefined);
+      if (accessToken) {
+        await logoutApi(accessToken, auth.refreshToken ?? localStorage.getItem('refreshToken') ?? undefined);
       }
     } catch {
       // clear local session regardless
@@ -63,13 +76,23 @@ export function AppNavbar({ portalRole }: AppNavbarProps) {
 
         {isAuthenticated ? (
           <>
-            <Button color="inherit" onClick={(e) => setMenuAnchor(e.currentTarget)} startIcon={
-              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}>
-                {initials(auth.user?.firstName, auth.user?.lastName, auth.user?.email)}
-              </Avatar>
-            } sx={{ textTransform: 'none' }}>
-              {displayName(auth.user?.firstName, auth.user?.lastName, auth.user?.email)}
-            </Button>
+            {isCompact ? (
+              <IconButton color="inherit" onClick={(e) => setMenuAnchor(e.currentTarget)} aria-label="Account menu">
+                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}>
+                  {initials(user?.firstName, user?.lastName, user?.email)}
+                </Avatar>
+              </IconButton>
+            ) : (
+              <Button color="inherit" onClick={(e) => setMenuAnchor(e.currentTarget)} startIcon={
+                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}>
+                  {initials(user?.firstName, user?.lastName, user?.email)}
+                </Avatar>
+              } sx={{ textTransform: 'none', maxWidth: 220 }}>
+                <Typography noWrap component="span">
+                  {displayName(user?.firstName, user?.lastName, user?.email)}
+                </Typography>
+              </Button>
+            )}
             <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
               <MenuItem component={RouterLink} to={homePath} onClick={() => setMenuAnchor(null)}>
                 <ListItemIcon><LocalHospitalIcon fontSize="small" /></ListItemIcon>
@@ -83,9 +106,19 @@ export function AppNavbar({ portalRole }: AppNavbarProps) {
             </Menu>
           </>
         ) : (
-          <Box>
-            <Button color="inherit" component={RouterLink} to="/login">Login</Button>
-            <Button variant="outlined" color="inherit" sx={{ ml: 1 }} component={RouterLink} to="/register">Register</Button>
+          <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, flexShrink: 0 }}>
+            <Button color="inherit" size={isCompact ? 'small' : 'medium'} component={RouterLink} to="/login">
+              {isCompact ? 'Login' : 'Login'}
+            </Button>
+            <Button
+              variant="outlined"
+              color="inherit"
+              size={isCompact ? 'small' : 'medium'}
+              component={RouterLink}
+              to="/register"
+            >
+              {isCompact ? 'Join' : 'Register'}
+            </Button>
           </Box>
         )}
       </Toolbar>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
@@ -26,6 +26,7 @@ import {
   useUpdateDoctorAppointmentStatus,
 } from '@/features/scheduling/hooks/useSchedulingQueries';
 import type { DoctorAppointmentsStackParamList } from '@/navigation/types';
+import { appColors } from '@/shared/theme';
 
 type Props = NativeStackScreenProps<DoctorAppointmentsStackParamList, 'DoctorAppointmentDetail'>;
 
@@ -82,7 +83,6 @@ export function DoctorAppointmentDetailScreen({ route }: Props) {
 
   return (
     <ScreenContainer>
-      <ScrollView contentContainerStyle={styles.content}>
         <AppCard>
           <Chip style={styles.chip}>{appointment.status}</Chip>
           <Text variant="headlineSmall">{appointment.patient.name}</Text>
@@ -126,7 +126,7 @@ export function DoctorAppointmentDetailScreen({ route }: Props) {
             </Button>
           ) : null}
           {appointment.canCancel ? (
-            <Button mode="outlined" textColor="#b00020" onPress={() => setDialog('cancel')}>Cancel</Button>
+            <Button mode="outlined" textColor={appColors.error} onPress={() => setDialog('cancel')}>Cancel</Button>
           ) : null}
           {appointment.canMarkCompleted ? (
             <Button mode="contained" onPress={() => runAction(() => statusMutation.mutateAsync({ appointmentId, status: 'COMPLETED' }), 'Marked as completed.')} loading={statusMutation.isPending}>
@@ -139,7 +139,6 @@ export function DoctorAppointmentDetailScreen({ route }: Props) {
             </Button>
           ) : null}
         </View>
-      </ScrollView>
 
       <Portal>
         <Dialog visible={dialog === 'cancel'} onDismiss={() => setDialog(null)}>

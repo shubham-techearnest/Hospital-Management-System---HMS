@@ -5,24 +5,38 @@ import {
   StyleSheet,
   View,
   type ViewProps,
+  type ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from 'react-native-paper';
 import { appColors, layout } from '@/shared/theme';
 
 interface ScreenContainerProps extends ViewProps {
   scroll?: boolean;
   centered?: boolean;
+  /** Apply bottom safe-area inset (useful for screens without tab bar) */
+  safeAreaBottom?: boolean;
   children: React.ReactNode;
 }
 
 export function ScreenContainer({
   scroll = true,
   centered = false,
+  safeAreaBottom = false,
   children,
   style,
   ...rest
 }: ScreenContainerProps) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
+
+  const paddedStyle: ViewStyle = centered
+    ? {}
+    : {
+        paddingBottom: safeAreaBottom
+          ? Math.max(insets.bottom, layout.screenPaddingBottom)
+          : layout.screenPaddingBottom,
+      };
 
   const content = (
     <View
@@ -33,6 +47,7 @@ export function ScreenContainer({
           borderColor: theme.colors.outline,
         },
         !centered && styles.standardInner,
+        !centered && paddedStyle,
         style,
       ]}
       {...rest}
@@ -43,7 +58,7 @@ export function ScreenContainer({
 
   const wrapperStyle = [
     styles.flex,
-    centered && { backgroundColor: theme.colors.background },
+    { backgroundColor: centered ? theme.colors.background : appColors.background },
   ];
 
   if (!scroll) {
@@ -52,7 +67,9 @@ export function ScreenContainer({
         style={wrapperStyle}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={centered ? styles.centeredOuter : styles.flex}>{content}</View>
+        <View style={[centered ? styles.centeredOuter : styles.listOuter, !centered && styles.listPadding]}>
+          {content}
+        </View>
       </KeyboardAvoidingView>
     );
   }
@@ -66,6 +83,7 @@ export function ScreenContainer({
         contentContainerStyle={[
           styles.scrollContent,
           centered && styles.centeredScroll,
+          !centered && { paddingBottom: Math.max(insets.bottom, layout.screenPaddingBottom) },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -80,6 +98,13 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
     minWidth: 0,
+  },
+  listOuter: {
+    flex: 1,
+    minWidth: 0,
+  },
+  listPadding: {
+    paddingHorizontal: 0,
   },
   scrollContent: {
     flexGrow: 1,
@@ -101,8 +126,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   standardInner: {
-    backgroundColor: appColors.background,
-    paddingBottom: layout.sectionGap,
     gap: layout.stackGap,
   },
   authCard: {

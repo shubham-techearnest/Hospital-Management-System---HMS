@@ -26,6 +26,7 @@ export type HomeStackParamList = {
 };
 
 export type CareStackParamList = {
+  UnifiedSearch: undefined;
   DoctorSearch: undefined;
   HospitalSearch: undefined;
   PublicDoctorProfile: { doctorId: string };
@@ -54,6 +55,7 @@ export type DoctorAppointmentsStackParamList = {
 };
 
 export type DoctorTabParamList = {
+  Overview: undefined;
   Profile: undefined;
   Verification: undefined;
   Hospitals: undefined;
@@ -63,9 +65,10 @@ export type DoctorTabParamList = {
 };
 
 export type HospitalTabParamList = {
+  Overview: undefined;
   Profile: undefined;
   Branches: undefined;
-  Manage: undefined;
+  Manage: NavigatorScreenParams<HospitalManageStackParamList>;
   Settings: undefined;
 };
 
@@ -74,6 +77,21 @@ export type HospitalManageStackParamList = {
   Departments: undefined;
   Emergency: undefined;
   Doctors: undefined;
+  Facilities: undefined;
+  Gallery: undefined;
+};
+
+export type AdminTabParamList = {
+  Overview: undefined;
+  Users: undefined;
+  Settings: undefined;
+};
+
+export type AdminStackParamList = {
+  AdminTabs: undefined;
+  VerificationQueue: undefined;
+  VerificationReview: { doctorId: string };
+  ReviewModeration: undefined;
 };
 
 export type RootStackParamList = {

@@ -119,3 +119,14 @@ export const tabBarOptions = {
   },
   headerTintColor: appColors.primary,
 };
+
+/** Shared stack navigator styling — matches tab header theme */
+export const stackScreenOptions = {
+  headerStyle: tabBarOptions.headerStyle,
+  headerTitleStyle: tabBarOptions.headerTitleStyle,
+  headerTintColor: tabBarOptions.headerTintColor,
+  headerShadowVisible: false,
+  contentStyle: {
+    backgroundColor: appColors.background,
+  },
+};

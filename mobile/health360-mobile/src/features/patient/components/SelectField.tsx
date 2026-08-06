@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { Button, Menu, TextInput } from 'react-native-paper';
+import { Menu, TextInput } from 'react-native-paper';
 import { formatEnumLabel } from '@/features/patient/utils/patientUtils';
 
 export type SelectOption = string | { value: string; label: string };
@@ -17,9 +17,10 @@ interface SelectFieldProps {
   options: readonly SelectOption[];
   onChange: (value: string) => void;
   error?: boolean;
+  compact?: boolean;
 }
 
-export function SelectField({ label, value, options, onChange, error }: SelectFieldProps) {
+export function SelectField({ label, value, options, onChange, error, compact = true }: SelectFieldProps) {
   const [visible, setVisible] = useState(false);
   const normalized = options.map(normalizeOption);
   const selectedLabel = normalized.find((option) => option.value === value)?.label;
@@ -30,9 +31,18 @@ export function SelectField({ label, value, options, onChange, error }: SelectFi
         visible={visible}
         onDismiss={() => setVisible(false)}
         anchor={
-          <Button mode="outlined" onPress={() => setVisible(true)} style={{ justifyContent: 'flex-start' }}>
-            {value ? `${label}: ${selectedLabel ?? formatEnumLabel(value)}` : `Select ${label}`}
-          </Button>
+          <TextInput
+            label={label}
+            mode="outlined"
+            value={value ? (selectedLabel ?? formatEnumLabel(value)) : ''}
+            placeholder={`Select ${label.toLowerCase()}`}
+            editable={false}
+            dense={compact}
+            error={error}
+            right={<TextInput.Icon icon="menu-down" onPress={() => setVisible(true)} />}
+            onPressIn={() => setVisible(true)}
+            style={compact ? { marginBottom: 0 } : undefined}
+          />
         }
       >
         <Menu.Item onPress={() => { onChange(''); setVisible(false); }} title="Clear" />
@@ -47,7 +57,6 @@ export function SelectField({ label, value, options, onChange, error }: SelectFi
           />
         ))}
       </Menu>
-      {error ? <TextInput error={error} style={{ height: 0, opacity: 0 }} /> : null}
     </View>
   );
 }

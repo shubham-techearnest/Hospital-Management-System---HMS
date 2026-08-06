@@ -15,7 +15,7 @@
 |------------|----------------|--------|
 | Backend | S9 (target) | Ahead of mobile |
 | Web Frontend | S9 (target) | Ahead of mobile |
-| **Mobile** | **S11** | Health dashboard with analytics API |
+| **Mobile** | **S11+** | Search/geo and P1 features in progress |
 | Documentation | MOBILE-STRAT-001 + S1 notes | Active |
 
 **Next mobile iteration:** S12 — doctor/hospital search per roadmap.
@@ -38,7 +38,7 @@
 | S9 | Scheduling Lifecycle | ✅ Complete | Appointments list + detail | Cancel/reschedule; history |
 | S10 | Formula Engine | ✅ Complete (backend) | — | Backend-only sprint |
 | S11 | Health Dashboard | ✅ Complete | Dashboard scores + metrics | `useHealthDashboard`, PatientHomeScreen |
-| S12+ | Ongoing | ⬜ Pending | Per [DOC-15](../15-DEVELOPMENT-ROADMAP.md) | Inline with each sprint |
+| S12+ | Ongoing | 🔄 In Progress | Per [DOC-15](../delivery/15-DEVELOPMENT-ROADMAP.md) | Search, geo, public profiles |
 
 **Legend:** ✅ Complete · 🔄 In Progress · ⬜ Pending · ⏸ Blocked (API not ready)
 

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Button, Chip, Text } from 'react-native-paper';
 import { AppCard } from '@/shared/components/AppCard';
+import { EmptyState } from '@/shared/components/EmptyState';
 import { ScreenContainer } from '@/shared/components/ScreenContainer';
+import { ScreenIntro } from '@/shared/components/ScreenIntro';
 import { useHealthTimeline } from '@/features/patient/hooks/usePatientExtendedQueries';
-
-import { appColors } from '@/shared/theme';
+import { appColors, layout } from '@/shared/theme';
 
 function eventColor(eventType: string): string {
   if (eventType.includes('VITAL')) return appColors.primary;
@@ -21,53 +22,73 @@ export function HealthTimelineScreen() {
 
   return (
     <ScreenContainer>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text variant="headlineSmall" style={styles.title}>Health Timeline</Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
-          A chronological view of vitals, lab results, documents, and other health events.
-        </Text>
+      <ScreenIntro description="A chronological view of vitals, lab results, documents, and other health events." />
 
-        {isLoading ? <ActivityIndicator /> : null}
-        {error ? <Text style={styles.error}>Unable to load timeline.</Text> : null}
+      {isLoading ? <ActivityIndicator style={styles.loader} /> : null}
+      {error ? <Text style={styles.error}>Unable to load timeline.</Text> : null}
 
-        {(data?.content ?? []).map((event) => (
-          <AppCard key={event.id} style={styles.card}>
-            <View style={styles.header}>
-              <Chip compact textStyle={{ color: eventColor(event.eventType) }}>
-                {event.eventType.replace(/_/g, ' ')}
-              </Chip>
-              <Text variant="labelSmall" style={styles.when}>
-                {new Date(event.occurredAt).toLocaleString()}
-              </Text>
-            </View>
-            <Text variant="bodyMedium">{event.summary}</Text>
-          </AppCard>
-        ))}
-
-        {(data?.content ?? []).length === 0 && !isLoading ? (
-          <Text style={styles.empty}>No timeline events yet. Record vitals, lab values, or upload documents to build your history.</Text>
-        ) : null}
-
-        {data && data.totalPages > 1 ? (
-          <View style={styles.pagination}>
-            <Button disabled={page <= 0} onPress={() => setPage((p) => p - 1)}>Previous</Button>
-            <Text>Page {page + 1} of {data.totalPages}</Text>
-            <Button disabled={page + 1 >= data.totalPages} onPress={() => setPage((p) => p + 1)}>Next</Button>
+      {(data?.content ?? []).map((event) => (
+        <AppCard key={event.id} style={styles.card}>
+          <View style={styles.header}>
+            <Chip compact textStyle={{ color: eventColor(event.eventType) }}>
+              {event.eventType.replace(/_/g, ' ')}
+            </Chip>
+            <Text variant="labelSmall" style={styles.when}>
+              {new Date(event.occurredAt).toLocaleString()}
+            </Text>
           </View>
-        ) : null}
-      </ScrollView>
+          <Text variant="bodyMedium">{event.summary}</Text>
+        </AppCard>
+      ))}
+
+      {(data?.content ?? []).length === 0 && !isLoading ? (
+        <EmptyState
+          icon="timeline-clock-outline"
+          title="No timeline events yet"
+          message="Record vitals, lab values, or upload documents to build your history."
+        />
+      ) : null}
+
+      {data && data.totalPages > 1 ? (
+        <View style={styles.pagination}>
+          <Button disabled={page <= 0} onPress={() => setPage((p) => p - 1)}>Previous</Button>
+          <Text variant="bodySmall" style={styles.pageLabel}>Page {page + 1} of {data.totalPages}</Text>
+          <Button disabled={page + 1 >= data.totalPages} onPress={() => setPage((p) => p + 1)}>Next</Button>
+        </View>
+      ) : null}
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: 24 },
-  title: { fontWeight: '700', marginBottom: 4 },
-  subtitle: { opacity: 0.7, marginBottom: 16 },
-  card: { marginBottom: 12 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  when: { opacity: 0.6 },
-  empty: { opacity: 0.7, textAlign: 'center', marginTop: 24 },
-  error: { color: '#b00020', marginBottom: 12 },
-  pagination: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
+  loader: {
+    marginBottom: layout.stackGap,
+  },
+  card: {
+    marginBottom: layout.listItemGap,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: layout.stackGap,
+    gap: layout.stackGap,
+  },
+  when: {
+    color: appColors.textSecondary,
+  },
+  error: {
+    color: appColors.error,
+    marginBottom: layout.stackGap,
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: layout.sectionGap,
+    gap: layout.stackGap,
+  },
+  pageLabel: {
+    color: appColors.textSecondary,
+  },
 });

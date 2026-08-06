@@ -4,9 +4,8 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   Stack,
-  Tab,
-  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
@@ -17,6 +16,7 @@ import { HospitalListCard } from '@/features/search/components/HospitalListCard'
 import { useUnifiedSearch } from '@/features/search/hooks/useSearchQueries';
 import { detectUserLocation } from '@/features/location/api/locationApi';
 import { parseApiError } from '@/shared/api/errorUtils';
+import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 
 type SearchType = 'ALL' | 'DOCTOR' | 'HOSPITAL';
 
@@ -43,10 +43,9 @@ export function UnifiedSearchPage() {
     setLocationError(null);
     setLocating(true);
     try {
-      const location = await detectUserLocation();
-      setCoords(location);
+      setCoords(await detectUserLocation());
     } catch {
-      setLocationError('Could not detect location. Enter a city on the doctor or hospital search pages instead.');
+      setLocationError('Could not detect location. Try the doctor or hospital search pages instead.');
     } finally {
       setLocating(false);
     }
@@ -54,53 +53,47 @@ export function UnifiedSearchPage() {
 
   return (
     <AnimatedPage>
-      <Typography variant="h4" sx={{ mb: 1 }}>Search Healthcare Providers</Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>
-        Find verified doctors and hospitals from one place.
-      </Typography>
+      <DashboardPageHeader
+        title="Search Healthcare Providers"
+        subtitle="Find verified doctors and hospitals from one place."
+      />
 
-      <Stack spacing={2} sx={{ mb: 3, maxWidth: 800 }}>
-        <TextField
-          label="Search doctors, hospitals, specialties, cities"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          fullWidth
-        />
-        <Stack direction="row" spacing={1} flexWrap="wrap">
-          <Button
-            variant="outlined"
-            startIcon={<MyLocationIcon />}
-            onClick={handleUseLocation}
-            disabled={locating}
-          >
-            {coords ? 'Location enabled' : 'Use my location'}
+      <Stack spacing={1.5} sx={{ mb: 2, maxWidth: 800 }}>
+        <TextField label="Search" size="small" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Doctors, hospitals, specialties, cities" fullWidth />
+        <Stack direction="row" spacing={0.75} flexWrap="wrap" alignItems="center">
+          {([
+            ['ALL', `All (${(data?.doctorCount ?? 0) + (data?.hospitalCount ?? 0)})`],
+            ['DOCTOR', `Doctors (${data?.doctorCount ?? 0})`],
+            ['HOSPITAL', `Hospitals (${data?.hospitalCount ?? 0})`],
+          ] as const).map(([value, label]) => (
+            <Chip
+              key={value}
+              label={label}
+              size="small"
+              color={type === value ? 'primary' : 'default'}
+              variant={type === value ? 'filled' : 'outlined'}
+              onClick={() => setType(value)}
+              sx={{ height: 28 }}
+            />
+          ))}
+          <Button size="small" variant="outlined" startIcon={<MyLocationIcon />} onClick={handleUseLocation} disabled={locating}>
+            {coords ? 'Location on' : 'Near me'}
           </Button>
-          <Button component={RouterLink} to="/patient/book" variant="text">Advanced doctor filters</Button>
-          <Button component={RouterLink} to="/patient/hospitals" variant="text">Advanced hospital filters</Button>
+          <Button component={RouterLink} to="/patient/book" size="small">Doctor filters</Button>
+          <Button component={RouterLink} to="/patient/hospitals" size="small">Hospital filters</Button>
         </Stack>
-        {locationError ? <Alert severity="warning">{locationError}</Alert> : null}
-        {coords ? (
-          <Typography variant="caption" color="text.secondary">
-            Showing results near your location (within 25 km when distance is available).
-          </Typography>
-        ) : null}
+        {locationError ? <Alert severity="warning" sx={{ py: 0.5 }}>{locationError}</Alert> : null}
       </Stack>
 
-      <Tabs value={type} onChange={(_, v) => setType(v)} sx={{ mb: 3 }}>
-        <Tab label={`All (${(data?.doctorCount ?? 0) + (data?.hospitalCount ?? 0)})`} value="ALL" />
-        <Tab label={`Doctors (${data?.doctorCount ?? 0})`} value="DOCTOR" />
-        <Tab label={`Hospitals (${data?.hospitalCount ?? 0})`} value="HOSPITAL" />
-      </Tabs>
-
       {parsedError ? <Alert severity="error" sx={{ mb: 2 }}>{parsedError.message}</Alert> : null}
-      {isLoading ? <Typography>Searching…</Typography> : null}
+      {isLoading ? <Typography variant="body2">Searching…</Typography> : null}
 
       {!isLoading && !parsedError ? (
-        <Stack spacing={3}>
+        <Stack spacing={2}>
           {(type === 'ALL' || type === 'DOCTOR') && (data?.doctors.length ?? 0) > 0 ? (
             <Box>
-              <Typography variant="h6" sx={{ mb: 2 }}>Doctors</Typography>
-              <Stack spacing={2}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Doctors</Typography>
+              <Stack spacing={1.5}>
                 {data?.doctors.map((doctor) => (
                   <DoctorListCard key={doctor.doctorId} doctor={doctor} />
                 ))}
@@ -110,8 +103,8 @@ export function UnifiedSearchPage() {
 
           {(type === 'ALL' || type === 'HOSPITAL') && (data?.hospitals.length ?? 0) > 0 ? (
             <Box>
-              <Typography variant="h6" sx={{ mb: 2 }}>Hospitals</Typography>
-              <Stack spacing={2}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Hospitals</Typography>
+              <Stack spacing={1.5}>
                 {data?.hospitals.map((hospital) => (
                   <HospitalListCard key={hospital.hospitalId} hospital={hospital} />
                 ))}

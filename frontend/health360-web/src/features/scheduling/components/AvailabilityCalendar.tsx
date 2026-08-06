@@ -78,12 +78,12 @@ export function AvailabilityCalendar({
   };
 
   return (
-    <Paper variant="outlined" sx={{ p: 2, maxWidth: 360 }}>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+    <Paper variant="outlined" sx={{ p: 1.25, maxWidth: 340 }}>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.75}>
         <IconButton size="small" aria-label="Previous month" onClick={goPrev}>
           <ChevronLeftIcon />
         </IconButton>
-        <Typography fontWeight={600}>{monthLabel}</Typography>
+        <Typography fontWeight={600} fontSize="0.875rem">{monthLabel}</Typography>
         <IconButton size="small" aria-label="Next month" onClick={goNext}>
           <ChevronRightIcon />
         </IconButton>
@@ -100,7 +100,7 @@ export function AvailabilityCalendar({
       <Box display="grid" gridTemplateColumns="repeat(7, 1fr)" gap={0.5}>
         {cells.map((cell, index) => {
           if (!cell) {
-            return <Box key={`empty-${index}`} sx={{ height: 40 }} />;
+            return <Box key={`empty-${index}`} sx={{ height: 32 }} />;
           }
 
           const dateKey = formatDateKey(cell.date);
@@ -122,7 +122,7 @@ export function AvailabilityCalendar({
               }
               aria-pressed={isSelected}
               sx={{
-                height: 40,
+                height: 32,
                 border: 'none',
                 borderRadius: 1,
                 cursor: isAvailable ? 'pointer' : 'default',
@@ -152,8 +152,8 @@ export function AvailabilityCalendar({
         })}
       </Box>
 
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, display: 'block' }}>
-        Highlighted dates have available slots. Numbers show slot count.
+      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', fontSize: '0.65rem' }}>
+        Highlighted dates have available slots.
       </Typography>
     </Paper>
   );

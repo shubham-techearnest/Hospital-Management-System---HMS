@@ -13,6 +13,7 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { AppNavbar } from '@/shared/layout/AppNavbar';
+import { pageSpacing } from '@/shared/layout/pageSpacing';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { useDoctorProfile } from '../hooks/useDoctorQueries';
 
@@ -70,11 +71,15 @@ export function DoctorPortalLayout() {
             <SidebarContent onNavigate={() => setMobileOpen(false)} />
           </Drawer>
         )}
-        <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, width: { md: `calc(100% - ${DRAWER_WIDTH}px)` } }}>
+        <Box component="main" sx={{ ...pageSpacing.main, width: { md: `calc(100% - ${DRAWER_WIDTH}px)` } }}>
           {isMobile && (
-            <Toolbar disableGutters sx={{ mb: 1, minHeight: 48 }}>
-              <IconButton edge="start" onClick={() => setMobileOpen(true)}><MenuIcon /></IconButton>
-              <Typography variant="h6" sx={{ ml: 1 }}>Doctor Dashboard</Typography>
+            <Toolbar disableGutters sx={{ mb: 1, minHeight: 48, px: 0 }}>
+              <IconButton edge="start" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
+                <MenuIcon />
+              </IconButton>
+              <Typography variant="h6" sx={{ ml: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                Doctor Dashboard
+              </Typography>
             </Toolbar>
           )}
           {isLoading ? <Skeleton variant="rounded" height={200} /> : null}

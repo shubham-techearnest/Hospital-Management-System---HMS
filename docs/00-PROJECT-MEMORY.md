@@ -33,6 +33,27 @@
 | MOBILE-API-001   | Mobile API Integration Guide          | **Active**           | 1.0     | DOC-07, backend codebase |
 | MOBILE-STATUS-001 | Mobile Sprint Status                 | **Active**           | 1.0     | MOBILE-STRAT-001         |
 
+### Phase 2 documents (Draft — 2026-08-03)
+
+| ID     | Document                                    | Status               | Path |
+| ------ | ------------------------------------------- | -------------------- | ---- |
+| DOC-21 | Phase 2 Vision & Scope Charter              | Draft                | `phase-2/requirements/21-*` |
+| DOC-22 | Phase 2 Business Requirements (BRD)         | Draft                | `phase-2/requirements/22-*` |
+| DOC-23 | Phase 2 Functional Requirements (FRS)       | Draft                | `phase-2/requirements/23-*` |
+| DOC-24 | Phase 2 Non-Functional Requirements           | Draft                | `phase-2/requirements/24-*` |
+| DOC-25 | Phase 2 Domain Model                        | Draft                | `phase-2/architecture/25-*` |
+| DOC-26 | Phase 2 Database Design                     | Draft                | `phase-2/architecture/26-*` |
+| DOC-27 | Phase 2 REST API Design                     | Draft                | `phase-2/architecture/27-*` |
+| DOC-28 | Phase 2 Business Rules                      | Draft                | `phase-2/architecture/28-*` |
+| DOC-29 | Phase 2 UI/UX Screens                       | Draft                | `phase-2/architecture/29-*` |
+| DOC-30 | Phase 2 System Architecture (Delta)         | Draft                | `phase-2/architecture/30-*` |
+| DOC-31 | Phase 2 Security Architecture (Delta)       | Draft                | `phase-2/architecture/31-*` |
+| DOC-32 | Phase 2 DevOps (Delta)                      | Draft                | `phase-2/architecture/32-*` |
+| DOC-33 | Phase 2 User Stories                        | Draft                | `phase-2/requirements/33-*` |
+| DOC-34 | Phase 2 Development Roadmap                 | Draft                | `phase-2/delivery/34-*` |
+| DOC-35 | Phase 2 Architecture Diagrams               | Draft                | `phase-2/architecture/35-*` |
+| DOC-36 | Launch Decision Framework (Phase 1 vs 2)    | Draft                | `phase-2/delivery/36-*` |
+
 
 ---
 
@@ -45,7 +66,7 @@
 | ---------------------- | ----------------------------------------------------------------- |
 | **Project Name**       | Health360 AI                                                      |
 | **Tagline**            | Enterprise Digital Healthcare Ecosystem                           |
-| **Current Phase**      | Phase 1 — Foundation Only                                         |
+| **Current Phase**      | Phase 1 — Foundation (M5–M6 polish & launch prep)                 |
 | **Architecture Style** | Modular Monolith (Microservice-Ready)                             |
 | **Deployment Model**   | Multi-Tenant Ready (Single-Tenant deployment in Phase 1 MVP path) |
 | **Primary Markets**    | India (initial), globally extensible                              |
@@ -159,7 +180,7 @@ The following modules are **NOT** part of Phase 1. They are recorded here to pre
 
 ### Development Policy
 
-**Four-deliverable sprints** (effective 2026-07-30): every sprint produces Backend + Web + Mobile + Documentation. See [DOC-15 §2.1](15-DEVELOPMENT-ROADMAP.md) and [MOBILE-STRAT-001](mobile/MOBILE_DEVELOPMENT_STRATEGY.md).
+**Four-deliverable sprints** (effective 2026-07-30): every sprint produces Backend + Web + Mobile + Documentation. See [DOC-15 §2.1](phase-1/delivery/15-DEVELOPMENT-ROADMAP.md) and [MOBILE-STRAT-001](phase-1/mobile/MOBILE_DEVELOPMENT_STRATEGY.md).
 
 | Workstream | Through Sprint | Notes |
 |------------|----------------|-------|
@@ -176,7 +197,25 @@ The following modules are **NOT** part of Phase 1. They are recorded here to pre
 | Docker Compose | `docker/` | postgres, redis, api, web, nginx |
 | CI pipelines | `.github/workflows/` | ci-backend, ci-frontend, ci-mobile |
 
-**Next (all workstreams):** S12 search + location (web/mobile).
+**Next (all workstreams):** S15 polish + production launch checklist (M6).
+
+### M5–M6 Status (Updated 2026-08-03)
+
+| Milestone | Target | Status | Notes |
+|-----------|--------|--------|-------|
+| **M5** Analytics & Search | Week 24 | **~85%** | Formula engine, dashboard, search APIs (V20–V21); web largely complete; mobile search partial |
+| **M6** Production Launch | Week 30 | **Not started** | Load test, pen test, prod AWS, UAT gates in [DOC-15 §10](../phase-1/delivery/15-DEVELOPMENT-ROADMAP.md) |
+
+**Completed since last update:** S12–S14 backend migrations (V20–V22); web public landing, care discovery, role dashboards, patient P1 screens (labs, documents, timeline, reviews); mobile auth UX, responsive layouts, hero polish.
+
+**Remaining before Phase 1 sign-off:**
+
+1. **Mobile parity** — S12–S15 screens (unified search, geo, public profiles, admin/reviews on mobile where applicable)
+2. **Production hardening** — staging/prod AWS, load & security testing, monitoring runbooks
+3. **Optional polish** — Google Maps API key for live maps; push notifications; E2E automation
+4. **Explicitly out of scope** — Prescriptions & payments routes remain placeholders (Phase 2 per DOC-00 §6)
+
+**Documentation:** Reorganized under `docs/phase-1/` and `docs/phase-2/` — see [docs/README.md](README.md).
 
 ### S10 Formula Engine + S11 Health Dashboard — Complete (2026-08-01)
 

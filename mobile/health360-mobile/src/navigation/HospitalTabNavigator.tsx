@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { HospitalDashboardScreen } from '@/features/hospital/screens/HospitalDashboardScreen';
 import { HospitalProfileScreen } from '@/features/hospital/screens/HospitalProfileScreen';
 import { HospitalBranchesScreen } from '@/features/hospital/screens/HospitalBranchesScreen';
 import { HospitalManageStackNavigator } from './HospitalManageStackNavigator';
@@ -12,6 +13,18 @@ const Tab = createBottomTabNavigator<HospitalTabParamList>();
 export function HospitalTabNavigator() {
   return (
     <Tab.Navigator screenOptions={tabBarOptions}>
+      <Tab.Screen
+        name="Overview"
+        component={HospitalDashboardScreen}
+        options={{
+          headerShown: true,
+          title: 'Hospital Overview',
+          tabBarLabel: 'Overview',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="view-dashboard" color={color} size={size} />
+          ),
+        }}
+      />
       <Tab.Screen
         name="Profile"
         component={HospitalProfileScreen}

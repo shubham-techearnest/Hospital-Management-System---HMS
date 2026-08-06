@@ -6,13 +6,14 @@ import { MetricDetailScreen } from '@/features/analytics/screens/MetricDetailScr
 import { LabValuesScreen } from '@/features/patient/screens/LabValuesScreen';
 import { HealthDocumentsScreen } from '@/features/patient/screens/HealthDocumentsScreen';
 import { HealthTimelineScreen } from '@/features/patient/screens/HealthTimelineScreen';
+import { stackScreenOptions } from '@/shared/theme';
 import type { HomeStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
 
 export function HomeStackNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={stackScreenOptions}>
       <Stack.Screen
         name="Home"
         component={PatientHomeScreen}

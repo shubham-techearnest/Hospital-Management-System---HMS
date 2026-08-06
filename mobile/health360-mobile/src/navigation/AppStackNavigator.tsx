@@ -1,6 +1,7 @@
 import { getPrimaryRole, RoleGuard } from '@/features/auth/components/RoleGuard';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { UnauthorizedScreen } from '@/features/auth/screens/UnauthorizedScreen';
+import { AdminStackNavigator } from './AdminStackNavigator';
 import { DoctorTabNavigator } from './DoctorTabNavigator';
 import { HospitalTabNavigator } from './HospitalTabNavigator';
 import { PatientAppNavigator } from './PatientAppNavigator';
@@ -8,6 +9,14 @@ import { PatientAppNavigator } from './PatientAppNavigator';
 export function AppShellNavigator() {
   const { user } = useAuth();
   const primaryRole = getPrimaryRole(user);
+
+  if (primaryRole === 'PLATFORM_ADMIN') {
+    return (
+      <RoleGuard role="PLATFORM_ADMIN">
+        <AdminStackNavigator />
+      </RoleGuard>
+    );
+  }
 
   if (primaryRole === 'DOCTOR') {
     return (
