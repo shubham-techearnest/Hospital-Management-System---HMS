@@ -1,7 +1,7 @@
 package com.health360.patient.presentation.dto.request;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -20,7 +20,7 @@ public class EmergencyContactRequest {
     @Size(max = 20)
     private String phone;
 
-    @Email
+    @Pattern(regexp = "^$|^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", message = "Invalid email format")
     @Size(max = 255)
     private String email;
 

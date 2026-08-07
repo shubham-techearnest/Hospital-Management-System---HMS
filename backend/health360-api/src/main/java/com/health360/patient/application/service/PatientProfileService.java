@@ -81,17 +81,17 @@ public class PatientProfileService {
         if (request.getDateOfBirth() != null) {
             profile.setDateOfBirth(request.getDateOfBirth());
         }
-        if (request.getGender() != null) {
+        if (request.getGender() != null && !request.getGender().isBlank()) {
             profile.setGender(request.getGender().trim());
         }
-        if (request.getBloodGroup() != null) {
-            profile.setBloodGroup(request.getBloodGroup().trim());
+        if (request.getBloodGroup() != null && !request.getBloodGroup().isBlank()) {
+            profile.setBloodGroup(PatientProfileValueNormalizer.normalizeBloodGroup(request.getBloodGroup()));
         }
-        if (request.getMaritalStatus() != null) {
+        if (request.getMaritalStatus() != null && !request.getMaritalStatus().isBlank()) {
             profile.setMaritalStatus(request.getMaritalStatus().trim());
         }
-        if (request.getNationality() != null) {
-            profile.setNationality(request.getNationality().trim());
+        if (request.getNationality() != null && !request.getNationality().isBlank()) {
+            profile.setNationality(request.getNationality().trim().toUpperCase());
         }
         if (request.getProfilePhotoUrl() != null) {
             profile.setProfilePhotoUrl(request.getProfilePhotoUrl().trim().isEmpty()
@@ -173,10 +173,12 @@ public class PatientProfileService {
             profile.setSmokingStatus(request.getSmokingStatus().trim());
         }
         if (request.getSmokingFrequency() != null) {
-            profile.setSmokingFrequency(request.getSmokingFrequency().trim());
+            profile.setSmokingFrequency(PatientProfileValueNormalizer.normalizeSmokingFrequency(
+                    request.getSmokingFrequency()));
         }
         if (request.getAlcoholConsumption() != null) {
-            profile.setAlcoholConsumption(request.getAlcoholConsumption().trim());
+            profile.setAlcoholConsumption(PatientProfileValueNormalizer.normalizeAlcoholConsumption(
+                    request.getAlcoholConsumption()));
         }
         if (request.getExerciseFrequency() != null) {
             profile.setExerciseFrequency(request.getExerciseFrequency().trim());
@@ -188,7 +190,8 @@ public class PatientProfileService {
             profile.setExerciseDurationMinutes(request.getExerciseDurationMinutes());
         }
         if (request.getOccupationType() != null) {
-            profile.setOccupationType(request.getOccupationType().trim());
+            profile.setOccupationType(PatientProfileValueNormalizer.normalizeOccupationType(
+                    request.getOccupationType()));
         }
         if (request.getAverageSleepHours() != null) {
             profile.setAverageSleepHours(request.getAverageSleepHours());
@@ -291,7 +294,7 @@ public class PatientProfileService {
         entity.setCreatedBy(userId);
         entity.setUpdatedBy(userId);
         applyAllergy(entity, request);
-        allergyRepository.save(entity);
+        entity = allergyRepository.saveAndFlush(entity);
         recalculateCompletionAndMetrics(profile, userId, tenantId);
         auditLogService.record(tenantId, userId, "PATIENT_ALLERGY_CREATED", "Allergy",
                 entity.getId(), Map.of("name", entity.getName()));
@@ -552,6 +555,9 @@ public class PatientProfileService {
 
     private void recalculateCompletionAndMetrics(PatientProfileEntity profile, UUID userId, UUID tenantId) {
         recalculateCompletion(profile);
+        profile.setUpdatedBy(userId);
+        profile.touch();
+        profileRepository.save(profile);
         triggerMetricsRecalculation(userId, tenantId);
     }
 
@@ -608,19 +614,19 @@ public class PatientProfileService {
 
     private void applyAddress(PatientProfileEntity profile, UpdateContactInfoRequest.AddressDto address, boolean permanent) {
         if (permanent) {
-            profile.setPermanentAddressLine1(address.getLine1());
-            profile.setPermanentAddressLine2(address.getLine2());
-            profile.setPermanentCity(address.getCity());
-            profile.setPermanentState(address.getState());
-            profile.setPermanentPincode(address.getPincode());
-            profile.setPermanentCountry(address.getCountry());
+            profile.setPermanentAddressLine1(PatientProfileValueNormalizer.blankToNull(address.getLine1()));
+            profile.setPermanentAddressLine2(PatientProfileValueNormalizer.blankToNull(address.getLine2()));
+            profile.setPermanentCity(PatientProfileValueNormalizer.blankToNull(address.getCity()));
+            profile.setPermanentState(PatientProfileValueNormalizer.blankToNull(address.getState()));
+            profile.setPermanentPincode(PatientProfileValueNormalizer.blankToNull(address.getPincode()));
+            profile.setPermanentCountry(PatientProfileValueNormalizer.blankToNull(address.getCountry()));
         } else {
-            profile.setCurrentAddressLine1(address.getLine1());
-            profile.setCurrentAddressLine2(address.getLine2());
-            profile.setCurrentCity(address.getCity());
-            profile.setCurrentState(address.getState());
-            profile.setCurrentPincode(address.getPincode());
-            profile.setCurrentCountry(address.getCountry());
+            profile.setCurrentAddressLine1(PatientProfileValueNormalizer.blankToNull(address.getLine1()));
+            profile.setCurrentAddressLine2(PatientProfileValueNormalizer.blankToNull(address.getLine2()));
+            profile.setCurrentCity(PatientProfileValueNormalizer.blankToNull(address.getCity()));
+            profile.setCurrentState(PatientProfileValueNormalizer.blankToNull(address.getState()));
+            profile.setCurrentPincode(PatientProfileValueNormalizer.blankToNull(address.getPincode()));
+            profile.setCurrentCountry(PatientProfileValueNormalizer.blankToNull(address.getCountry()));
         }
     }
 
@@ -693,7 +699,7 @@ public class PatientProfileService {
         entity.setName(request.getName().trim());
         entity.setRelationship(request.getRelationship().trim());
         entity.setPhone(request.getPhone().trim());
-        entity.setEmail(request.getEmail() != null ? request.getEmail().trim() : null);
+        entity.setEmail(PatientProfileValueNormalizer.blankToNull(request.getEmail()));
         entity.setPrimaryContact(Boolean.TRUE.equals(request.getPrimary()));
     }
 

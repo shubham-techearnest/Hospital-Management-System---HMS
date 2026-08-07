@@ -71,15 +71,23 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const status = error.response?.status;
 
-    if (status === 401 && originalRequest && !originalRequest._retry) {
-      originalRequest._retry = true;
-      const refreshed = await refreshAccessToken();
-      if (refreshed) {
-        originalRequest.headers.Authorization = `Bearer ${refreshed.accessToken}`;
-        return apiClient(originalRequest);
+    if (status === 401 || status === 403) {
+      const apiMessage = (error.response?.data as { message?: string })?.message;
+      const mightBeStaleAuth =
+        status === 401 || (status === 403 && apiMessage === 'Access denied');
+
+      if (originalRequest && !originalRequest._retry && mightBeStaleAuth) {
+        originalRequest._retry = true;
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+          originalRequest.headers.Authorization = `Bearer ${refreshed.accessToken}`;
+          return apiClient(originalRequest);
+        }
+        if (status === 401) {
+          clearStoredSession();
+          redirectToLogin();
+        }
       }
-      clearStoredSession();
-      redirectToLogin();
     }
 
     return Promise.reject(error);

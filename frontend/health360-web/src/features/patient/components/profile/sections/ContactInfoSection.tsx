@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { usePatientProfile, useUpdateContactInfo } from '../../../hooks/usePatientQueries';
 import { contactInfoSchema, type ContactInfoForm } from '../../../schemas/patient.schema';
+import { sanitizeContactPayload } from '../../../utils/profileEnumMapper';
 import { SaveButton } from '../SaveButton';
 import type { ProfileSectionCallbacks } from '../types';
 
@@ -51,7 +52,7 @@ export function ContactInfoSection({ onSaveSuccess, onSaveError }: ProfileSectio
     setError(null);
     setSaved(false);
     try {
-      await updateMutation.mutateAsync(values);
+      await updateMutation.mutateAsync(sanitizeContactPayload(values));
       setSaved(true);
       onSaveSuccess('Contact information saved.');
       setTimeout(() => setSaved(false), 2000);

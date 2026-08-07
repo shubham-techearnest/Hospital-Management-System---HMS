@@ -18,6 +18,13 @@ import {
 
 type TabKey = 'allergies' | 'medications' | 'surgeries' | 'conditions';
 
+const tabAddLabels: Record<TabKey, string> = {
+  allergies: 'allergy',
+  medications: 'medication',
+  surgeries: 'surgery',
+  conditions: 'condition',
+};
+
 interface MedicalInfoSectionProps extends ProfileSectionCallbacks {
   active: boolean;
 }
@@ -138,7 +145,7 @@ export function MedicalInfoSection({ active, onSaveSuccess, onSaveError }: Medic
 
       <Portal>
         <Dialog visible={dialogOpen} onDismiss={() => setDialogOpen(false)}>
-          <Dialog.Title>Add {tab.slice(0, -1)}</Dialog.Title>
+          <Dialog.Title>Add {tabAddLabels[tab]}</Dialog.Title>
           <Dialog.ScrollArea style={{ maxHeight: 360 }}>
             <ScrollView contentContainerStyle={styles.dialogContent}>
               {tab === 'allergies' && (

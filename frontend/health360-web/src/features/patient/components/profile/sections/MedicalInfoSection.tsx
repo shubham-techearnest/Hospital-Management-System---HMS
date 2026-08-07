@@ -11,6 +11,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  MenuItem,
   Skeleton,
   Tab,
   Tabs,
@@ -38,6 +39,14 @@ import type {
 import type { ProfileSectionCallbacks } from '../types';
 
 type TabKey = 'allergies' | 'medications' | 'surgeries' | 'conditions';
+
+const allergySeverities = ['MILD', 'MODERATE', 'SEVERE'];
+const tabAddLabels: Record<TabKey, string> = {
+  allergies: 'allergy',
+  medications: 'medication',
+  surgeries: 'surgery',
+  conditions: 'condition',
+};
 
 interface MedicalInfoSectionProps extends ProfileSectionCallbacks {
   active: boolean;
@@ -172,7 +181,7 @@ export function MedicalInfoSection({ active, onSaveSuccess, onSaveError }: Medic
       </List>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Add {tab.slice(0, -1)}</DialogTitle>
+        <DialogTitle>Add {tabAddLabels[tab]}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
             {(tab === 'allergies' || tab === 'medications') && (
@@ -180,7 +189,9 @@ export function MedicalInfoSection({ active, onSaveSuccess, onSaveError }: Medic
             )}
             {tab === 'allergies' && (
               <>
-                <TextField label="Severity" value={form.severity ?? ''} onChange={(e) => setForm({ ...form, severity: e.target.value })} />
+                <TextField select label="Severity" value={form.severity ?? 'MILD'} onChange={(e) => setForm({ ...form, severity: e.target.value })}>
+                  {allergySeverities.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                </TextField>
                 <TextField label="Reaction" value={form.reaction ?? ''} onChange={(e) => setForm({ ...form, reaction: e.target.value })} />
               </>
             )}

@@ -61,14 +61,16 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const status = error.response?.status;
 
-    if (status === 401 && originalRequest && !originalRequest._retry) {
+    if ((status === 401 || status === 403) && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshed = await refreshAccessToken();
       if (refreshed) {
         originalRequest.headers.Authorization = `Bearer ${refreshed.accessToken}`;
         return apiClient(originalRequest);
       }
-      await handleSessionExpired();
+      if (status === 401) {
+        await handleSessionExpired();
+      }
     }
 
     return Promise.reject(error);

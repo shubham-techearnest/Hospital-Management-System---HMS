@@ -36,7 +36,7 @@ public class PatientProfileEntity extends BaseAuditableEntity {
     @Column(length = 30)
     private String gender;
 
-    @Column(name = "blood_group", length = 5)
+    @Column(name = "blood_group", length = 20)
     private String bloodGroup;
 
     @Column(name = "marital_status", length = 20)

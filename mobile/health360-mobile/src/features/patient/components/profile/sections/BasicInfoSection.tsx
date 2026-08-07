@@ -13,6 +13,7 @@ import {
 } from '@/features/patient/constants/enums';
 import { usePatientProfile, useUpdateBasicInfo } from '@/features/patient/hooks/usePatientQueries';
 import { basicInfoSchema, type BasicInfoForm } from '@/features/patient/schemas/patient.schema';
+import { normalizeBloodGroup, sanitizeBasicInfoPayload } from '@/features/patient/utils/profileEnumMapper';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
 
 export function BasicInfoSection({ onSaveSuccess, onSaveError }: ProfileSectionCallbacks) {
@@ -31,7 +32,7 @@ export function BasicInfoSection({ onSaveSuccess, onSaveError }: ProfileSectionC
     reset({
       dateOfBirth: profile.basicInfo?.dateOfBirth ?? '',
       gender: profile.basicInfo?.gender ?? '',
-      bloodGroup: profile.basicInfo?.bloodGroup ?? '',
+      bloodGroup: normalizeBloodGroup(profile.basicInfo?.bloodGroup),
       maritalStatus: profile.basicInfo?.maritalStatus ?? '',
       nationality: profile.basicInfo?.nationality ?? 'IN',
     });
@@ -41,7 +42,7 @@ export function BasicInfoSection({ onSaveSuccess, onSaveError }: ProfileSectionC
     setError(null);
     setSaved(false);
     try {
-      await updateMutation.mutateAsync(values);
+      await updateMutation.mutateAsync(sanitizeBasicInfoPayload(values));
       setSaved(true);
       onSaveSuccess('Basic information saved.');
       setTimeout(() => setSaved(false), 2000);

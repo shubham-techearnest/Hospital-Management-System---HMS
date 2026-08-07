@@ -7,6 +7,7 @@ import {
   useDeleteEmergencyContact,
   useEmergencyContacts,
 } from '@/features/patient/hooks/usePatientQueries';
+import { isValidEmail, sanitizeOptionalEmail } from '@/features/patient/utils/profileEnumMapper';
 
 interface EmergencyContactsSectionProps extends ProfileSectionCallbacks {
   active: boolean;
@@ -16,6 +17,7 @@ export function EmergencyContactsSection({ active, onSaveSuccess, onSaveError }:
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', relationship: '', phone: '', email: '', primary: false });
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const { data: contacts = [], isLoading, isError } = useEmergencyContacts(active);
   const createContact = useCreateEmergencyContact();
@@ -23,12 +25,18 @@ export function EmergencyContactsSection({ active, onSaveSuccess, onSaveError }:
 
   const handleSave = async () => {
     setError(null);
+    setEmailError(null);
+    const trimmedEmail = form.email.trim();
+    if (trimmedEmail && !isValidEmail(trimmedEmail)) {
+      setEmailError('Enter a valid email address or leave blank.');
+      return;
+    }
     try {
       await createContact.mutateAsync({
         name: form.name,
         relationship: form.relationship,
         phone: form.phone,
-        email: form.email || undefined,
+        email: sanitizeOptionalEmail(form.email),
         primary: form.primary,
       });
       setDialogOpen(false);
@@ -86,7 +94,18 @@ export function EmergencyContactsSection({ active, onSaveSuccess, onSaveError }:
               <TextInput label="Name" mode="outlined" value={form.name} onChangeText={(name) => setForm({ ...form, name })} />
               <TextInput label="Relationship" mode="outlined" value={form.relationship} onChangeText={(relationship) => setForm({ ...form, relationship })} />
               <TextInput label="Phone" mode="outlined" keyboardType="phone-pad" value={form.phone} onChangeText={(phone) => setForm({ ...form, phone })} />
-              <TextInput label="Email" mode="outlined" keyboardType="email-address" value={form.email} onChangeText={(email) => setForm({ ...form, email })} />
+              <TextInput
+                label="Email (optional)"
+                mode="outlined"
+                keyboardType="email-address"
+                value={form.email}
+                onChangeText={(email) => {
+                  setForm({ ...form, email });
+                  setEmailError(null);
+                }}
+                error={!!emailError}
+              />
+              {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
               <Checkbox.Item label="Primary contact" status={form.primary ? 'checked' : 'unchecked'} onPress={() => setForm({ ...form, primary: !form.primary })} />
             </ScrollView>
           </Dialog.ScrollArea>

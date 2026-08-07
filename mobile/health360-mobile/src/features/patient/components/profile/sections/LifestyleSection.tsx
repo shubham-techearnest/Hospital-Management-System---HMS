@@ -15,6 +15,7 @@ import {
 } from '@/features/patient/constants/enums';
 import { usePatientProfile, useUpdateLifestyle } from '@/features/patient/hooks/usePatientQueries';
 import { lifestyleSchema, type LifestyleForm } from '@/features/patient/schemas/patient.schema';
+import { normalizeLifestyleForm } from '@/features/patient/utils/profileEnumMapper';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
 
 export function LifestyleSection({ onSaveSuccess, onSaveError }: ProfileSectionCallbacks) {
@@ -38,18 +39,7 @@ export function LifestyleSection({ onSaveSuccess, onSaveError }: ProfileSectionC
 
   useEffect(() => {
     if (!profile) return;
-    reset({
-      smokingStatus: profile.lifestyle?.smokingStatus ?? '',
-      smokingFrequency: profile.lifestyle?.smokingFrequency ?? '',
-      alcoholConsumption: profile.lifestyle?.alcoholConsumption ?? '',
-      exerciseFrequency: profile.lifestyle?.exerciseFrequency ?? '',
-      exerciseType: profile.lifestyle?.exerciseType ?? '',
-      exerciseDurationMinutes: profile.lifestyle?.exerciseDurationMinutes,
-      occupationType: profile.lifestyle?.occupationType ?? '',
-      averageSleepHours: profile.lifestyle?.averageSleepHours,
-      dietaryPreference: profile.lifestyle?.dietaryPreference ?? '',
-      stressLevel: profile.lifestyle?.stressLevel,
-    });
+    reset(normalizeLifestyleForm(profile.lifestyle));
   }, [profile, reset]);
 
   const onSubmit = async (values: LifestyleForm) => {
@@ -98,7 +88,7 @@ export function LifestyleSection({ onSaveSuccess, onSaveError }: ProfileSectionC
         <SelectField label="Dietary Preference" value={value} options={DIET_OPTIONS} onChange={onChange} />
       )} />
       <Controller control={control} name="stressLevel" render={({ field: { onChange, onBlur, value } }) => (
-        <TextInput label="Stress Level (1-10)" mode="outlined" keyboardType="number-pad" value={value?.toString() ?? ''} onBlur={onBlur} onChangeText={(t) => onChange(t === '' ? undefined : Number(t))} />
+        <TextInput label="Stress Level (1-5)" mode="outlined" keyboardType="number-pad" value={value?.toString() ?? ''} onBlur={onBlur} onChangeText={(t) => onChange(t === '' ? undefined : Number(t))} />
       )} />
       <SaveButton saving={isSubmitting || updateMutation.isPending} saved={saved} onPress={handleSubmit(onSubmit)} />
     </View>

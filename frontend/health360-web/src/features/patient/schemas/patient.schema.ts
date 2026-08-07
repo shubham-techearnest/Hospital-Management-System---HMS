@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const basicInfoSchema = z.object({
   dateOfBirth: z.string().optional(),
   gender: z.string().max(30).optional(),
-  bloodGroup: z.string().max(5).optional(),
+  bloodGroup: z.string().max(20).optional(),
   maritalStatus: z.string().max(20).optional(),
   nationality: z.string().length(2).optional().or(z.literal('')),
   profilePhotoUrl: z.string().max(500).optional(),
@@ -52,7 +52,7 @@ export const lifestyleSchema = z.object({
   occupationType: z.string().max(20).optional(),
   averageSleepHours: z.coerce.number().optional(),
   dietaryPreference: z.string().max(20).optional(),
-  stressLevel: z.coerce.number().min(1).max(10).optional(),
+  stressLevel: z.coerce.number().min(1).max(5).optional(),
 });
 
 export type LifestyleForm = z.infer<typeof lifestyleSchema>;

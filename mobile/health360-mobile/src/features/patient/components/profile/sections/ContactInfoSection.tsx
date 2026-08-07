@@ -7,6 +7,7 @@ import { SaveButton } from '@/features/patient/components/profile/SaveButton';
 import type { ProfileSectionCallbacks } from '@/features/patient/components/profile/types';
 import { usePatientProfile, useUpdateContactInfo } from '@/features/patient/hooks/usePatientQueries';
 import { contactInfoSchema, type ContactInfoForm } from '@/features/patient/schemas/patient.schema';
+import { sanitizeContactPayload } from '@/features/patient/utils/profileEnumMapper';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
 
 const emptyAddress = { line1: '', line2: '', city: '', state: '', pincode: '', country: 'IN' };
@@ -45,7 +46,7 @@ export function ContactInfoSection({ onSaveSuccess, onSaveError }: ProfileSectio
     setError(null);
     setSaved(false);
     try {
-      await updateMutation.mutateAsync(values);
+      await updateMutation.mutateAsync(sanitizeContactPayload(values));
       setSaved(true);
       onSaveSuccess('Contact information saved.');
       setTimeout(() => setSaved(false), 2000);

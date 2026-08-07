@@ -1,7 +1,7 @@
 package com.health360.patient.presentation.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -16,13 +16,13 @@ public class UpdateBasicInfoRequest {
     @Size(max = 30)
     private String gender;
 
-    @Size(max = 5)
+    @Size(max = 20)
     private String bloodGroup;
 
     @Size(max = 20)
     private String maritalStatus;
 
-    @Size(min = 2, max = 2)
+    @Pattern(regexp = "^$|^[A-Z]{2}$", message = "Nationality must be a 2-letter ISO code")
     private String nationality;
 
     @Size(max = 500)

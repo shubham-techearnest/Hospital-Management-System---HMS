@@ -25,7 +25,7 @@ public class PatientProfileMapper {
                 .basicInfo(PatientProfileResponse.BasicInfoSection.builder()
                         .dateOfBirth(profile.getDateOfBirth())
                         .gender(profile.getGender())
-                        .bloodGroup(profile.getBloodGroup())
+                        .bloodGroup(PatientProfileValueNormalizer.normalizeBloodGroup(profile.getBloodGroup()))
                         .maritalStatus(profile.getMaritalStatus())
                         .nationality(profile.getNationality())
                         .profilePhotoUrl(profile.getProfilePhotoUrl())
@@ -53,12 +53,15 @@ public class PatientProfileMapper {
                         .build())
                 .lifestyle(PatientProfileResponse.LifestyleSection.builder()
                         .smokingStatus(profile.getSmokingStatus())
-                        .smokingFrequency(profile.getSmokingFrequency())
-                        .alcoholConsumption(profile.getAlcoholConsumption())
+                        .smokingFrequency(PatientProfileValueNormalizer.normalizeSmokingFrequency(
+                                profile.getSmokingFrequency()))
+                        .alcoholConsumption(PatientProfileValueNormalizer.normalizeAlcoholConsumption(
+                                profile.getAlcoholConsumption()))
                         .exerciseFrequency(profile.getExerciseFrequency())
                         .exerciseType(profile.getExerciseType())
                         .exerciseDurationMinutes(profile.getExerciseDurationMinutes())
-                        .occupationType(profile.getOccupationType())
+                        .occupationType(PatientProfileValueNormalizer.normalizeOccupationType(
+                                profile.getOccupationType()))
                         .averageSleepHours(profile.getAverageSleepHours())
                         .dietaryPreference(profile.getDietaryPreference())
                         .stressLevel(profile.getStressLevel())

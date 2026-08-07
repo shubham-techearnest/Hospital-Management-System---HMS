@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Button, Checkbox, Dialog, IconButton, Portal, Text, TextInput } from 'react-native-paper';
+import { SelectField } from '@/features/patient/components/SelectField';
 import type { ProfileSectionCallbacks } from '@/features/patient/components/profile/types';
+import { GENDER_OPTIONS } from '@/features/patient/constants/enums';
 import {
   useCreateFamilyMember,
   useDeleteFamilyMember,
@@ -96,7 +98,12 @@ export function FamilyMembersSection({ active, onSaveSuccess, onSaveError }: Fam
             <TextInput label="Name *" value={form.name} onChangeText={(name) => setForm({ ...form, name })} style={styles.input} />
             <TextInput label="Relationship *" value={form.relationship} onChangeText={(relationship) => setForm({ ...form, relationship })} style={styles.input} />
             <TextInput label="Date of birth (YYYY-MM-DD)" value={form.dateOfBirth} onChangeText={(dateOfBirth) => setForm({ ...form, dateOfBirth })} style={styles.input} />
-            <TextInput label="Gender" value={form.gender} onChangeText={(gender) => setForm({ ...form, gender })} style={styles.input} />
+            <SelectField
+              label="Gender"
+              value={form.gender}
+              options={GENDER_OPTIONS}
+              onChange={(gender) => setForm({ ...form, gender })}
+            />
             <TextInput label="Hereditary conditions (comma-separated)" value={form.hereditaryConditions} onChangeText={(hereditaryConditions) => setForm({ ...form, hereditaryConditions })} style={styles.input} />
             <View style={styles.checkboxRow}>
               <Checkbox status={form.alive ? 'checked' : 'unchecked'} onPress={() => setForm({ ...form, alive: !form.alive })} />

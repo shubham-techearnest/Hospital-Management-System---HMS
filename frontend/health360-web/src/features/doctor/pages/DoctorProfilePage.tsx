@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import type { AxiosError } from 'axios';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -43,11 +45,13 @@ import {
   useUpdateProfessionalDetails,
   useUpdateSpecialization,
 } from '../hooks/useDoctorQueries';
+import { doctorProfileLockMessage, isDoctorProfileEditable } from '../utils/profileUtils';
+import { getApiErrorMessage } from '@/shared/utils/apiError';
 
 type SectionId = 'professional' | 'biography' | 'qualifications' | 'awards' | 'memberships' | 'experience' | 'specialization' | 'consultation';
 
 export function DoctorProfilePage() {
-  const { data: profile } = useDoctorProfile();
+  const { data: profile, isLoading, isError, error } = useDoctorProfile();
   const { data: specializations = [] } = useSpecializations();
   const { data: awards = [] } = useAwards();
   const { data: memberships = [] } = useMemberships();
@@ -147,15 +151,26 @@ export function DoctorProfilePage() {
     setSnackbar({ open: true, message, severity });
   }, []);
 
+  const isProfileEditable = isDoctorProfileEditable(profile?.verificationStatus);
+  const profileLockMessage = doctorProfileLockMessage(profile?.verificationStatus);
+
   const onSaveProfessional = professionalForm.handleSubmit(async (values) => {
+    if (!isProfileEditable) {
+      notify(profileLockMessage ?? 'Profile is locked for editing.', 'error');
+      return;
+    }
     setSaved(false);
     try {
-      await updateProfessional.mutateAsync(values);
+      await updateProfessional.mutateAsync({
+        ...values,
+        registrationYear: values.registrationYear || undefined,
+        totalYearsExperience: values.totalYearsExperience || undefined,
+      });
       setSaved(true);
       notify('Professional details saved.');
       setTimeout(() => setSaved(false), 2000);
-    } catch {
-      notify('Unable to save professional details.', 'error');
+    } catch (e: unknown) {
+      notify(getApiErrorMessage(e, 'Unable to save professional details.'), 'error');
     }
   });
 
@@ -168,6 +183,35 @@ export function DoctorProfilePage() {
     }
   }, [profile?.verificationStatus]);
 
+  const authErrorMessage = useMemo(() => {
+    if (!isError) return null;
+    const status = (error as AxiosError)?.response?.status;
+    if (status === 401) {
+      return 'Your session has expired. Please sign in again as a doctor account.';
+    }
+    if (status === 403) {
+      return 'Your account does not have permission to view the doctor profile. Sign in with a doctor account.';
+    }
+    return 'Unable to load your doctor profile. Please try again.';
+  }, [isError, error]);
+
+  if (isLoading) {
+    return (
+      <AnimatedPage>
+        <Typography variant="body1" color="text.secondary">Loading profile…</Typography>
+      </AnimatedPage>
+    );
+  }
+
+  if (isError && authErrorMessage) {
+    return (
+      <AnimatedPage>
+        <Alert severity="error" sx={{ mb: 2 }}>{authErrorMessage}</Alert>
+        <Button component={RouterLink} to="/login" variant="contained">Sign in</Button>
+      </AnimatedPage>
+    );
+  }
+
   return (
     <AnimatedPage>
       <Box display="flex" alignItems="center" gap={2} mb={1}>
@@ -179,6 +223,9 @@ export function DoctorProfilePage() {
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
         Complete your profile in draft status. It will not appear in public search until verified.
       </Typography>
+      {profileLockMessage && (
+        <Alert severity="info" sx={{ mb: 3 }}>{profileLockMessage}</Alert>
+      )}
 
       <Paper elevation={0} variant="outlined" sx={{ overflow: 'hidden' }}>
         <ProfileAccordionSection
@@ -190,32 +237,46 @@ export function DoctorProfilePage() {
           {everOpened.professional && (
             <Stack component="form" spacing={2} onSubmit={onSaveProfessional}>
               <Controller name="title" control={professionalForm.control} render={({ field }) => (
-                <TextField {...field} select label="Title">
+                <TextField {...field} select label="Title" disabled={!isProfileEditable}>
                   {['DR', 'PROF', 'MR', 'MS'].map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
                 </TextField>
               )} />
               <Controller name="medicalRegistrationNumber" control={professionalForm.control} render={({ field }) => (
-                <TextField {...field} label="Medical Registration Number" />
+                <TextField {...field} label="Medical Registration Number" disabled={!isProfileEditable} />
               )} />
               <Controller name="registrationCouncil" control={professionalForm.control} render={({ field }) => (
-                <TextField {...field} label="Registration Council" />
+                <TextField {...field} label="Registration Council" disabled={!isProfileEditable} />
               )} />
               <Controller name="registrationYear" control={professionalForm.control} render={({ field }) => (
-                <TextField {...field} label="Registration Year" type="number" onChange={(e) => field.onChange(Number(e.target.value))} />
+                <TextField
+                  {...field}
+                  value={field.value ?? ''}
+                  label="Registration Year"
+                  type="number"
+                  disabled={!isProfileEditable}
+                  onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                />
               )} />
               <Controller name="registrationExpiry" control={professionalForm.control} render={({ field }) => (
-                <TextField {...field} label="Registration Expiry" type="date" InputLabelProps={{ shrink: true }} />
+                <TextField {...field} label="Registration Expiry" type="date" InputLabelProps={{ shrink: true }} disabled={!isProfileEditable} />
               )} />
               <Controller name="gender" control={professionalForm.control} render={({ field }) => (
-                <TextField {...field} select label="Gender">
+                <TextField {...field} select label="Gender" disabled={!isProfileEditable}>
                   <MenuItem value="">Select</MenuItem>
                   {['MALE', 'FEMALE', 'OTHER'].map((g) => <MenuItem key={g} value={g}>{g}</MenuItem>)}
                 </TextField>
               )} />
               <Controller name="totalYearsExperience" control={professionalForm.control} render={({ field }) => (
-                <TextField {...field} label="Total Years of Experience" type="number" onChange={(e) => field.onChange(Number(e.target.value))} />
+                <TextField
+                  {...field}
+                  value={field.value ?? ''}
+                  label="Total Years of Experience"
+                  type="number"
+                  disabled={!isProfileEditable}
+                  onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                />
               )} />
-              <SaveButton saving={updateProfessional.isPending} saved={saved} />
+              <SaveButton saving={updateProfessional.isPending} saved={saved} disabled={!isProfileEditable} />
             </Stack>
           )}
         </ProfileAccordionSection>

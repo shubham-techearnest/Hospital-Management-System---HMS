@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
 import {
   getDoctorProfile,
   listSpecializations,
@@ -41,6 +42,10 @@ export function useDoctorProfile() {
     queryKey: doctorKeys.profile,
     queryFn: getDoctorProfile,
     staleTime: 5 * 60 * 1000,
+    retry: (_, error) => {
+      const status = (error as AxiosError)?.response?.status;
+      return status !== 401 && status !== 403;
+    },
   });
 }
 
@@ -49,6 +54,10 @@ export function useSpecializations() {
     queryKey: doctorKeys.specializations,
     queryFn: listSpecializations,
     staleTime: 30 * 60 * 1000,
+    retry: (_, error) => {
+      const status = (error as AxiosError)?.response?.status;
+      return status !== 401 && status !== 403;
+    },
   });
 }
 

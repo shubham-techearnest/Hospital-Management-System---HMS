@@ -23,6 +23,7 @@ import {
   useDeleteEmergencyContact,
   useEmergencyContacts,
 } from '../../../hooks/usePatientQueries';
+import { isValidEmail, sanitizeOptionalEmail } from '../../../utils/profileEnumMapper';
 import type { ProfileSectionCallbacks } from '../types';
 
 interface EmergencyContactsSectionProps extends ProfileSectionCallbacks {
@@ -33,6 +34,7 @@ export function EmergencyContactsSection({ active, onSaveSuccess, onSaveError }:
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', relationship: '', phone: '', email: '', primary: false });
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const { data: contacts = [], isLoading, isError } = useEmergencyContacts(active);
   const createContact = useCreateEmergencyContact();
@@ -40,12 +42,18 @@ export function EmergencyContactsSection({ active, onSaveSuccess, onSaveError }:
 
   const handleSave = async () => {
     setError(null);
+    setEmailError(null);
+    const trimmedEmail = form.email.trim();
+    if (trimmedEmail && !isValidEmail(trimmedEmail)) {
+      setEmailError('Enter a valid email address or leave blank.');
+      return;
+    }
     try {
       await createContact.mutateAsync({
         name: form.name,
         relationship: form.relationship,
         phone: form.phone,
-        email: form.email || undefined,
+        email: sanitizeOptionalEmail(form.email),
         primary: form.primary,
       });
       setDialogOpen(false);
@@ -111,7 +119,16 @@ export function EmergencyContactsSection({ active, onSaveSuccess, onSaveError }:
             <TextField label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <TextField label="Relationship" value={form.relationship} onChange={(e) => setForm({ ...form, relationship: e.target.value })} />
             <TextField label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            <TextField label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <TextField
+              label="Email"
+              value={form.email}
+              onChange={(e) => {
+                setForm({ ...form, email: e.target.value });
+                setEmailError(null);
+              }}
+              error={!!emailError}
+              helperText={emailError ?? 'Optional'}
+            />
             <FormControlLabel
               control={<Checkbox checked={form.primary} onChange={(e) => setForm({ ...form, primary: e.target.checked })} />}
               label="Primary contact"

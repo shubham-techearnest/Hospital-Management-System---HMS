@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, MenuItem, Stack, TextField } from '@mui/material';
 import { usePatientProfile, useUpdateLifestyle } from '../../../hooks/usePatientQueries';
 import { lifestyleSchema, type LifestyleForm } from '../../../schemas/patient.schema';
+import { normalizeLifestyleForm } from '../../../utils/profileEnumMapper';
 import { SaveButton } from '../SaveButton';
 import type { ProfileSectionCallbacks } from '../types';
 
@@ -22,13 +23,21 @@ export function LifestyleSection({ onSaveSuccess, onSaveError }: ProfileSectionC
 
   const { control, handleSubmit, reset, formState: { isSubmitting } } = useForm<LifestyleForm>({
     resolver: zodResolver(lifestyleSchema),
-    defaultValues: {},
+    defaultValues: {
+      smokingStatus: '',
+      smokingFrequency: '',
+      alcoholConsumption: '',
+      exerciseFrequency: '',
+      exerciseType: '',
+      occupationType: '',
+      dietaryPreference: '',
+    },
     mode: 'onBlur',
   });
 
   useEffect(() => {
     if (!profile) return;
-    reset(profile.lifestyle ?? {}, { keepDirtyValues: true });
+    reset(normalizeLifestyleForm(profile.lifestyle), { keepDirtyValues: true });
   }, [profile, reset]);
 
   const onSubmit = async (values: LifestyleForm) => {
@@ -94,7 +103,7 @@ export function LifestyleSection({ onSaveSuccess, onSaveError }: ProfileSectionC
         </TextField>
       )} />
       <Controller name="stressLevel" control={control} render={({ field }) => (
-        <TextField {...field} label="Stress Level (1–10)" type="number" inputProps={{ min: 1, max: 10 }} />
+        <TextField {...field} label="Stress Level (1–5)" type="number" inputProps={{ min: 1, max: 5 }} />
       )} />
       <SaveButton saving={isSubmitting || updateMutation.isPending} saved={saved} />
     </Stack>

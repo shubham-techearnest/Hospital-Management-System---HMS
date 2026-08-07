@@ -64,22 +64,62 @@ export function PhysicalMeasurementsSection({ onSaveSuccess, onSaveError }: Prof
     <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
       {error && <Alert severity="error">{error}</Alert>}
       <Controller name="heightCm" control={control} render={({ field }) => (
-        <TextField {...field} label="Height (cm)" type="number" error={!!errors.heightCm} helperText={errors.heightCm?.message} />
+        <TextField
+          {...field}
+          value={field.value ?? ''}
+          onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+          label="Height (cm)"
+          type="number"
+          error={!!errors.heightCm}
+          helperText={errors.heightCm?.message}
+        />
       )} />
       <Controller name="weightKg" control={control} render={({ field }) => (
-        <TextField {...field} label="Weight (kg)" type="number" error={!!errors.weightKg} helperText={errors.weightKg?.message} />
+        <TextField
+          {...field}
+          value={field.value ?? ''}
+          onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+          label="Weight (kg)"
+          type="number"
+          error={!!errors.weightKg}
+          helperText={errors.weightKg?.message}
+        />
       )} />
       <Controller name="waistCm" control={control} render={({ field }) => (
-        <TextField {...field} label="Waist (cm)" type="number" />
+        <TextField
+          {...field}
+          value={field.value ?? ''}
+          onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+          label="Waist (cm)"
+          type="number"
+        />
       )} />
       <Controller name="hipCm" control={control} render={({ field }) => (
-        <TextField {...field} label="Hip (cm)" type="number" />
+        <TextField
+          {...field}
+          value={field.value ?? ''}
+          onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+          label="Hip (cm)"
+          type="number"
+        />
       )} />
       <Controller name="neckCm" control={control} render={({ field }) => (
-        <TextField {...field} label="Neck (cm)" type="number" />
+        <TextField
+          {...field}
+          value={field.value ?? ''}
+          onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+          label="Neck (cm)"
+          type="number"
+        />
       )} />
       <Controller name="bodyFatPercent" control={control} render={({ field }) => (
-        <TextField {...field} label="Body Fat (%)" type="number" />
+        <TextField
+          {...field}
+          value={field.value ?? ''}
+          onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+          label="Body Fat (%)"
+          type="number"
+        />
       )} />
       <Controller name="measuredAt" control={control} render={({ field }) => (
         <TextField {...field} label="Measured At" type="datetime-local" InputLabelProps={{ shrink: true }} error={!!errors.measuredAt} />

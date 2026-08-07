@@ -32,9 +32,9 @@ public class UpdateContactInfoRequest {
         private String city;
         @Size(max = 100)
         private String state;
-        @Pattern(regexp = "^\\d{6}$", message = "Invalid pincode")
+        @Pattern(regexp = "^(\\d{6})?$", message = "Invalid pincode")
         private String pincode;
-        @Size(min = 2, max = 2)
+        @Pattern(regexp = "^([A-Z]{2})?$", message = "Invalid country code")
         private String country;
     }
 }
