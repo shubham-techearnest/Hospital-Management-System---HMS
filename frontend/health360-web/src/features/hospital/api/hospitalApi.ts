@@ -174,6 +174,38 @@ export async function approveHospitalDoctorAssociation(associationId: string) {
   return data.data;
 }
 
+export interface InviteDoctorPayload {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  password?: string;
+  branchId?: string;
+  departmentId?: string;
+}
+
+export interface InviteDoctorResult {
+  userId: string;
+  doctorId: string;
+  associationId: string;
+  email: string;
+  status: string;
+  invitationEmailSent: boolean;
+  message: string;
+}
+
+export async function inviteHospitalDoctor(payload: InviteDoctorPayload) {
+  const { data } = await apiClient.post<ApiEnvelope<InviteDoctorResult>>('/hospitals/me/doctors/invite', payload);
+  return data.data!;
+}
+
+export async function getHospitalSubscription() {
+  const { data } = await apiClient.get<ApiEnvelope<import('@/features/subscription/api/subscriptionApi').HospitalSubscription>>(
+    '/hospitals/me/subscription',
+  );
+  return data.data!;
+}
+
 export async function listHospitalCatalog() {
   const { data } = await apiClient.get<ApiEnvelope<HospitalProfile[]>>('/hospitals/catalog');
   return data.data;

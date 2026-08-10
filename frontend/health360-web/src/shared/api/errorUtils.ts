@@ -39,6 +39,9 @@ export function parseApiError(error: unknown): ParsedApiError {
     if (status === 400) {
       return { kind: 'validation', message: serverMessage ?? 'Invalid request. Please check your input.' };
     }
+    if (status === 409) {
+      return { kind: 'validation', message: serverMessage ?? 'This action is not allowed with your current plan.' };
+    }
 
     return {
       kind: 'unknown',

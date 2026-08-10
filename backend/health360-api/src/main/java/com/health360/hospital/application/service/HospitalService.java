@@ -1,6 +1,9 @@
 package com.health360.hospital.application.service;
 
+import com.health360.doctor.application.service.DoctorInviteService;
 import com.health360.doctor.infrastructure.persistence.entity.DoctorProfileEntity;
+import com.health360.doctor.presentation.dto.request.InviteDoctorRequest;
+import com.health360.doctor.presentation.dto.response.InviteDoctorResponse;
 import com.health360.doctor.infrastructure.persistence.entity.HospitalAssociationEntity;
 import com.health360.doctor.infrastructure.persistence.repository.DoctorProfileRepository;
 import com.health360.doctor.infrastructure.persistence.repository.HospitalAssociationRepository;
@@ -15,6 +18,8 @@ import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
 import com.health360.shared.infrastructure.persistence.entity.SpecializationEntity;
 import com.health360.shared.infrastructure.persistence.repository.SpecializationRepository;
+import com.health360.subscription.application.service.HospitalSubscriptionService;
+import com.health360.subscription.application.service.PlanLimitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -44,6 +49,9 @@ public class HospitalService {
     private final SpecializationRepository specializationRepository;
     private final HospitalMapper mapper;
     private final AuditLogService auditLogService;
+    private final PlanLimitService planLimitService;
+    private final HospitalSubscriptionService hospitalSubscriptionService;
+    private final DoctorInviteService doctorInviteService;
 
     @Transactional(readOnly = true)
     public HospitalProfileResponse getProfile(UUID adminUserId, UUID tenantId) {
@@ -77,6 +85,10 @@ public class HospitalService {
         entity.setCreatedBy(adminUserId);
         entity.setUpdatedBy(adminUserId);
         entity = hospitalRepository.save(entity);
+
+        hospitalSubscriptionService.assignInitialPlan(
+                entity.getId(), tenantId, HospitalSubscriptionService.DEFAULT_FREE_PLAN_CODE,
+                adminUserId, "Hospital profile created");
 
         auditLogService.record(tenantId, adminUserId, "HOSPITAL_PROFILE_CREATED",
                 "Hospital", entity.getId(), Map.of());
@@ -269,6 +281,12 @@ public class HospitalService {
     }
 
     @Transactional
+    public InviteDoctorResponse inviteDoctor(UUID adminUserId, UUID tenantId, InviteDoctorRequest request) {
+        HospitalEntity hospital = requireHospital(adminUserId, tenantId);
+        return doctorInviteService.inviteDoctor(hospital.getId(), tenantId, adminUserId, request);
+    }
+
+    @Transactional
     public HospitalDoctorResponse associateDoctor(UUID adminUserId, UUID tenantId, AssociateDoctorRequest request) {
         HospitalEntity hospital = requireHospital(adminUserId, tenantId);
         DoctorProfileEntity doctor = doctorProfileRepository.findByIdAndTenantIdAndDeletedAtIsNull(request.getDoctorId(), tenantId)
@@ -288,6 +306,8 @@ public class HospitalService {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
                     "Doctor already associated with this hospital/branch");
         }
+
+        planLimitService.assertCanAddDoctor(hospital.getId(), tenantId);
 
         HospitalAssociationEntity assoc = new HospitalAssociationEntity();
         assoc.setTenantId(tenantId);
@@ -325,6 +345,7 @@ public class HospitalService {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
                     "Only pending associations can be approved");
         }
+        planLimitService.assertCanAddDoctor(hospital.getId(), tenantId);
         assoc.setStatus("ACTIVE");
         assoc.setUpdatedBy(adminUserId);
         assoc = associationRepository.save(assoc);

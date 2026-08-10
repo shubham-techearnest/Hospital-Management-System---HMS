@@ -1,7 +1,7 @@
 package com.health360.iam.application.service;
 
 import com.health360.config.Health360Properties;
-import com.health360.doctor.application.service.DoctorProfileProvisioningService;
+import com.health360.hospital.application.service.IndividualPracticeProvisioningService;
 import com.health360.iam.domain.RegistrationRole;
 import com.health360.iam.domain.UserStatus;
 import com.health360.iam.infrastructure.persistence.entity.RoleEntity;
@@ -36,7 +36,7 @@ public class RegistrationService {
     private final NotificationPreferenceService notificationPreferenceService;
     private final AuditLogService auditLogService;
     private final Health360Properties properties;
-    private final DoctorProfileProvisioningService doctorProfileProvisioningService;
+    private final IndividualPracticeProvisioningService individualPracticeProvisioningService;
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
@@ -47,10 +47,39 @@ public class RegistrationService {
                     "Email is already registered");
         }
 
-        RoleEntity role = roleRepository.findByTenantIdAndName(tenantId, request.getRole().name())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Default role not configured"));
+        RegistrationRole registrationRole = request.getRole();
+        if (registrationRole == null) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, "Role is required");
+        }
 
+        UserEntity savedUser = createUser(request, tenantId);
+
+        switch (registrationRole) {
+            case PATIENT -> assignRole(tenantId, savedUser.getId(), "PATIENT");
+            case INDIVIDUAL_PRACTICE -> {
+                assignRole(tenantId, savedUser.getId(), "DOCTOR");
+                individualPracticeProvisioningService.provision(
+                        savedUser.getId(), tenantId, request.getClinicName().trim());
+            }
+            default -> throw new BusinessException(ErrorCode.DOCTOR_REGISTRATION_DISABLED, HttpStatus.FORBIDDEN,
+                    "Doctor registration is by invitation only. Register as an individual practice or contact your hospital administrator.");
+        }
+
+        emailVerificationService.createAndSendVerificationToken(savedUser);
+        notificationPreferenceService.seedDefaultsForUser(savedUser);
+
+        auditLogService.record(tenantId, savedUser.getId(), "USER_REGISTERED", "User", savedUser.getId(),
+                Map.of("email", savedUser.getEmail(), "role", registrationRole.name()));
+
+        return RegisterResponse.builder()
+                .userId(savedUser.getId())
+                .email(savedUser.getEmail())
+                .status(savedUser.getStatus())
+                .message("Verification email sent")
+                .build();
+    }
+
+    private UserEntity createUser(RegisterRequest request, UUID tenantId) {
         UserEntity user = new UserEntity();
         user.setTenantId(tenantId);
         user.setEmail(request.getEmail().trim().toLowerCase());
@@ -60,29 +89,17 @@ public class RegistrationService {
         user.setPhone(request.getPhone().trim());
         user.setStatus(UserStatus.PENDING_VERIFICATION);
         user.setEmailVerified(false);
-        UserEntity savedUser = userRepository.saveAndFlush(user);
+        return userRepository.saveAndFlush(user);
+    }
 
+    private void assignRole(UUID tenantId, UUID userId, String roleName) {
+        RoleEntity role = roleRepository.findByTenantIdAndName(tenantId, roleName)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Default role not configured: " + roleName));
         UserRoleEntity userRole = new UserRoleEntity();
         userRole.setTenantId(tenantId);
-        userRole.setUserId(savedUser.getId());
+        userRole.setUserId(userId);
         userRole.setRoleId(role.getId());
         userRoleRepository.save(userRole);
-
-        emailVerificationService.createAndSendVerificationToken(savedUser);
-        notificationPreferenceService.seedDefaultsForUser(savedUser);
-
-        if (RegistrationRole.DOCTOR.equals(request.getRole())) {
-            doctorProfileProvisioningService.ensureProfileEntity(savedUser.getId(), tenantId);
-        }
-
-        auditLogService.record(tenantId, savedUser.getId(), "USER_REGISTERED", "User", savedUser.getId(),
-                Map.of("email", savedUser.getEmail(), "role", request.getRole().name()));
-
-        return RegisterResponse.builder()
-                .userId(savedUser.getId())
-                .email(savedUser.getEmail())
-                .status(savedUser.getStatus())
-                .message("Verification email sent")
-                .build();
     }
 }

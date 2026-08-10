@@ -1,10 +1,14 @@
 package com.health360.hospital.presentation.controller;
 
 import com.health360.config.security.UserPrincipal;
+import com.health360.doctor.presentation.dto.request.InviteDoctorRequest;
+import com.health360.doctor.presentation.dto.response.InviteDoctorResponse;
 import com.health360.hospital.application.service.HospitalService;
 import com.health360.hospital.presentation.dto.request.*;
 import com.health360.hospital.presentation.dto.response.*;
 import com.health360.shared.dto.ApiResponse;
+import com.health360.subscription.application.service.HospitalSubscriptionQueryService;
+import com.health360.subscription.presentation.dto.response.HospitalSubscriptionResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +26,17 @@ import java.util.UUID;
 public class HospitalController {
 
     private final HospitalService hospitalService;
+    private final HospitalSubscriptionQueryService hospitalSubscriptionQueryService;
+
+    @GetMapping("/me/subscription")
+    @PreAuthorize("hasAuthority('hospital:subscription:read')")
+    public ResponseEntity<ApiResponse<HospitalSubscriptionResponse>> getSubscription(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        var profile = hospitalService.getProfile(principal.getUserId(), principal.getTenantId());
+        return ResponseEntity.ok(ApiResponse.ok(
+                hospitalSubscriptionQueryService.getHospitalSubscriptionSummary(
+                        profile.getId(), principal.getTenantId())));
+    }
 
     @GetMapping("/me/profile")
     @PreAuthorize("hasAuthority('hospital:profile:read')")
@@ -182,6 +197,15 @@ public class HospitalController {
             @RequestParam String q) {
         return ResponseEntity.ok(ApiResponse.ok(
                 hospitalService.searchDoctors(principal.getUserId(), principal.getTenantId(), q)));
+    }
+
+    @PostMapping("/me/doctors/invite")
+    @PreAuthorize("hasAuthority('hospital:doctors:write')")
+    public ResponseEntity<ApiResponse<InviteDoctorResponse>> inviteDoctor(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody InviteDoctorRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
+                hospitalService.inviteDoctor(principal.getUserId(), principal.getTenantId(), request)));
     }
 
     @PostMapping("/me/doctors")

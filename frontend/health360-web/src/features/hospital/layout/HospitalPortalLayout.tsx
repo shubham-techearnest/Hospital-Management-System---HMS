@@ -11,6 +11,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import EmergencyIcon from '@mui/icons-material/Emergency';
 import GroupsIcon from '@mui/icons-material/Groups';
+import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -27,6 +28,7 @@ const navItems = [
   { label: 'Facilities', path: '/hospital/facilities', icon: <MedicalServicesIcon /> },
   { label: 'Gallery', path: '/hospital/gallery', icon: <PhotoLibraryIcon /> },
   { label: 'Doctor Roster', path: '/hospital/doctors', icon: <GroupsIcon /> },
+  { label: 'Subscription', path: '/hospital/subscription', icon: <CardMembershipIcon /> },
   { label: 'Settings', path: '/hospital/settings/account', icon: <SettingsIcon /> },
 ];
 

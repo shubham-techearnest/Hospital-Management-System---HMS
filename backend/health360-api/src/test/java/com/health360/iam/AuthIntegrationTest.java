@@ -120,8 +120,40 @@ class AuthIntegrationTest {
         request.setFirstName("Test");
         request.setLastName("User");
         request.setPhone("9123456789");
-        request.setRole(RegistrationRole.DOCTOR);
+        request.setRole(RegistrationRole.PATIENT);
         request.setAcceptTerms(true);
         return request;
+    }
+
+    @Test
+    void doctorSelfRegistrationIsDisabled() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("doctor.blocked@" + System.currentTimeMillis() + ".test");
+        request.setPassword("SecureP@ss1");
+        request.setConfirmPassword("SecureP@ss1");
+        request.setFirstName("Blocked");
+        request.setLastName("Doctor");
+        request.setPhone("9123456780");
+        request.setRole(RegistrationRole.PATIENT);
+        request.setAcceptTerms(true);
+
+        // Legacy clients may still send role=DOCTOR as string — expect 400 validation error
+        String rawJson = """
+                {
+                  "email": "legacy.doctor@%d.test",
+                  "password": "SecureP@ss1",
+                  "confirmPassword": "SecureP@ss1",
+                  "firstName": "Legacy",
+                  "lastName": "Doctor",
+                  "phone": "9123456781",
+                  "role": "DOCTOR",
+                  "acceptTerms": true
+                }
+                """.formatted(System.currentTimeMillis());
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(rawJson))
+                .andExpect(status().isBadRequest());
     }
 }

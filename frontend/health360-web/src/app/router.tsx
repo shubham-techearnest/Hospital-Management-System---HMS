@@ -135,6 +135,18 @@ const AdminUsersPage = lazy(() =>
 const AdminReviewModerationPage = lazy(() =>
   import('@/features/admin/pages/AdminReviewModerationPage').then((m) => ({ default: m.AdminReviewModerationPage })),
 );
+const AdminHospitalsPage = lazy(() =>
+  import('@/features/admin/pages/AdminHospitalsPage').then((m) => ({ default: m.AdminHospitalsPage })),
+);
+const AdminHospitalDetailPage = lazy(() =>
+  import('@/features/admin/pages/AdminHospitalDetailPage').then((m) => ({ default: m.AdminHospitalDetailPage })),
+);
+const AdminPlansPage = lazy(() =>
+  import('@/features/admin/pages/AdminPlansPage').then((m) => ({ default: m.AdminPlansPage })),
+);
+const HospitalSubscriptionPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalSubscriptionPage').then((m) => ({ default: m.HospitalSubscriptionPage })),
+);
 const DoctorAppointmentsPage = lazy(() =>
   import('@/features/doctor/pages/DoctorAppointmentsPage').then((m) => ({ default: m.DoctorAppointmentsPage })),
 );
@@ -345,6 +357,7 @@ export function AppRouter() {
           <Route path="departments" element={<LazyPage><HospitalDepartmentsPage /></LazyPage>} />
           <Route path="emergency" element={<LazyPage><HospitalEmergencyPage /></LazyPage>} />
           <Route path="doctors" element={<LazyPage><HospitalDoctorRosterPage /></LazyPage>} />
+          <Route path="subscription" element={<LazyPage><HospitalSubscriptionPage /></LazyPage>} />
           <Route path="facilities" element={<LazyPage><HospitalFacilitiesPage /></LazyPage>} />
           <Route path="gallery" element={<LazyPage><HospitalGalleryPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
@@ -356,6 +369,9 @@ export function AppRouter() {
           <Route path="verifications" element={<LazyPage><AdminVerificationQueuePage /></LazyPage>} />
           <Route path="verifications/:doctorId" element={<LazyPage><AdminVerificationReviewPage /></LazyPage>} />
           <Route path="users" element={<LazyPage><AdminUsersPage /></LazyPage>} />
+          <Route path="hospitals" element={<LazyPage><AdminHospitalsPage /></LazyPage>} />
+          <Route path="hospitals/:hospitalId" element={<LazyPage><AdminHospitalDetailPage /></LazyPage>} />
+          <Route path="plans" element={<LazyPage><AdminPlansPage /></LazyPage>} />
           <Route path="reviews" element={<LazyPage><AdminReviewModerationPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
           <Route path="settings/notifications" element={<LazyPage><NotificationPreferencesPage /></LazyPage>} />

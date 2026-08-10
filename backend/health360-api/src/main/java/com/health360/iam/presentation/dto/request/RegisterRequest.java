@@ -43,6 +43,18 @@ public class RegisterRequest {
     @NotNull
     private RegistrationRole role;
 
+    /** Required when role is INDIVIDUAL_PRACTICE — name of the clinic/hospital. */
+    @Size(max = 300)
+    private String clinicName;
+
+    @AssertTrue(message = "Clinic name is required for individual practice registration")
+    public boolean isClinicNameValidForIndividualPractice() {
+        if (role != RegistrationRole.INDIVIDUAL_PRACTICE) {
+            return true;
+        }
+        return clinicName != null && !clinicName.isBlank();
+    }
+
     @AssertTrue(message = "You must accept the Terms of Service and Privacy Policy")
     private boolean acceptTerms;
 }

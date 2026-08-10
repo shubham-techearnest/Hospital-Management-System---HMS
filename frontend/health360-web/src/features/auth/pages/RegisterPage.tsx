@@ -20,6 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { useWatch } from 'react-hook-form';
 import { registerSchema, type RegisterForm } from '../schemas/auth.schema';
 import { register as registerApi } from '../api/authApi';
 
@@ -34,8 +35,10 @@ export function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { role: 'PATIENT', acceptTerms: false },
+    defaultValues: { role: 'PATIENT', acceptTerms: false, clinicName: '' },
   });
+
+  const selectedRole = useWatch({ control, name: 'role' });
 
   const onSubmit = async (values: RegisterForm) => {
     setError(null);
@@ -57,7 +60,7 @@ export function RegisterPage() {
           Create account
         </Typography>
         <Typography color="text.secondary" mb={3}>
-          Join Health360 AI as a patient or doctor
+          Join Health360 AI as a patient or register your individual practice
         </Typography>
 
         {error && (
@@ -80,12 +83,26 @@ export function RegisterPage() {
                 render={({ field }) => (
                   <Select {...field} label="Role">
                     <MenuItem value="PATIENT">Patient</MenuItem>
-                    <MenuItem value="DOCTOR">Doctor</MenuItem>
+                    <MenuItem value="INDIVIDUAL_PRACTICE">Individual practice (solo doctor)</MenuItem>
                   </Select>
                 )}
               />
               {errors.role && <FormHelperText>{errors.role.message}</FormHelperText>}
             </FormControl>
+            {selectedRole === 'INDIVIDUAL_PRACTICE' && (
+              <>
+                <TextField
+                  label="Clinic / practice name"
+                  fullWidth
+                  {...register('clinicName')}
+                  error={!!errors.clinicName}
+                  helperText={
+                    errors.clinicName?.message ??
+                    'Your practice will be set up as a single-doctor clinic on the Free plan.'
+                  }
+                />
+              </>
+            )}
             <TextField label="Password" type="password" fullWidth {...register('password')} error={!!errors.password} helperText={errors.password?.message} />
             <TextField label="Confirm password" type="password" fullWidth {...register('confirmPassword')} error={!!errors.confirmPassword} helperText={errors.confirmPassword?.message} />
             <FormControl error={!!errors.acceptTerms}>

@@ -24,6 +24,8 @@ import {
   listGalleryImages,
   uploadGalleryImage,
   deleteGalleryImage,
+  getHospitalSubscription,
+  inviteHospitalDoctor,
 } from '../api/hospitalApi';
 
 export const hospitalKeys = {
@@ -33,6 +35,7 @@ export const hospitalKeys = {
   doctors: ['hospital', 'doctors'] as const,
   facilities: ['hospital', 'facilities'] as const,
   gallery: ['hospital', 'gallery'] as const,
+  subscription: ['hospital', 'subscription'] as const,
 };
 
 export function useHospitalProfile() {
@@ -228,5 +231,28 @@ export function useDeleteGalleryImage() {
   return useMutation({
     mutationFn: deleteGalleryImage,
     onSuccess: () => qc.invalidateQueries({ queryKey: hospitalKeys.gallery }),
+  });
+}
+
+export function useHospitalSubscription() {
+  return useQuery({
+    queryKey: hospitalKeys.subscription,
+    queryFn: getHospitalSubscription,
+    retry: (_, error) => {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      return status !== 404;
+    },
+  });
+}
+
+export function useInviteHospitalDoctor() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: inviteHospitalDoctor,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: hospitalKeys.doctors });
+      void qc.invalidateQueries({ queryKey: hospitalKeys.profile });
+      void qc.invalidateQueries({ queryKey: hospitalKeys.subscription });
+    },
   });
 }

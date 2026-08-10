@@ -63,4 +63,7 @@ public class HospitalEntity extends BaseAuditableEntity {
 
     @Column(name = "review_count", nullable = false)
     private int reviewCount;
+
+    @Column(nullable = false, length = 20)
+    private String status = "ACTIVE";
 }

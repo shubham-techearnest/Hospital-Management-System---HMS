@@ -16,7 +16,8 @@ export const registerSchema = z
     firstName: z.string().min(1).max(100),
     lastName: z.string().min(1).max(100),
     phone: z.string().regex(/^(\+?[1-9]\d{9,14}|[6-9]\d{9})$/, 'Invalid phone number'),
-    role: z.enum(['PATIENT', 'DOCTOR']),
+    role: z.enum(['PATIENT', 'INDIVIDUAL_PRACTICE']),
+    clinicName: z.string().max(300).optional(),
     acceptTerms: z.boolean().refine((val) => val === true, {
       message: 'You must accept the terms',
     }),
@@ -24,7 +25,16 @@ export const registerSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
-  });
+  })
+  .refine(
+    (data) =>
+      data.role !== 'INDIVIDUAL_PRACTICE' ||
+      (data.clinicName != null && data.clinicName.trim().length > 0),
+    {
+      message: 'Clinic name is required for individual practice',
+      path: ['clinicName'],
+    },
+  );
 
 export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
