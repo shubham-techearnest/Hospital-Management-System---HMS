@@ -6,13 +6,15 @@ import {
 } from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { parseApiError } from '@/shared/api/errorUtils';
-import { useAdminPlans, useUpdateAdminPlan } from '../hooks/useAdminHospitalQueries';
+import { useAdminPlans, useUpdateAdminPlan, useUpdateAdminPlanLimits } from '../hooks/useAdminHospitalQueries';
 
 export function AdminPlansPage() {
   const { data: plans = [], isError, error } = useAdminPlans();
   const updatePlan = useUpdateAdminPlan();
+  const updateLimits = useUpdateAdminPlanLimits();
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', description: '', price: '', status: 'ACTIVE' });
+  const [limitForm, setLimitForm] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
 
   const loadError = isError ? parseApiError(error) : null;
@@ -28,6 +30,9 @@ export function AdminPlansPage() {
       price: String(plan.price),
       status: plan.status,
     });
+    const limits: Record<string, string> = {};
+    plan.limits.forEach((l) => { limits[l.limitKey] = String(l.limitValue); });
+    setLimitForm(limits);
   };
 
   const handleSave = async () => {
@@ -43,6 +48,15 @@ export function AdminPlansPage() {
           status: form.status,
         },
       });
+      if (Object.keys(limitForm).length > 0) {
+        await updateLimits.mutateAsync({
+          planId: editId,
+          limits: Object.entries(limitForm).map(([limitKey, limitValue]) => ({
+            limitKey,
+            limitValue: Number(limitValue),
+          })),
+        });
+      }
       setEditId(null);
       setMessage('Plan updated.');
     } catch (e) {
@@ -108,11 +122,26 @@ export function AdminPlansPage() {
                 />
               ))}
             </Stack>
+            {editing && editing.limits.length > 0 && (
+              <>
+                <Typography variant="subtitle2" sx={{ pt: 1 }}>Plan limits</Typography>
+                {editing.limits.map((limit) => (
+                  <TextField
+                    key={limit.limitKey}
+                    label={limit.limitKey.replace(/_/g, ' ')}
+                    type="number"
+                    fullWidth
+                    value={limitForm[limit.limitKey] ?? String(limit.limitValue)}
+                    onChange={(e) => setLimitForm({ ...limitForm, [limit.limitKey]: e.target.value })}
+                  />
+                ))}
+              </>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditId(null)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={updatePlan.isPending}>Save</Button>
+          <Button variant="contained" onClick={handleSave} disabled={updatePlan.isPending || updateLimits.isPending}>Save</Button>
         </DialogActions>
       </Dialog>
     </AnimatedPage>

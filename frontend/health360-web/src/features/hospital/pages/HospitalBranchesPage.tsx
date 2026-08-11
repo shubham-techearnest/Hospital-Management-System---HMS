@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
+import { parseApiError } from '@/shared/api/errorUtils';
 import { useBranches, useCreateBranch, useDeleteBranch } from '@/features/hospital/hooks/useHospitalQueries';
 
 const emptyForm = {
@@ -33,8 +34,8 @@ export function HospitalBranchesPage() {
       setOpen(false);
       setForm(emptyForm);
       setSnackbar({ open: true, message: 'Branch added.', severity: 'success' });
-    } catch {
-      setSnackbar({ open: true, message: 'Unable to add branch.', severity: 'error' });
+    } catch (e) {
+      setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
     }
   };
 

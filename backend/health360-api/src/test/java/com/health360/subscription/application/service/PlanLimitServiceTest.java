@@ -2,6 +2,7 @@ package com.health360.subscription.application.service;
 
 import com.health360.doctor.infrastructure.persistence.entity.HospitalAssociationEntity;
 import com.health360.doctor.infrastructure.persistence.repository.HospitalAssociationRepository;
+import com.health360.scheduling.infrastructure.persistence.repository.AppointmentRepository;
 import com.health360.hospital.infrastructure.persistence.repository.BranchRepository;
 import com.health360.hospital.infrastructure.persistence.repository.DepartmentRepository;
 import com.health360.shared.domain.ErrorCode;
@@ -10,6 +11,8 @@ import com.health360.subscription.domain.PlanLimitKeys;
 import com.health360.subscription.infrastructure.persistence.entity.HospitalSubscriptionEntity;
 import com.health360.subscription.infrastructure.persistence.entity.SubscriptionPlanLimitEntity;
 import com.health360.subscription.infrastructure.persistence.repository.SubscriptionPlanLimitRepository;
+import com.health360.hospital.infrastructure.persistence.entity.BranchEntity;
+import com.health360.hospital.infrastructure.persistence.entity.DepartmentEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +48,9 @@ class PlanLimitServiceTest {
     @Mock
     private BranchRepository branchRepository;
 
+    @Mock
+    private AppointmentRepository appointmentRepository;
+
     @InjectMocks
     private PlanLimitService planLimitService;
 
@@ -66,18 +72,20 @@ class PlanLimitServiceTest {
 
         when(hospitalSubscriptionService.requireActiveSubscription(hospitalId, tenantId))
                 .thenReturn(subscription);
+    }
 
+    private void stubDoctorLimit(long max) {
         SubscriptionPlanLimitEntity limit = new SubscriptionPlanLimitEntity();
         limit.setPlanId(planId);
         limit.setLimitKey(PlanLimitKeys.MAX_DOCTORS);
-        limit.setLimitValue(1);
-
+        limit.setLimitValue(max);
         when(planLimitRepository.findByPlanIdAndLimitKeyAndDeletedAtIsNull(planId, PlanLimitKeys.MAX_DOCTORS))
                 .thenReturn(Optional.of(limit));
     }
 
     @Test
     void freePlanAllowsFirstDoctor() {
+        stubDoctorLimit(1);
         when(associationRepository.findByHospitalIdAndDeletedAtIsNullOrderByCreatedAtDesc(hospitalId))
                 .thenReturn(List.of());
 
@@ -86,6 +94,7 @@ class PlanLimitServiceTest {
 
     @Test
     void freePlanBlocksSecondDoctor() {
+        stubDoctorLimit(1);
         HospitalAssociationEntity existing = new HospitalAssociationEntity();
         existing.setDoctorId(UUID.randomUUID());
         existing.setHospitalId(hospitalId);
@@ -100,5 +109,45 @@ class PlanLimitServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("code")
                 .isEqualTo(ErrorCode.DOCTOR_LIMIT_REACHED);
+    }
+
+    @Test
+    void freePlanBlocksSecondBranch() {
+        SubscriptionPlanLimitEntity branchLimit = new SubscriptionPlanLimitEntity();
+        branchLimit.setPlanId(planId);
+        branchLimit.setLimitKey(PlanLimitKeys.MAX_BRANCHES);
+        branchLimit.setLimitValue(1);
+
+        when(planLimitRepository.findByPlanIdAndLimitKeyAndDeletedAtIsNull(planId, PlanLimitKeys.MAX_BRANCHES))
+                .thenReturn(Optional.of(branchLimit));
+
+        BranchEntity existing = new BranchEntity();
+        when(branchRepository.findByHospitalIdAndDeletedAtIsNullOrderByNameAsc(hospitalId))
+                .thenReturn(List.of(existing));
+
+        assertThatThrownBy(() -> planLimitService.assertCanAddBranch(hospitalId, tenantId))
+                .isInstanceOf(BusinessException.class)
+                .extracting("code")
+                .isEqualTo(ErrorCode.BRANCH_LIMIT_REACHED);
+    }
+
+    @Test
+    void freePlanBlocksSecondDepartment() {
+        SubscriptionPlanLimitEntity deptLimit = new SubscriptionPlanLimitEntity();
+        deptLimit.setPlanId(planId);
+        deptLimit.setLimitKey(PlanLimitKeys.MAX_DEPARTMENTS);
+        deptLimit.setLimitValue(1);
+
+        when(planLimitRepository.findByPlanIdAndLimitKeyAndDeletedAtIsNull(planId, PlanLimitKeys.MAX_DEPARTMENTS))
+                .thenReturn(Optional.of(deptLimit));
+
+        DepartmentEntity existing = new DepartmentEntity();
+        when(departmentRepository.findByHospitalIdAndDeletedAtIsNullOrderByNameAsc(hospitalId))
+                .thenReturn(List.of(existing));
+
+        assertThatThrownBy(() -> planLimitService.assertCanAddDepartment(hospitalId, tenantId))
+                .isInstanceOf(BusinessException.class)
+                .extracting("code")
+                .isEqualTo(ErrorCode.DEPARTMENT_LIMIT_REACHED);
     }
 }

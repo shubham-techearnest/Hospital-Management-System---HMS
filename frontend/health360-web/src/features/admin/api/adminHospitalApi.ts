@@ -23,6 +23,27 @@ export interface AdminHospital {
   updatedAt: string;
 }
 
+export interface CreateAdminHospitalPayload {
+  name: string;
+  registrationNumber: string;
+  hospitalType: string;
+  establishedYear?: number;
+  totalBedCount?: number;
+  accreditation?: string;
+  description?: string;
+  adminEmail: string;
+  adminFirstName: string;
+  adminLastName: string;
+  adminPhone: string;
+  adminPassword?: string;
+  planCode?: string;
+}
+
+export async function createAdminHospital(payload: CreateAdminHospitalPayload): Promise<AdminHospital> {
+  const { data } = await apiClient.post<ApiEnvelope<AdminHospital>>('/admin/hospitals', payload);
+  return data.data!;
+}
+
 export interface InviteDoctorPayload {
   email: string;
   firstName: string;

@@ -4,11 +4,11 @@ import {
 } from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { HOSPITAL_TYPES } from '@/features/hospital/api/hospitalApi';
-import { useCreateHospitalProfile, useHospitalProfile, useUpdateHospitalProfile } from '@/features/hospital/hooks/useHospitalQueries';
+import { useHospitalProfile, useUpdateHospitalProfile } from '@/features/hospital/hooks/useHospitalQueries';
+import { parseApiError } from '@/shared/api/errorUtils';
 
 export function HospitalProfilePage() {
-  const { data: profile, isLoading, isError, error, refetch } = useHospitalProfile();
-  const createProfile = useCreateHospitalProfile();
+  const { data: profile, isLoading, isError, error } = useHospitalProfile();
   const updateProfile = useUpdateHospitalProfile();
   const is404 = (error as { response?: { status?: number } })?.response?.status === 404;
   const [form, setForm] = useState({
@@ -40,44 +40,47 @@ export function HospitalProfilePage() {
       description: form.description || undefined,
     };
     try {
-      if (is404 || !profile) {
-        await createProfile.mutateAsync({ ...payload, registrationNumber: form.registrationNumber });
-        setSnackbar({ open: true, message: 'Hospital profile created.', severity: 'success' });
-        refetch();
-      } else {
-        await updateProfile.mutateAsync(payload);
-        setSnackbar({ open: true, message: 'Profile saved.', severity: 'success' });
-      }
-    } catch {
-      setSnackbar({ open: true, message: 'Unable to save profile.', severity: 'error' });
+      await updateProfile.mutateAsync(payload);
+      setSnackbar({ open: true, message: 'Profile saved.', severity: 'success' });
+    } catch (e) {
+      setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
     }
   };
 
   if (isLoading) return <Typography>Loading…</Typography>;
 
+  if (is404 || !profile) {
+    return (
+      <AnimatedPage>
+        <Typography variant="h4" fontWeight={700} mb={1}>Hospital Profile</Typography>
+        <Alert severity="info">
+          No hospital is linked to your account yet. Platform administrators create hospitals and assign hospital admins.
+        </Alert>
+      </AnimatedPage>
+    );
+  }
+
   return (
     <AnimatedPage>
       <Typography variant="h4" fontWeight={700} mb={1}>Hospital Profile</Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        {profile ? 'Update your facility information.' : 'Create your hospital profile to get started.'}
+        Update your facility information.
       </Typography>
 
       {isError && !is404 && <Alert severity="error" sx={{ mb: 2 }}>Unable to load profile.</Alert>}
 
-      {profile && (
-        <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-          <Stack direction="row" spacing={3}>
-            <Typography variant="body2">Branches: {profile.branchCount}</Typography>
-            <Typography variant="body2">Departments: {profile.departmentCount}</Typography>
-            <Typography variant="body2">Doctors: {profile.doctorCount}</Typography>
-          </Stack>
-        </Paper>
-      )}
+      <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+        <Stack direction="row" spacing={3}>
+          <Typography variant="body2">Branches: {profile.branchCount}</Typography>
+          <Typography variant="body2">Departments: {profile.departmentCount}</Typography>
+          <Typography variant="body2">Doctors: {profile.doctorCount}</Typography>
+        </Stack>
+      </Paper>
 
       <Paper variant="outlined" sx={{ p: 3 }}>
         <Stack spacing={2}>
           <TextField label="Hospital Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-          <TextField label="Registration Number" value={form.registrationNumber} onChange={(e) => setForm({ ...form, registrationNumber: e.target.value })} required disabled={!!profile} />
+          <TextField label="Registration Number" value={form.registrationNumber} disabled required />
           <TextField select label="Hospital Type" value={form.hospitalType} onChange={(e) => setForm({ ...form, hospitalType: e.target.value })}>
             {HOSPITAL_TYPES.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
           </TextField>
@@ -88,8 +91,8 @@ export function HospitalProfilePage() {
           </TextField>
           <TextField label="Description" multiline minRows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           <Box>
-            <Button variant="contained" onClick={handleSave} disabled={createProfile.isPending || updateProfile.isPending}>
-              {profile ? 'Save Profile' : 'Create Profile'}
+            <Button variant="contained" onClick={handleSave} disabled={updateProfile.isPending}>
+              Save Profile
             </Button>
           </Box>
         </Stack>

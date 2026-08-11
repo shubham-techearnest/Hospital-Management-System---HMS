@@ -3,6 +3,7 @@ package com.health360.subscription.presentation.controller;
 import com.health360.config.security.UserPrincipal;
 import com.health360.shared.dto.ApiResponse;
 import com.health360.subscription.application.service.AdminSubscriptionPlanService;
+import com.health360.subscription.presentation.dto.request.UpdatePlanLimitsRequest;
 import com.health360.subscription.presentation.dto.request.UpdateSubscriptionPlanRequest;
 import com.health360.subscription.presentation.dto.response.SubscriptionPlanResponse;
 import jakarta.validation.Valid;
@@ -47,6 +48,17 @@ public class AdminSubscriptionPlanController {
             @Valid @RequestBody UpdateSubscriptionPlanRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(
                 adminSubscriptionPlanService.updatePlan(
+                        principal.getTenantId(), principal.getUserId(), planId, request)));
+    }
+
+    @PatchMapping("/{planId}/limits")
+    @PreAuthorize("hasAuthority('admin:plans:write')")
+    public ResponseEntity<ApiResponse<SubscriptionPlanResponse>> updatePlanLimits(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID planId,
+            @Valid @RequestBody UpdatePlanLimitsRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                adminSubscriptionPlanService.updatePlanLimits(
                         principal.getTenantId(), principal.getUserId(), planId, request)));
     }
 }

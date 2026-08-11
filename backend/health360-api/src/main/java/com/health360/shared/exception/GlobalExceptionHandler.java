@@ -7,6 +7,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
@@ -86,6 +88,22 @@ public class GlobalExceptionHandler {
         String message = "Invalid value for parameter '" + ex.getName() + "'";
         return ResponseEntity.badRequest().body(
                 ErrorResponse.of(ErrorCode.VALIDATION_ERROR.name(), message, correlationId()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation [correlationId={}]: {}", correlationId(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                ErrorResponse.of(ErrorCode.VALIDATION_ERROR.name(),
+                        "Operation could not be completed due to a data conflict. Please refresh and try again.",
+                        correlationId()));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(NoResourceFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                ErrorResponse.of(ErrorCode.RESOURCE_NOT_FOUND.name(),
+                        "Resource not found: " + ex.getResourcePath(), correlationId()));
     }
 
     @ExceptionHandler(Exception.class)

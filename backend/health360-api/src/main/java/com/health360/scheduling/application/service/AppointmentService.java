@@ -24,6 +24,9 @@ import com.health360.scheduling.presentation.dto.response.DoctorBookingLocationR
 import com.health360.scheduling.presentation.dto.response.DoctorAvailabilityResponse;
 import com.health360.iam.application.service.TransactionalNotificationService;
 import com.health360.iam.domain.NotificationType;
+import com.health360.subscription.application.service.FeatureAccessService;
+import com.health360.subscription.application.service.PlanLimitService;
+import com.health360.subscription.domain.PlanFeatureKeys;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -61,6 +64,8 @@ public class AppointmentService {
     private final SpecializationRepository specializationRepository;
     private final AuditLogService auditLogService;
     private final TransactionalNotificationService notificationService;
+    private final PlanLimitService planLimitService;
+    private final FeatureAccessService featureAccessService;
 
     @Transactional(readOnly = true)
     public List<DoctorBookingLocationResponse> getDoctorBookingLocations(UUID doctorId, UUID tenantId) {
@@ -187,6 +192,14 @@ public class AppointmentService {
                 patient.getId(), doctor.getId(), dayStart, dayEnd)) {
             throw new BusinessException(ErrorCode.DUPLICATE_APPOINTMENT, HttpStatus.CONFLICT,
                     "You already have an appointment with this doctor on the selected date");
+        }
+
+        planLimitService.assertCanBookAppointment(request.getHospitalId(), tenantId);
+
+        if ("TELECONSULTATION".equals(request.getConsultationType())
+                && !featureAccessService.hasFeature(request.getHospitalId(), tenantId, PlanFeatureKeys.FEATURE_TELEMEDICINE)) {
+            throw new BusinessException(ErrorCode.FEATURE_NOT_AVAILABLE, HttpStatus.FORBIDDEN,
+                    "Teleconsultation is not available on this hospital's current plan. Please choose an in-person appointment.");
         }
 
         ConsultationDefaultEntity feeDefault = consultationDefaultRepository

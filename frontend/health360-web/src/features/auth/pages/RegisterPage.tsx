@@ -10,17 +10,13 @@ import {
   FormControl,
   FormControlLabel,
   FormHelperText,
-  InputLabel,
   Link,
-  MenuItem,
   Paper,
-  Select,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import { useWatch } from 'react-hook-form';
 import { registerSchema, type RegisterForm } from '../schemas/auth.schema';
 import { register as registerApi } from '../api/authApi';
 
@@ -35,10 +31,8 @@ export function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { role: 'PATIENT', acceptTerms: false, clinicName: '' },
+    defaultValues: { role: 'PATIENT', acceptTerms: false },
   });
-
-  const selectedRole = useWatch({ control, name: 'role' });
 
   const onSubmit = async (values: RegisterForm) => {
     setError(null);
@@ -60,7 +54,7 @@ export function RegisterPage() {
           Create account
         </Typography>
         <Typography color="text.secondary" mb={3}>
-          Join Health360 AI as a patient or register your individual practice
+          Join Health360 AI as a patient. Hospitals and doctors are added by platform administrators.
         </Typography>
 
         {error && (
@@ -75,34 +69,7 @@ export function RegisterPage() {
             <TextField label="Last name" fullWidth {...register('lastName')} error={!!errors.lastName} helperText={errors.lastName?.message} />
             <TextField label="Email" type="email" fullWidth {...register('email')} error={!!errors.email} helperText={errors.email?.message} />
             <TextField label="Phone" fullWidth {...register('phone')} error={!!errors.phone} helperText={errors.phone?.message} />
-            <FormControl fullWidth error={!!errors.role}>
-              <InputLabel>Role</InputLabel>
-              <Controller
-                name="role"
-                control={control}
-                render={({ field }) => (
-                  <Select {...field} label="Role">
-                    <MenuItem value="PATIENT">Patient</MenuItem>
-                    <MenuItem value="INDIVIDUAL_PRACTICE">Individual practice (solo doctor)</MenuItem>
-                  </Select>
-                )}
-              />
-              {errors.role && <FormHelperText>{errors.role.message}</FormHelperText>}
-            </FormControl>
-            {selectedRole === 'INDIVIDUAL_PRACTICE' && (
-              <>
-                <TextField
-                  label="Clinic / practice name"
-                  fullWidth
-                  {...register('clinicName')}
-                  error={!!errors.clinicName}
-                  helperText={
-                    errors.clinicName?.message ??
-                    'Your practice will be set up as a single-doctor clinic on the Free plan.'
-                  }
-                />
-              </>
-            )}
+            <input type="hidden" {...register('role')} value="PATIENT" />
             <TextField label="Password" type="password" fullWidth {...register('password')} error={!!errors.password} helperText={errors.password?.message} />
             <TextField label="Confirm password" type="password" fullWidth {...register('confirmPassword')} error={!!errors.confirmPassword} helperText={errors.confirmPassword?.message} />
             <FormControl error={!!errors.acceptTerms}>

@@ -80,12 +80,7 @@ public class HospitalSubscriptionQueryService {
     }
 
     private long resolveUsage(UUID hospitalId, String limitKey) {
-        return switch (limitKey) {
-            case PlanLimitKeys.MAX_DEPARTMENTS -> planLimitService.countDepartments(hospitalId);
-            case PlanLimitKeys.MAX_BRANCHES -> planLimitService.countBranches(hospitalId);
-            case PlanLimitKeys.MAX_DOCTORS -> planLimitService.getDoctorUsage(hospitalId);
-            default -> 0L;
-        };
+        return planLimitService.resolveUsage(hospitalId, limitKey);
     }
 
     private String normalizeUsageKey(String limitKey) {

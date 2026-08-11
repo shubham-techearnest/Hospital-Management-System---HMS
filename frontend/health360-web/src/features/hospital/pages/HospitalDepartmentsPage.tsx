@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
+import { parseApiError } from '@/shared/api/errorUtils';
 import { useCreateDepartment, useDeleteDepartment, useDepartments } from '@/features/hospital/hooks/useHospitalQueries';
 
 export function HospitalDepartmentsPage() {
@@ -22,8 +23,8 @@ export function HospitalDepartmentsPage() {
       setOpen(false);
       setForm({ name: '', description: '', floor: '' });
       setSnackbar({ open: true, message: 'Department added.', severity: 'success' });
-    } catch {
-      setSnackbar({ open: true, message: 'Unable to add department.', severity: 'error' });
+    } catch (e) {
+      setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
     }
   };
 

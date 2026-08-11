@@ -27,6 +27,7 @@ public class AdminHospitalSubscriptionService {
     private final HospitalSubscriptionHistoryRepository historyRepository;
     private final SubscriptionPlanRepository planRepository;
     private final AuditLogService auditLogService;
+    private final PlanLimitService planLimitService;
 
     @Transactional(readOnly = true)
     public HospitalSubscriptionResponse getSubscription(UUID tenantId, UUID hospitalId) {
@@ -39,6 +40,9 @@ public class AdminHospitalSubscriptionService {
             UUID tenantId, UUID actorId, UUID hospitalId, ChangeHospitalPlanRequest request) {
         adminHospitalService.requireHospital(tenantId, hospitalId);
         String notes = request.getNotes() != null ? request.getNotes().trim() : "Changed by platform admin";
+        SubscriptionPlanEntity newPlan = hospitalSubscriptionService.requirePlanByCode(
+                request.getPlanCode().trim(), tenantId);
+        planLimitService.validatePlanDowngrade(hospitalId, tenantId, newPlan.getId());
         hospitalSubscriptionService.changePlan(hospitalId, tenantId, request.getPlanCode().trim(), actorId, notes);
         auditLogService.record(tenantId, actorId, "ADMIN_HOSPITAL_PLAN_CHANGED", "Hospital", hospitalId,
                 Map.of("planCode", request.getPlanCode()));

@@ -9,6 +9,7 @@ import com.health360.subscription.infrastructure.persistence.entity.Subscription
 import com.health360.subscription.infrastructure.persistence.repository.SubscriptionPlanFeatureRepository;
 import com.health360.subscription.infrastructure.persistence.repository.SubscriptionPlanLimitRepository;
 import com.health360.subscription.infrastructure.persistence.repository.SubscriptionPlanRepository;
+import com.health360.subscription.presentation.dto.request.UpdatePlanLimitsRequest;
 import com.health360.subscription.presentation.dto.request.UpdateSubscriptionPlanRequest;
 import com.health360.subscription.presentation.dto.response.SubscriptionPlanResponse;
 import lombok.RequiredArgsConstructor;
@@ -64,6 +65,29 @@ public class AdminSubscriptionPlanService {
 
         auditLogService.record(tenantId, actorId, "SUBSCRIPTION_PLAN_UPDATED", "SubscriptionPlan", planId,
                 Map.of("code", plan.getCode(), "status", plan.getStatus()));
+
+        return toResponse(plan);
+    }
+
+    @Transactional
+    public SubscriptionPlanResponse updatePlanLimits(
+            UUID tenantId, UUID actorId, UUID planId, UpdatePlanLimitsRequest request) {
+        SubscriptionPlanEntity plan = requirePlan(tenantId, planId);
+
+        for (UpdatePlanLimitsRequest.PlanLimitItem item : request.getLimits()) {
+            SubscriptionPlanLimitEntity limit = limitRepository
+                    .findByPlanIdAndLimitKeyAndDeletedAtIsNull(planId, item.getLimitKey().trim())
+                    .orElseThrow(() -> new BusinessException(
+                            ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                            "Limit not found: " + item.getLimitKey()));
+            limit.setLimitValue(item.getLimitValue());
+            limit.setUpdatedBy(actorId);
+            limit.touch();
+            limitRepository.save(limit);
+        }
+
+        auditLogService.record(tenantId, actorId, "SUBSCRIPTION_PLAN_LIMITS_UPDATED", "SubscriptionPlan", planId,
+                Map.of("code", plan.getCode(), "limitCount", request.getLimits().size()));
 
         return toResponse(plan);
     }

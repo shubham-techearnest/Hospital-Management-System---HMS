@@ -1,71 +1,94 @@
-# Health360 Phase 1.5 — Hospital SaaS & Subscription Architecture
+# Phase 1.5 — Hospital SaaS & Subscription Architecture
 
-Phase 1.5 introduces **hospital-centric subscription management** on top of the existing Phase 1 hospital domain.
+**Status:** In progress (Sprints P1.5-S0 through P1.5-S5 largely complete)  
+**Goal:** Hospital-centric subscription management, platform-admin provisioning, plan limits, and admin portals — without blocking Phase 1 launch.
+
+Phase 1.5 sits **between Phase 1 (Foundation)** and **Phase 2 (Commerce & Care Delivery)**. It enables Health360 to operate as a **multi-hospital SaaS platform** where subscriptions belong to hospitals, not individual doctors.
+
+---
 
 ## Core business rule
 
-**Health360 is hospital-centric.** Every doctor belongs to a hospital/clinic. Subscriptions belong to hospitals, not doctors. A solo doctor is modeled as a **CLINIC hospital** with exactly one doctor on the **Free (Solo)** hospital plan (`MAX_DOCTORS = 1`). There is no separate "Free Doctor" subscription.
+**Health360 is hospital-centric.** Every doctor belongs to a hospital/clinic. Subscriptions belong to hospitals. Solo practitioners are modeled as a **CLINIC hospital** with one doctor on a hospital plan (e.g. Free/Solo, `MAX_DOCTORS = 1`).
 
-## Architectural decisions (confirmed)
+**Provisioning is admin-only:** platform administrators create hospitals and invite doctors. Public signup is **patients only**.
 
-### Individual practice
+---
 
-- Treat individual practice as a hospital/clinic with exactly one doctor.
-- On `INDIVIDUAL_PRACTICE` registration: auto-create clinic, associate doctor, grant `HOSPITAL_ADMIN`, assign Free/Solo hospital plan.
+## Document index
 
-### Subscription history
+### Requirements (what to build)
 
-- `hospital.hospital_subscriptions` — current subscription only.
-- `hospital.hospital_subscription_history` — append-only audit (initial, renewal, upgrade, downgrade, cancellation, expiration, plan changes). Historical rows are never deleted.
+| ID | Document |
+|----|----------|
+| DOC-51 | [Vision & Scope Charter](./requirements/51-PHASE-1.5-VISION-AND-SCOPE-CHARTER.md) |
+| DOC-52 | [Business Requirements](./requirements/52-PHASE-1.5-BUSINESS-REQUIREMENTS.md) |
+| DOC-53 | [Functional Requirements](./requirements/53-PHASE-1.5-FUNCTIONAL-REQUIREMENTS.md) |
+| DOC-54 | [User Stories & Acceptance Criteria](./requirements/54-PHASE-1.5-USER-STORIES.md) |
 
-### Staff
+### Architecture (how to build)
 
-- No staff limits or placeholder staff features until the staff module exists.
-- Plan limit keys are extensible (`MAX_STAFF` can be added later without redesign).
+| ID | Document |
+|----|----------|
+| DOC-55 | [Domain & Subscription Architecture](./architecture/55-PHASE-1.5-DOMAIN-AND-SUBSCRIPTION-ARCHITECTURE.md) |
+| DOC-56 | [Database Design](./architecture/56-PHASE-1.5-DATABASE-DESIGN.md) |
+| DOC-57 | [REST API Design](./architecture/57-PHASE-1.5-REST-API-DESIGN.md) |
+| DOC-58 | [Business Rules & Validation](./architecture/58-PHASE-1.5-BUSINESS-RULES.md) |
+| DOC-59 | [UI/UX Screen Specification](./architecture/59-PHASE-1.5-UI-UX-SCREENS.md) |
+| DOC-60 | [Security & Permissions](./architecture/60-PHASE-1.5-SECURITY-AND-PERMISSIONS.md) |
 
-### Doctor registration
+### Delivery (when & in what order)
 
-| Flow | Allowed? |
-|------|----------|
-| Patient self-registration | Yes |
-| Individual practice (`INDIVIDUAL_PRACTICE`) | Yes — creates clinic + doctor + Free plan + HOSPITAL_ADMIN |
-| Doctor self-registration (`DOCTOR`) | **No** — invitation only (platform admin or hospital admin) |
-| Hospital admin / platform admin invite | Planned (Sprint E) |
+| ID | Document |
+|----|----------|
+| DOC-61 | [**Development Roadmap & Implementation Plan**](./delivery/61-PHASE-1.5-DEVELOPMENT-ROADMAP.md) |
+| DOC-62 | [Sprint Status (living)](./delivery/62-PHASE-1.5-SPRINT-STATUS.md) |
 
-## Database (Flyway V26–V28)
+### Quality
 
-| Table | Purpose |
-|-------|---------|
-| `shared.subscription_plans` | Plan catalog (price, billing cycle, status) |
-| `shared.subscription_plan_limits` | Configurable limits (`MAX_DOCTORS`, etc.) |
-| `shared.subscription_plan_features` | Feature flags per plan |
-| `hospital.hospital_subscriptions` | Current subscription per hospital |
-| `hospital.hospital_subscription_history` | Append-only audit of plan changes |
+| ID | Document |
+|----|----------|
+| DOC-63 | [Test Plan](./testing/63-PHASE-1.5-TEST-PLAN.md) |
 
-Staff limits (`MAX_STAFF`) are intentionally omitted until the staff module exists.
+---
 
-## API (implemented)
+## Implementation code paths
 
-### Hospital admin
-- `GET /api/v1/hospitals/me/subscription` — plan, usage, features
-- `POST /api/v1/hospitals/me/doctors/invite` — invite doctor to own hospital
+| Layer | Path |
+|-------|------|
+| Backend subscription module | `backend/health360-api/src/main/java/com/health360/subscription/` |
+| Hospital admin APIs | `backend/health360-api/.../hospital/` |
+| Doctor invite | `backend/health360-api/.../doctor/application/service/DoctorInviteService.java` |
+| Flyway migrations | `backend/health360-api/src/main/resources/db/migration/V26–V28__*.sql` |
+| Web admin UI | `frontend/health360-web/src/features/admin/` |
+| Web hospital subscription | `frontend/health360-web/src/features/hospital/`, `features/subscription/` |
+| Mobile (patient registration only) | `mobile/health360-mobile/src/features/auth/` |
 
-### Platform admin
-- `GET /api/v1/admin/hospitals` — paginated hospital list
-- `GET /api/v1/admin/hospitals/{id}` — hospital detail
-- `PATCH /api/v1/admin/hospitals/{id}/status` — activate/suspend hospital
-- `POST /api/v1/admin/hospitals/{id}/doctors/invite` — invite doctor to hospital
-- `GET /api/v1/admin/hospitals/{id}/subscription` — subscription summary
-- `PUT /api/v1/admin/hospitals/{id}/subscription/plan` — change plan
-- `GET /api/v1/admin/hospitals/{id}/subscription/history` — append-only history
-- `GET /api/v1/admin/plans` — plan catalog
-- `PATCH /api/v1/admin/plans/{id}` — update plan metadata/status
+---
 
-## Enforcement
+## Quick status (2026-08-10)
 
-- `PlanLimitService.assertCanAddDoctor()` — used when associating/approving doctors
-- Returns `DOCTOR_LIMIT_REACHED` (409) with user-friendly message
+| Area | Status |
+|------|--------|
+| DB schema + plan seed (V26–V28) | Done |
+| Subscription domain services | Done |
+| Platform admin hospital/plan/subscription APIs | Done |
+| Doctor invite (platform admin) | Done |
+| Patient-only public registration | Done |
+| Web admin hospitals/plans UI | Done |
+| Web hospital subscription page | Done |
+| Doctor limit enforcement | Done (invite path) |
+| Branch/dept/appointment limits | Not started |
+| Feature gating on API endpoints | Not started |
+| Mobile admin/subscription UI | Not started |
+| Audit log read API | Not started |
 
-## Next sprints
+See [DOC-62 Sprint Status](./delivery/62-PHASE-1.5-SPRINT-STATUS.md) for detail.
 
-Audit log read API, broader limit enforcement (branches/departments), feature gating on endpoints, mobile admin/subscription UI.
+---
+
+## Related documents
+
+- [Phase 1 README](../phase-1/README.md) — Foundation modules this phase extends
+- [Phase 2 README](../phase-2/README.md) — Commerce/telemedicine (depends on subscription features)
+- [Project Memory](../00-PROJECT-MEMORY.md) — Cross-phase decisions

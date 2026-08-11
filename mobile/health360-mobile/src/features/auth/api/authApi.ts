@@ -8,8 +8,7 @@ export interface RegisterPayload {
   firstName: string;
   lastName: string;
   phone: string;
-  role: 'PATIENT' | 'INDIVIDUAL_PRACTICE';
-  clinicName?: string;
+  role: 'PATIENT';
   acceptTerms: boolean;
 }
 

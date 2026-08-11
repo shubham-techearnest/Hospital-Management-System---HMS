@@ -1,8 +1,11 @@
 package com.health360.subscription.application.service;
 
+import com.health360.shared.domain.ErrorCode;
+import com.health360.shared.exception.BusinessException;
 import com.health360.subscription.infrastructure.persistence.entity.SubscriptionPlanFeatureEntity;
 import com.health360.subscription.infrastructure.persistence.repository.SubscriptionPlanFeatureRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,5 +39,12 @@ public class FeatureAccessService {
             result.put(feature.getFeatureKey(), feature.isEnabled());
         }
         return result;
+    }
+
+    @Transactional(readOnly = true)
+    public void assertHasFeature(UUID hospitalId, UUID tenantId, String featureKey, String message) {
+        if (!hasFeature(hospitalId, tenantId, featureKey)) {
+            throw new BusinessException(ErrorCode.FEATURE_NOT_AVAILABLE, HttpStatus.FORBIDDEN, message);
+        }
     }
 }

@@ -156,4 +156,26 @@ class AuthIntegrationTest {
                         .content(rawJson))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void individualPracticeRegistrationIsDisabled() throws Exception {
+        String rawJson = """
+                {
+                  "email": "solo.doctor@%d.test",
+                  "password": "SecureP@ss1",
+                  "confirmPassword": "SecureP@ss1",
+                  "firstName": "Solo",
+                  "lastName": "Doctor",
+                  "phone": "9123456782",
+                  "role": "INDIVIDUAL_PRACTICE",
+                  "clinicName": "Solo Clinic",
+                  "acceptTerms": true
+                }
+                """.formatted(System.currentTimeMillis());
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(rawJson))
+                .andExpect(status().isBadRequest());
+    }
 }

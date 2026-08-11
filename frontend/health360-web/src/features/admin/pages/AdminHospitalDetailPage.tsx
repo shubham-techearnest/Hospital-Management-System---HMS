@@ -134,7 +134,15 @@ export function AdminHospitalDetailPage() {
               />
             ))}
           </Stack>
-          <Button variant="contained" onClick={() => setInviteOpen(true)}>Invite doctor</Button>
+          <Button variant="contained" onClick={() => setInviteOpen(true)}
+            disabled={doctorUsage != null && doctorUsage.used >= doctorUsage.limit}>
+            Invite doctor
+          </Button>
+          {doctorUsage && doctorUsage.used >= doctorUsage.limit && (
+            <Typography variant="body2" color="error.main" sx={{ mt: 1 }}>
+              Doctor limit reached ({doctorUsage.used}/{doctorUsage.limit}). Upgrade the hospital plan to invite more doctors.
+            </Typography>
+          )}
         </Paper>
       </Stack>
 

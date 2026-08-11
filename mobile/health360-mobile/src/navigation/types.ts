@@ -79,6 +79,7 @@ export type HospitalManageStackParamList = {
   Doctors: undefined;
   Facilities: undefined;
   Gallery: undefined;
+  Subscription: undefined;
 };
 
 export type AdminTabParamList = {

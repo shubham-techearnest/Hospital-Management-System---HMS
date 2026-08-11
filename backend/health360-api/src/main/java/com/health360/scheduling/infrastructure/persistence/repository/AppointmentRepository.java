@@ -43,4 +43,17 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
             @Param("doctorId") UUID doctorId,
             @Param("from") Instant from,
             @Param("to") Instant to);
+
+    @Query("""
+            SELECT COUNT(a) FROM AppointmentEntity a
+            WHERE a.hospitalId = :hospitalId
+              AND a.status NOT IN ('CANCELLED', 'RESCHEDULED')
+              AND a.createdAt >= :from
+              AND a.createdAt < :to
+              AND a.deletedAt IS NULL
+            """)
+    long countByHospitalIdAndCreatedAtBetweenExcludingCancelled(
+            @Param("hospitalId") UUID hospitalId,
+            @Param("from") Instant from,
+            @Param("to") Instant to);
 }

@@ -1,6 +1,5 @@
 package com.health360.hospital.application.service;
 
-import com.health360.doctor.application.service.DoctorInviteService;
 import com.health360.doctor.infrastructure.persistence.entity.DoctorProfileEntity;
 import com.health360.doctor.presentation.dto.request.InviteDoctorRequest;
 import com.health360.doctor.presentation.dto.response.InviteDoctorResponse;
@@ -51,7 +50,6 @@ public class HospitalService {
     private final AuditLogService auditLogService;
     private final PlanLimitService planLimitService;
     private final HospitalSubscriptionService hospitalSubscriptionService;
-    private final DoctorInviteService doctorInviteService;
 
     @Transactional(readOnly = true)
     public HospitalProfileResponse getProfile(UUID adminUserId, UUID tenantId) {
@@ -61,6 +59,13 @@ public class HospitalService {
 
     @Transactional
     public HospitalProfileResponse createProfile(UUID adminUserId, UUID tenantId, CreateHospitalProfileRequest request) {
+        throw new BusinessException(ErrorCode.HOSPITAL_SELF_REGISTRATION_DISABLED, HttpStatus.FORBIDDEN,
+                "Hospitals can only be created by platform administrators.");
+    }
+
+    @Transactional
+    public HospitalProfileResponse createProfileInternal(
+            UUID adminUserId, UUID tenantId, CreateHospitalProfileRequest request, UUID actorId, String planCode) {
         if (hospitalRepository.findByTenantIdAndAdminUserIdAndDeletedAtIsNull(tenantId, adminUserId).isPresent()) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
                     "Hospital profile already exists for this admin");
@@ -82,15 +87,18 @@ public class HospitalService {
         entity.setTotalBedCount(request.getTotalBedCount());
         entity.setAccreditation(request.getAccreditation());
         entity.setDescription(request.getDescription());
-        entity.setCreatedBy(adminUserId);
-        entity.setUpdatedBy(adminUserId);
+        entity.setCreatedBy(actorId);
+        entity.setUpdatedBy(actorId);
         entity = hospitalRepository.save(entity);
 
+        String resolvedPlanCode = planCode != null && !planCode.isBlank()
+                ? planCode.trim()
+                : HospitalSubscriptionService.DEFAULT_FREE_PLAN_CODE;
         hospitalSubscriptionService.assignInitialPlan(
-                entity.getId(), tenantId, HospitalSubscriptionService.DEFAULT_FREE_PLAN_CODE,
-                adminUserId, "Hospital profile created");
+                entity.getId(), tenantId, resolvedPlanCode,
+                actorId, "Hospital created by platform admin");
 
-        auditLogService.record(tenantId, adminUserId, "HOSPITAL_PROFILE_CREATED",
+        auditLogService.record(tenantId, actorId, "HOSPITAL_PROFILE_CREATED",
                 "Hospital", entity.getId(), Map.of());
 
         return toProfileResponse(entity);
@@ -138,6 +146,7 @@ public class HospitalService {
     @Transactional
     public BranchResponse createBranch(UUID adminUserId, UUID tenantId, BranchRequest request) {
         HospitalEntity hospital = requireHospital(adminUserId, tenantId);
+        planLimitService.assertCanAddBranch(hospital.getId(), tenantId);
         BranchEntity branch = mapBranch(new BranchEntity(), hospital, request, tenantId, adminUserId);
         if (request.isPrimary()) {
             clearPrimaryBranch(hospital.getId());
@@ -189,6 +198,7 @@ public class HospitalService {
     @Transactional
     public DepartmentResponse createDepartment(UUID adminUserId, UUID tenantId, DepartmentRequest request) {
         HospitalEntity hospital = requireHospital(adminUserId, tenantId);
+        planLimitService.assertCanAddDepartment(hospital.getId(), tenantId);
         validateUniqueDepartmentName(hospital.getId(), request.getName(), null);
         DepartmentEntity entity = new DepartmentEntity();
         entity.setTenantId(tenantId);
@@ -282,48 +292,14 @@ public class HospitalService {
 
     @Transactional
     public InviteDoctorResponse inviteDoctor(UUID adminUserId, UUID tenantId, InviteDoctorRequest request) {
-        HospitalEntity hospital = requireHospital(adminUserId, tenantId);
-        return doctorInviteService.inviteDoctor(hospital.getId(), tenantId, adminUserId, request);
+        throw new BusinessException(ErrorCode.DOCTOR_PROVISIONING_ADMIN_ONLY, HttpStatus.FORBIDDEN,
+                "Doctors can only be added by platform administrators.");
     }
 
     @Transactional
     public HospitalDoctorResponse associateDoctor(UUID adminUserId, UUID tenantId, AssociateDoctorRequest request) {
-        HospitalEntity hospital = requireHospital(adminUserId, tenantId);
-        DoctorProfileEntity doctor = doctorProfileRepository.findByIdAndTenantIdAndDeletedAtIsNull(request.getDoctorId(), tenantId)
-                .orElseThrow(notFound("Doctor not found"));
-        if (!"VERIFIED".equals(doctor.getVerificationStatus())) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
-                    "Only verified doctors can be associated");
-        }
-        validateBranchAndDepartment(hospital.getId(), request.getBranchId(), request.getDepartmentId());
-
-        boolean duplicate = associationRepository.findByHospitalIdAndDeletedAtIsNullOrderByCreatedAtDesc(hospital.getId())
-                .stream()
-                .anyMatch(a -> a.getDoctorId().equals(doctor.getId())
-                        && "ACTIVE".equals(a.getStatus())
-                        && Objects.equals(a.getBranchId(), request.getBranchId()));
-        if (duplicate) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
-                    "Doctor already associated with this hospital/branch");
-        }
-
-        planLimitService.assertCanAddDoctor(hospital.getId(), tenantId);
-
-        HospitalAssociationEntity assoc = new HospitalAssociationEntity();
-        assoc.setTenantId(tenantId);
-        assoc.setDoctorId(doctor.getId());
-        assoc.setHospitalId(hospital.getId());
-        assoc.setBranchId(request.getBranchId());
-        assoc.setDepartmentId(request.getDepartmentId());
-        assoc.setStatus("ACTIVE");
-        assoc.setCreatedBy(adminUserId);
-        assoc.setUpdatedBy(adminUserId);
-        assoc = associationRepository.save(assoc);
-
-        auditLogService.record(tenantId, adminUserId, "HOSPITAL_DOCTOR_ASSOCIATED",
-                "HospitalAssociation", assoc.getId(), Map.of("doctorId", doctor.getId()));
-
-        return buildDoctorResponses(hospital.getId(), tenantId, List.of(assoc)).get(0);
+        throw new BusinessException(ErrorCode.DOCTOR_PROVISIONING_ADMIN_ONLY, HttpStatus.FORBIDDEN,
+                "Doctors can only be added by platform administrators.");
     }
 
     @Transactional
@@ -338,22 +314,8 @@ public class HospitalService {
 
     @Transactional
     public HospitalDoctorResponse approveDoctorAssociation(UUID adminUserId, UUID tenantId, UUID associationId) {
-        HospitalEntity hospital = requireHospital(adminUserId, tenantId);
-        HospitalAssociationEntity assoc = associationRepository.findByIdAndHospitalIdAndDeletedAtIsNull(associationId, hospital.getId())
-                .orElseThrow(notFound("Association not found"));
-        if (!"PENDING".equals(assoc.getStatus())) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
-                    "Only pending associations can be approved");
-        }
-        planLimitService.assertCanAddDoctor(hospital.getId(), tenantId);
-        assoc.setStatus("ACTIVE");
-        assoc.setUpdatedBy(adminUserId);
-        assoc = associationRepository.save(assoc);
-
-        auditLogService.record(tenantId, adminUserId, "HOSPITAL_DOCTOR_ASSOCIATION_APPROVED",
-                "HospitalAssociation", assoc.getId(), Map.of("doctorId", assoc.getDoctorId()));
-
-        return buildDoctorResponses(hospital.getId(), tenantId, List.of(assoc)).get(0);
+        throw new BusinessException(ErrorCode.DOCTOR_PROVISIONING_ADMIN_ONLY, HttpStatus.FORBIDDEN,
+                "Doctors can only be added by platform administrators.");
     }
 
     @Transactional(readOnly = true)

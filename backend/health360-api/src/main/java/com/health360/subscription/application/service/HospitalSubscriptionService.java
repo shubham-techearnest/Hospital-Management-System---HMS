@@ -111,10 +111,15 @@ public class HospitalSubscriptionService {
         current.setEndDate(LocalDate.now());
         current.setUpdatedBy(actorId);
         current.touch();
-        subscriptionRepository.save(current);
+        subscriptionRepository.saveAndFlush(current);
 
         recordHistory(current, previousPlanId, SubscriptionHistoryEventType.PLAN_CHANGE.name(),
                 "Previous subscription closed: " + notes, actorId);
+
+        SubscriptionPlanEntity previousPlan = planRepository.findById(previousPlanId).orElseThrow();
+        String changeEventType = newPlan.getPrice().compareTo(previousPlan.getPrice()) >= 0
+                ? SubscriptionHistoryEventType.UPGRADE.name()
+                : SubscriptionHistoryEventType.DOWNGRADE.name();
 
         HospitalSubscriptionEntity next = new HospitalSubscriptionEntity();
         next.setTenantId(tenantId);
@@ -129,7 +134,7 @@ public class HospitalSubscriptionService {
         next.setUpdatedBy(actorId);
         next = subscriptionRepository.save(next);
 
-        recordHistory(next, previousPlanId, SubscriptionHistoryEventType.UPGRADE.name(), notes, actorId);
+        recordHistory(next, previousPlanId, changeEventType, notes, actorId);
 
         auditLogService.record(tenantId, actorId, "HOSPITAL_SUBSCRIPTION_PLAN_CHANGED", "HospitalSubscription",
                 next.getId(), Map.of("previousPlanId", previousPlanId, "newPlanCode", newPlan.getCode()));

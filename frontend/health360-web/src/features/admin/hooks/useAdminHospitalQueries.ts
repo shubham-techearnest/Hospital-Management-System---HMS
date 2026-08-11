@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   changeAdminHospitalPlan,
+  createAdminHospital,
   getAdminHospital,
   getAdminHospitalSubscription,
   getAdminHospitalSubscriptionHistory,
@@ -8,7 +9,8 @@ import {
   searchAdminHospitals,
   updateAdminHospitalStatus,
 } from '../api/adminHospitalApi';
-import { getAdminPlan, listAdminPlans, updateAdminPlan } from '../api/adminSubscriptionApi';
+import { getAdminPlan, listAdminPlans, updateAdminPlan, updateAdminPlanLimits } from '../api/adminSubscriptionApi';
+import { listAdminAuditLogs } from '../api/adminAuditApi';
 
 export const adminHospitalKeys = {
   hospitals: (params: Record<string, string | number | undefined>) => ['admin', 'hospitals', params] as const,
@@ -17,7 +19,16 @@ export const adminHospitalKeys = {
   history: (id: string) => ['admin', 'hospitals', id, 'subscription-history'] as const,
   plans: ['admin', 'plans'] as const,
   plan: (id: string) => ['admin', 'plans', id] as const,
+  auditLogs: (params: Record<string, string | number | undefined>) => ['admin', 'audit-logs', params] as const,
 };
+
+export function useCreateAdminHospital() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: createAdminHospital,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['admin', 'hospitals'] }),
+  });
+}
 
 export function useAdminHospitals(params: {
   name?: string;
@@ -131,5 +142,32 @@ export function useUpdateAdminPlan() {
       payload: Parameters<typeof updateAdminPlan>[1];
     }) => updateAdminPlan(planId, payload),
     onSuccess: () => void qc.invalidateQueries({ queryKey: adminHospitalKeys.plans }),
+  });
+}
+
+export function useUpdateAdminPlanLimits() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      planId,
+      limits,
+    }: {
+      planId: string;
+      limits: { limitKey: string; limitValue: number }[];
+    }) => updateAdminPlanLimits(planId, limits),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: adminHospitalKeys.plans }),
+  });
+}
+
+export function useAdminAuditLogs(params: {
+  action?: string;
+  entityType?: string;
+  entityId?: string;
+  page?: number;
+  size?: number;
+}) {
+  return useQuery({
+    queryKey: adminHospitalKeys.auditLogs(params),
+    queryFn: () => listAdminAuditLogs(params),
   });
 }

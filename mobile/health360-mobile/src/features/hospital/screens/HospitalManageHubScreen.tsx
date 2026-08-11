@@ -45,6 +45,12 @@ export function HospitalManageHubScreen({ navigation }: Props) {
             left={(props) => <List.Icon {...props} icon="doctor" />}
             onPress={() => navigation.navigate('Doctors')}
           />
+          <List.Item
+            title="Subscription"
+            description="View plan, usage limits, and features"
+            left={(props) => <List.Icon {...props} icon="card-account-details" />}
+            onPress={() => navigation.navigate('Subscription')}
+          />
         </List.Section>
       </AppCard>
     </ScreenContainer>

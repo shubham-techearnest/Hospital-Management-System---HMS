@@ -33,6 +33,24 @@
 | MOBILE-API-001   | Mobile API Integration Guide          | **Active**           | 1.0     | DOC-07, backend codebase |
 | MOBILE-STATUS-001 | Mobile Sprint Status                 | **Active**           | 1.0     | MOBILE-STRAT-001         |
 
+### Phase 1.5 documents (Active — 2026-08-10)
+
+| ID     | Document                                    | Status               | Path |
+| ------ | ------------------------------------------- | -------------------- | ---- |
+| DOC-51 | Phase 1.5 Vision & Scope Charter            | Approved             | `phase-1.5/requirements/51-*` |
+| DOC-52 | Phase 1.5 Business Requirements             | Approved             | `phase-1.5/requirements/52-*` |
+| DOC-53 | Phase 1.5 Functional Requirements           | Approved             | `phase-1.5/requirements/53-*` |
+| DOC-54 | Phase 1.5 User Stories                      | Approved             | `phase-1.5/requirements/54-*` |
+| DOC-55 | Phase 1.5 Domain & Subscription Architecture | Approved             | `phase-1.5/architecture/55-*` |
+| DOC-56 | Phase 1.5 Database Design                   | Approved             | `phase-1.5/architecture/56-*` |
+| DOC-57 | Phase 1.5 REST API Design                   | Approved             | `phase-1.5/architecture/57-*` |
+| DOC-58 | Phase 1.5 Business Rules                    | Approved             | `phase-1.5/architecture/58-*` |
+| DOC-59 | Phase 1.5 UI/UX Screens                     | Approved             | `phase-1.5/architecture/59-*` |
+| DOC-60 | Phase 1.5 Security & Permissions            | Approved             | `phase-1.5/architecture/60-*` |
+| DOC-61 | Phase 1.5 Development Roadmap               | **Active**           | `phase-1.5/delivery/61-*` |
+| DOC-62 | Phase 1.5 Sprint Status                     | **Active (living)**  | `phase-1.5/delivery/62-*` |
+| DOC-63 | Phase 1.5 Test Plan                         | Active               | `phase-1.5/testing/63-*` |
+
 ### Phase 2 documents (Draft — 2026-08-03)
 
 | ID     | Document                                    | Status               | Path |
@@ -66,7 +84,7 @@
 | ---------------------- | ----------------------------------------------------------------- |
 | **Project Name**       | Health360 AI                                                      |
 | **Tagline**            | Enterprise Digital Healthcare Ecosystem                           |
-| **Current Phase**      | Phase 1 — Foundation (M5–M6 polish & launch prep)                 |
+| **Current Phase**      | Phase 1 — Foundation + **Phase 1.5** (Hospital SaaS) in progress |
 | **Architecture Style** | Modular Monolith (Microservice-Ready)                             |
 | **Deployment Model**   | Multi-Tenant Ready (Single-Tenant deployment in Phase 1 MVP path) |
 | **Primary Markets**    | India (initial), globally extensible                              |

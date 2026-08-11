@@ -44,6 +44,8 @@ services:
       DEFAULT_TENANT_SLUG: ${DEFAULT_TENANT_SLUG:-default}
     ports:
       - "${API_PORT:-8080}:8080"
+    volumes:
+      - api_local_data:/app/.local
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,3 +77,4 @@ services:
 
 volumes:
   postgres_data:
+  api_local_data:

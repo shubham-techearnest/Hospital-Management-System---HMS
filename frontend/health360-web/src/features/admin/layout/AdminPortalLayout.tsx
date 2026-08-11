@@ -4,6 +4,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
+import HistoryIcon from '@mui/icons-material/History';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 
@@ -11,6 +12,7 @@ const navItems: PortalNavItem[] = [
   { label: 'Overview', path: '/admin/dashboard', icon: <DashboardIcon /> },
   { label: 'Hospitals', path: '/admin/hospitals', icon: <LocalHospitalIcon /> },
   { label: 'Plans', path: '/admin/plans', icon: <CardMembershipIcon /> },
+  { label: 'Audit Logs', path: '/admin/audit-logs', icon: <HistoryIcon /> },
   { label: 'Doctor Verifications', path: '/admin/verifications', icon: <VerifiedUserIcon /> },
   { label: 'Users', path: '/admin/users', icon: <PeopleIcon /> },
   { label: 'Review Moderation', path: '/admin/reviews', icon: <RateReviewIcon /> },

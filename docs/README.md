@@ -6,6 +6,7 @@ Start here if you are new to the project.
 |----------|------|---------|
 | **Project Memory (living doc)** | [00-PROJECT-MEMORY.md](./00-PROJECT-MEMORY.md) | Decisions, terminology, implementation status |
 | **Phase 1 (current)** | [phase-1/README.md](./phase-1/README.md) | Requirements, architecture, delivery, mobile |
+| **Phase 1.5 (in progress)** | [phase-1.5/README.md](./phase-1.5/README.md) | Hospital SaaS, subscriptions, admin provisioning |
 | **Phase 2 (planned)** | [phase-2/README.md](./phase-2/README.md) | Care delivery, commerce, telemedicine — **draft pack** |
 | **User manuals** | [../mannual/README.md](../mannual/README.md) | Web and mobile end-user guides |
 
@@ -13,13 +14,19 @@ Start here if you are new to the project.
 
 ### Product / BA
 - [Phase 1 Vision & Scope](./phase-1/requirements/01-PROJECT-VISION-AND-SCOPE-CHARTER.md)
+- [Phase 1.5 Vision & Scope](./phase-1.5/requirements/51-PHASE-1.5-VISION-AND-SCOPE-CHARTER.md)
 - [User Stories & Acceptance Criteria](./phase-1/requirements/14-USER-STORIES-AND-ACCEPTANCE-CRITERIA.md)
-- [Development Roadmap](./phase-1/delivery/15-DEVELOPMENT-ROADMAP.md)
+- [Phase 1.5 User Stories](./phase-1.5/requirements/54-PHASE-1.5-USER-STORIES.md)
+- [Phase 1 Development Roadmap](./phase-1/delivery/15-DEVELOPMENT-ROADMAP.md)
+- [**Phase 1.5 Implementation Plan**](./phase-1.5/delivery/61-PHASE-1.5-DEVELOPMENT-ROADMAP.md)
 
 ### Backend engineer
 - [REST API Spec](./phase-1/architecture/07-REST-API-DESIGN-SPECIFICATION.md)
+- [Phase 1.5 REST API](./phase-1.5/architecture/57-PHASE-1.5-REST-API-DESIGN.md)
 - [Database Design](./phase-1/architecture/06-DATABASE-DESIGN-SPECIFICATION.md)
+- [Phase 1.5 Database Design](./phase-1.5/architecture/56-PHASE-1.5-DATABASE-DESIGN.md)
 - [Business Rules](./phase-1/architecture/09-BUSINESS-RULES-AND-VALIDATION-CATALOG.md)
+- [Phase 1.5 Business Rules](./phase-1.5/architecture/58-PHASE-1.5-BUSINESS-RULES.md)
 - [Formula Engine](./phase-1/architecture/08-HEALTH-FORMULA-ENGINE-SPECIFICATION.md)
 
 ### Frontend / mobile engineer
@@ -51,5 +58,10 @@ docs/
 │   ├── architecture/         # DOC-05 – DOC-13, DOC-16
 │   ├── delivery/             # DOC-15 roadmap & sprint plan
 │   └── mobile/               # Mobile strategy, API guide, sprint status
+├── phase-1.5/                # Hospital SaaS & subscriptions (DOC-51 – DOC-63)
+│   ├── requirements/
+│   ├── architecture/
+│   ├── delivery/             # Implementation plan + sprint status
+│   └── testing/
 └── phase-2/                  # Future phase placeholder
 ```

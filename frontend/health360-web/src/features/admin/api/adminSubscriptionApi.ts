@@ -34,3 +34,11 @@ export async function updateAdminPlan(
   const { data } = await apiClient.patch<ApiEnvelope<SubscriptionPlan>>(`/admin/plans/${planId}`, payload);
   return data.data!;
 }
+
+export async function updateAdminPlanLimits(
+  planId: string,
+  limits: { limitKey: string; limitValue: number }[],
+): Promise<SubscriptionPlan> {
+  const { data } = await apiClient.patch<ApiEnvelope<SubscriptionPlan>>(`/admin/plans/${planId}/limits`, { limits });
+  return data.data!;
+}

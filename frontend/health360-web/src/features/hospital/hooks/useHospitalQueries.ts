@@ -84,6 +84,7 @@ export function useCreateBranch() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: hospitalKeys.branches });
       qc.invalidateQueries({ queryKey: hospitalKeys.profile });
+      qc.invalidateQueries({ queryKey: hospitalKeys.subscription });
     },
   });
 }
@@ -119,6 +120,7 @@ export function useCreateDepartment() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: hospitalKeys.departments });
       qc.invalidateQueries({ queryKey: hospitalKeys.profile });
+      qc.invalidateQueries({ queryKey: hospitalKeys.subscription });
     },
   });
 }

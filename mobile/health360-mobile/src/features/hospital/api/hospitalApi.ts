@@ -248,3 +248,26 @@ export function galleryImageSrc(imageUrl: string) {
   if (imageUrl.startsWith('/api/')) return `${base}${imageUrl}`;
   return `${API_BASE_URL.replace(/\/$/, '')}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
 }
+
+export interface HospitalSubscription {
+  status: string;
+  startDate: string;
+  endDate?: string;
+  autoRenew: boolean;
+  plan: {
+    id: string;
+    code: string;
+    name: string;
+    description?: string;
+    price: number;
+    currency: string;
+    billingCycle: string;
+  };
+  usage: Record<string, { used: number; limit: number; remaining: number }>;
+  features: Record<string, boolean>;
+}
+
+export async function getHospitalSubscription(): Promise<HospitalSubscription> {
+  const { data } = await apiClient.get<ApiEnvelope<HospitalSubscription>>('/hospitals/me/subscription');
+  return data.data!;
+}

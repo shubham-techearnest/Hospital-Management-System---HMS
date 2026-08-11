@@ -144,6 +144,9 @@ const AdminHospitalDetailPage = lazy(() =>
 const AdminPlansPage = lazy(() =>
   import('@/features/admin/pages/AdminPlansPage').then((m) => ({ default: m.AdminPlansPage })),
 );
+const AdminAuditLogsPage = lazy(() =>
+  import('@/features/admin/pages/AdminAuditLogsPage').then((m) => ({ default: m.AdminAuditLogsPage })),
+);
 const HospitalSubscriptionPage = lazy(() =>
   import('@/features/hospital/pages/HospitalSubscriptionPage').then((m) => ({ default: m.HospitalSubscriptionPage })),
 );
@@ -372,6 +375,7 @@ export function AppRouter() {
           <Route path="hospitals" element={<LazyPage><AdminHospitalsPage /></LazyPage>} />
           <Route path="hospitals/:hospitalId" element={<LazyPage><AdminHospitalDetailPage /></LazyPage>} />
           <Route path="plans" element={<LazyPage><AdminPlansPage /></LazyPage>} />
+          <Route path="audit-logs" element={<LazyPage><AdminAuditLogsPage /></LazyPage>} />
           <Route path="reviews" element={<LazyPage><AdminReviewModerationPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
           <Route path="settings/notifications" element={<LazyPage><NotificationPreferencesPage /></LazyPage>} />

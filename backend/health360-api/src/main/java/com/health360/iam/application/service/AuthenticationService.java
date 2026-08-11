@@ -1,6 +1,7 @@
 package com.health360.iam.application.service;
 
 import com.health360.config.Health360Properties;
+import com.health360.hospital.infrastructure.persistence.repository.HospitalRepository;
 import com.health360.iam.domain.UserStatus;
 import com.health360.iam.infrastructure.persistence.entity.RefreshTokenEntity;
 import com.health360.iam.infrastructure.persistence.entity.UserEntity;
@@ -40,6 +41,7 @@ public class AuthenticationService {
     private final AuditLogService auditLogService;
     private final UserProfileMapper userProfileMapper;
     private final Health360Properties properties;
+    private final HospitalRepository hospitalRepository;
 
     @Transactional
     public AuthTokenResponse login(LoginRequest request) {
@@ -66,6 +68,8 @@ public class AuthenticationService {
             throw new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED, HttpStatus.FORBIDDEN,
                     "Please verify your email before logging in");
         }
+
+        assertHospitalNotSuspended(user);
 
         user.setFailedLoginAttempts(0);
         user.setLockedUntil(null);
@@ -149,5 +153,18 @@ public class AuthenticationService {
     private BusinessException invalidCredentials() {
         return new BusinessException(ErrorCode.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED,
                 "Invalid email or password");
+    }
+
+    private void assertHospitalNotSuspended(UserEntity user) {
+        List<String> roles = userRoleRepository.findRoleNamesByUserId(user.getId());
+        if (!roles.contains("HOSPITAL_ADMIN")) {
+            return;
+        }
+        hospitalRepository.findByTenantIdAndAdminUserIdAndDeletedAtIsNull(user.getTenantId(), user.getId())
+                .filter(h -> "SUSPENDED".equals(h.getStatus()))
+                .ifPresent(h -> {
+                    throw new BusinessException(ErrorCode.HOSPITAL_SUSPENDED, HttpStatus.FORBIDDEN,
+                            "This hospital account has been suspended. Contact platform support.");
+                });
     }
 }

@@ -5,6 +5,7 @@ import com.health360.doctor.application.service.DoctorInviteService;
 import com.health360.doctor.presentation.dto.request.InviteDoctorRequest;
 import com.health360.doctor.presentation.dto.response.InviteDoctorResponse;
 import com.health360.hospital.application.service.AdminHospitalService;
+import com.health360.hospital.presentation.dto.request.CreateAdminHospitalRequest;
 import com.health360.hospital.presentation.dto.request.UpdateHospitalStatusRequest;
 import com.health360.hospital.presentation.dto.response.AdminHospitalResponse;
 import com.health360.shared.dto.ApiResponse;
@@ -28,6 +29,16 @@ public class AdminHospitalController {
 
     private final AdminHospitalService adminHospitalService;
     private final DoctorInviteService doctorInviteService;
+
+    @PostMapping
+    @PreAuthorize("hasAuthority('admin:hospitals:write')")
+    public ResponseEntity<ApiResponse<AdminHospitalResponse>> createHospital(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody CreateAdminHospitalRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
+                adminHospitalService.createHospital(
+                        principal.getTenantId(), principal.getUserId(), request)));
+    }
 
     @GetMapping
     @PreAuthorize("hasAuthority('admin:hospitals:read')")
