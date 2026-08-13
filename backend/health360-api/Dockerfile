@@ -13,6 +13,7 @@ WORKDIR /app
 COPY --from=build /app/target/health360-api-*.jar app.jar
 RUN mkdir -p /app/.local/uploads /tmp/health360 && chown -R health360:health360 /app /tmp/health360
 USER health360
+ENV SPRING_PROFILES_ACTIVE=production
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD wget -qO- http://localhost:8080/actuator/health || exit 1

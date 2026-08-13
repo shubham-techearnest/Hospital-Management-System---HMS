@@ -14,19 +14,15 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useQueryClient } from '@tanstack/react-query';
 import { loginSchema, type LoginForm } from '../schemas/auth.schema';
 import { login as loginApi } from '../api/authApi';
 import { setCredentials } from '../store/authSlice';
 import { getRoleDashboardPathFromRoles } from '@/shared/auth/roleNavigation';
-import { schedulingKeys } from '@/features/scheduling/hooks/useSchedulingQueries';
-import { listMyAppointments } from '@/features/scheduling/api/schedulingApi';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const successMessage = (location.state as { message?: string } | null)?.message;
 
@@ -46,12 +42,6 @@ export function LoginPage() {
       const defaultDestination = getRoleDashboardPathFromRoles(roles);
       const destination =
         state?.redirectTo && roles.includes('PATIENT') ? state.redirectTo : defaultDestination;
-      if (roles.includes('PATIENT')) {
-        void queryClient.prefetchQuery({
-          queryKey: schedulingKeys.myAppointments('upcoming'),
-          queryFn: () => listMyAppointments('upcoming'),
-        });
-      }
       navigate(destination);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: { message?: string } } } };

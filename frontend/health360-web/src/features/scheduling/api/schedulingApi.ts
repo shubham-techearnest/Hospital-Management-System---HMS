@@ -114,6 +114,14 @@ export interface AppointmentDetail extends AppointmentSummary {
 
 export type AppointmentFilter = 'all' | 'upcoming' | 'past' | 'cancelled';
 
+export interface PagedAppointments {
+  content: AppointmentSummary[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
+
 export async function listMySchedules() {
   const { data } = await apiClient.get<ApiEnvelope<DoctorSchedule[]>>('/scheduling/doctors/me/schedules');
   return data.data ?? [];
@@ -155,11 +163,11 @@ export async function bookAppointment(payload: BookAppointmentPayload) {
   return data.data;
 }
 
-export async function listMyAppointments(filter: AppointmentFilter = 'all') {
-  const { data } = await apiClient.get<ApiEnvelope<AppointmentSummary[]>>('/scheduling/appointments/me', {
-    params: { filter },
+export async function listMyAppointments(filter: AppointmentFilter = 'all', page = 0, size = 20) {
+  const { data } = await apiClient.get<ApiEnvelope<PagedAppointments>>('/scheduling/appointments/me', {
+    params: { filter, page, size },
   });
-  return data.data ?? [];
+  return data.data?.content ?? [];
 }
 
 export async function getMyAppointment(appointmentId: string) {

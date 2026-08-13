@@ -23,6 +23,9 @@ import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,12 +61,19 @@ public class AppointmentLifecycleService {
     private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
-    public List<AppointmentSummaryResponse> listPatientAppointments(UUID userId, UUID tenantId, String filter) {
+    public Page<AppointmentSummaryResponse> listPatientAppointments(
+            UUID userId, UUID tenantId, String filter, Pageable pageable) {
         AppointmentFilter parsed = AppointmentFilter.parse(filter);
-        PatientProfileEntity patient = patientProfileService.requireProfileForAppointmentAccess(userId, tenantId);
-        List<AppointmentEntity> appointments = appointmentRepository
-                .findByPatientIdAndTenantIdAndDeletedAtIsNullOrderByScheduledAtDesc(patient.getId(), tenantId);
-        return appointmentSummaryMapper.toSummaries(filterAppointments(appointments, parsed), ViewContext.PATIENT);
+        return patientProfileRepository.findByTenantIdAndUserIdAndDeletedAtIsNull(tenantId, userId)
+                .map(patient -> {
+                    List<AppointmentEntity> appointments = appointmentRepository
+                            .findByPatientIdAndTenantIdAndDeletedAtIsNullOrderByScheduledAtDesc(
+                                    patient.getId(), tenantId);
+                    List<AppointmentSummaryResponse> summaries = appointmentSummaryMapper.toSummaries(
+                            filterAppointments(appointments, parsed), ViewContext.PATIENT);
+                    return paginate(summaries, pageable);
+                })
+                .orElseGet(() -> Page.empty(pageable));
     }
 
     @Transactional(readOnly = true)
@@ -392,15 +402,37 @@ public class AppointmentLifecycleService {
         Instant now = Instant.now();
         return appointments.stream()
                 .filter(a -> switch (filter) {
-                    case UPCOMING -> UPCOMING.contains(a.getStatus()) && !a.getScheduledAt().isBefore(now);
-                    case PAST -> "COMPLETED".equals(a.getStatus())
-                            || "NO_SHOW".equals(a.getStatus())
-                            || (UPCOMING.contains(a.getStatus()) && a.getScheduledAt().isBefore(now));
+                    case UPCOMING -> UPCOMING.contains(a.getStatus()) && isUpcoming(a.getScheduledAt(), now);
+                    case PAST -> isPast(a, now);
                     case CANCELLED -> CANCELLED_STATUSES.contains(a.getStatus());
                     case ALL -> true;
                 })
-                .sorted(Comparator.comparing(AppointmentEntity::getScheduledAt).reversed())
+                .sorted(Comparator.comparing(
+                        AppointmentEntity::getScheduledAt,
+                        Comparator.nullsLast(Comparator.naturalOrder())).reversed())
                 .collect(Collectors.toList());
+    }
+
+    private boolean isUpcoming(Instant scheduledAt, Instant now) {
+        return scheduledAt != null && !scheduledAt.isBefore(now);
+    }
+
+    private boolean isPast(AppointmentEntity appointment, Instant now) {
+        if ("COMPLETED".equals(appointment.getStatus()) || "NO_SHOW".equals(appointment.getStatus())) {
+            return true;
+        }
+        Instant scheduledAt = appointment.getScheduledAt();
+        return UPCOMING.contains(appointment.getStatus()) && scheduledAt != null && scheduledAt.isBefore(now);
+    }
+
+    private <T> Page<T> paginate(List<T> items, Pageable pageable) {
+        int total = items.size();
+        int start = (int) pageable.getOffset();
+        if (start >= total) {
+            return new PageImpl<>(List.of(), pageable, total);
+        }
+        int end = Math.min(start + pageable.getPageSize(), total);
+        return new PageImpl<>(items.subList(start, end), pageable, total);
     }
 
     private void releaseSlot(UUID slotId, UUID userId) {
@@ -413,6 +445,9 @@ public class AppointmentLifecycleService {
     }
 
     private boolean withinCancellationWindow(Instant scheduledAt) {
+        if (scheduledAt == null) {
+            return false;
+        }
         return Duration.between(Instant.now(), scheduledAt).compareTo(CANCELLATION_WINDOW) >= 0;
     }
 

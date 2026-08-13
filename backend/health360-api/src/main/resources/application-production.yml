@@ -1,0 +1,19 @@
+# Production / Render profile
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    root: INFO
+    com.health360: INFO
+
+server:
+  port: ${PORT:8080}
+
+health360:
+  app-base-url: ${APP_BASE_URL:https://health360-web.onrender.com}

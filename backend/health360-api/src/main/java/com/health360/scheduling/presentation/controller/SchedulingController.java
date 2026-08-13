@@ -22,6 +22,9 @@ import com.health360.scheduling.presentation.dto.response.SlotBlockResponse;
 import com.health360.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -125,12 +128,13 @@ public class SchedulingController {
 
     @GetMapping("/appointments/me")
     @PreAuthorize("hasAuthority('appointment:view:own')")
-    public ResponseEntity<ApiResponse<List<AppointmentSummaryResponse>>> listMyAppointments(
+    public ResponseEntity<ApiResponse<Page<AppointmentSummaryResponse>>> listMyAppointments(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestParam(required = false, defaultValue = "all") String filter) {
+            @RequestParam(required = false, defaultValue = "all") String filter,
+            @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(
                 appointmentLifecycleService.listPatientAppointments(
-                        principal.getUserId(), principal.getTenantId(), filter)));
+                        principal.getUserId(), principal.getTenantId(), filter, pageable)));
     }
 
     @GetMapping("/appointments/{appointmentId:[0-9a-fA-F\\-]{36}}")

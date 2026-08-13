@@ -171,9 +171,11 @@ public class AppointmentSummaryMapper {
     }
 
     private boolean canMarkNoShow(AppointmentEntity appointment, AppointmentLifecycleService.ViewContext context) {
+        Instant scheduledAt = appointment.getScheduledAt();
         return context == AppointmentLifecycleService.ViewContext.DOCTOR
                 && "CONFIRMED".equals(appointment.getStatus())
-                && Instant.now().isAfter(appointment.getScheduledAt().plus(Duration.ofMinutes(15)));
+                && scheduledAt != null
+                && Instant.now().isAfter(scheduledAt.plus(Duration.ofMinutes(15)));
     }
 
     private boolean canConfirm(AppointmentEntity appointment, AppointmentLifecycleService.ViewContext context) {
@@ -197,6 +199,9 @@ public class AppointmentSummaryMapper {
     }
 
     private boolean withinCancellationWindow(Instant scheduledAt) {
+        if (scheduledAt == null) {
+            return false;
+        }
         return Duration.between(Instant.now(), scheduledAt).compareTo(CANCELLATION_WINDOW) >= 0;
     }
 
