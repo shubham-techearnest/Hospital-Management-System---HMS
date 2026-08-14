@@ -88,7 +88,7 @@ SET
     consent_accepted_at = COALESCE(pp.consent_accepted_at, NOW()),
     date_of_birth = COALESCE(pp.date_of_birth, DATE '1992-06-15'),
     gender = COALESCE(NULLIF(TRIM(pp.gender), ''), 'MALE'),
-    blood_group = COALESCE(pp.blood_group, 'B_POSITIVE'),
+    blood_group = COALESCE(pp.blood_group, 'B+'),
     marital_status = COALESCE(pp.marital_status, 'SINGLE'),
     nationality = COALESCE(pp.nationality, 'IN'),
     primary_phone = COALESCE(NULLIF(TRIM(pp.primary_phone), ''), '9876543210'),
