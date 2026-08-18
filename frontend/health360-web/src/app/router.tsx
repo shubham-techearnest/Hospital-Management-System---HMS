@@ -102,6 +102,9 @@ const PublicHospitalProfilePage = lazy(() =>
 const DoctorDashboardPage = lazy(() =>
   import('@/features/doctor/pages/DoctorDashboardPage').then((m) => ({ default: m.DoctorDashboardPage })),
 );
+const HospitalOpdPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalOpdPage').then((m) => ({ default: m.HospitalOpdPage })),
+);
 const HospitalDashboardPage = lazy(() =>
   import('@/features/hospital/pages/HospitalDashboardPage').then((m) => ({ default: m.HospitalDashboardPage })),
 );
@@ -360,6 +363,7 @@ export function AppRouter() {
           <Route path="departments" element={<LazyPage><HospitalDepartmentsPage /></LazyPage>} />
           <Route path="emergency" element={<LazyPage><HospitalEmergencyPage /></LazyPage>} />
           <Route path="doctors" element={<LazyPage><HospitalDoctorRosterPage /></LazyPage>} />
+          <Route path="opd" element={<LazyPage><HospitalOpdPage /></LazyPage>} />
           <Route path="subscription" element={<LazyPage><HospitalSubscriptionPage /></LazyPage>} />
           <Route path="facilities" element={<LazyPage><HospitalFacilitiesPage /></LazyPage>} />
           <Route path="gallery" element={<LazyPage><HospitalGalleryPage /></LazyPage>} />
