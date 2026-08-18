@@ -105,6 +105,9 @@ const DoctorDashboardPage = lazy(() =>
 const HospitalOpdPage = lazy(() =>
   import('@/features/hospital/pages/HospitalOpdPage').then((m) => ({ default: m.HospitalOpdPage })),
 );
+const HospitalIpdPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalIpdPage').then((m) => ({ default: m.HospitalIpdPage })),
+);
 const HospitalDashboardPage = lazy(() =>
   import('@/features/hospital/pages/HospitalDashboardPage').then((m) => ({ default: m.HospitalDashboardPage })),
 );
@@ -158,6 +161,18 @@ const DoctorAppointmentsPage = lazy(() =>
 );
 const DoctorAppointmentDetailPage = lazy(() =>
   import('@/features/doctor/pages/DoctorAppointmentDetailPage').then((m) => ({ default: m.DoctorAppointmentDetailPage })),
+);
+const DoctorOpdPage = lazy(() =>
+  import('@/features/doctor/pages/DoctorOpdPage').then((m) => ({ default: m.DoctorOpdPage })),
+);
+const DoctorEncounterDetailPage = lazy(() =>
+  import('@/features/doctor/pages/DoctorEncounterDetailPage').then((m) => ({ default: m.DoctorEncounterDetailPage })),
+);
+const PatientEncountersPage = lazy(() =>
+  import('@/features/patient/pages/PatientEncountersPage').then((m) => ({ default: m.PatientEncountersPage })),
+);
+const PatientEncounterDetailPage = lazy(() =>
+  import('@/features/patient/pages/PatientEncounterDetailPage').then((m) => ({ default: m.PatientEncounterDetailPage })),
 );
 
 function PageLoader() {
@@ -305,6 +320,8 @@ export function AppRouter() {
               </LazyPage>
             }
           />
+          <Route path="encounters" element={<LazyPage><PatientEncountersPage /></LazyPage>} />
+          <Route path="encounters/:encounterId" element={<LazyPage><PatientEncounterDetailPage /></LazyPage>} />
         </Route>
         <Route
           path="/doctor"
@@ -352,6 +369,8 @@ export function AppRouter() {
             }
           />
           <Route path="appointments/:appointmentId" element={<LazyPage><DoctorAppointmentDetailPage /></LazyPage>} />
+          <Route path="opd" element={<LazyPage><DoctorOpdPage /></LazyPage>} />
+          <Route path="encounters/:encounterId" element={<LazyPage><DoctorEncounterDetailPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
           <Route path="settings/notifications" element={<LazyPage><NotificationPreferencesPage /></LazyPage>} />
         </Route>
@@ -364,6 +383,7 @@ export function AppRouter() {
           <Route path="emergency" element={<LazyPage><HospitalEmergencyPage /></LazyPage>} />
           <Route path="doctors" element={<LazyPage><HospitalDoctorRosterPage /></LazyPage>} />
           <Route path="opd" element={<LazyPage><HospitalOpdPage /></LazyPage>} />
+          <Route path="ipd" element={<LazyPage><HospitalIpdPage /></LazyPage>} />
           <Route path="subscription" element={<LazyPage><HospitalSubscriptionPage /></LazyPage>} />
           <Route path="facilities" element={<LazyPage><HospitalFacilitiesPage /></LazyPage>} />
           <Route path="gallery" element={<LazyPage><HospitalGalleryPage /></LazyPage>} />

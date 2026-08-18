@@ -18,6 +18,7 @@ import MedicationIcon from '@mui/icons-material/Medication';
 import PaymentIcon from '@mui/icons-material/Payment';
 import ScienceIcon from '@mui/icons-material/Science';
 import SettingsIcon from '@mui/icons-material/Settings';
+import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import { AppNavbar } from '@/shared/layout/AppNavbar';
 import { pageSpacing } from '@/shared/layout/pageSpacing';
 import { usePatientProfile } from '../hooks/usePatientQueries';
@@ -29,6 +30,7 @@ const navItems = [
   { label: 'Overview', path: '/patient/dashboard', icon: <DashboardIcon /> },
   { label: 'Health Analytics', path: '/patient/health-score', icon: <MonitorHeartIcon /> },
   { label: 'Appointments', path: '/patient/appointments', icon: <EventNoteIcon /> },
+  { label: 'My Visits', path: '/patient/encounters', icon: <MedicalServicesIcon /> },
   { label: 'Search', path: '/patient/search', icon: <SearchIcon /> },
   { label: 'Find a Doctor', path: '/patient/book', icon: <EventAvailableIcon /> },
   { label: 'Find a Hospital', path: '/patient/hospitals', icon: <LocalHospitalIcon /> },

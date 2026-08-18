@@ -8,7 +8,7 @@
 
 | **Document ID** | HMS-SPRINT-001 |
 
-| **Last Updated** | 2026-08-17 |
+| **Last Updated** | 2026-08-18 |
 
 | **Maintained By** | Engineering |
 
@@ -28,7 +28,7 @@
 
 | Phases complete | 3 / 12 (HMS-0 through HMS-11) |
 
-| Current phase | **HMS-3** (next — IPD module) |
+| Current phase | **HMS-4** (next — ICU module) |
 
 | Architecture doc | [HEALTH360-HMS-ARCHITECTURE.md](./HEALTH360-HMS-ARCHITECTURE.md) |
 
@@ -48,11 +48,11 @@
 
 | HMS-0 | Launch gate — appointment fix | ✅ Done | 2026-08-12 |
 
-| HMS-1 | Clinical encounter foundation | ✅ Done | 2026-08-17 |
+| HMS-1 | Clinical encounter foundation | ✅ Done (UI + V32) | 2026-08-18 |
 
 | HMS-2 | OPD module | ✅ Done | 2026-08-17 |
 
-| HMS-3 | IPD module | ⏳ Not started | — |
+| HMS-3 | IPD module | ✅ Done | 2026-08-18 |
 
 | HMS-4 | ICU module | ⏳ Not started | — |
 
@@ -168,6 +168,14 @@ Web/mobile clients extract `data.content` for backward-compatible array usage in
 
 | Generic clinical orders + order items | ✅ |
 
+| Flyway V32 — encounter number sequences | ✅ |
+
+| Convenience APIs — `/me`, `/doctor/me`, check-in/start/complete | ✅ |
+
+| Web patient/doctor encounter UIs + mobile screens | ✅ |
+
+| Stage 2 documentation pack | ✅ |
+
 | `EncounterStatusTest` + `ClinicalEncounterIntegrationTest` | ✅ |
 
 
@@ -230,7 +238,7 @@ GET    /api/v1/clinical/encounters/{id}/orders/{orderId}
 
 | Encounter status sync (WAITING → IN_PROGRESS → COMPLETED) | ✅ |
 
-| Hospital portal OPD page (`/hospital/opd`) | ✅ |
+| Hospital portal OPD page (`/hospital/opd`) with paginated queue | ✅ |
 
 | `QueueEntryStatusTest` + `OpdIntegrationTest` | ✅ |
 
@@ -269,6 +277,68 @@ POST   /api/v1/opd/queue/{queueEntryId}/cancel
 
 
 Users must **re-login** after V31 so JWT includes new OPD permissions (`opd:desk:*`, `opd:queue:*`, `opd:registration:write`).
+
+
+
+---
+
+
+
+## HMS-3 deliverables
+
+
+
+| Item | Status |
+
+|------|--------|
+
+| Flyway V33 — `ipd` schema (wards, rooms, beds, admissions, bed_assignments, rounds, discharge_summaries) | ✅ |
+
+| RBAC — `ipd:ward:*`, `ipd:bed:*`, `ipd:admission:*`, `ipd:round:*`, `ipd:discharge:write` | ✅ |
+
+| Backend module — `com.health360.ipd.*` | ✅ |
+
+| Admit patient → IPD encounter + bed assignment | ✅ |
+
+| Nursing/doctor rounds + discharge with summary | ✅ |
+
+| Hospital portal IPD page (`/hospital/ipd`) | ✅ |
+
+| `IpdIntegrationTest` | ✅ |
+
+
+
+### HMS-3 API endpoints
+
+
+
+```
+
+POST/GET  /api/v1/ipd/wards
+
+POST/GET  /api/v1/ipd/rooms?wardId=
+
+POST/GET  /api/v1/ipd/beds?hospitalId=&branchId=&status=
+
+POST/GET  /api/v1/ipd/admissions (paginated)
+
+GET       /api/v1/ipd/admissions/{id}
+
+POST      /api/v1/ipd/admissions/{id}/rounds
+
+GET       /api/v1/ipd/admissions/{id}/rounds
+
+POST      /api/v1/ipd/admissions/{id}/discharge
+
+```
+
+
+
+### HMS-3 deploy note
+
+
+
+Re-login after V33 so JWT includes `ipd:*` permissions.
 
 
 

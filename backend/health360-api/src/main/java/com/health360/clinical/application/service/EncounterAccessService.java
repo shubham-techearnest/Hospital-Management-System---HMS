@@ -80,7 +80,7 @@ public class EncounterAccessService {
         }
     }
 
-    private void assertHospitalAdminScope(UserPrincipal principal, UUID hospitalId) {
+    public void assertHospitalAdminScope(UserPrincipal principal, UUID hospitalId) {
         HospitalEntity hospital = requireHospital(principal.getTenantId(), hospitalId);
         if (!hospital.getAdminUserId().equals(principal.getUserId())) {
             throw forbidden();

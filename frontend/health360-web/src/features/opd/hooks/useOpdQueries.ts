@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import {
   callQueuePatient,
   cancelQueueEntry,
@@ -16,8 +17,8 @@ import {
 
 export const opdKeys = {
   desks: (hospitalId: string, branchId: string) => ['opd', 'desks', hospitalId, branchId] as const,
-  queue: (hospitalId: string, branchId: string, status?: string) =>
-    ['opd', 'queue', hospitalId, branchId, status ?? 'ALL'] as const,
+  queue: (hospitalId: string, branchId: string, status?: string, page = 0) =>
+    ['opd', 'queue', hospitalId, branchId, status ?? 'ALL', page] as const,
 };
 
 export function useOpdDesks(hospitalId?: string, branchId?: string) {
@@ -25,15 +26,23 @@ export function useOpdDesks(hospitalId?: string, branchId?: string) {
     queryKey: opdKeys.desks(hospitalId ?? '', branchId ?? ''),
     queryFn: () => listOpdDesks(hospitalId!, branchId!),
     enabled: Boolean(hospitalId && branchId),
+    retry: (_, error) => !isAuthError(error),
   });
 }
 
-export function useOpdQueue(hospitalId?: string, branchId?: string, status?: string) {
+function isAuthError(error: unknown): boolean {
+  if (!isAxiosError(error)) return false;
+  const status = error.response?.status;
+  return status === 401 || status === 403;
+}
+
+export function useOpdQueue(hospitalId?: string, branchId?: string, status?: string, page = 0, size = 50) {
   return useQuery({
-    queryKey: opdKeys.queue(hospitalId ?? '', branchId ?? '', status),
-    queryFn: () => listOpdQueue({ hospitalId: hospitalId!, branchId: branchId!, status }),
+    queryKey: opdKeys.queue(hospitalId ?? '', branchId ?? '', status, page),
+    queryFn: () => listOpdQueue({ hospitalId: hospitalId!, branchId: branchId!, status, page, size }),
     enabled: Boolean(hospitalId && branchId),
-    refetchInterval: 15000,
+    retry: (_, error) => !isAuthError(error),
+    refetchInterval: (query) => (query.state.error ? false : 15_000),
   });
 }
 

@@ -25,6 +25,9 @@ export function DoctorAppointmentsListScreen({ navigation }: Props) {
   const listHeader = (
     <View style={styles.header}>
       <PageHero compact subtitle="Manage upcoming visits and review past appointments." />
+      <Button mode="outlined" onPress={() => navigation.navigate('DoctorOpdQueue')} style={styles.opdBtn}>
+        Today&apos;s OPD
+      </Button>
       <FilterChipRow
         value={filter}
         options={[
@@ -92,6 +95,9 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: layout.stackGap / 2,
+  },
+  opdBtn: {
+    marginBottom: layout.stackGap,
   },
   loader: {
     marginTop: layout.stackGap,

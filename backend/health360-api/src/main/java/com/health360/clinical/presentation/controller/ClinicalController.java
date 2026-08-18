@@ -37,6 +37,35 @@ public class ClinicalController {
                 encounterService.createEncounter(principal, request)));
     }
 
+    @GetMapping("/encounters/me")
+    @PreAuthorize("hasAuthority('clinical:encounter:read')")
+    public ResponseEntity<ApiResponse<Page<EncounterResponse>>> listMyEncounters(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(encounterService.listMyEncounters(principal, pageable)));
+    }
+
+    @GetMapping("/encounters/doctor/me")
+    @PreAuthorize("hasAuthority('clinical:encounter:read')")
+    public ResponseEntity<ApiResponse<Page<EncounterResponse>>> listDoctorMyEncounters(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(defaultValue = "false") boolean todayOnly,
+            @RequestParam(required = false) String status,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                encounterService.listDoctorMyEncounters(principal, todayOnly, status, pageable)));
+    }
+
+    @GetMapping("/encounters/hospital/{hospitalId}")
+    @PreAuthorize("hasAuthority('clinical:encounter:read')")
+    public ResponseEntity<ApiResponse<Page<EncounterResponse>>> listHospitalEncounters(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID hospitalId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                encounterService.listHospitalEncounters(principal, hospitalId, pageable)));
+    }
+
     @GetMapping("/encounters")
     @PreAuthorize("hasAuthority('clinical:encounter:read')")
     public ResponseEntity<ApiResponse<Page<EncounterResponse>>> listEncounters(
@@ -56,6 +85,33 @@ public class ClinicalController {
             @PathVariable UUID encounterId) {
         return ResponseEntity.ok(ApiResponse.ok(
                 encounterService.getEncounter(principal, encounterId)));
+    }
+
+    @PostMapping("/encounters/{encounterId}/check-in")
+    @PreAuthorize("hasAuthority('clinical:encounter:write')")
+    public ResponseEntity<ApiResponse<EncounterResponse>> checkInEncounter(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                encounterService.checkInEncounter(principal, encounterId)));
+    }
+
+    @PostMapping("/encounters/{encounterId}/start")
+    @PreAuthorize("hasAuthority('clinical:encounter:write')")
+    public ResponseEntity<ApiResponse<EncounterResponse>> startEncounter(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                encounterService.startEncounter(principal, encounterId)));
+    }
+
+    @PostMapping("/encounters/{encounterId}/complete")
+    @PreAuthorize("hasAuthority('clinical:encounter:write')")
+    public ResponseEntity<ApiResponse<EncounterResponse>> completeEncounter(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                encounterService.completeEncounter(principal, encounterId)));
     }
 
     @PatchMapping("/encounters/{encounterId}/status")

@@ -15,6 +15,7 @@ import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import QueueIcon from '@mui/icons-material/Queue';
+import HotelIcon from '@mui/icons-material/Hotel';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { AppNavbar } from '@/shared/layout/AppNavbar';
 
@@ -30,6 +31,7 @@ const navItems = [
   { label: 'Gallery', path: '/hospital/gallery', icon: <PhotoLibraryIcon /> },
   { label: 'Doctor Roster', path: '/hospital/doctors', icon: <GroupsIcon /> },
   { label: 'OPD', path: '/hospital/opd', icon: <QueueIcon /> },
+  { label: 'IPD', path: '/hospital/ipd', icon: <HotelIcon /> },
   { label: 'Subscription', path: '/hospital/subscription', icon: <CardMembershipIcon /> },
   { label: 'Settings', path: '/hospital/settings/account', icon: <SettingsIcon /> },
 ];

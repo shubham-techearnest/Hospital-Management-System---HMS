@@ -105,6 +105,9 @@ export function PatientHomeScreen({ navigation }: Props) {
           <Button mode="outlined" onPress={() => navigation.navigate('HealthAnalytics')} style={styles.headerBtn}>
             Health analytics
           </Button>
+          <Button mode="outlined" onPress={() => navigation.navigate('EncountersList')} style={styles.headerBtn}>
+            My visits
+          </Button>
           <Button mode="contained" onPress={handleExportPdf} loading={downloadPdf.isPending} style={styles.headerBtn}>
             Export PDF
           </Button>

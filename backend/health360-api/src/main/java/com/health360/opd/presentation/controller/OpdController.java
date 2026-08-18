@@ -14,6 +14,9 @@ import com.health360.opd.presentation.dto.response.OpdRegistrationResponse;
 import com.health360.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -73,15 +76,16 @@ public class OpdController {
 
     @GetMapping("/queue")
     @PreAuthorize("hasAuthority('opd:queue:read')")
-    public ResponseEntity<ApiResponse<List<OpdQueueEntryResponse>>> listQueue(
+    public ResponseEntity<ApiResponse<Page<OpdQueueEntryResponse>>> listQueue(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam UUID hospitalId,
             @RequestParam UUID branchId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate queueDate,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) UUID deskId) {
+            @RequestParam(required = false) UUID deskId,
+            @PageableDefault(size = 50) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(
-                queueService.listQueue(principal, hospitalId, branchId, queueDate, status, deskId)));
+                queueService.listQueue(principal, hospitalId, branchId, queueDate, status, deskId, pageable)));
     }
 
     @PostMapping("/queue/{queueEntryId}/call")

@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +41,7 @@ public class EncounterService {
     private final BranchRepository branchRepository;
     private final DepartmentRepository departmentRepository;
     private final EncounterAccessService accessService;
+    private final EncounterNumberService encounterNumberService;
     private final ClinicalMapper mapper;
     private final AuditLogService auditLogService;
 
@@ -71,16 +74,18 @@ public class EncounterService {
             validateAppointmentLink(tenantId, request);
         }
 
+        EncounterType encounterType = parseEncounterType(request.getEncounterType());
         EncounterEntity encounter = new EncounterEntity();
         encounter.setTenantId(tenantId);
-        encounter.setEncounterNumber(generateEncounterNumber(tenantId, request.getHospitalId()));
+        encounter.setEncounterNumber(encounterNumberService.allocateEncounterNumber(
+                tenantId, request.getHospitalId(), encounterType));
         encounter.setPatientId(request.getPatientId());
         encounter.setHospitalId(request.getHospitalId());
         encounter.setBranchId(request.getBranchId());
         encounter.setDepartmentId(request.getDepartmentId());
         encounter.setPrimaryDoctorId(doctorId);
         encounter.setAppointmentId(request.getAppointmentId());
-        encounter.setEncounterType(parseEncounterType(request.getEncounterType()).name());
+        encounter.setEncounterType(encounterType.name());
         encounter.setStatus(EncounterStatus.REGISTERED.name());
         encounter.setVisitReason(trimToNull(request.getVisitReason()));
         encounter.setCreatedBy(userId);
@@ -144,6 +149,96 @@ public class EncounterService {
         }
 
         return page.map(mapper::toEncounterResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<EncounterResponse> listMyEncounters(UserPrincipal principal, Pageable pageable) {
+        UUID tenantId = principal.getTenantId();
+        UUID patientId = accessService.resolvePatientProfileIdForUser(principal.getUserId(), tenantId);
+        if (patientId == null) {
+            return Page.empty(pageable);
+        }
+        return encounterRepository
+                .findByTenantIdAndPatientIdAndDeletedAtIsNullOrderByCreatedAtDesc(tenantId, patientId, pageable)
+                .map(mapper::toEncounterResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<EncounterResponse> listDoctorMyEncounters(
+            UserPrincipal principal,
+            boolean todayOnly,
+            String status,
+            Pageable pageable) {
+        if (!principal.hasPermission("clinical:encounter:read")) {
+            throw forbidden();
+        }
+        UUID tenantId = principal.getTenantId();
+        UUID doctorId = accessService.resolveDoctorProfileIdForUser(principal.getUserId(), tenantId);
+        if (doctorId == null) {
+            return Page.empty(pageable);
+        }
+
+        if (!todayOnly && (status == null || status.isBlank())) {
+            return encounterRepository
+                    .findByTenantIdAndPrimaryDoctorIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+                            tenantId, doctorId, pageable)
+                    .map(mapper::toEncounterResponse);
+        }
+
+        Instant from = null;
+        Instant to = null;
+        String encounterType = null;
+        if (todayOnly) {
+            LocalDate today = LocalDate.now(ZoneId.systemDefault());
+            from = today.atStartOfDay(ZoneId.systemDefault()).toInstant();
+            to = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+            encounterType = EncounterType.OPD.name();
+        }
+
+        String normalizedStatus = status != null && !status.isBlank()
+                ? parseEncounterStatus(status).name() : null;
+
+        return encounterRepository.findDoctorEncountersFiltered(
+                        tenantId, doctorId, encounterType, from, to, normalizedStatus, pageable)
+                .map(mapper::toEncounterResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<EncounterResponse> listHospitalEncounters(
+            UserPrincipal principal, UUID hospitalId, Pageable pageable) {
+        if (!principal.hasPermission("clinical:encounter:read")) {
+            throw forbidden();
+        }
+        accessService.requireHospital(principal.getTenantId(), hospitalId);
+        if (principal.getRoles().contains("HOSPITAL_ADMIN")) {
+            accessService.assertHospitalAdminScope(principal, hospitalId);
+        }
+        return encounterRepository
+                .findByTenantIdAndHospitalIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+                        principal.getTenantId(), hospitalId, pageable)
+                .map(mapper::toEncounterResponse);
+    }
+
+    @Transactional
+    public EncounterResponse checkInEncounter(UserPrincipal principal, UUID encounterId) {
+        return transitionEncounter(principal, encounterId, EncounterStatus.WAITING);
+    }
+
+    @Transactional
+    public EncounterResponse startEncounter(UserPrincipal principal, UUID encounterId) {
+        return transitionEncounter(principal, encounterId, EncounterStatus.IN_PROGRESS);
+    }
+
+    @Transactional
+    public EncounterResponse completeEncounter(UserPrincipal principal, UUID encounterId) {
+        return transitionEncounter(principal, encounterId, EncounterStatus.COMPLETED);
+    }
+
+    private EncounterResponse transitionEncounter(
+            UserPrincipal principal, UUID encounterId, EncounterStatus target) {
+        UpdateEncounterStatusRequest request = new UpdateEncounterStatusRequest();
+        request.setStatus(target.name());
+        return updateEncounterStatus(principal, encounterId, request);
     }
 
     @Transactional
@@ -280,12 +375,6 @@ public class EncounterService {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
                     "Department does not belong to the specified hospital");
         }
-    }
-
-    private String generateEncounterNumber(UUID tenantId, UUID hospitalId) {
-        long sequence = encounterRepository.countByTenantIdAndHospitalIdAndDeletedAtIsNull(tenantId, hospitalId) + 1;
-        String hospitalPrefix = hospitalId.toString().substring(0, 8).toUpperCase();
-        return "ENC-" + hospitalPrefix + "-" + String.format("%06d", sequence);
     }
 
     private void applyStatusTimestamps(EncounterEntity encounter, EncounterStatus status) {

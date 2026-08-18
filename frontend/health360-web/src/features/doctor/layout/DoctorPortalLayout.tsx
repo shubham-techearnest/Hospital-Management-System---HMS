@@ -12,6 +12,7 @@ import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import SettingsIcon from '@mui/icons-material/Settings';
+import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import { AppNavbar } from '@/shared/layout/AppNavbar';
 import { pageSpacing } from '@/shared/layout/pageSpacing';
 import { parseApiError } from '@/shared/api/errorUtils';
@@ -22,6 +23,7 @@ const DRAWER_WIDTH = 260;
 const navItems = [
   { label: 'Overview', path: '/doctor/dashboard', icon: <DashboardIcon /> },
   { label: 'Appointments', path: '/doctor/appointments', icon: <EventNoteIcon /> },
+  { label: 'OPD', path: '/doctor/opd', icon: <MedicalServicesIcon /> },
   { label: 'Schedule', path: '/doctor/schedule', icon: <EventAvailableIcon /> },
   { label: 'Professional Profile', path: '/doctor/profile', icon: <PersonIcon /> },
   { label: 'Verification', path: '/doctor/verification', icon: <VerifiedUserIcon /> },

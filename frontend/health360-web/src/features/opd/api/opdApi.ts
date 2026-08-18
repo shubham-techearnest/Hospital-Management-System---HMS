@@ -1,5 +1,6 @@
 import { apiClient } from '@/shared/api/client';
 import type { ApiEnvelope } from '@/features/auth/api/authApi';
+import type { SpringPage } from '@/features/patient/api/patientExtendedApi';
 
 export interface OpdDesk {
   deskId: string;
@@ -100,9 +101,11 @@ export async function listOpdQueue(params: {
   queueDate?: string;
   status?: string;
   deskId?: string;
-}): Promise<OpdQueueEntry[]> {
-  const { data } = await apiClient.get<ApiEnvelope<OpdQueueEntry[]>>('/opd/queue', { params });
-  return unwrap(data);
+  page?: number;
+  size?: number;
+}): Promise<SpringPage<OpdQueueEntry>> {
+  const { data } = await apiClient.get<ApiEnvelope<SpringPage<OpdQueueEntry>>>('/opd/queue', { params });
+  return unwrap(data) ?? { content: [], totalElements: 0, totalPages: 0, number: 0, size: params.size ?? 50 };
 }
 
 export async function registerWalkIn(payload: WalkInRegistrationPayload): Promise<OpdRegistrationResult> {

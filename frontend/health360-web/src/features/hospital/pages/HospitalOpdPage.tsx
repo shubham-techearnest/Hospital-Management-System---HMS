@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle,
   MenuItem, Paper, Snackbar, Stack, Tab, Tabs, Table, TableBody, TableCell,
@@ -38,14 +39,18 @@ export function HospitalOpdPage() {
 
   const [tab, setTab] = useState(0);
   const [queueFilter, setQueueFilter] = useState('');
+  const [queuePage, setQueuePage] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   const { data: desks = [] } = useOpdDesks(hospitalId, branchId);
-  const { data: queue = [], isError: queueError, refetch: refetchQueue } = useOpdQueue(
+  const { data: queuePageData, isError: queueError, error: queueLoadError, refetch: refetchQueue } = useOpdQueue(
     hospitalId,
     branchId,
     queueFilter || undefined,
+    queuePage,
   );
+  const queue = queuePageData?.content ?? [];
+  const queueTotalPages = queuePageData?.totalPages ?? 0;
 
   const createDesk = useCreateOpdDesk(hospitalId ?? '', branchId ?? '');
   const registerWalkIn = useRegisterWalkIn(hospitalId ?? '', branchId ?? '');
@@ -172,7 +177,7 @@ export function HospitalOpdPage() {
             select
             label="Filter by status"
             value={queueFilter}
-            onChange={(e) => setQueueFilter(e.target.value)}
+            onChange={(e) => { setQueueFilter(e.target.value); setQueuePage(0); }}
             sx={{ maxWidth: 240 }}
             size="small"
           >
@@ -183,7 +188,22 @@ export function HospitalOpdPage() {
             <MenuItem value="COMPLETED">Completed</MenuItem>
           </TextField>
 
-          {queueError && <Alert severity="error">Could not load queue.</Alert>}
+          {queueError && (
+            <Alert
+              severity={parseApiError(queueLoadError).kind === 'session' || parseApiError(queueLoadError).kind === 'forbidden' ? 'warning' : 'error'}
+              action={
+                (parseApiError(queueLoadError).kind === 'session' || parseApiError(queueLoadError).kind === 'forbidden') ? (
+                  <Button color="inherit" size="small" component={RouterLink} to="/login">
+                    Sign in again
+                  </Button>
+                ) : undefined
+              }
+            >
+              {parseApiError(queueLoadError).kind === 'forbidden'
+                ? 'Your session does not include OPD permissions yet. Sign in again to load the latest access.'
+                : parseApiError(queueLoadError).message}
+            </Alert>
+          )}
 
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
@@ -245,6 +265,14 @@ export function HospitalOpdPage() {
               </TableBody>
             </Table>
           </TableContainer>
+
+          {queueTotalPages > 1 ? (
+            <Stack direction="row" justifyContent="center" alignItems="center" spacing={2}>
+              <Button disabled={queuePage === 0} onClick={() => setQueuePage((p) => p - 1)}>Previous</Button>
+              <Typography variant="body2">Page {queuePage + 1} of {queueTotalPages}</Typography>
+              <Button disabled={queuePage + 1 >= queueTotalPages} onClick={() => setQueuePage((p) => p + 1)}>Next</Button>
+            </Stack>
+          ) : null}
         </Stack>
       )}
 

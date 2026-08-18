@@ -72,7 +72,8 @@ apiClient.interceptors.response.use(
     const status = error.response?.status;
 
     if (status === 401 || status === 403) {
-      const apiMessage = (error.response?.data as { message?: string })?.message;
+      const errorBody = error.response?.data as { error?: { message?: string } } | undefined;
+      const apiMessage = errorBody?.error?.message;
       const mightBeStaleAuth =
         status === 401 || (status === 403 && apiMessage === 'Access denied');
 
@@ -83,7 +84,7 @@ apiClient.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${refreshed.accessToken}`;
           return apiClient(originalRequest);
         }
-        if (status === 401) {
+        if (status === 401 || (status === 403 && apiMessage === 'Access denied')) {
           clearStoredSession();
           redirectToLogin();
         }

@@ -95,6 +95,9 @@ export function DoctorDashboardScreen() {
         <Button mode="text" icon="hospital-building" onPress={() => navigation.navigate('Hospitals')}>
           Hospital associations
         </Button>
+        <Button mode="text" icon="stethoscope" onPress={() => navigation.navigate('Appointments', { screen: 'DoctorOpdQueue' })}>
+          Today&apos;s OPD queue
+        </Button>
       </AppCard>
     </ScreenContainer>
   );

@@ -23,6 +23,8 @@ export type HomeStackParamList = {
   LabValues: undefined;
   HealthDocuments: undefined;
   HealthTimeline: undefined;
+  EncountersList: undefined;
+  EncounterDetail: { encounterId: string };
 };
 
 export type CareStackParamList = {
@@ -52,6 +54,8 @@ export type PatientTabParamList = {
 export type DoctorAppointmentsStackParamList = {
   DoctorAppointmentsList: undefined;
   DoctorAppointmentDetail: { appointmentId: string };
+  DoctorOpdQueue: undefined;
+  DoctorEncounterDetail: { encounterId: string };
 };
 
 export type DoctorTabParamList = {

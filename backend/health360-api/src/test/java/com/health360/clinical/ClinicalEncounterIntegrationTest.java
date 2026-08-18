@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.health360.clinical.presentation.dto.request.CreateClinicalOrderRequest;
 import com.health360.clinical.presentation.dto.request.CreateDiagnosisRequest;
 import com.health360.clinical.presentation.dto.request.CreateEncounterRequest;
-import com.health360.clinical.presentation.dto.request.UpdateEncounterStatusRequest;
 import com.health360.support.IntegrationTestAuth;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -27,7 +26,6 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -92,13 +90,13 @@ class ClinicalEncounterIntegrationTest {
                 .path("data");
         String encounterId = encounter.path("encounterId").asText();
 
-        UpdateEncounterStatusRequest statusRequest = new UpdateEncounterStatusRequest();
-        statusRequest.setStatus("IN_PROGRESS");
+        mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId + "/check-in")
+                        .header("Authorization", IntegrationTestAuth.bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("WAITING"));
 
-        mockMvc.perform(patch("/api/v1/clinical/encounters/" + encounterId + "/status")
-                        .header("Authorization", IntegrationTestAuth.bearer(token))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(statusRequest)))
+        mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId + "/start")
+                        .header("Authorization", IntegrationTestAuth.bearer(token)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("IN_PROGRESS"));
 
@@ -134,5 +132,21 @@ class ClinicalEncounterIntegrationTest {
                         .header("Authorization", IntegrationTestAuth.bearer(token)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", hasSize(1)));
+
+        mockMvc.perform(get("/api/v1/clinical/encounters/me")
+                        .header("Authorization", IntegrationTestAuth.bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content").isArray());
+
+        mockMvc.perform(get("/api/v1/clinical/encounters/doctor/me")
+                        .header("Authorization", IntegrationTestAuth.bearer(token))
+                        .param("todayOnly", "false"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content").isArray());
+
+        mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId + "/complete")
+                        .header("Authorization", IntegrationTestAuth.bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("COMPLETED"));
     }
 }

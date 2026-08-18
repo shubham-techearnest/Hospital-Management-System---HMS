@@ -2,6 +2,8 @@ package com.health360.opd.infrastructure.persistence.repository;
 
 import com.health360.opd.infrastructure.persistence.entity.OpdQueueEntryEntity;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -50,4 +52,35 @@ public interface OpdQueueEntryRepository extends JpaRepository<OpdQueueEntryEnti
             @Param("queueDate") LocalDate queueDate,
             @Param("status") String status,
             @Param("deskId") UUID deskId);
+
+    @Query(
+            value = """
+            SELECT q FROM OpdQueueEntryEntity q
+            WHERE q.tenantId = :tenantId
+              AND q.hospitalId = :hospitalId
+              AND q.branchId = :branchId
+              AND q.queueDate = :queueDate
+              AND q.deletedAt IS NULL
+              AND (:status IS NULL OR q.status = :status)
+              AND (:deskId IS NULL OR q.deskId = :deskId)
+            ORDER BY q.priority DESC, q.tokenNumber ASC
+            """,
+            countQuery = """
+            SELECT COUNT(q) FROM OpdQueueEntryEntity q
+            WHERE q.tenantId = :tenantId
+              AND q.hospitalId = :hospitalId
+              AND q.branchId = :branchId
+              AND q.queueDate = :queueDate
+              AND q.deletedAt IS NULL
+              AND (:status IS NULL OR q.status = :status)
+              AND (:deskId IS NULL OR q.deskId = :deskId)
+            """)
+    Page<OpdQueueEntryEntity> findQueuePage(
+            @Param("tenantId") UUID tenantId,
+            @Param("hospitalId") UUID hospitalId,
+            @Param("branchId") UUID branchId,
+            @Param("queueDate") LocalDate queueDate,
+            @Param("status") String status,
+            @Param("deskId") UUID deskId,
+            Pageable pageable);
 }

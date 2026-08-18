@@ -6,6 +6,8 @@ import { MetricDetailScreen } from '@/features/analytics/screens/MetricDetailScr
 import { LabValuesScreen } from '@/features/patient/screens/LabValuesScreen';
 import { HealthDocumentsScreen } from '@/features/patient/screens/HealthDocumentsScreen';
 import { HealthTimelineScreen } from '@/features/patient/screens/HealthTimelineScreen';
+import { EncountersListScreen } from '@/features/clinical/screens/patient/EncountersListScreen';
+import { EncounterDetailScreen } from '@/features/clinical/screens/patient/EncounterDetailScreen';
 import { stackScreenOptions } from '@/shared/theme';
 import type { HomeStackParamList } from './types';
 
@@ -37,6 +39,8 @@ export function HomeStackNavigator() {
       <Stack.Screen name="LabValues" component={LabValuesScreen} options={{ title: 'Lab Values' }} />
       <Stack.Screen name="HealthDocuments" component={HealthDocumentsScreen} options={{ title: 'Health Documents' }} />
       <Stack.Screen name="HealthTimeline" component={HealthTimelineScreen} options={{ title: 'Health Timeline' }} />
+      <Stack.Screen name="EncountersList" component={EncountersListScreen} options={{ title: 'My Visits' }} />
+      <Stack.Screen name="EncounterDetail" component={EncounterDetailScreen} options={{ title: 'Visit Details' }} />
     </Stack.Navigator>
   );
 }

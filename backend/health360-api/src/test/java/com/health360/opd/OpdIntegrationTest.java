@@ -109,7 +109,7 @@ class OpdIntegrationTest {
                         .param("branchId", BRANCH_ID.toString())
                         .param("status", "WAITING"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data", hasSize(org.hamcrest.Matchers.greaterThanOrEqualTo(1))));
+                .andExpect(jsonPath("$.data.content", hasSize(org.hamcrest.Matchers.greaterThanOrEqualTo(1))));
 
         mockMvc.perform(post("/api/v1/opd/queue/" + queueEntryId + "/call")
                         .header("Authorization", IntegrationTestAuth.bearer(token))

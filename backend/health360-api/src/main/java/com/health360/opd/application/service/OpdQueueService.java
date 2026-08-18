@@ -16,6 +16,8 @@ import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,13 +41,14 @@ public class OpdQueueService {
     private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
-    public List<OpdQueueEntryResponse> listQueue(
+    public Page<OpdQueueEntryResponse> listQueue(
             UserPrincipal principal,
             UUID hospitalId,
             UUID branchId,
             LocalDate queueDate,
             String status,
-            UUID deskId) {
+            UUID deskId,
+            Pageable pageable) {
 
         opdAccessService.assertCanReadQueue(principal);
         opdAccessService.assertHospitalScope(principal, hospitalId);
@@ -55,11 +57,9 @@ public class OpdQueueService {
         LocalDate effectiveDate = queueDate != null ? queueDate : LocalDate.now(ZoneId.systemDefault());
         String normalizedStatus = normalizeStatus(status);
 
-        return queueEntryRepository.findQueue(
-                        tenantId, hospitalId, branchId, effectiveDate, normalizedStatus, deskId)
-                .stream()
-                .map(entry -> toQueueResponse(tenantId, entry))
-                .toList();
+        return queueEntryRepository.findQueuePage(
+                        tenantId, hospitalId, branchId, effectiveDate, normalizedStatus, deskId, pageable)
+                .map(entry -> toQueueResponse(tenantId, entry));
     }
 
     @Transactional
