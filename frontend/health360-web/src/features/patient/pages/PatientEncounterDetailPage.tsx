@@ -19,6 +19,10 @@ import {
   useEncounterNotes,
   useEncounterOrders,
 } from '@/features/clinical/hooks/useClinicalQueries';
+import { useEncounterLabReports } from '@/features/lab/hooks/useLabQueries';
+import { useEncounterImagingReports } from '@/features/radiology/hooks/useRadiologyQueries';
+import { useEncounterProcedures } from '@/features/ot/hooks/useOtQueries';
+import { useEncounterAdministrations } from '@/features/pharmacy/hooks/usePharmacyQueries';
 import { encounterStatusColor, encounterStatusLabel, formatEncounterDate } from '@/features/clinical/utils/encounterUtils';
 import { parseApiError } from '@/shared/api/errorUtils';
 
@@ -28,6 +32,10 @@ export function PatientEncounterDetailPage() {
   const { data: diagnoses = [] } = useEncounterDiagnoses(encounterId);
   const { data: notes = [] } = useEncounterNotes(encounterId);
   const { data: orders = [] } = useEncounterOrders(encounterId);
+  const { data: labReports = [] } = useEncounterLabReports(encounterId);
+  const { data: imagingReports = [] } = useEncounterImagingReports(encounterId);
+  const { data: procedures = [] } = useEncounterProcedures(encounterId);
+  const { data: administrations = [] } = useEncounterAdministrations(encounterId);
   const parsedError = error ? parseApiError(error) : null;
 
   if (isLoading) {
@@ -111,6 +119,117 @@ export function PatientEncounterDetailPage() {
                           {item.itemName}{item.itemCode ? ` (${item.itemCode})` : ''}
                         </Typography>
                       ))}
+                    </>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Section>
+
+        <Section title="Lab results" empty={labReports.length === 0}>
+          <List dense disablePadding>
+            {labReports.map((report) => (
+              <ListItem key={report.reportId} disableGutters alignItems="flex-start">
+                <ListItemText
+                  primary={`${report.testName} (${report.testCode})`}
+                  secondary={
+                    <>
+                      {report.summaryText ? <Typography variant="body2">{report.summaryText}</Typography> : null}
+                      {report.results.map((result) => (
+                        <Typography key={result.resultId} variant="body2" color="text.secondary">
+                          {result.parameterName}: {result.valueText} {result.unit ?? ''}
+                          {result.referenceRange ? ` · ref ${result.referenceRange}` : ''}
+                        </Typography>
+                      ))}
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Released {formatEncounterDate(report.releasedAt)}
+                      </Typography>
+                    </>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Section>
+
+        <Section title="Imaging results" empty={imagingReports.length === 0}>
+          <List dense disablePadding>
+            {imagingReports.map((report) => (
+              <ListItem key={report.reportId} disableGutters alignItems="flex-start">
+                <ListItemText
+                  primary={`${report.modalityName} (${report.modalityCode})`}
+                  secondary={
+                    <>
+                      {report.findingsText ? (
+                        <Typography variant="body2">{report.findingsText}</Typography>
+                      ) : null}
+                      {report.impressionText ? (
+                        <Typography variant="body2" color="text.secondary">
+                          Impression: {report.impressionText}
+                        </Typography>
+                      ) : null}
+                      {report.releasedAt ? (
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Released {formatEncounterDate(report.releasedAt)}
+                        </Typography>
+                      ) : null}
+                    </>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Section>
+
+        <Section title="Completed procedures" empty={procedures.length === 0}>
+          <List dense disablePadding>
+            {procedures.map((procedure) => (
+              <ListItem key={procedure.procedureId} disableGutters alignItems="flex-start">
+                <ListItemText
+                  primary={procedure.procedureName}
+                  secondary={
+                    <>
+                      {procedure.theatreName ? (
+                        <Typography variant="body2" color="text.secondary">
+                          Theatre: {procedure.theatreName}
+                        </Typography>
+                      ) : null}
+                      {procedure.notes.map((note) => (
+                        <Typography key={note.noteId} variant="body2" color="text.secondary">
+                          {note.noteType}: {note.content}
+                        </Typography>
+                      ))}
+                      {procedure.completedAt ? (
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Completed {formatEncounterDate(procedure.completedAt)}
+                        </Typography>
+                      ) : null}
+                    </>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Section>
+
+        <Section title="Medication administration (MAR)" empty={administrations.length === 0}>
+          <List dense disablePadding>
+            {administrations.map((admin) => (
+              <ListItem key={admin.administrationId} disableGutters alignItems="flex-start">
+                <ListItemText
+                  primary={`${admin.medicineName} — ${admin.doseGiven}`}
+                  secondary={
+                    <>
+                      {admin.route ? (
+                        <Typography variant="body2" color="text.secondary">Route: {admin.route}</Typography>
+                      ) : null}
+                      {admin.notes ? (
+                        <Typography variant="body2" color="text.secondary">{admin.notes}</Typography>
+                      ) : null}
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Administered {formatEncounterDate(admin.administeredAt)}
+                      </Typography>
                     </>
                   }
                 />

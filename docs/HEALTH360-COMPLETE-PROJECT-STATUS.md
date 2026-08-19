@@ -32,7 +32,9 @@ Health360 is a **multi-platform healthcare SaaS** (Spring Boot API, React web, E
 
 **Phase 1.5** (hospital-centric subscriptions, admin provisioning, plan limits) is **code-complete** per DOC-62 and verified in source, but **manual staging QA and production deploy** remain open.
 
-**Phase 2** (e-prescription, pharmacy, lab orders, payments, telemedicine) is **documented only** — **not started** in code.
+**Phase 2** (e-prescription, **billing**, telemedicine) — **P2-B1 billing foundation started** (V41); Razorpay/e-Rx remain planned. See [post-hms/POST-HMS-PHASE-2-BRIDGE.md](./post-hms/POST-HMS-PHASE-2-BRIDGE.md).
+
+**HMS phase (HMS-0 … HMS-11):** **12/12 complete** — OPD, IPD, ICU, Lab, Rad, Pharmacy, OT, Staff, Dashboards, Hardening. See [hms/HMS-SPRINT-STATUS.md](./hms/HMS-SPRINT-STATUS.md).
 
 **Critical blockers for production:** Render JDBC URL format (fix added but deploy-dependent), Flyway V24 checksum drift on some dev DBs, stale project memory docs, M6 launch checklist incomplete, Redis configured but excluded in local/production profiles.
 
@@ -692,9 +694,9 @@ Search / Location / Public Profiles / Reviews
 | Q7  | Phase 1.5 sprints completed?       | **11/11** code; staging QA open                                                                                                                   |
 | Q8  | Phase 1.5 sprints remain?          | **Manual QA + production validation** (not new feature sprints)                                                                                   |
 | Q9  | Phase 2 sprints planned?           | **12** (draft DOC-34)                                                                                                                             |
-| Q10 | Phase 2 started?                   | **NO**                                                                                                                                            |
+| Q10 | Phase 2 started?                   | **YES — P2-B1 billing foundation (V41)**                                                                                                            |
 | Q11 | Reusable for Hospital Management?  | Hospital CRUD, branches, depts, doctors, subscriptions, limits, scheduling, audit, admin APIs                                                     |
-| Q12 | Completely missing?                | OPD/IPD/ICU/Lab/OT/Pharmacy clinical workflows, EMR, billing/payments, e-Rx, staff module                                                         |
+| Q12 | Completely missing?                | E-Rx, Razorpay payments, telemedicine, insurance; HMS clinical ops **built** (OPD/IPD/ICU/Lab/OT/Pharmacy/staff)                                  |
 | Q13 | Should NOT rebuild?                | IAM, patient/doctor profiles, scheduling core, hospital schema, subscription module, analytics engine                                             |
 | Q14 | Architecture changes needed first? | Clinical ops domain model; encounter/visit model; bed/ward; order management; extend RBAC; production infra hardening                             |
 
@@ -721,11 +723,13 @@ Search / Location / Public Profiles / Reviews
 
 ## 23. Recommended Next Step
 
-1. **Refresh stale docs** — `00-PROJECT-MEMORY.md`, DOC-61, phase-1.5 README, MOBILE_SPRINT_STATUS to match DOC-62 and V29.
-2. **Unblock production** — Deploy DATABASE_URL fix; set Render env (`SPRING_PROFILES_ACTIVE=production`, JWT keys); run DOC-63 manual QA.
-3. **Dev environment hygiene** — `mvn flyway:repair` for V24 checksum; restart API after migrations.
-4. **Define clinical/HMS phase charter** — OPD/IPD/ICU/Lab/OT/Pharmacy are **not** in Phase 1, 1.5, or approved Phase 2 docs; require new phase scoping before implementation.
-5. **Do NOT start OPD/IPD/ICU/Lab/OT/Pharmacy build** until (a) production launch gate passed or explicitly waived, and (b) clinical domain architecture document exists.
+1. **Apply V41** — Restart API after Flyway; re-login hospital admin for `billing:*` permissions.
+2. **P2-B2** — Razorpay payment intent + webhook integration.
+3. **P2-B3** — Patient billing UI (web `/patient/billing` or payments page).
+4. **Unblock production** — Deploy DATABASE_URL fix; run manual QA on staging.
+5. **P2-Rx1** — E-prescription module (after billing MVP validated).
+
+HMS reference: [hms/HMS-SPRINT-STATUS.md](./hms/HMS-SPRINT-STATUS.md) · Post-HMS bridge: [post-hms/POST-HMS-PHASE-2-BRIDGE.md](./post-hms/POST-HMS-PHASE-2-BRIDGE.md)
 
 ---
 

@@ -26,14 +26,14 @@ export function useOpdDesks(hospitalId?: string, branchId?: string) {
     queryKey: opdKeys.desks(hospitalId ?? '', branchId ?? ''),
     queryFn: () => listOpdDesks(hospitalId!, branchId!),
     enabled: Boolean(hospitalId && branchId),
-    retry: (_, error) => !isAuthError(error),
+    retry: (_, error) => isRetryableError(error),
   });
 }
 
-function isAuthError(error: unknown): boolean {
-  if (!isAxiosError(error)) return false;
+function isRetryableError(error: unknown): boolean {
+  if (!isAxiosError(error)) return true;
   const status = error.response?.status;
-  return status === 401 || status === 403;
+  return status !== 401 && status !== 403 && status !== 404;
 }
 
 export function useOpdQueue(hospitalId?: string, branchId?: string, status?: string, page = 0, size = 50) {
@@ -41,7 +41,7 @@ export function useOpdQueue(hospitalId?: string, branchId?: string, status?: str
     queryKey: opdKeys.queue(hospitalId ?? '', branchId ?? '', status, page),
     queryFn: () => listOpdQueue({ hospitalId: hospitalId!, branchId: branchId!, status, page, size }),
     enabled: Boolean(hospitalId && branchId),
-    retry: (_, error) => !isAuthError(error),
+    retry: (_, error) => isRetryableError(error),
     refetchInterval: (query) => (query.state.error ? false : 15_000),
   });
 }
@@ -79,7 +79,7 @@ export function useOpdQueueActions(hospitalId: string, branchId: string) {
   const invalidate = () => qc.invalidateQueries({ queryKey: ['opd', 'queue', hospitalId, branchId] });
 
   return {
-    call: useMutation({ mutationFn: callQueuePatient, onSuccess: invalidate }),
+    call: useMutation({ mutationFn: (queueEntryId: string) => callQueuePatient(queueEntryId), onSuccess: invalidate }),
     start: useMutation({ mutationFn: startQueueService, onSuccess: invalidate }),
     complete: useMutation({ mutationFn: completeQueueService, onSuccess: invalidate }),
     cancel: useMutation({ mutationFn: cancelQueueEntry, onSuccess: invalidate }),

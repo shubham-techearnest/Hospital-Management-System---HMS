@@ -16,4 +16,7 @@ public interface OpdDeskRepository extends JpaRepository<OpdDeskEntity, UUID> {
 
     boolean existsByTenantIdAndHospitalIdAndBranchIdAndCodeAndDeletedAtIsNull(
             UUID tenantId, UUID hospitalId, UUID branchId, String code);
+
+    long countByTenantIdAndHospitalIdAndBranchIdAndDeletedAtIsNull(
+            UUID tenantId, UUID hospitalId, UUID branchId);
 }

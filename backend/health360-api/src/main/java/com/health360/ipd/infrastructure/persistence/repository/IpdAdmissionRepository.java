@@ -19,4 +19,7 @@ public interface IpdAdmissionRepository extends JpaRepository<IpdAdmissionEntity
             UUID tenantId, UUID hospitalId, UUID branchId, String status, Pageable pageable);
 
     boolean existsByEncounterIdAndDeletedAtIsNull(UUID encounterId);
+
+    long countByTenantIdAndHospitalIdAndBranchIdAndStatusAndDeletedAtIsNull(
+            UUID tenantId, UUID hospitalId, UUID branchId, String status);
 }

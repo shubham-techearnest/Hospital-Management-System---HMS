@@ -16,6 +16,12 @@ import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import QueueIcon from '@mui/icons-material/Queue';
 import HotelIcon from '@mui/icons-material/Hotel';
+import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
+import ScienceIcon from '@mui/icons-material/Science';
+import MedicalInformationIcon from '@mui/icons-material/MedicalInformation';
+import HealingIcon from '@mui/icons-material/Healing';
+import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
+import BadgeIcon from '@mui/icons-material/Badge';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { AppNavbar } from '@/shared/layout/AppNavbar';
 
@@ -30,8 +36,14 @@ const navItems = [
   { label: 'Facilities', path: '/hospital/facilities', icon: <MedicalServicesIcon /> },
   { label: 'Gallery', path: '/hospital/gallery', icon: <PhotoLibraryIcon /> },
   { label: 'Doctor Roster', path: '/hospital/doctors', icon: <GroupsIcon /> },
+  { label: 'Staff', path: '/hospital/staff', icon: <BadgeIcon /> },
   { label: 'OPD', path: '/hospital/opd', icon: <QueueIcon /> },
   { label: 'IPD', path: '/hospital/ipd', icon: <HotelIcon /> },
+  { label: 'ICU', path: '/hospital/icu', icon: <MonitorHeartIcon /> },
+  { label: 'Laboratory', path: '/hospital/lab', icon: <ScienceIcon /> },
+  { label: 'Radiology', path: '/hospital/radiology', icon: <MedicalInformationIcon /> },
+  { label: 'Operation Theatre', path: '/hospital/ot', icon: <HealingIcon /> },
+  { label: 'Pharmacy', path: '/hospital/pharmacy', icon: <LocalPharmacyIcon /> },
   { label: 'Subscription', path: '/hospital/subscription', icon: <CardMembershipIcon /> },
   { label: 'Settings', path: '/hospital/settings/account', icon: <SettingsIcon /> },
 ];
@@ -45,7 +57,13 @@ const SidebarContent = memo(function SidebarContent({ onNavigate }: { onNavigate
           key={item.path}
           component={RouterLink}
           to={item.path}
-          selected={location.pathname === item.path}
+          selected={
+            location.pathname === item.path
+            || (item.path === '/hospital/lab' && location.pathname.startsWith('/hospital/lab'))
+            || (item.path === '/hospital/radiology' && location.pathname.startsWith('/hospital/radiology'))
+            || (item.path === '/hospital/ot' && location.pathname.startsWith('/hospital/ot'))
+            || (item.path === '/hospital/pharmacy' && location.pathname.startsWith('/hospital/pharmacy'))
+          }
           onClick={onNavigate}
         >
           <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>

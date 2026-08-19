@@ -25,7 +25,12 @@ const ROLE_LABELS: Record<AppRole, string> = {
   HOSPITAL_ADMIN: 'Hospital portal',
   PLATFORM_ADMIN: 'Admin portal',
   LAB_TECHNICIAN: 'Lab portal',
+  RADIOLOGY_TECHNICIAN: 'Radiology portal',
+  OT_COORDINATOR: 'Operation theatre portal',
   PHARMACIST: 'Pharmacy portal',
+  RECEPTIONIST: 'Reception portal',
+  NURSE: 'Nursing portal',
+  ICU_NURSE: 'ICU nursing portal',
 };
 
 const TRUST_POINTS = [

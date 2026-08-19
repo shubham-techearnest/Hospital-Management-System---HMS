@@ -3,6 +3,7 @@ import { isAxiosError } from 'axios';
 import {
   checkInEncounter,
   completeEncounter,
+  createClinicalOrder,
   getEncounter,
   listDoctorMyEncounters,
   listEncounterDiagnoses,
@@ -84,10 +85,20 @@ export function useEncounterActions(encounterId: string) {
     qc.invalidateQueries({ queryKey: clinicalKeys.encounter(encounterId) });
     qc.invalidateQueries({ queryKey: ['clinical', 'encounters'] });
   };
+  const invalidateOrders = () => {
+    invalidate();
+    qc.invalidateQueries({ queryKey: clinicalKeys.orders(encounterId) });
+    qc.invalidateQueries({ queryKey: ['lab', 'worklist'] });
+  };
 
   return {
     checkIn: useMutation({ mutationFn: () => checkInEncounter(encounterId), onSuccess: invalidate }),
     start: useMutation({ mutationFn: () => startEncounter(encounterId), onSuccess: invalidate }),
     complete: useMutation({ mutationFn: () => completeEncounter(encounterId), onSuccess: invalidate }),
+    createOrder: useMutation({
+      mutationFn: (payload: Parameters<typeof createClinicalOrder>[1]) =>
+        createClinicalOrder(encounterId, payload),
+      onSuccess: invalidateOrders,
+    }),
   };
 }

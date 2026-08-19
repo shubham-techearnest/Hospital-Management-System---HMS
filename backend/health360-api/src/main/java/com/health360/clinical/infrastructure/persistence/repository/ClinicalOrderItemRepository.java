@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface ClinicalOrderItemRepository extends JpaRepository<ClinicalOrderItemEntity, UUID> {
 
     List<ClinicalOrderItemEntity> findByOrderIdAndDeletedAtIsNullOrderByCreatedAtAsc(UUID orderId);
+
+    java.util.Optional<ClinicalOrderItemEntity> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
 }

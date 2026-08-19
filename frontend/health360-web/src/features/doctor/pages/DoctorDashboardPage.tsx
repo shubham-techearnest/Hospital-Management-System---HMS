@@ -4,69 +4,64 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { useDoctorProfile } from '../hooks/useDoctorQueries';
-import { useDoctorAppointments, useMySchedules } from '@/features/scheduling/hooks/useSchedulingQueries';
+import { useDoctorAppointments } from '@/features/scheduling/hooks/useSchedulingQueries';
 import { formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { DashboardSection } from '@/shared/dashboard/DashboardSection';
-import { StatCard } from '@/shared/dashboard/StatCard';
+import { DashboardStatsGrid } from '@/features/dashboard/components/DashboardStatsGrid';
+import { useDoctorDashboardStats } from '@/features/dashboard/hooks/useDashboardQueries';
 
 export function DoctorDashboardPage() {
   const { data: profile, isLoading: profileLoading } = useDoctorProfile();
+  const { data: clinical, isLoading: clinicalLoading } = useDoctorDashboardStats();
   const { data: upcoming = [], isLoading: apptLoading } = useDoctorAppointments('upcoming');
-  const { data: schedules = [], isLoading: scheduleLoading } = useMySchedules();
 
-  const today = new Date().toISOString().slice(0, 10);
-  const todayCount = upcoming.filter((a) => a.scheduledAt.startsWith(today)).length;
-  const loading = profileLoading || apptLoading || scheduleLoading;
+  const loading = profileLoading || apptLoading || clinicalLoading;
 
   return (
     <AnimatedPage>
       <DashboardPageHeader
         title="Practice overview"
-        subtitle="Today's visits, schedule templates, and verification status at a glance."
+        subtitle="Clinical workload, schedule, and verification status at a glance."
       />
 
-      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            label="Today's visits"
-            value={loading ? '—' : todayCount}
-            hint="Confirmed upcoming today"
-            icon={<EventNoteIcon />}
-            to="/doctor/appointments"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            label="Upcoming"
-            value={loading ? '—' : upcoming.length}
-            hint="All future appointments"
-            icon={<EventAvailableIcon />}
-            to="/doctor/appointments"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            label="Schedule templates"
-            value={loading ? '—' : schedules.length}
-            hint="Active availability rules"
-            icon={<EventAvailableIcon />}
-            to="/doctor/schedule"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            label="Verification"
-            value={loading ? '—' : (profile?.verificationStatus?.replace(/_/g, ' ') ?? '—')}
-            hint="Professional credential status"
-            icon={<VerifiedUserIcon />}
-            to="/doctor/verification"
-            accent="secondary.main"
-          />
-        </Grid>
-      </Grid>
+      <DashboardStatsGrid
+        loading={loading}
+        items={[
+          {
+            label: 'In progress',
+            value: clinical?.inProgressEncounters ?? 0,
+            hint: 'Active encounters',
+            icon: <MedicalServicesIcon />,
+            to: '/doctor/opd',
+          },
+          {
+            label: 'Waiting',
+            value: clinical?.waitingEncounters ?? 0,
+            hint: 'Encounters awaiting start',
+            icon: <EventNoteIcon />,
+            to: '/doctor/opd',
+          },
+          {
+            label: 'Upcoming appts',
+            value: clinical?.upcomingAppointments ?? upcoming.length,
+            hint: 'Confirmed future visits',
+            icon: <EventAvailableIcon />,
+            to: '/doctor/appointments',
+          },
+          {
+            label: 'Verification',
+            value: profile?.verificationStatus?.replace(/_/g, ' ') ?? '—',
+            hint: 'Professional credential status',
+            icon: <VerifiedUserIcon />,
+            to: '/doctor/verification',
+            accent: 'secondary.main',
+          },
+        ]}
+      />
 
       <Grid container spacing={{ xs: 2, md: 3 }}>
         <Grid item xs={12} md={7}>

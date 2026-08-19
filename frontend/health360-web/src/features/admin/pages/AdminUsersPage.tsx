@@ -9,7 +9,7 @@ import { parseApiError } from '@/shared/api/errorUtils';
 import { useAdminUsers, useUpdateUserStatus } from '../hooks/useAdminExtendedQueries';
 
 const STATUSES = ['ACTIVE', 'DEACTIVATED', 'LOCKED'] as const;
-const ROLES = ['PATIENT', 'DOCTOR', 'HOSPITAL_ADMIN', 'PLATFORM_ADMIN', 'LAB_TECHNICIAN', 'PHARMACIST'];
+const ROLES = ['PATIENT', 'DOCTOR', 'HOSPITAL_ADMIN', 'PLATFORM_ADMIN', 'LAB_TECHNICIAN', 'RADIOLOGY_TECHNICIAN', 'OT_COORDINATOR', 'PHARMACIST'];
 
 export function AdminUsersPage() {
   const theme = useTheme();

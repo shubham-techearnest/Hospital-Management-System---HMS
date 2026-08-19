@@ -33,4 +33,20 @@ public interface IpdBedRepository extends JpaRepository<IpdBedEntity, UUID> {
             @Param("status") String status);
 
     boolean existsByRoomIdAndBedNumberAndDeletedAtIsNull(UUID roomId, String bedNumber);
+
+    @Query("""
+            SELECT COUNT(b) FROM IpdBedEntity b
+            JOIN IpdRoomEntity r ON r.id = b.roomId
+            JOIN IpdWardEntity w ON w.id = r.wardId
+            WHERE b.tenantId = :tenantId
+              AND w.hospitalId = :hospitalId
+              AND w.branchId = :branchId
+              AND b.deletedAt IS NULL
+              AND (:status IS NULL OR b.status = :status)
+            """)
+    long countByHospitalBranch(
+            @Param("tenantId") UUID tenantId,
+            @Param("hospitalId") UUID hospitalId,
+            @Param("branchId") UUID branchId,
+            @Param("status") String status);
 }

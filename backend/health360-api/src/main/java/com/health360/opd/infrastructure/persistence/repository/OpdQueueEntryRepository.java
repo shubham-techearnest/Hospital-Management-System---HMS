@@ -83,4 +83,20 @@ public interface OpdQueueEntryRepository extends JpaRepository<OpdQueueEntryEnti
             @Param("status") String status,
             @Param("deskId") UUID deskId,
             Pageable pageable);
+
+    @Query("""
+            SELECT COUNT(q) FROM OpdQueueEntryEntity q
+            WHERE q.tenantId = :tenantId
+              AND q.hospitalId = :hospitalId
+              AND q.branchId = :branchId
+              AND q.queueDate = :queueDate
+              AND q.deletedAt IS NULL
+              AND (:status IS NULL OR q.status = :status)
+            """)
+    long countByScopeAndDate(
+            @Param("tenantId") UUID tenantId,
+            @Param("hospitalId") UUID hospitalId,
+            @Param("branchId") UUID branchId,
+            @Param("queueDate") LocalDate queueDate,
+            @Param("status") String status);
 }

@@ -21,10 +21,10 @@ export const ipdKeys = {
     ['ipd', 'admissions', hospitalId, branchId, page, status ?? 'ALL'] as const,
 };
 
-function isAuthError(error: unknown): boolean {
-  if (!isAxiosError(error)) return false;
+function isRetryableError(error: unknown): boolean {
+  if (!isAxiosError(error)) return true;
   const status = error.response?.status;
-  return status === 401 || status === 403;
+  return status !== 401 && status !== 403 && status !== 404;
 }
 
 export function useIpdWards(hospitalId?: string, branchId?: string) {
@@ -32,7 +32,7 @@ export function useIpdWards(hospitalId?: string, branchId?: string) {
     queryKey: ipdKeys.wards(hospitalId ?? '', branchId ?? ''),
     queryFn: () => listIpdWards(hospitalId!, branchId!),
     enabled: Boolean(hospitalId && branchId),
-    retry: (_, error) => !isAuthError(error),
+    retry: (_, error) => isRetryableError(error),
   });
 }
 
@@ -49,7 +49,7 @@ export function useIpdBeds(hospitalId?: string, branchId?: string, status?: stri
     queryKey: ipdKeys.beds(hospitalId ?? '', branchId ?? '', status),
     queryFn: () => listIpdBeds(hospitalId!, branchId!, status),
     enabled: Boolean(hospitalId && branchId),
-    retry: (_, error) => !isAuthError(error),
+    retry: (_, error) => isRetryableError(error),
   });
 }
 
@@ -63,7 +63,7 @@ export function useIpdAdmissions(
     queryKey: ipdKeys.admissions(hospitalId ?? '', branchId ?? '', page, status),
     queryFn: () => listIpdAdmissions(hospitalId!, branchId!, page, 20, status),
     enabled: Boolean(hospitalId && branchId),
-    retry: (_, error) => !isAuthError(error),
+    retry: (_, error) => isRetryableError(error),
   });
 }
 

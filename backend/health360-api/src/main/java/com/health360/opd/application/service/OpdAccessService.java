@@ -1,8 +1,7 @@
 package com.health360.opd.application.service;
 
-import com.health360.clinical.application.service.EncounterAccessService;
 import com.health360.config.security.UserPrincipal;
-import com.health360.hospital.infrastructure.persistence.entity.HospitalEntity;
+import com.health360.hospital.application.service.HospitalScopeService;
 import com.health360.opd.infrastructure.persistence.entity.OpdDeskEntity;
 import com.health360.opd.infrastructure.persistence.entity.OpdQueueEntryEntity;
 import com.health360.shared.domain.ErrorCode;
@@ -17,7 +16,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OpdAccessService {
 
-    private final EncounterAccessService encounterAccessService;
+    private final HospitalScopeService hospitalScopeService;
 
     public void assertCanManageRegistration(UserPrincipal principal) {
         if (!principal.hasPermission("opd:registration:write")) {
@@ -50,13 +49,7 @@ public class OpdAccessService {
     }
 
     public void assertHospitalScope(UserPrincipal principal, UUID hospitalId) {
-        if (principal.getRoles().contains("HOSPITAL_ADMIN")) {
-            HospitalEntity hospital = encounterAccessService.requireHospital(
-                    principal.getTenantId(), hospitalId);
-            if (!hospital.getAdminUserId().equals(principal.getUserId())) {
-                throw forbidden();
-            }
-        }
+        hospitalScopeService.assertHospitalScope(principal, hospitalId);
     }
 
     public void assertQueueEntryScope(UserPrincipal principal, OpdQueueEntryEntity entry) {

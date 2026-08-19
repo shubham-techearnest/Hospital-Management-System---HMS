@@ -31,6 +31,7 @@ public class EncounterNumberService {
         String prefix = switch (encounterType) {
             case OPD -> "OPD";
             case IPD -> "IPD";
+            case ICU -> "ICU";
             default -> "ENC";
         };
         return prefix + "-" + year + "-" + String.format("%06d", next);

@@ -42,6 +42,7 @@ export interface ClinicalOrderItem {
   itemId: string;
   itemCode?: string;
   itemName: string;
+  itemReferenceId?: string;
   quantity?: number;
   instructions?: string;
   status?: string;
@@ -124,4 +125,25 @@ export async function listEncounterNotes(encounterId: string): Promise<ClinicalN
 export async function listEncounterOrders(encounterId: string): Promise<ClinicalOrder[]> {
   const { data } = await apiClient.get<ApiEnvelope<ClinicalOrder[]>>(`/clinical/encounters/${encounterId}/orders`);
   return unwrap(data) ?? [];
+}
+
+export async function createClinicalOrder(
+  encounterId: string,
+  payload: {
+    orderType: string;
+    instructions?: string;
+    items: Array<{
+      itemCode?: string;
+      itemName: string;
+      itemReferenceId?: string;
+      quantity?: number;
+      instructions?: string;
+    }>;
+  },
+): Promise<ClinicalOrder> {
+  const { data } = await apiClient.post<ApiEnvelope<ClinicalOrder>>(
+    `/clinical/encounters/${encounterId}/orders`,
+    payload,
+  );
+  return unwrap(data);
 }

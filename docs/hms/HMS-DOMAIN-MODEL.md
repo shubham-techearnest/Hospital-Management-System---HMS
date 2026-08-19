@@ -14,6 +14,7 @@
 | `clinical` | V30, V32 | encounters, diagnoses, notes, orders, order_items, followups, reminders, encounter_number_sequences |
 | `opd` | V31 | desks, queue_entries |
 | `ipd` | V33 | wards, rooms, beds, admissions, bed_assignments, rounds, discharge_summaries |
+| `icu` | V34 | icu_units, icu_beds, icu_stays, icu_bed_assignments, equipment, equipment_assignments, monitoring_records |
 
 ---
 
@@ -87,6 +88,8 @@ Allocation service retries on duplicate-key race when two threads create the seq
 | `clinical:encounter:write` | DOCTOR, HOSPITAL_ADMIN |
 | `clinical:order:read` / `write` | DOCTOR |
 | `opd:desk:*`, `opd:queue:*`, `opd:registration:write` | HOSPITAL_ADMIN |
+| `ipd:*` | HOSPITAL_ADMIN, DOCTOR (subset) |
+| `icu:*` | HOSPITAL_ADMIN, DOCTOR (subset) |
 
 HMS-9 will add RECEPTIONIST / NURSE roles with scoped permissions.
 
@@ -105,6 +108,14 @@ com.health360.opd
  ├── application/     OpdQueueService, OpdRegistrationService, OpdDeskService
  ├── infrastructure/  queue + desk persistence
  └── presentation/    OpdController
+
+com.health360.ipd
+ └── … (see HMS-IPD-FLOW.md)
+
+com.health360.icu
+ ├── application/     IcuStayService, IcuFacilityService, IcuEquipmentService
+ ├── infrastructure/  units, beds, stays, equipment, monitoring persistence
+ └── presentation/    IcuController
 ```
 
 ---
@@ -115,15 +126,72 @@ com.health360.opd
 |-----|--------|---------|
 | Web | `features/clinical/` | Shared encounter API + hooks |
 | Web | `features/opd/` | Hospital queue API |
+| Web | `features/ipd/` | Hospital IPD API |
+| Web | `features/icu/` | Hospital ICU API |
+| Web | `features/lab/` | Lab catalog + fulfillment API |
+| Web | `features/radiology/` | Radiology catalog + fulfillment API |
 | Web | Patient/doctor pages | Portal-specific list/detail |
 | Mobile | `features/clinical/` | Same API surface, RN screens |
 
 ---
 
-## Future extensions (HMS-4+)
+## Laboratory (HMS-5)
 
-- ICU: `icu` schema with units, stays, equipment, monitoring
+```
+clinical.orders (LAB) + order_items
+  └── laboratory.lab_orders (1:1 clinical_order_item_id)
+        ├── lab_samples
+        ├── lab_results (per parameter)
+        └── lab_reports → visible on encounter
+```
+
+Catalog: `laboratories` → `lab_tests` → `lab_test_parameters`
+
+---
+
+## Radiology (HMS-6)
+
+```
+clinical.orders (IMAGING) + order_items
+  └── radiology.imaging_orders (1:1 clinical_order_item_id)
+        ├── imaging_studies (schedule + perform)
+        └── imaging_reports → visible on encounter
+```
+
+Catalog: `imaging_modalities` (X_RAY, USG, CT, MRI, EEG, OTHER)
+
+---
+
+## Operation theatre (HMS-7)
+
+```
+clinical.orders (PROCEDURE) + order_items
+  └── ot.ot_procedures (1:1 clinical_order_item_id)
+        ├── ot_schedules (theatre + time slot, conflict check)
+        ├── ot_team_members (surgeon, nurses, anaesthetist)
+        └── ot_notes (PRE_OP, INTRA_OP, POST_OP) → visible on encounter when COMPLETED
+```
+
+Catalog: `operation_theatres` per hospital branch
+
+---
+
+## Clinical pharmacy (HMS-8)
+
+```
+clinical.orders (MEDICATION) + order_items
+  └── pharmacy.medication_orders (1:1 clinical_order_id)
+        └── medication_order_items (1:1 clinical_order_item_id)
+              └── medication_administrations (MAR: encounter + time + administered_by)
+```
+
+Catalog: `medicines` per hospital branch. No commerce/billing.
+
+---
+
+## Future extensions (HMS-9+)
+
 - Observations: vitals captured with `encounter_id`
-- Order fulfillment: lab/radiology/pharmacy modules consume `clinical.orders`
+- Staff RBAC and nursing MAR delegation
 
 See [HMS-ROADMAP.md](./HMS-ROADMAP.md).

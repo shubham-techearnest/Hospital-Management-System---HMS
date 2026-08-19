@@ -3,7 +3,7 @@
 | Attribute | Value |
 |-----------|-------|
 | **Document ID** | HMS-ROADMAP-001 |
-| **Last Updated** | 2026-08-18 |
+| **Last Updated** | 2026-08-19 |
 | **Status** | Living document |
 
 ---
@@ -22,14 +22,14 @@ Health360 HMS expands the platform from consumer health + hospital subscription 
 | HMS-1 | Clinical encounter foundation | Encounters, diagnoses, notes, orders, patient/doctor UIs | V30, V32 | ✅ Done |
 | HMS-2 | OPD module | Desks, queue, walk-in/check-in, hospital OPD UI | V31 | ✅ Done |
 | HMS-3 | IPD module | Admissions, wards, beds, nursing notes | V33 | ✅ Done |
-| HMS-4 | ICU module | Critical care flows, monitoring hooks | TBD | ⏳ Next |
-| HMS-5 | Laboratory | Lab order fulfillment, results | TBD | ⏳ |
-| HMS-6 | Radiology | Imaging orders, reports | TBD | ⏳ |
-| HMS-7 | Operation theatre | Surgical scheduling, OT notes | TBD | ⏳ |
-| HMS-8 | Clinical pharmacy | Dispensing, administrations | TBD | ⏳ |
-| HMS-9 | Staff + RBAC | Receptionist, nurse, lab tech roles | TBD | ⏳ |
-| HMS-10 | Role dashboards | Aggregated KPIs per persona | TBD | ⏳ |
-| HMS-11 | Performance + security | Load tests, audit review, regression | TBD | ⏳ |
+| HMS-4 | ICU module | Critical care flows, monitoring hooks | V34 | ✅ Done |
+| HMS-5 | Laboratory | Lab order fulfillment, results | V35 | ✅ Done |
+| HMS-6 | Radiology | Imaging orders, reports | V36 | ✅ Done |
+| HMS-7 | Operation theatre | Surgical scheduling, OT notes | V37 | ✅ Done |
+| HMS-8 | Clinical pharmacy | Dispensing, MAR | V38 | ✅ Done |
+| HMS-9 | Staff + RBAC | Receptionist, nurse, lab tech roles | V39 | ✅ Done |
+| HMS-10 | Role dashboards | Aggregated KPIs per persona | — | ✅ Done |
+| HMS-11 | Performance + security | Indexes, RBAC regression, golden-path tests | V40 | ✅ Done |
 
 ---
 
@@ -63,10 +63,26 @@ flowchart LR
 
 ---
 
+## Post-HMS — Phase 2 (in progress)
+
+HMS phases HMS-0 … HMS-11 are **complete**. Next work follows [POST-HMS-PHASE-2-BRIDGE.md](../post-hms/POST-HMS-PHASE-2-BRIDGE.md):
+
+| Sprint | Focus | Status |
+|--------|-------|--------|
+| P2-B1 | Billing schema + encounter invoices + manual payment | ✅ Backend (V41) |
+| P2-B2 | Razorpay integration | ⏳ Planned |
+| P2-Rx1 | E-prescription | ⏳ Planned |
+
+---
+
 ## References
 
-- [HEALTH360-HMS-ARCHITECTURE.md](./HEALTH360-HMS-ARCHITECTURE.md)
+- **[README.md](./README.md)** — documentation index (start here)
+- **[HMS-SPRINT-PLAN.md](./HMS-SPRINT-PLAN.md)** — detailed per-sprint plan + flows
+- **[HMS-MASTER-FLOW.md](./HMS-MASTER-FLOW.md)** — generalized encounter-centric patterns
 - [HMS-SPRINT-STATUS.md](./HMS-SPRINT-STATUS.md)
 - [HMS-OPD-FLOW.md](./HMS-OPD-FLOW.md)
+- [HMS-IPD-FLOW.md](./HMS-IPD-FLOW.md)
 - [HMS-DOMAIN-MODEL.md](./HMS-DOMAIN-MODEL.md)
 - [HMS-API-MAP.md](./HMS-API-MAP.md)
+- [HEALTH360-HMS-ARCHITECTURE.md](./HEALTH360-HMS-ARCHITECTURE.md)
