@@ -1,7 +1,7 @@
 # Health360 AI — Project Memory (Living Document)
 
 > **Status:** Active  
-> **Last Updated:** 2026-07-30  
+> **Last Updated:** 2026-08-20  
 > **Maintained By:** Technical Lead / Chief Architect  
 > **Purpose:** Single source of truth for assumptions, decisions, terminology, and cross-document references.
 
@@ -441,5 +441,34 @@ All documents use this reference format:
 | 2026-07-30 | DOC-15   | v1.1 — four-deliverable sprint policy; parallel mobile catch-up | Technical Lead |
 | 2026-07-30 | MOBILE   | MOBILE-STRAT-001, MOBILE-STATUS-001, ADR-013 published | Technical Lead |
 | 2026-07-29 | IMPL     | S0 kickoff — monorepo scaffold created | Technical Lead |
+| 2026-08-20 | HMS-PDMP | Health360 HMS Product Development Master Plan created (30 deliverables) | Program Team |
+| 2026-08-20 | P1-F1    | P1-F1 documentation package (14 docs) — DRAFT | Program Team |
+| 2026-08-20 | HMS      | HMS-0…11 as-built marked RELEASED; governed program for OPD/IPD gaps | Program Team |
 
+
+---
+
+## 11. HMS Program (2026-08-20)
+
+| Item | Value |
+|------|-------|
+| Master plan | [HMS-PRODUCT-MASTER-PLAN.md](./HMS-PRODUCT-MASTER-PLAN.md) |
+| Mode | **DOCUMENTATION / PLANNING — awaiting approval** |
+| As-built HMS | HMS-0…11 **RELEASED** ([hms/HMS-SPRINT-STATUS.md](./hms/HMS-SPRINT-STATUS.md)) |
+| Latest Flyway | V41 billing schema |
+| Next migration | V42 (P1-F1 — **not approved**) |
+| First feature | P1-F1 UHID + hospital registration + duplicate detection |
+| Architecture hub | `clinical.encounters` = PatientVisit (ADR-002) |
+| Blocking decisions | DEC-001 UHID scope, DEC-002 duplicate threshold, DEC-004 walk-in user |
+| Approval phrase | `"APPROVE ROADMAP AND P1-F1"` |
+
+### Critical rules (non-negotiable)
+
+1. No duplicate Patient entity — extend `patient.patient_profiles`
+2. No parallel PatientVisit table
+3. Flyway V42+ only; never edit V1–V41
+4. Additive APIs; preserve React+Vite and Expo RN stacks
+5. No feature code without APPROVED documentation package
+
+See [NEXT-ACTION.md](./NEXT-ACTION.md).
 

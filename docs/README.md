@@ -2,6 +2,46 @@
 
 Start here if you are new to the project.
 
+## HMS Product Development (current program)
+
+| Document | Path | Purpose |
+|----------|------|---------|
+| **Master Plan (start here)** | [HMS-PRODUCT-MASTER-PLAN.md](./HMS-PRODUCT-MASTER-PLAN.md) | 30 deliverables, governance, approval gate |
+| **Next action** | [NEXT-ACTION.md](./NEXT-ACTION.md) | Awaiting **"APPROVE ROADMAP AND P1-F1"** |
+| **Executive dashboard** | [13-project-management/executive-dashboard.md](./13-project-management/executive-dashboard.md) | Senior management status |
+| **P1-F1 (first feature)** | [09-features/P1-foundation/P1-F1/](./09-features/P1-foundation/P1-F1/) | UHID + registration — DRAFT, not approved |
+| **As-built HMS (HMS-0…11)** | [hms/README.md](./hms/README.md) | Delivered modular HMS modules |
+| **Pending decisions** | [13-project-management/decisions-pending-approval.md](./13-project-management/decisions-pending-approval.md) | DEC-001…010 |
+
+### New documentation structure
+
+```text
+docs/
+├── HMS-PRODUCT-MASTER-PLAN.md
+├── NEXT-ACTION.md
+├── 00-governance/          # DoR, DoD, approval, change control
+├── 01-product/             # Vision, scope, roadmap, personas, workflows
+├── 02-requirements/        # Epics, requirements, stories, traceability
+├── 03-domain/              # Domain model
+├── 04-architecture/        # Target architecture, ADRs, state machines
+├── 05-database/            # V42+ migration plan
+├── 06-api/                 # API change plan
+├── 07-web/                 # Portal & routes
+├── 08-mobile/              # Mobile screen plan
+├── 09-features/            # Feature packages (P1-F1 complete DRAFT)
+├── 10-testing/             # Testing strategy
+├── 11-security/            # RBAC, audit, notifications
+├── 13-project-management/  # Sprint plan, risks, feature board
+├── 14-release/             # Release roadmap, UAT, checklist
+├── hms/                    # As-built HMS delivery docs
+├── post-hms/               # Post-HMS bridge (billing V41)
+└── phase-1|1.5|2/          # Historical — preserved
+```
+
+---
+
+## Legacy documentation
+
 | Document | Path | Purpose |
 |----------|------|---------|
 | **Project Memory (living doc)** | [00-PROJECT-MEMORY.md](./00-PROJECT-MEMORY.md) | Decisions, terminology, implementation status |
