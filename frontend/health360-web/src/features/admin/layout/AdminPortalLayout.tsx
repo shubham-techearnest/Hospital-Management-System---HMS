@@ -1,22 +1,22 @@
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import PeopleIcon from '@mui/icons-material/People';
-import RateReviewIcon from '@mui/icons-material/RateReview';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import CardMembershipIcon from '@mui/icons-material/CardMembership';
-import HistoryIcon from '@mui/icons-material/History';
-import SettingsIcon from '@mui/icons-material/Settings';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
+import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
+import LocalHospitalOutlinedIcon from '@mui/icons-material/LocalHospitalOutlined';
+import CardMembershipOutlinedIcon from '@mui/icons-material/CardMembershipOutlined';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 
 const navItems: PortalNavItem[] = [
-  { label: 'Overview', path: '/admin/dashboard', icon: <DashboardIcon /> },
-  { label: 'Hospitals', path: '/admin/hospitals', icon: <LocalHospitalIcon /> },
-  { label: 'Plans', path: '/admin/plans', icon: <CardMembershipIcon /> },
-  { label: 'Audit Logs', path: '/admin/audit-logs', icon: <HistoryIcon /> },
-  { label: 'Doctor Verifications', path: '/admin/verifications', icon: <VerifiedUserIcon /> },
-  { label: 'Users', path: '/admin/users', icon: <PeopleIcon /> },
-  { label: 'Review Moderation', path: '/admin/reviews', icon: <RateReviewIcon /> },
-  { label: 'Settings', path: '/admin/settings/account', icon: <SettingsIcon /> },
+  { section: 'Navigation', label: 'Dashboard', path: '/admin/dashboard', icon: <DashboardOutlinedIcon /> },
+  { section: 'Directory', label: 'Hospitals', path: '/admin/hospitals', icon: <LocalHospitalOutlinedIcon /> },
+  { section: 'Directory', label: 'Users', path: '/admin/users', icon: <PeopleOutlinedIcon /> },
+  { section: 'Quality', label: 'Verifications', path: '/admin/verifications', icon: <VerifiedUserOutlinedIcon /> },
+  { section: 'Quality', label: 'Reviews', path: '/admin/reviews', icon: <RateReviewOutlinedIcon /> },
+  { section: 'Platform', label: 'Plans', path: '/admin/plans', icon: <CardMembershipOutlinedIcon /> },
+  { section: 'Platform', label: 'Audit logs', path: '/admin/audit-logs', icon: <HistoryOutlinedIcon /> },
+  { section: 'Account', label: 'Settings', path: '/admin/settings/account', icon: <SettingsOutlinedIcon /> },
 ];
 
 export function AdminPortalLayout() {

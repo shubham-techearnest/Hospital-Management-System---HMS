@@ -7,6 +7,9 @@ import {
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { useAdminUsers, useUpdateUserStatus } from '../hooks/useAdminExtendedQueries';
+import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
+import { StatusBadge } from '@/shared/ui/StatusBadge';
+import { useToast } from '@/shared/ui/ToastProvider';
 
 const STATUSES = ['ACTIVE', 'DEACTIVATED', 'LOCKED'] as const;
 const ROLES = ['PATIENT', 'DOCTOR', 'HOSPITAL_ADMIN', 'PLATFORM_ADMIN', 'LAB_TECHNICIAN', 'RADIOLOGY_TECHNICIAN', 'OT_COORDINATOR', 'PHARMACIST'];
@@ -19,7 +22,7 @@ export function AdminUsersPage() {
   const [role, setRole] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(0);
-  const [message, setMessage] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const { data, isLoading, isError, error, refetch, isFetching } = useAdminUsers({
     email: email || undefined,
@@ -31,12 +34,11 @@ export function AdminUsersPage() {
   const updateStatus = useUpdateUserStatus();
 
   const handleStatusChange = async (userId: string, status: string) => {
-    setMessage(null);
     try {
       await updateStatus.mutateAsync({ userId, status });
-      setMessage(`User status updated to ${status}.`);
+      showToast(`User status updated to ${status}.`);
     } catch {
-      setMessage('Unable to update user status.');
+      showToast('Unable to update user status.', 'error');
     }
   };
 
@@ -45,12 +47,10 @@ export function AdminUsersPage() {
 
   return (
     <AnimatedPage>
-      <Typography variant="h4" fontWeight={700} mb={1} sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
-        User Management
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Search platform users and deactivate or lock accounts when needed.
-      </Typography>
+      <DashboardPageHeader
+        title="User management"
+        subtitle="Search platform users and deactivate or lock accounts when needed."
+      />
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 3 }}>
         <TextField
@@ -83,7 +83,6 @@ export function AdminUsersPage() {
         </FormControl>
       </Stack>
 
-      {message ? <Alert severity="info" sx={{ mb: 2 }}>{message}</Alert> : null}
       {loadError ? (
         <Alert
           severity="error"
@@ -162,7 +161,7 @@ export function AdminUsersPage() {
                       {user.roles.map((r) => <Chip key={r} size="small" label={r} />)}
                     </Stack>
                   </TableCell>
-                  <TableCell>{user.status}</TableCell>
+                  <TableCell><StatusBadge label={user.status} /></TableCell>
                   <TableCell align="right">
                     {STATUSES.filter((s) => s !== user.status).map((s) => (
                       <Button

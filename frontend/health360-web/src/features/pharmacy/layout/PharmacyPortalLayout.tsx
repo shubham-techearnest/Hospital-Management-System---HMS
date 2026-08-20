@@ -1,10 +1,10 @@
-import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
-import SettingsIcon from '@mui/icons-material/Settings';
+import LocalPharmacyOutlinedIcon from '@mui/icons-material/LocalPharmacyOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 
 const navItems: PortalNavItem[] = [
-  { label: 'Overview', path: '/pharmacy/dashboard', icon: <LocalPharmacyIcon /> },
-  { label: 'Settings', path: '/pharmacy/settings/account', icon: <SettingsIcon /> },
+  { section: 'Navigation', label: 'Overview', path: '/pharmacy/dashboard', icon: <LocalPharmacyOutlinedIcon /> },
+  { section: 'Account', label: 'Settings', path: '/pharmacy/settings/account', icon: <SettingsOutlinedIcon /> },
 ];
 
 export function PharmacyPortalLayout() {

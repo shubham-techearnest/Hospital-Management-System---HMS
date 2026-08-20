@@ -18,6 +18,9 @@ import { loginSchema, type LoginForm } from '../schemas/auth.schema';
 import { login as loginApi } from '../api/authApi';
 import { setCredentials } from '../store/authSlice';
 import { getRoleDashboardPathFromRoles } from '@/shared/auth/roleNavigation';
+import { Health360Logo } from '@/shared/brand/Health360Logo';
+import { AppLayout } from '@/shared/layout/AppLayout';
+import { PasswordField } from '@/shared/ui/PasswordField';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -50,58 +53,64 @@ export function LoginPage() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom fontWeight={700}>
-          Sign in
-        </Typography>
-        <Typography color="text.secondary" mb={3}>
-          Access your Health360 AI account
-        </Typography>
+    <AppLayout>
+      <Container maxWidth="sm" sx={{ py: { xs: 4, md: 8 }, px: { xs: 2, sm: 3 } }}>
+        <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 }, boxShadow: 'var(--h360-shadow-sm)' }}>
+          <Box sx={{ mb: 2.5 }}>
+            <Health360Logo size={40} withWordmark compact />
+          </Box>
+          <Typography variant="h4" gutterBottom fontWeight={700}>
+            Sign in
+          </Typography>
+          <Typography color="text.secondary" mb={3}>
+            Access your Hospital Management System account
+          </Typography>
 
-        {successMessage && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {successMessage}
-          </Alert>
-        )}
+          {successMessage && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {successMessage}
+            </Alert>
+          )}
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-        <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-          <Stack spacing={2}>
-            <TextField
-              label="Email"
-              type="email"
-              fullWidth
-              {...register('email')}
-              error={!!errors.email}
-              helperText={errors.email?.message}
-            />
-            <TextField
-              label="Password"
-              type="password"
-              fullWidth
-              {...register('password')}
-              error={!!errors.password}
-              helperText={errors.password?.message}
-            />
-            <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
-              {isSubmitting ? 'Signing in…' : 'Sign in'}
-            </Button>
-          </Stack>
-        </Box>
+          <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+            <Stack spacing={2}>
+              <TextField
+                label="Email"
+                type="email"
+                autoComplete="email"
+                fullWidth
+                {...register('email')}
+                error={!!errors.email}
+                helperText={errors.email?.message}
+              />
+              <PasswordField
+                label="Password"
+                autoComplete="current-password"
+                fullWidth
+                {...register('password')}
+                error={!!errors.password}
+                helperText={errors.password?.message}
+              />
+              <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
+                {isSubmitting ? 'Signing in…' : 'Sign in'}
+              </Button>
+            </Stack>
+          </Box>
 
-        <Typography mt={3} textAlign="center">
-          Don&apos;t have an account?{' '}
-          <Link component={RouterLink} to="/register">
-            Register
-          </Link>
-        </Typography>
-      </Paper>
-    </Container>
+          <Typography mt={3} textAlign="center">
+            Don&apos;t have an account?{' '}
+            <Link component={RouterLink} to="/register">
+              Register
+            </Link>
+          </Typography>
+        </Paper>
+      </Container>
+    </AppLayout>
   );
 }

@@ -1,115 +1,50 @@
-import { memo, useState } from 'react';
-import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
-import {
-  Box, Drawer, IconButton, List, ListItemButton, ListItemIcon, ListItemText,
-  Toolbar, Typography, useMediaQuery, useTheme,
-} from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
-import EmergencyIcon from '@mui/icons-material/Emergency';
-import GroupsIcon from '@mui/icons-material/Groups';
-import CardMembershipIcon from '@mui/icons-material/CardMembership';
-import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
-import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
-import QueueIcon from '@mui/icons-material/Queue';
-import HotelIcon from '@mui/icons-material/Hotel';
-import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
-import ScienceIcon from '@mui/icons-material/Science';
-import MedicalInformationIcon from '@mui/icons-material/MedicalInformation';
-import HealingIcon from '@mui/icons-material/Healing';
-import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
-import BadgeIcon from '@mui/icons-material/Badge';
-import SettingsIcon from '@mui/icons-material/Settings';
-import { AppNavbar } from '@/shared/layout/AppNavbar';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import LocalHospitalOutlinedIcon from '@mui/icons-material/LocalHospitalOutlined';
+import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
+import MeetingRoomOutlinedIcon from '@mui/icons-material/MeetingRoomOutlined';
+import EmergencyOutlinedIcon from '@mui/icons-material/EmergencyOutlined';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import CardMembershipOutlinedIcon from '@mui/icons-material/CardMembershipOutlined';
+import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
+import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined';
+import QueueOutlinedIcon from '@mui/icons-material/QueueOutlined';
+import HotelOutlinedIcon from '@mui/icons-material/HotelOutlined';
+import MonitorHeartOutlinedIcon from '@mui/icons-material/MonitorHeartOutlined';
+import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
+import MedicalInformationOutlinedIcon from '@mui/icons-material/MedicalInformationOutlined';
+import HealingOutlinedIcon from '@mui/icons-material/HealingOutlined';
+import LocalPharmacyOutlinedIcon from '@mui/icons-material/LocalPharmacyOutlined';
+import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 
-const DRAWER_WIDTH = 260;
-
-const navItems = [
-  { label: 'Overview', path: '/hospital/dashboard', icon: <DashboardIcon /> },
-  { label: 'Hospital Profile', path: '/hospital/profile', icon: <LocalHospitalIcon /> },
-  { label: 'Branches', path: '/hospital/branches', icon: <AccountTreeIcon /> },
-  { label: 'Departments', path: '/hospital/departments', icon: <MeetingRoomIcon /> },
-  { label: 'Emergency & ICU', path: '/hospital/emergency', icon: <EmergencyIcon /> },
-  { label: 'Facilities', path: '/hospital/facilities', icon: <MedicalServicesIcon /> },
-  { label: 'Gallery', path: '/hospital/gallery', icon: <PhotoLibraryIcon /> },
-  { label: 'Doctor Roster', path: '/hospital/doctors', icon: <GroupsIcon /> },
-  { label: 'Staff', path: '/hospital/staff', icon: <BadgeIcon /> },
-  { label: 'OPD', path: '/hospital/opd', icon: <QueueIcon /> },
-  { label: 'IPD', path: '/hospital/ipd', icon: <HotelIcon /> },
-  { label: 'ICU', path: '/hospital/icu', icon: <MonitorHeartIcon /> },
-  { label: 'Laboratory', path: '/hospital/lab', icon: <ScienceIcon /> },
-  { label: 'Radiology', path: '/hospital/radiology', icon: <MedicalInformationIcon /> },
-  { label: 'Operation Theatre', path: '/hospital/ot', icon: <HealingIcon /> },
-  { label: 'Pharmacy', path: '/hospital/pharmacy', icon: <LocalPharmacyIcon /> },
-  { label: 'Subscription', path: '/hospital/subscription', icon: <CardMembershipIcon /> },
-  { label: 'Settings', path: '/hospital/settings/account', icon: <SettingsIcon /> },
+const navItems: PortalNavItem[] = [
+  { label: 'Overview', path: '/hospital/dashboard', icon: <DashboardOutlinedIcon /> },
+  { section: 'Clinical', label: 'OPD', path: '/hospital/opd', icon: <QueueOutlinedIcon /> },
+  { section: 'Clinical', label: 'IPD', path: '/hospital/ipd', icon: <HotelOutlinedIcon /> },
+  { section: 'Clinical', label: 'ICU', path: '/hospital/icu', icon: <MonitorHeartOutlinedIcon /> },
+  { section: 'Clinical', label: 'Laboratory', path: '/hospital/lab', icon: <ScienceOutlinedIcon /> },
+  { section: 'Clinical', label: 'Radiology', path: '/hospital/radiology', icon: <MedicalInformationOutlinedIcon /> },
+  { section: 'Clinical', label: 'Theatre', path: '/hospital/ot', icon: <HealingOutlinedIcon /> },
+  { section: 'Clinical', label: 'Pharmacy', path: '/hospital/pharmacy', icon: <LocalPharmacyOutlinedIcon /> },
+  { section: 'Navigation', label: 'Profile', path: '/hospital/profile', icon: <LocalHospitalOutlinedIcon /> },
+  { section: 'Navigation', label: 'Branches', path: '/hospital/branches', icon: <AccountTreeOutlinedIcon /> },
+  { section: 'Navigation', label: 'Departments', path: '/hospital/departments', icon: <MeetingRoomOutlinedIcon /> },
+  { section: 'Navigation', label: 'Emergency', path: '/hospital/emergency', icon: <EmergencyOutlinedIcon /> },
+  { section: 'Navigation', label: 'Facilities', path: '/hospital/facilities', icon: <MedicalServicesOutlinedIcon /> },
+  { section: 'Navigation', label: 'Gallery', path: '/hospital/gallery', icon: <PhotoLibraryOutlinedIcon /> },
+  { section: 'Navigation', label: 'Plan', path: '/hospital/subscription', icon: <CardMembershipOutlinedIcon /> },
+  { section: 'People', label: 'Doctors', path: '/hospital/doctors', icon: <GroupsOutlinedIcon /> },
+  { section: 'People', label: 'Staff', path: '/hospital/staff', icon: <BadgeOutlinedIcon /> },
+  { section: 'Account', label: 'Settings', path: '/hospital/settings/account', icon: <SettingsOutlinedIcon /> },
 ];
 
-const SidebarContent = memo(function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const location = useLocation();
-  return (
-    <List component="nav" sx={{ px: 1, py: 2 }}>
-      {navItems.map((item) => (
-        <ListItemButton
-          key={item.path}
-          component={RouterLink}
-          to={item.path}
-          selected={
-            location.pathname === item.path
-            || (item.path === '/hospital/lab' && location.pathname.startsWith('/hospital/lab'))
-            || (item.path === '/hospital/radiology' && location.pathname.startsWith('/hospital/radiology'))
-            || (item.path === '/hospital/ot' && location.pathname.startsWith('/hospital/ot'))
-            || (item.path === '/hospital/pharmacy' && location.pathname.startsWith('/hospital/pharmacy'))
-          }
-          onClick={onNavigate}
-        >
-          <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-          <ListItemText primary={item.label} />
-        </ListItemButton>
-      ))}
-    </List>
-  );
-});
-
 export function HospitalPortalLayout() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [mobileOpen, setMobileOpen] = useState(false);
-
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppNavbar portalRole="HOSPITAL_ADMIN" />
-      <Box sx={{ display: 'flex', flex: 1, pt: '64px' }}>
-        {!isMobile && (
-          <Drawer variant="permanent" sx={{
-            width: DRAWER_WIDTH, flexShrink: 0,
-            [`& .MuiDrawer-paper`]: { width: DRAWER_WIDTH, top: 64, height: 'calc(100% - 64px)' },
-          }} open>
-            <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="subtitle2" color="text.secondary">Hospital Portal</Typography>
-            </Box>
-            <SidebarContent />
-          </Drawer>
-        )}
-        {isMobile && (
-          <Drawer variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)}
-            sx={{ [`& .MuiDrawer-paper`]: { width: DRAWER_WIDTH, top: 64, height: 'calc(100% - 64px)' } }}>
-            <SidebarContent onNavigate={() => setMobileOpen(false)} />
-          </Drawer>
-        )}
-        <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, width: { md: `calc(100% - ${DRAWER_WIDTH}px)` } }}>
-          {isMobile && (
-            <Toolbar disableGutters sx={{ mb: 1, minHeight: 48 }}>
-              <IconButton onClick={() => setMobileOpen(true)}><MenuIcon /></IconButton>
-              <Typography variant="h6" sx={{ ml: 1 }}>Hospital Portal</Typography>
-            </Toolbar>
-          )}
-          <Outlet />
-        </Box>
-      </Box>
-    </Box>
+    <PortalShellLayout
+      portalRole="HOSPITAL_ADMIN"
+      portalTitle="Hospital Portal"
+      navItems={navItems}
+    />
   );
 }

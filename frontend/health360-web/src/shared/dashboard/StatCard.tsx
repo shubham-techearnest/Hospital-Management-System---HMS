@@ -19,7 +19,7 @@ export function StatCard({ label, value, hint, icon, to, accent = 'primary.main'
           <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.4 }}>
             {label}
           </Typography>
-          <Typography variant="h4" fontWeight={700} sx={{ mt: 0.5, wordBreak: 'break-word' }}>
+          <Typography variant="h4" fontWeight={700} sx={{ mt: 0.5, wordBreak: 'break-word', fontVariantNumeric: 'tabular-nums' }}>
             {value}
           </Typography>
           {hint ? (
@@ -33,7 +33,23 @@ export function StatCard({ label, value, hint, icon, to, accent = 'primary.main'
   );
 
   return (
-    <Card variant="outlined" sx={{ height: '100%' }}>
+    <Card
+      variant="outlined"
+      sx={{
+        height: '100%',
+        boxShadow: 'var(--h360-shadow-xs)',
+        transition: 'box-shadow var(--h360-duration) var(--h360-ease), transform var(--h360-duration) var(--h360-ease), border-color var(--h360-duration) var(--h360-ease)',
+        ...(to
+          ? {
+              '&:hover': {
+                boxShadow: 'var(--h360-shadow-sm)',
+                transform: 'translateY(-1px)',
+                borderColor: 'primary.light',
+              },
+            }
+          : null),
+      }}
+    >
       {to ? (
         <CardActionArea component={RouterLink} to={to} sx={{ height: '100%' }}>
           {content}

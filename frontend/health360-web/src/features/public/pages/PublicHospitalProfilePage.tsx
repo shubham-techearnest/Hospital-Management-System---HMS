@@ -20,6 +20,7 @@ import { BranchLocationsMap } from '@/features/public/components/BranchLocations
 import { PublicProfileLayout } from '@/features/public/components/PublicProfileLayout';
 import { ReviewsSection } from '@/features/public/components/ReviewsSection';
 import { galleryImageSrc } from '@/features/hospital/api/hospitalApi';
+import { brand } from '@/shared/brand/brand';
 
 export function PublicHospitalProfilePage() {
   const { hospitalId = '' } = useParams<{ hospitalId: string }>();
@@ -32,10 +33,10 @@ export function PublicHospitalProfilePage() {
 
   useEffect(() => {
     if (profile?.name) {
-      document.title = `${profile.name} — Health360`;
+      document.title = `${profile.name} — ${brand.name}`;
     }
     return () => {
-      document.title = 'Health360';
+      document.title = brand.name;
     };
   }, [profile?.name]);
 

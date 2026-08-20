@@ -1,10 +1,10 @@
-import ScienceIcon from '@mui/icons-material/Science';
-import SettingsIcon from '@mui/icons-material/Settings';
+import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 
 const navItems: PortalNavItem[] = [
-  { label: 'Overview', path: '/lab/dashboard', icon: <ScienceIcon /> },
-  { label: 'Settings', path: '/lab/settings/account', icon: <SettingsIcon /> },
+  { section: 'Navigation', label: 'Overview', path: '/lab/dashboard', icon: <ScienceOutlinedIcon /> },
+  { section: 'Account', label: 'Settings', path: '/lab/settings/account', icon: <SettingsOutlinedIcon /> },
 ];
 
 export function LabPortalLayout() {

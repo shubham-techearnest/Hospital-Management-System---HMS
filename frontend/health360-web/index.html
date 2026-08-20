@@ -2,15 +2,122 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=14" />
+    <link rel="apple-touch-icon" href="/logo.svg?v=14" />
+    <meta name="theme-color" content="#714fff" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Health360 AI — Enterprise Digital Healthcare Ecosystem" />
-    <title>Health360 AI</title>
+    <meta name="description" content="Hospital Management System — care, records, and operations in one place for patients, doctors, and hospitals." />
+    <title>Hospital Management System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      #boot-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        background: #f5f4ff;
+        color: #0f0b28;
+        font-family: Inter, system-ui, sans-serif;
+        text-align: center;
+        transition: opacity 280ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      #boot-loader.is-complete {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #boot-loader.is-done .hms-facet {
+        animation: none !important;
+        fill: #714fff !important;
+        opacity: 1;
+      }
+      #boot-loader svg {
+        width: 96px;
+        height: 96px;
+        overflow: visible;
+        filter: drop-shadow(0 8px 24px rgba(113, 79, 255, 0.28));
+      }
+      #boot-loader .hms-plus {
+        filter: drop-shadow(0 0 8px rgba(113, 79, 255, 0.55));
+      }
+      #boot-loader .hms-facet {
+        animation: hms-wave 2s linear infinite;
+      }
+      #boot-loader .hms-f0 { animation-delay: 0ms; }
+      #boot-loader .hms-f1 { animation-delay: 250ms; }
+      #boot-loader .hms-f2 { animation-delay: 500ms; }
+      #boot-loader .hms-f3 { animation-delay: 750ms; }
+      #boot-loader .hms-f4 { animation-delay: 1000ms; }
+      #boot-loader .hms-f5 { animation-delay: 1250ms; }
+      #boot-loader .hms-f6 { animation-delay: 1500ms; }
+      #boot-loader .hms-f7 { animation-delay: 1750ms; }
+      #boot-loader .boot-name {
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
+        animation: hms-copy 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      #boot-loader .boot-name span {
+        display: block;
+        margin-top: 2px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #714fff;
+      }
+      #boot-loader .boot-tagline {
+        font-size: 13px;
+        font-weight: 600;
+        color: #585969;
+        animation: hms-tag 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      @keyframes hms-wave {
+        0%, 100% { fill: #5c3dd9; }
+        35% { fill: #714fff; }
+        50% { fill: #cfc8ff; }
+        65% { fill: #714fff; }
+      }
+      @keyframes hms-copy {
+        0%, 28% { opacity: 0; transform: translateY(8px); }
+        52%, 100% { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes hms-tag {
+        0%, 44% { opacity: 0; }
+        70%, 100% { opacity: 1; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #boot-loader * { animation: none !important; opacity: 1 !important; transform: none !important; }
+      }
+    </style>
   </head>
   <body>
+    <div id="boot-loader" aria-label="Loading Hospital Management System" role="status">
+      <svg viewBox="0 0 64 64" role="img" aria-label="Hospital Management System">
+        <rect x="1.25" y="1.25" width="61.5" height="61.5" rx="14" fill="#ffffff" stroke="#cfc8ff" stroke-width="1.5"/>
+        <path class="hms-facet hms-f0" d="M32 6.2 49.8 14.6 41.8 23.5 32 18.1Z" fill="#714fff"/>
+        <path class="hms-facet hms-f1 hms-highlight" d="M49.8 14.6 54.4 28.8 44.5 32.3 41.8 23.5Z" fill="#cfc8ff"/>
+        <path class="hms-facet hms-f2" d="M54.4 28.8 46.6 44.6 40.1 41.5 44.5 32.3Z" fill="#714fff"/>
+        <path class="hms-facet hms-f3" d="M46.6 44.6 32 57.6 32 48 40.1 41.5Z" fill="#5c3dd9"/>
+        <path class="hms-facet hms-f4" d="M32 57.6 17.4 44.6 23.9 41.5 32 48Z" fill="#5c3dd9"/>
+        <path class="hms-facet hms-f5" d="M17.4 44.6 9.6 28.8 19.5 32.3 23.9 41.5Z" fill="#714fff"/>
+        <path class="hms-facet hms-f6" d="M9.6 28.8 14.2 14.6 22.2 23.5 19.5 32.3Z" fill="#5c3dd9"/>
+        <path class="hms-facet hms-f7" d="M14.2 14.6 32 6.2 32 18.1 22.2 23.5Z" fill="#714fff"/>
+        <path d="M32 18.1 41.8 23.5 44.5 32.3 40.1 41.5 32 48 23.9 41.5 19.5 32.3 22.2 23.5Z" fill="#ffffff"/>
+        <path class="hms-plus" fill="#714fff" d="M32 25.2c1.2 0 2.15.95 2.15 2.15v3.3h3.3c1.2 0 2.15.95 2.15 2.15s-.95 2.15-2.15 2.15h-3.3v3.3c0 1.2-.95 2.15-2.15 2.15s-2.15-.95-2.15-2.15v-3.3h-3.3c-1.2 0-2.15-.95-2.15-2.15s.95-2.15 2.15-2.15h3.3v-3.3c0-1.2.95-2.15 2.15-2.15z"/>
+      </svg>
+      <div class="boot-name">
+        Hospital Management
+        <span>System</span>
+      </div>
+      <div class="boot-tagline">Care, records, and operations in one place</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

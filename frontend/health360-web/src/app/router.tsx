@@ -1,6 +1,5 @@
 import { lazy, Suspense, type PropsWithChildren } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
 import { LandingPage } from '@/features/public/pages/LandingPage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
@@ -22,6 +21,8 @@ import { PharmacyPortalLayout } from '@/features/pharmacy/layout/PharmacyPortalL
 import { ReceptionPortalLayout } from '@/features/reception/layout/ReceptionPortalLayout';
 import { NursingPortalLayout } from '@/features/nursing/layout/NursingPortalLayout';
 import { IcuNursePortalLayout } from '@/features/icu-nurse/layout/IcuNursePortalLayout';
+import { LogoLoader } from '@/shared/brand/LogoLoader';
+import { BrandIdentityPage } from '@/shared/brand/BrandIdentityPage';
 
 const DashboardPage = lazy(() =>
   import('@/features/patient/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -214,11 +215,7 @@ const PatientEncounterDetailPage = lazy(() =>
 );
 
 function PageLoader() {
-  return (
-    <Box display="flex" justifyContent="center" py={8}>
-      <CircularProgress aria-label="Loading page" />
-    </Box>
-  );
+  return <LogoLoader label="Loading page" size={72} />;
 }
 
 function LazyPage({ children }: PropsWithChildren) {
@@ -245,6 +242,7 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/brand" element={<BrandIdentityPage />} />
         <Route path="/login" element={<GuestOnlyRoute><LoginPage /></GuestOnlyRoute>} />
         <Route path="/register" element={<GuestOnlyRoute><RegisterPage /></GuestOnlyRoute>} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />

@@ -19,6 +19,9 @@ import {
 import { useState } from 'react';
 import { registerSchema, type RegisterForm } from '../schemas/auth.schema';
 import { register as registerApi } from '../api/authApi';
+import { Health360Logo } from '@/shared/brand/Health360Logo';
+import { AppLayout } from '@/shared/layout/AppLayout';
+import { PasswordField } from '@/shared/ui/PasswordField';
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -48,13 +51,17 @@ export function RegisterPage() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper sx={{ p: 4 }}>
+    <AppLayout>
+      <Container maxWidth="sm" sx={{ py: { xs: 4, md: 8 }, px: { xs: 2, sm: 3 } }}>
+        <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 }, boxShadow: 'var(--h360-shadow-sm)' }}>
+        <Box sx={{ mb: 2.5 }}>
+          <Health360Logo size={40} withWordmark compact />
+        </Box>
         <Typography variant="h4" gutterBottom fontWeight={700}>
           Create account
         </Typography>
         <Typography color="text.secondary" mb={3}>
-          Join Health360 AI as a patient. Hospitals and doctors are added by platform administrators.
+          Join as a patient. Hospitals and doctors are added by platform administrators.
         </Typography>
 
         {error && (
@@ -65,13 +72,56 @@ export function RegisterPage() {
 
         <Box component="form" onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={2}>
-            <TextField label="First name" fullWidth {...register('firstName')} error={!!errors.firstName} helperText={errors.firstName?.message} />
-            <TextField label="Last name" fullWidth {...register('lastName')} error={!!errors.lastName} helperText={errors.lastName?.message} />
-            <TextField label="Email" type="email" fullWidth {...register('email')} error={!!errors.email} helperText={errors.email?.message} />
-            <TextField label="Phone" fullWidth {...register('phone')} error={!!errors.phone} helperText={errors.phone?.message} />
+            <TextField
+              label="First name"
+              autoComplete="given-name"
+              fullWidth
+              {...register('firstName')}
+              error={!!errors.firstName}
+              helperText={errors.firstName?.message}
+            />
+            <TextField
+              label="Last name"
+              autoComplete="family-name"
+              fullWidth
+              {...register('lastName')}
+              error={!!errors.lastName}
+              helperText={errors.lastName?.message}
+            />
+            <TextField
+              label="Email"
+              type="email"
+              autoComplete="email"
+              fullWidth
+              {...register('email')}
+              error={!!errors.email}
+              helperText={errors.email?.message}
+            />
+            <TextField
+              label="Phone"
+              autoComplete="tel"
+              fullWidth
+              {...register('phone')}
+              error={!!errors.phone}
+              helperText={errors.phone?.message}
+            />
             <input type="hidden" {...register('role')} value="PATIENT" />
-            <TextField label="Password" type="password" fullWidth {...register('password')} error={!!errors.password} helperText={errors.password?.message} />
-            <TextField label="Confirm password" type="password" fullWidth {...register('confirmPassword')} error={!!errors.confirmPassword} helperText={errors.confirmPassword?.message} />
+            <PasswordField
+              label="Password"
+              autoComplete="new-password"
+              fullWidth
+              {...register('password')}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+            />
+            <PasswordField
+              label="Confirm password"
+              autoComplete="new-password"
+              fullWidth
+              {...register('confirmPassword')}
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword?.message}
+            />
             <FormControl error={!!errors.acceptTerms}>
               <Controller
                 name="acceptTerms"
@@ -102,7 +152,8 @@ export function RegisterPage() {
             Sign in
           </Link>
         </Typography>
-      </Paper>
-    </Container>
+        </Paper>
+      </Container>
+    </AppLayout>
   );
 }

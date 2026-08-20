@@ -4,6 +4,7 @@ import { Provider as ReduxProvider } from 'react-redux';
 import { PropsWithChildren } from 'react';
 import { theme } from './theme';
 import { store } from './store';
+import { ToastProvider } from '@/shared/ui/ToastProvider';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,7 +23,7 @@ export function AppProviders({ children }: PropsWithChildren) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          {children}
+          <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ReduxProvider>

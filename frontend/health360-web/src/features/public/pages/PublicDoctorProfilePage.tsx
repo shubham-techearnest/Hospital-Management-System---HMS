@@ -27,6 +27,7 @@ import {
 } from '@/features/public/api/publicProfileApi';
 import { PublicProfileLayout } from '@/features/public/components/PublicProfileLayout';
 import { ReviewsSection } from '@/features/public/components/ReviewsSection';
+import { brand } from '@/shared/brand/brand';
 
 export function PublicDoctorProfilePage() {
   const { doctorId = '' } = useParams<{ doctorId: string }>();
@@ -41,10 +42,10 @@ export function PublicDoctorProfilePage() {
 
   useEffect(() => {
     if (profile?.name) {
-      document.title = `${profile.name} — Health360`;
+      document.title = `${profile.name} — ${brand.name}`;
     }
     return () => {
-      document.title = 'Health360';
+      document.title = brand.name;
     };
   }, [profile?.name]);
 

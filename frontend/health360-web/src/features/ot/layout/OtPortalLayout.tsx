@@ -1,10 +1,10 @@
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import SettingsIcon from '@mui/icons-material/Settings';
+import LocalHospitalOutlinedIcon from '@mui/icons-material/LocalHospitalOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 
 const navItems: PortalNavItem[] = [
-  { label: 'Overview', path: '/ot/dashboard', icon: <LocalHospitalIcon /> },
-  { label: 'Settings', path: '/ot/settings/account', icon: <SettingsIcon /> },
+  { section: 'Navigation', label: 'Overview', path: '/ot/dashboard', icon: <LocalHospitalOutlinedIcon /> },
+  { section: 'Account', label: 'Settings', path: '/ot/settings/account', icon: <SettingsOutlinedIcon /> },
 ];
 
 export function OtPortalLayout() {

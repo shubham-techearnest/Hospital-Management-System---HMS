@@ -33,4 +33,10 @@ class HealthControllerIntegrationTest {
                 .andExpect(jsonPath("$.status").value("UP"))
                 .andExpect(jsonPath("$.service").value("health360-api"));
     }
+
+    @Test
+    void awakeEndpointReturnsNoContent() throws Exception {
+        mockMvc.perform(get("/api/v1/health/awake"))
+                .andExpect(status().isNoContent());
+    }
 }

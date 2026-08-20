@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { SECTION_LABELS, SECTION_ROUTES, completionLabel } from '../utils/patientUtils';
 import type { ProfileCompletion } from '../api/patientApi';
+import { usePrefersReducedMotion } from '@/shared/motion/usePrefersReducedMotion';
 
 interface ProfileCompletionWidgetProps {
   completion?: ProfileCompletion;
@@ -12,25 +13,26 @@ interface ProfileCompletionWidgetProps {
 }
 
 function AnimatedRing({ score }: { score: number }) {
+  const reduceMotion = usePrefersReducedMotion();
   const progress = useMotionValue(0);
   const display = useTransform(progress, (v) => Math.round(v));
   const circumference = 2 * Math.PI * 54;
   const strokeDashoffset = useTransform(progress, (v) => circumference - (v / 100) * circumference);
 
   useEffect(() => {
-    animate(progress, score, { duration: 1, ease: 'easeOut' });
-  }, [score, progress]);
+    animate(progress, score, { duration: reduceMotion ? 0 : 1, ease: 'easeOut' });
+  }, [score, progress, reduceMotion]);
 
   return (
     <Box sx={{ position: 'relative', width: 140, height: 140, mx: 'auto' }}>
       <svg width="140" height="140" viewBox="0 0 120 120" aria-hidden>
-        <circle cx="60" cy="60" r="54" fill="none" stroke="#e3edf7" strokeWidth="10" />
+        <circle cx="60" cy="60" r="54" fill="none" stroke="#efecff" strokeWidth="10" />
         <motion.circle
           cx="60"
           cy="60"
           r="54"
           fill="none"
-          stroke="#1565c0"
+          stroke="#5c3dd9"
           strokeWidth="10"
           strokeLinecap="round"
           transform="rotate(-90 60 60)"
@@ -47,7 +49,7 @@ function AnimatedRing({ score }: { score: number }) {
           justifyContent: 'center',
         }}
       >
-        <motion.span style={{ fontSize: 28, fontWeight: 700, color: '#1565c0' }}>
+        <motion.span style={{ fontSize: 28, fontWeight: 700, color: '#5c3dd9' }}>
           {display}
         </motion.span>
         <Typography variant="caption" color="text.secondary">

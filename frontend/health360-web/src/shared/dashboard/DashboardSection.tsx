@@ -31,7 +31,7 @@ export function DashboardSection({ title, action, children, noPadding }: Dashboa
           py: { xs: 1.5, md: 2 },
           borderBottom: '1px solid',
           borderColor: 'divider',
-          bgcolor: 'background.default',
+          bgcolor: 'background.paper',
           flexShrink: 0,
         }}
       >

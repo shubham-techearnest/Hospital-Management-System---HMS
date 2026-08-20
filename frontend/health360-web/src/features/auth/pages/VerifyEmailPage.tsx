@@ -1,7 +1,9 @@
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
-import { Alert, Button, Container, Link, Paper, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Container, Link, Paper, Stack, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { verifyEmail } from '../api/authApi';
+import { Health360Logo } from '@/shared/brand/Health360Logo';
+import { AppLayout } from '@/shared/layout/AppLayout';
 
 export function VerifyEmailPage() {
   const [params] = useSearchParams();
@@ -35,8 +37,12 @@ export function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper sx={{ p: 4 }}>
+    <AppLayout>
+      <Container maxWidth="sm" sx={{ py: { xs: 4, md: 8 }, px: { xs: 2, sm: 3 } }}>
+        <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 }, boxShadow: 'var(--h360-shadow-sm)' }}>
+        <Box sx={{ mb: 2.5 }}>
+          <Health360Logo size={40} withWordmark compact />
+        </Box>
         <Typography variant="h4" gutterBottom fontWeight={700}>
           Email verification
         </Typography>
@@ -58,7 +64,8 @@ export function VerifyEmailPage() {
             </Typography>
           )}
         </Stack>
-      </Paper>
-    </Container>
+        </Paper>
+      </Container>
+    </AppLayout>
   );
 }

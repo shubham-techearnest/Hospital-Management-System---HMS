@@ -7,7 +7,6 @@ import {
   Button,
   Chip,
   Grid,
-  LinearProgress,
   Skeleton,
   Stack,
   Typography,
@@ -26,6 +25,7 @@ import { VitalsTrendSection } from '@/features/analytics/components/VitalsTrendS
 import { RecentTimeline } from '@/features/analytics/components/RecentTimeline';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { DashboardSection } from '@/shared/dashboard/DashboardSection';
+import { EmptyState } from '@/shared/ui/EmptyState';
 
 export function DashboardPage() {
   const authUser = useSelector((state: RootState) => state.auth.user);
@@ -85,7 +85,9 @@ export function DashboardPage() {
       />
 
       {dashboard?.disclaimer ? (
-        <Alert severity="info" sx={{ mb: 2 }}>{dashboard.disclaimer}</Alert>
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2, lineHeight: 1.6 }}>
+          {dashboard.disclaimer}
+        </Typography>
       ) : null}
       {exportError ? (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setExportError(null)}>{exportError}</Alert>
@@ -97,23 +99,6 @@ export function DashboardPage() {
           action={<Button color="inherit" size="small" onClick={() => refetchDashboard()}>Retry</Button>}
         >
           Health analytics could not be loaded.
-        </Alert>
-      ) : null}
-
-      {completion && completion.completionScore < 100 ? (
-        <Alert
-          severity="warning"
-          sx={{ mb: 3 }}
-          action={
-            <Button component={RouterLink} to="/patient/profile" color="inherit" size="small">
-              Complete profile
-            </Button>
-          }
-        >
-          <Typography variant="body2" fontWeight={600} gutterBottom>
-            Profile {completion.completionScore}% complete
-          </Typography>
-          <LinearProgress variant="determinate" value={completion.completionScore} sx={{ height: 8, borderRadius: 999 }} />
         </Alert>
       ) : null}
 
@@ -175,12 +160,13 @@ export function DashboardPage() {
                 </Button>
               </Stack>
             ) : (
-              <Stack spacing={1.5}>
-                <Typography color="text.secondary">No upcoming appointments scheduled.</Typography>
-                <Button component={RouterLink} to="/patient/book" variant="outlined" size="small" sx={{ alignSelf: 'flex-start' }}>
-                  Find a doctor
-                </Button>
-              </Stack>
+              <EmptyState
+                icon={<EventIcon />}
+                title="No upcoming appointments"
+                description="Find a doctor and book your next visit when you are ready."
+                actionLabel="Find care"
+                to="/patient/search"
+              />
             )}
           </DashboardSection>
         </Grid>
@@ -199,6 +185,11 @@ export function DashboardPage() {
                     ? 'Your profile is complete. Metrics stay up to date as you log vitals.'
                     : 'Finish your profile to unlock fuller wellness analytics.'}
                 </Typography>
+                {completion.completionScore < 100 ? (
+                  <Button component={RouterLink} to="/patient/profile" size="small" sx={{ alignSelf: 'flex-start' }}>
+                    Complete profile
+                  </Button>
+                ) : null}
               </Stack>
             ) : (
               <Typography color="text.secondary">Profile completion unavailable.</Typography>

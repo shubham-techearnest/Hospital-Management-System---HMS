@@ -27,4 +27,10 @@ public class HealthController {
         body.put("phase", "Phase 1 — S0 Kickoff");
         return ResponseEntity.ok(body);
     }
+
+    /** Empty wake probe for frontend keep-alive. No database or business work. */
+    @GetMapping("/awake")
+    public ResponseEntity<Void> awake() {
+        return ResponseEntity.noContent().build();
+    }
 }

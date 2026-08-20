@@ -1,10 +1,12 @@
+@import './shared/ui/tokens.css';
+
 :root {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--h360-font);
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light;
-  color: #1a1a2e;
-  background-color: #f8fafc;
+  color: var(--h360-color-text);
+  background-color: var(--h360-color-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,7 +20,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  overflow-x: hidden;
+  background-color: var(--h360-color-bg);
+  color: var(--h360-color-text);
 }
 
 #root {
@@ -28,8 +31,36 @@ body {
 }
 
 img,
-video,
-svg {
+video {
   max-width: 100%;
   height: auto;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -48px;
+  z-index: calc(var(--h360-z-toast) + 1);
+  padding: 8px 14px;
+  border-radius: var(--h360-radius-sm);
+  background: var(--h360-color-primary-dark);
+  color: var(--h360-color-text-on-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 12px;
+  outline: 3px solid var(--h360-color-primary-light);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

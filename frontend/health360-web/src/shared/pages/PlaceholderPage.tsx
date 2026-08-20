@@ -1,11 +1,12 @@
-import { Typography } from '@mui/material';
-import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
+import InboxIcon from '@mui/icons-material/Inbox';
+import { EmptyState } from '@/shared/ui/EmptyState';
 
 export function PlaceholderPage({ title }: { title: string }) {
   return (
-    <AnimatedPage>
-      <Typography variant="h4" sx={{ mb: 1 }}>{title}</Typography>
-      <Typography color="text.secondary">This section is planned for a future sprint.</Typography>
-    </AnimatedPage>
+    <EmptyState
+      icon={<InboxIcon />}
+      title={title}
+      description="This section is not available in the current release."
+    />
   );
 }

@@ -1,5 +1,5 @@
 import { Link as RouterLink } from 'react-router-dom';
-import { Chip, Grid, Stack, Typography } from '@mui/material';
+import { Button, Chip, Grid, Stack, Typography } from '@mui/material';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
@@ -25,7 +25,17 @@ export function HospitalDashboardPage() {
         title={dashboard?.hospitalName ?? 'Hospital overview'}
         subtitle={dashboard?.branchName
           ? `Operational snapshot — ${dashboard.branchName}`
-          : 'Operational snapshot — branches, departments, roster, and clinical modules.'}
+          : 'Today’s waiting queue, beds, and pending diagnostics first.'}
+      />
+
+      <DashboardStatsGrid
+        loading={isLoading}
+        items={[
+          { label: 'OPD waiting', value: dashboard?.opdWaitingToday ?? 0, hint: 'Patients in queue today', icon: <QueueIcon />, to: '/hospital/opd', accent: 'warning.main' },
+          { label: 'IPD active', value: dashboard?.activeIpdAdmissions ?? 0, hint: 'Current admissions', icon: <HotelIcon />, to: '/hospital/ipd' },
+          { label: 'ICU active', value: dashboard?.activeIcuStays ?? 0, hint: 'Critical care stays', icon: <MonitorHeartIcon />, to: '/hospital/icu' },
+          { label: 'Pending lab', value: dashboard?.pendingLabOrders ?? 0, hint: 'Orders awaiting results', icon: <ScienceIcon />, to: '/hospital/lab' },
+        ]}
       />
 
       <DashboardStatsGrid
@@ -35,10 +45,6 @@ export function HospitalDashboardPage() {
           { label: 'Departments', value: dashboard?.departmentCount ?? 0, icon: <MeetingRoomIcon />, to: '/hospital/departments' },
           { label: 'Doctors', value: dashboard?.doctorCount ?? 0, icon: <GroupsIcon />, to: '/hospital/doctors' },
           { label: 'Active staff', value: dashboard?.activeStaffCount ?? 0, icon: <BadgeIcon />, to: '/hospital/staff' },
-          { label: 'OPD waiting', value: dashboard?.opdWaitingToday ?? 0, icon: <QueueIcon />, to: '/hospital/opd' },
-          { label: 'IPD active', value: dashboard?.activeIpdAdmissions ?? 0, icon: <HotelIcon />, to: '/hospital/ipd' },
-          { label: 'ICU active', value: dashboard?.activeIcuStays ?? 0, icon: <MonitorHeartIcon />, to: '/hospital/icu' },
-          { label: 'Pending lab', value: dashboard?.pendingLabOrders ?? 0, icon: <ScienceIcon />, to: '/hospital/lab' },
         ]}
       />
 
@@ -55,9 +61,9 @@ export function HospitalDashboardPage() {
                   {dashboard.totalEncounters} total encounters · {dashboard.pendingPharmacyOrders} pending pharmacy · {dashboard.pendingRadiologyOrders} pending radiology · {dashboard.pendingOtProcedures} pending OT
                 </Typography>
                 <Chip label="24×7 Emergency" color="success" size="small" sx={{ alignSelf: 'flex-start' }} icon={<EmergencyIcon />} />
-                <Typography component={RouterLink} to="/hospital/profile" color="primary" sx={{ pt: 1 }}>
-                  Edit hospital profile →
-                </Typography>
+                <Button component={RouterLink} to="/hospital/profile" size="small" sx={{ alignSelf: 'flex-start' }}>
+                  Edit hospital profile
+                </Button>
               </Stack>
             ) : (
               <Typography color="text.secondary">Complete your hospital profile to appear in search.</Typography>
@@ -65,12 +71,12 @@ export function HospitalDashboardPage() {
           </DashboardSection>
         </Grid>
         <Grid item xs={12} md={4}>
-          <DashboardSection title="Manage">
-            <Stack spacing={1.5}>
-              <Typography component={RouterLink} to="/hospital/opd" color="primary">OPD queue →</Typography>
-              <Typography component={RouterLink} to="/hospital/staff" color="primary">Staff roster →</Typography>
-              <Typography component={RouterLink} to="/hospital/facilities" color="primary">Facilities & amenities →</Typography>
-              <Typography component={RouterLink} to="/hospital/gallery" color="primary">Photo gallery →</Typography>
+          <DashboardSection title="Quick actions">
+            <Stack spacing={1}>
+              <Button component={RouterLink} to="/hospital/opd" variant="outlined">OPD queue</Button>
+              <Button component={RouterLink} to="/hospital/staff" variant="outlined">Staff roster</Button>
+              <Button component={RouterLink} to="/hospital/facilities" variant="outlined">Facilities</Button>
+              <Button component={RouterLink} to="/hospital/gallery" variant="outlined">Photo gallery</Button>
             </Stack>
           </DashboardSection>
         </Grid>

@@ -1,5 +1,5 @@
 import { Link as RouterLink } from 'react-router-dom';
-import { Chip, Grid, List, ListItem, ListItemText, Skeleton, Stack, Typography } from '@mui/material';
+import { Button, Chip, Grid, List, ListItem, ListItemText, Skeleton, Stack, Typography } from '@mui/material';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
@@ -95,15 +95,12 @@ export function DoctorDashboardPage() {
         </Grid>
         <Grid item xs={12} md={5}>
           <DashboardSection title="Quick links">
-            <Stack spacing={1.5}>
-              <Typography component={RouterLink} to="/doctor/schedule" color="primary">Manage weekly schedule →</Typography>
-              <Typography component={RouterLink} to="/doctor/profile" color="primary">Update professional profile →</Typography>
-              <Typography component={RouterLink} to="/doctor/hospitals" color="primary">
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <LocalHospitalIcon fontSize="small" />
-                  <span>Hospital associations →</span>
-                </Stack>
-              </Typography>
+            <Stack spacing={1}>
+              <Button component={RouterLink} to="/doctor/schedule" variant="outlined">Manage weekly schedule</Button>
+              <Button component={RouterLink} to="/doctor/profile" variant="outlined">Update professional profile</Button>
+              <Button component={RouterLink} to="/doctor/hospitals" variant="outlined" startIcon={<LocalHospitalIcon />}>
+                Hospital associations
+              </Button>
             </Stack>
           </DashboardSection>
         </Grid>

@@ -61,14 +61,21 @@ export function PublicCareDiscovery({ isAuthenticated = false, showPatientAction
   }
 
   return (
-    <Box sx={{ mb: { xs: 3, md: 5 } }}>
-      <Typography variant="h5" fontWeight={700} gutterBottom sx={{ px: { xs: 0.5, sm: 0 } }}>
+    <Box component="section" aria-labelledby="find-care-heading" sx={{ mb: { xs: 4, md: 6 } }}>
+      <Typography
+        variant="overline"
+        color="primary.dark"
+        sx={{ fontWeight: 700, letterSpacing: '0.12em' }}
+      >
+        Care search
+      </Typography>
+      <Typography id="find-care-heading" variant="h5" fontWeight={800} gutterBottom sx={{ letterSpacing: '-0.02em' }}>
         Find care near you
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 720, lineHeight: 1.7 }}>
         {isAuthenticated
-          ? 'Search doctors and hospitals on Health360, compare options, and book visits from your patient portal.'
-          : 'Explore doctors and hospitals on Health360. Create a free account or sign in to search, compare, and book.'}
+          ? 'Search doctors and hospitals, compare options, and book visits from your patient portal.'
+          : 'Explore doctors and hospitals. Create a free account or sign in to search, compare, and book.'}
       </Typography>
       <Grid container spacing={{ xs: 2, md: 3 }}>
         {CARE_OPTIONS.map((option) => (

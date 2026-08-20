@@ -1,10 +1,10 @@
-import MedicalInformationIcon from '@mui/icons-material/MedicalInformation';
-import SettingsIcon from '@mui/icons-material/Settings';
+import MedicalInformationOutlinedIcon from '@mui/icons-material/MedicalInformationOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 
 const navItems: PortalNavItem[] = [
-  { label: 'Overview', path: '/radiology/dashboard', icon: <MedicalInformationIcon /> },
-  { label: 'Settings', path: '/radiology/settings/account', icon: <SettingsIcon /> },
+  { section: 'Navigation', label: 'Overview', path: '/radiology/dashboard', icon: <MedicalInformationOutlinedIcon /> },
+  { section: 'Account', label: 'Settings', path: '/radiology/settings/account', icon: <SettingsOutlinedIcon /> },
 ];
 
 export function RadiologyPortalLayout() {

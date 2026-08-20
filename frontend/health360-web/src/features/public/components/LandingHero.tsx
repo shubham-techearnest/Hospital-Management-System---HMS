@@ -18,6 +18,7 @@ import {
   resolvePrimaryRole,
   type AppRole,
 } from '@/shared/auth/roleNavigation';
+import { Health360Logo } from '@/shared/brand/Health360Logo';
 
 const ROLE_LABELS: Record<AppRole, string> = {
   PATIENT: 'Patient portal',
@@ -55,14 +56,14 @@ export function LandingHero({ isAuthenticated, displayName, roles }: LandingHero
   return (
     <Box
       component="section"
-      aria-label="Health360 AI overview"
+      aria-label="Hospital Management System overview"
       sx={{
         position: 'relative',
         overflow: 'hidden',
         borderRadius: { xs: 3, md: 4 },
-        mb: { xs: 3, md: 5 },
+        mb: { xs: 4, md: 6 },
         px: { xs: 2.5, sm: 4, md: 6 },
-        py: { xs: 4, sm: 5, md: 6 },
+        py: { xs: 4, sm: 5, md: 6.5 },
         textAlign: 'center',
         background: `linear-gradient(145deg, ${theme.palette.primary.light} 0%, #ffffff 48%, ${theme.palette.background.default} 100%)`,
         border: '1px solid',
@@ -100,11 +101,13 @@ export function LandingHero({ isAuthenticated, displayName, roles }: LandingHero
       <Stack
         spacing={{ xs: 2, md: 2.5 }}
         alignItems="center"
-        sx={{ position: 'relative', zIndex: 1, maxWidth: 760, mx: 'auto' }}
+        sx={{ position: 'relative', zIndex: 1, maxWidth: 800, mx: 'auto' }}
       >
+        <Health360Logo size={isSmUp ? 72 : 60} />
+
         <Chip
           icon={<VerifiedUserOutlinedIcon />}
-          label={isAuthenticated ? roleLabel : 'Enterprise digital healthcare'}
+          label={isAuthenticated ? roleLabel : 'Connected care for every role'}
           color="primary"
           variant="outlined"
           sx={{
@@ -123,10 +126,12 @@ export function LandingHero({ isAuthenticated, displayName, roles }: LandingHero
           sx={{
             lineHeight: 1.15,
             letterSpacing: '-0.02em',
-            fontSize: { xs: '2rem', sm: '2.75rem', md: '3.25rem' },
+            fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3.1rem' },
+            maxWidth: 720,
           }}
         >
-          Health360 AI
+          Hospital Management
+          <Box component="span" sx={{ color: 'primary.main' }}> System</Box>
         </Typography>
 
         {isAuthenticated ? (
@@ -139,7 +144,7 @@ export function LandingHero({ isAuthenticated, displayName, roles }: LandingHero
                 lineHeight: 1.75,
                 fontWeight: 400,
                 fontSize: { xs: '1rem', md: '1.125rem' },
-                maxWidth: 620,
+                maxWidth: 640,
                 px: { xs: 0.5, sm: 2 },
               }}
             >
@@ -170,11 +175,12 @@ export function LandingHero({ isAuthenticated, displayName, roles }: LandingHero
                 lineHeight: 1.75,
                 fontWeight: 400,
                 fontSize: { xs: '1rem', md: '1.125rem' },
-                maxWidth: 620,
+                maxWidth: 680,
                 px: { xs: 0.5, sm: 2 },
               }}
             >
-              One connected platform for patients, doctors, and hospitals — book care, manage records, and collaborate securely.
+              One platform for patients, doctors, and hospitals. Search care, book visits, keep records together, and run
+              clinical work from role-based portals — without switching systems.
             </Typography>
 
             <Stack direction="row" flexWrap="wrap" justifyContent="center" gap={1} sx={{ pt: 0.5 }}>
@@ -228,8 +234,8 @@ export function LandingHero({ isAuthenticated, displayName, roles }: LandingHero
               </Button>
             </Stack>
 
-            <Typography variant="caption" color="text.secondary" sx={{ pt: 0.5, lineHeight: 1.6 }}>
-              Free to join · Role-based portals · Secure health data access
+            <Typography variant="caption" color="text.secondary" sx={{ pt: 0.5, lineHeight: 1.6, maxWidth: 480 }}>
+              Patients can register free. Hospital and clinician accounts are provisioned by your organization.
             </Typography>
           </>
         )}

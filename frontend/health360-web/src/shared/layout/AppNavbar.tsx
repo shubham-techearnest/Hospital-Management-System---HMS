@@ -1,28 +1,23 @@
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import {
-  AppBar, Avatar, Box, Button, Divider, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Toolbar, Typography, useMediaQuery, useTheme,
-} from '@mui/material';
-import LogoutIcon from '@mui/icons-material/Logout';
-import { useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import MenuIcon from '@mui/icons-material/Menu';
+import { AppBar, Box, Button, IconButton, Toolbar, useMediaQuery, useTheme } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import type { RootState } from '@/app/store';
-import { clearCredentials } from '@/features/auth/store/authSlice';
-import { logout as logoutApi } from '@/features/auth/api/authApi';
-import { getRoleDashboardPath, resolvePrimaryRole, type AppRole } from '@/shared/auth/roleNavigation';
-
-function displayName(firstName?: string, lastName?: string, email?: string) {
-  const name = [firstName, lastName].filter(Boolean).join(' ').trim();
-  return name || email || 'Account';
-}
-
-function initials(firstName?: string, lastName?: string, email?: string) {
-  const combined = `${firstName?.charAt(0) ?? ''}${lastName?.charAt(0) ?? ''}`.trim();
-  return combined || email?.charAt(0)?.toUpperCase() || '?';
-}
+import {
+  getRoleDashboardPath,
+  getRoleSettingsBasePath,
+  resolvePrimaryRole,
+  type AppRole,
+} from '@/shared/auth/roleNavigation';
+import { brand } from '@/shared/brand/brand';
+import { Health360Logo } from '@/shared/brand/Health360Logo';
+import { NavbarAccount } from '@/shared/layout/NavbarAccount';
+import { APP_NAVBAR_HEIGHT } from '@/shared/layout/PortalTopBar';
+import { ToastNavbar } from '@/shared/layout/ToastNavbar';
 
 interface AppNavbarProps {
   portalRole?: AppRole;
+  onOpenNav?: () => void;
 }
 
 function readStoredUser(): RootState['auth']['user'] {
@@ -34,90 +29,120 @@ function readStoredUser(): RootState['auth']['user'] {
   }
 }
 
-export function AppNavbar({ portalRole }: AppNavbarProps) {
+export function AppNavbar({ portalRole, onOpenNav }: AppNavbarProps) {
   const theme = useTheme();
   const isCompact = useMediaQuery(theme.breakpoints.down('sm'));
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
   const auth = useSelector((state: RootState) => state.auth);
-  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const accessToken = auth.accessToken ?? localStorage.getItem('accessToken');
   const user = auth.user ?? readStoredUser();
   const isAuthenticated = Boolean(accessToken && user);
   const role = portalRole ?? resolvePrimaryRole(user?.roles);
   const homePath = role ? getRoleDashboardPath(role) : '/';
-
-  const handleLogout = async () => {
-    setMenuAnchor(null);
-    try {
-      if (accessToken) {
-        await logoutApi(accessToken, auth.refreshToken ?? localStorage.getItem('refreshToken') ?? undefined);
-      }
-    } catch {
-      // clear local session regardless
-    } finally {
-      dispatch(clearCredentials());
-      navigate('/login');
-    }
-  };
+  const settingsPath = role ? `${getRoleSettingsBasePath(role)}/account` : '/settings/account';
+  const hasNotifications = role === 'PATIENT' || role === 'DOCTOR' || role === 'HOSPITAL_ADMIN' || role === 'PLATFORM_ADMIN';
+  const notificationsPath = role && hasNotifications ? `${getRoleSettingsBasePath(role)}/notifications` : null;
+  const profilePath = role === 'PATIENT' ? '/patient/profile' : role === 'DOCTOR' ? '/doctor/profile' : role === 'HOSPITAL_ADMIN' ? '/hospital/profile' : null;
 
   return (
-    <AppBar position="fixed" elevation={0} sx={{ bgcolor: 'secondary.main', zIndex: (t) => t.zIndex.drawer + 1 }}>
-      <Toolbar>
-        <LocalHospitalIcon sx={{ mr: 1 }} />
-        <Typography
-          variant="h6"
-          component={RouterLink}
-          to={isAuthenticated ? homePath : '/'}
-          sx={{ flexGrow: 1, fontWeight: 700, color: 'inherit', textDecoration: 'none' }}
-        >
-          Health360 AI
-        </Typography>
+    <AppBar
+      position="fixed"
+      elevation={0}
+      sx={{
+        bgcolor: 'secondary.main',
+        color: '#ffffff',
+        zIndex: (t) => t.zIndex.drawer + 1,
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+      }}
+    >
+      <Toolbar
+        sx={{
+          minHeight: { xs: APP_NAVBAR_HEIGHT, sm: APP_NAVBAR_HEIGHT },
+          px: { xs: 1.5, md: 2.5 },
+          gap: 1.5,
+          justifyContent: 'space-between',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+          {onOpenNav ? (
+            <IconButton
+              edge="start"
+              onClick={onOpenNav}
+              aria-label="Open navigation"
+              sx={{
+                color: 'inherit',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+          ) : null}
+          <Box
+            component={RouterLink}
+            to={isAuthenticated ? homePath : '/'}
+            aria-label={`${brand.name} home`}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              minWidth: 0,
+              color: '#ffffff',
+              textDecoration: 'none',
+              '&:hover': { opacity: 1 },
+            }}
+          >
+            <Health360Logo
+              size={isCompact ? 28 : 32}
+              withWordmark
+              compact
+              short={isCompact}
+              decorative
+              motion="interactive"
+              wordmarkColor="#ffffff"
+            />
+          </Box>
+        </Box>
 
         {isAuthenticated ? (
-          <>
-            {isCompact ? (
-              <IconButton color="inherit" onClick={(e) => setMenuAnchor(e.currentTarget)} aria-label="Account menu">
-                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}>
-                  {initials(user?.firstName, user?.lastName, user?.email)}
-                </Avatar>
-              </IconButton>
-            ) : (
-              <Button color="inherit" onClick={(e) => setMenuAnchor(e.currentTarget)} startIcon={
-                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}>
-                  {initials(user?.firstName, user?.lastName, user?.email)}
-                </Avatar>
-              } sx={{ textTransform: 'none', maxWidth: 220 }}>
-                <Typography noWrap component="span">
-                  {displayName(user?.firstName, user?.lastName, user?.email)}
-                </Typography>
-              </Button>
-            )}
-            <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
-              <MenuItem component={RouterLink} to={homePath} onClick={() => setMenuAnchor(null)}>
-                <ListItemIcon><LocalHospitalIcon fontSize="small" /></ListItemIcon>
-                <ListItemText>Dashboard</ListItemText>
-              </MenuItem>
-              <Divider />
-              <MenuItem onClick={handleLogout}>
-                <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
-                <ListItemText>Logout</ListItemText>
-              </MenuItem>
-            </Menu>
-          </>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>
+            <ToastNavbar notificationsPath={notificationsPath} tone="brand" />
+            <NavbarAccount
+              homePath={homePath}
+              settingsPath={settingsPath}
+              profilePath={profilePath}
+              tone="brand"
+            />
+          </Box>
         ) : (
-          <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, flexShrink: 0 }}>
-            <Button color="inherit" size={isCompact ? 'small' : 'medium'} component={RouterLink} to="/login">
-              {isCompact ? 'Login' : 'Login'}
-            </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
             <Button
-              variant="outlined"
               color="inherit"
               size={isCompact ? 'small' : 'medium'}
               component={RouterLink}
-              to="/register"
+              to="/login"
+              sx={{
+                fontWeight: 700,
+                color: '#ffffff',
+                px: { xs: 1.25, sm: 1.75 },
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
+              }}
             >
-              {isCompact ? 'Join' : 'Register'}
+              Sign in
+            </Button>
+            <Button
+              variant="contained"
+              size={isCompact ? 'small' : 'medium'}
+              component={RouterLink}
+              to="/register"
+              sx={{
+                bgcolor: '#ffffff',
+                color: 'primary.dark',
+                boxShadow: 'none',
+                fontWeight: 700,
+                borderRadius: 999,
+                px: { xs: 1.5, sm: 2 },
+                '&:hover': { bgcolor: 'primary.light', boxShadow: 'none' },
+              }}
+            >
+              {isCompact ? 'Join' : 'Create account'}
             </Button>
           </Box>
         )}

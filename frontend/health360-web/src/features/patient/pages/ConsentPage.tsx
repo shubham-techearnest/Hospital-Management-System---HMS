@@ -45,7 +45,7 @@ export function ConsentPage() {
             Health Data Consent
           </Typography>
           <Typography variant="body1" color="text.secondary" paragraph>
-            To build your health profile, Health360 needs your consent to collect and store personal
+            To build your health profile, Hospital Management System needs your consent to collect and store personal
             health information. Your data is encrypted and used only to provide personalized health
             insights and care coordination.
           </Typography>
@@ -65,7 +65,7 @@ export function ConsentPage() {
               control={
                 <Checkbox checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
               }
-              label="I consent to Health360 collecting and processing my health data as described above."
+              label="I consent to Hospital Management System collecting and processing my health data as described above."
             />
             <Button variant="contained" disabled={submitting} onClick={handleSubmit}>
               {submitting ? 'Saving…' : 'Accept & Continue'}

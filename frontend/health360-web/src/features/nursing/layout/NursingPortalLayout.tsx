@@ -1,10 +1,10 @@
-import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
-import SettingsIcon from '@mui/icons-material/Settings';
+import LocalPharmacyOutlinedIcon from '@mui/icons-material/LocalPharmacyOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 
 const navItems: PortalNavItem[] = [
-  { label: 'Medication (MAR)', path: '/nursing/dashboard', icon: <LocalPharmacyIcon /> },
-  { label: 'Settings', path: '/nursing/settings/account', icon: <SettingsIcon /> },
+  { section: 'Navigation', label: 'Medications', path: '/nursing/dashboard', icon: <LocalPharmacyOutlinedIcon /> },
+  { section: 'Account', label: 'Settings', path: '/nursing/settings/account', icon: <SettingsOutlinedIcon /> },
 ];
 
 export function NursingPortalLayout() {

@@ -46,8 +46,8 @@ export function VitalCard({
           height: '100%',
           border: '1px solid',
           borderColor: 'divider',
-          transition: 'box-shadow 0.2s',
-          '&:hover': { boxShadow: 3 },
+          transition: 'box-shadow var(--h360-duration) var(--h360-ease), transform var(--h360-duration) var(--h360-ease)',
+          '&:hover': { boxShadow: 'var(--h360-shadow-sm)', transform: 'translateY(-1px)' },
         }}
       >
         <CardContent>
