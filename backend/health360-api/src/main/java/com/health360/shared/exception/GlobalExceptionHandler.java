@@ -1,5 +1,7 @@
 package com.health360.shared.exception;
 
+import com.health360.patient.exception.DuplicatePatientCandidatesException;
+import com.health360.patient.presentation.dto.response.DuplicateCandidateResponse;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.dto.ErrorResponse;
 import com.health360.shared.filter.CorrelationIdFilter;
@@ -21,11 +23,26 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(DuplicatePatientCandidatesException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateCandidates(DuplicatePatientCandidatesException ex) {
+        List<DuplicateCandidateResponse> candidates = ex.getCandidates();
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("success", false);
+        body.put("error", Map.of(
+                "code", ErrorCode.DUPLICATE_PATIENT_CANDIDATES.name(),
+                "message", ex.getMessage(),
+                "correlationId", correlationId(),
+                "timestamp", java.time.Instant.now().toString()));
+        body.put("data", Map.of("candidates", candidates));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusiness(BusinessException ex) {

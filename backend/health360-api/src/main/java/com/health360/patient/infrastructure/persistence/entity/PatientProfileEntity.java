@@ -155,4 +155,16 @@ public class PatientProfileEntity extends BaseAuditableEntity {
 
     @Column(name = "weekly_exercise_minutes_goal")
     private Integer weeklyExerciseMinutesGoal;
+
+    @Column(length = 20)
+    private String uhid;
+
+    @Column(name = "legal_first_name", length = 100)
+    private String legalFirstName;
+
+    @Column(name = "legal_last_name", length = 100)
+    private String legalLastName;
+
+    @Column(name = "registration_source", length = 30, nullable = false)
+    private String registrationSource = "APP";
 }

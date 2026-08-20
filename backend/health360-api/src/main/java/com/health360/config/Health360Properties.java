@@ -14,6 +14,8 @@ public class Health360Properties {
     private UUID defaultTenantId = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private String defaultTenantSlug = "default";
     private String appBaseUrl = "http://localhost:5173";
+    /** Extra browser origins besides app-base-url. Comma-separated. */
+    private String corsAllowedOrigins = "";
     private Jwt jwt = new Jwt();
     private Auth auth = new Auth();
     private Storage storage = new Storage();

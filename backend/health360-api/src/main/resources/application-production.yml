@@ -17,3 +17,4 @@ server:
 
 health360:
   app-base-url: ${APP_BASE_URL:https://health360-web.onrender.com}
+  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:}

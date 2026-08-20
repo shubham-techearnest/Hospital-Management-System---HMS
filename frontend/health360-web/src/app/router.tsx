@@ -140,6 +140,18 @@ const HospitalStaffPage = lazy(() =>
 const ReceptionDashboardPage = lazy(() =>
   import('@/features/reception/pages/ReceptionDashboardPage').then((m) => ({ default: m.ReceptionDashboardPage })),
 );
+const PatientSearchPage = lazy(() =>
+  import('@/features/reception/pages/PatientSearchPage').then((m) => ({ default: m.PatientSearchPage })),
+);
+const PatientRegisterPage = lazy(() =>
+  import('@/features/reception/pages/PatientRegisterPage').then((m) => ({ default: m.PatientRegisterPage })),
+);
+const PatientDetailPage = lazy(() =>
+  import('@/features/reception/pages/PatientDetailPage').then((m) => ({ default: m.PatientDetailPage })),
+);
+const PatientReceiptPage = lazy(() =>
+  import('@/features/reception/pages/PatientReceiptPage').then((m) => ({ default: m.PatientReceiptPage })),
+);
 const NursingDashboardPage = lazy(() =>
   import('@/features/nursing/pages/NursingDashboardPage').then((m) => ({ default: m.NursingDashboardPage })),
 );
@@ -463,6 +475,10 @@ export function AppRouter() {
         <Route path="/reception" element={<ProtectedRoute><RoleRoute role="RECEPTIONIST"><ReceptionPortalLayout /></RoleRoute></ProtectedRoute>}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<LazyPage><ReceptionDashboardPage /></LazyPage>} />
+          <Route path="patients/search" element={<LazyPage><PatientSearchPage /></LazyPage>} />
+          <Route path="patients/new" element={<LazyPage><PatientRegisterPage /></LazyPage>} />
+          <Route path="patients/:patientId/receipt" element={<LazyPage><PatientReceiptPage /></LazyPage>} />
+          <Route path="patients/:patientId" element={<LazyPage><PatientDetailPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
         </Route>
         <Route path="/nursing" element={<ProtectedRoute><RoleRoute role="NURSE"><NursingPortalLayout /></RoleRoute></ProtectedRoute>}>

@@ -1,0 +1,22 @@
+# Keep-alive ping for the Render free API so it is less likely to sleep after ~15 minutes idle.
+# This only reduces cold starts. Render free-tier monthly hours still apply; it does not make the service unlimited.
+#
+# Preferred no-code alternative (UptimeRobot):
+#   Monitor type: HTTP(s)
+#   Friendly name: Health360 API keep-alive
+#   URL: https://health360-api-6hz5.onrender.com/api/v1/health
+#   Interval: 10 minutes (or 5 minutes if available on the plan)
+#   Expected status: 200
+name: Keep Render API awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: curl -fsS --retry 2 --retry-delay 5 --max-time 60 https://health360-api-6hz5.onrender.com/api/v1/health

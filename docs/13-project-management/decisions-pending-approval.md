@@ -1,9 +1,7 @@
 # Decisions Requiring Senior Approval
 
 | Document ID | PM-DEC-001 |
-| Status | **ACTIVE — unresolved** |
-
-Do not implement until marked **APPROVED**.
+| Status | **RESOLVED — approved 2026-08-20 with roadmap approval** |
 
 ---
 
@@ -20,7 +18,7 @@ Do not implement until marked **APPROVED**.
 
 **Impact:** V42 unique index, search API, receipt format.
 
-**Status:** DECISION REQUIRED
+**Status:** **APPROVED** — Option A (tenant-global UHID)
 
 ---
 
@@ -36,7 +34,7 @@ Do not implement until marked **APPROVED**.
 
 **Impact:** P1-F1 register API behavior, override workflow.
 
-**Status:** DECISION REQUIRED
+**Status:** **APPROVED** — Option A (block on mobile exact or name+DOB)
 
 ---
 
@@ -46,7 +44,7 @@ Do not implement until marked **APPROVED**.
 
 **Recommendation:** pg_trgm for scale; ILIKE acceptable for MVP if index size concern.
 
-**Status:** DECISION REQUIRED
+**Status:** **APPROVED** — ILIKE/JPA for MVP
 
 ---
 
@@ -62,7 +60,7 @@ Do not implement until marked **APPROVED**.
 
 **Impact:** V42 migration, IAM integration, privacy.
 
-**Status:** DECISION REQUIRED — **blocks P1-F1**
+**Status:** **APPROVED** — Option A (stub IAM user)
 
 ---
 
@@ -72,7 +70,7 @@ Do not implement until marked **APPROVED**.
 
 **Recommendation:** Optional per hospital setting; default off until SMS gateway approved.
 
-**Status:** DECISION REQUIRED
+**Status:** **APPROVED** — Optional per hospital; default off
 
 ---
 
@@ -130,4 +128,4 @@ Do not implement until marked **APPROVED**.
 
 | Decision | Approved by | Date |
 |----------|-------------|------|
-| — | — | — |
+| DEC-001 … DEC-005 | Product Owner (roadmap approval) | 2026-08-20 |
