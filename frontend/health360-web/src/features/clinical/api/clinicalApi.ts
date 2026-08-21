@@ -59,6 +59,48 @@ export interface ClinicalOrder {
   orderedAt: string;
 }
 
+export interface ClinicalVitalSign {
+  vitalSignId: string;
+  encounterId: string;
+  systolicBp?: number;
+  diastolicBp?: number;
+  heartRate?: number;
+  temperature?: number;
+  respiratoryRate?: number;
+  spo2?: number;
+  bloodGlucose?: number;
+  glucoseReadingType?: string;
+  notes?: string;
+  recordedAt: string;
+  bpClassification?: string;
+  bpInterpretation?: string;
+}
+
+export type RecordClinicalVitalsPayload = {
+  systolicBp?: number;
+  diastolicBp?: number;
+  heartRate?: number;
+  temperature?: number;
+  respiratoryRate?: number;
+  spo2?: number;
+  bloodGlucose?: number;
+  glucoseReadingType?: string;
+  notes?: string;
+  recordedAt: string;
+};
+
+export interface ClinicalTimelineItem {
+  eventId: string;
+  eventType: string;
+  summary: string;
+  occurredAt: string;
+  encounterId: string;
+  encounterNumber?: string;
+  referenceType?: string;
+  referenceId?: string;
+  metadata?: Record<string, unknown>;
+}
+
 const EMPTY_PAGE = <T>(): SpringPage<T> => ({
   content: [],
   totalElements: 0,
@@ -146,4 +188,42 @@ export async function createClinicalOrder(
     payload,
   );
   return unwrap(data);
+}
+
+export async function listEncounterVitals(encounterId: string): Promise<ClinicalVitalSign[]> {
+  const { data } = await apiClient.get<ApiEnvelope<ClinicalVitalSign[]>>(
+    `/clinical/encounters/${encounterId}/vitals`,
+  );
+  return unwrap(data) ?? [];
+}
+
+export async function recordEncounterVitals(
+  encounterId: string,
+  payload: RecordClinicalVitalsPayload,
+): Promise<ClinicalVitalSign> {
+  const { data } = await apiClient.post<ApiEnvelope<ClinicalVitalSign>>(
+    `/clinical/encounters/${encounterId}/vitals`,
+    payload,
+  );
+  return unwrap(data);
+}
+
+export async function getPatientClinicalTimeline(
+  patientId: string,
+  page = 0,
+  size = 20,
+): Promise<SpringPage<ClinicalTimelineItem>> {
+  const { data } = await apiClient.get<ApiEnvelope<SpringPage<ClinicalTimelineItem>>>(
+    `/clinical/patients/${patientId}/timeline`,
+    { params: { page, size } },
+  );
+  return unwrap(data) ?? EMPTY_PAGE();
+}
+
+export async function getMyClinicalTimeline(page = 0, size = 20): Promise<SpringPage<ClinicalTimelineItem>> {
+  const { data } = await apiClient.get<ApiEnvelope<SpringPage<ClinicalTimelineItem>>>(
+    '/patients/me/clinical-timeline',
+    { params: { page, size } },
+  );
+  return unwrap(data) ?? EMPTY_PAGE();
 }

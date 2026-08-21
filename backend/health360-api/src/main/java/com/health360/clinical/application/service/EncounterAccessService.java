@@ -44,6 +44,31 @@ public class EncounterAccessService {
         }
     }
 
+    public void assertCanReadVitals(UserPrincipal principal, EncounterEntity encounter) {
+        if (!principal.hasPermission("clinical:vitals:read")
+                && !principal.hasPermission("clinical:vitals:write")) {
+            throw forbidden();
+        }
+        if (principal.getRoles().contains("HOSPITAL_ADMIN")) {
+            assertHospitalAdminScope(principal, encounter.getHospitalId());
+        }
+    }
+
+    public void assertCanWriteVitals(UserPrincipal principal, EncounterEntity encounter) {
+        if (!principal.hasPermission("clinical:vitals:write")) {
+            throw forbidden();
+        }
+        if (principal.getRoles().contains("HOSPITAL_ADMIN")) {
+            assertHospitalAdminScope(principal, encounter.getHospitalId());
+        }
+    }
+
+    public void assertCanReadClinicalTimeline(UserPrincipal principal) {
+        if (!principal.hasPermission("clinical:timeline:read")) {
+            throw forbidden();
+        }
+    }
+
     public PatientProfileEntity requirePatient(UUID tenantId, UUID patientId) {
         return patientProfileRepository.findById(patientId)
                 .filter(p -> p.getDeletedAt() == null && p.getTenantId().equals(tenantId))

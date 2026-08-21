@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { Alert, Button, Paper, Stack, Typography } from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
+import { ClinicalTimelinePanel } from '@/features/clinical/components/ClinicalTimelinePanel';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { useHospitalPatient } from '@/features/reception/hooks/usePatientRegistryQueries';
@@ -21,7 +22,7 @@ export function PatientDetailPage() {
   return (
     <AnimatedPage>
       <DashboardPageHeader title="Patient Summary" subtitle={data.legalName} />
-      <Paper sx={{ p: 3, maxWidth: 720 }}>
+      <Paper sx={{ p: 3, maxWidth: 720, mb: 3 }}>
         <Stack spacing={1}>
           <Typography><strong>UHID:</strong> {data.uhid ?? 'Not assigned'}</Typography>
           <Typography><strong>Mobile:</strong> {data.primaryPhone ?? '—'}</Typography>
@@ -39,6 +40,10 @@ export function PatientDetailPage() {
             Back to Search
           </Button>
         </Stack>
+      </Paper>
+
+      <Paper variant="outlined" sx={{ p: 3, maxWidth: 720 }}>
+        <ClinicalTimelinePanel patientId={data.patientId} />
       </Paper>
     </AnimatedPage>
   );

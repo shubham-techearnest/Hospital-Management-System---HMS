@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
-  Alert, Button, Card, CardContent, Chip, CircularProgress, Grid, Paper, Stack, Typography,
+  Alert, Button, Card, CardContent, Chip, CircularProgress, Divider, Grid, Paper, Stack, Typography,
 } from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
+import { ClinicalTimelinePanel } from '@/features/clinical/components/ClinicalTimelinePanel';
 import { LineChart } from '@/features/analytics/components/LineChart';
 import { useHealthDashboard, useMetricHistory } from '@/features/analytics/hooks/useAnalyticsQueries';
 import type { MetricHistoryPoint } from '@/features/analytics/api/analyticsApi';
@@ -54,6 +55,12 @@ export function HealthTimelinePage() {
       <Typography color="text.secondary" sx={{ mb: 3 }}>
         A chronological view of vitals, lab results, documents, and other health events.
       </Typography>
+
+      <Paper variant="outlined" sx={{ p: 2.5, mb: 4 }}>
+        <ClinicalTimelinePanel self title="Clinical visits" />
+      </Paper>
+
+      <Divider sx={{ mb: 4 }} />
 
       <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Metric trends</Typography>
       <Grid container spacing={2} sx={{ mb: 4 }}>

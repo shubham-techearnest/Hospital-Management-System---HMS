@@ -18,6 +18,8 @@ import {
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { PatientSummaryPanel } from '@/features/doctor/components/PatientSummaryPanel';
 import { usePatientSummary } from '@/features/doctor/hooks/usePatientSummaryQueries';
+import { EncounterVitalsPanel } from '@/features/clinical/components/EncounterVitalsPanel';
+import { ClinicalTimelinePanel } from '@/features/clinical/components/ClinicalTimelinePanel';
 import {
   useEncounter,
   useEncounterActions,
@@ -170,6 +172,14 @@ export function DoctorEncounterDetailPage() {
       </Box>
 
       <Stack spacing={3}>
+        <Box>
+          <EncounterVitalsPanel encounterId={encounterId} />
+        </Box>
+
+        <Box>
+          <ClinicalTimelinePanel patientId={encounter.patientId} title="Patient clinical timeline" />
+        </Box>
+
         <DetailSection title="Diagnoses" empty={diagnoses.length === 0}>
           <List dense disablePadding>
             {diagnoses.map((dx) => (

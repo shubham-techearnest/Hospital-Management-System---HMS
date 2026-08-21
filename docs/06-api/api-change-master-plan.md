@@ -32,6 +32,17 @@ Base: `/api/v1` — additive evolution per ADR-007.
 
 ---
 
+## P1-F3 — Patient Clinical Timeline
+
+| Method | Path | Permission |
+|--------|------|------------|
+| GET | `/clinical/patients/{patientId}/timeline` | `clinical:timeline:read` |
+| GET | `/patients/me/clinical-timeline` | `patient:profile:read` |
+
+Live aggregate of encounters, clinical vitals, diagnoses, notes, and orders. Separate from consumer `/patients/me/profile/timeline`.
+
+---
+
 ## P2-F1 — Appointment Arrival
 
 | Method | Path | Permission |

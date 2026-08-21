@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import {
-  Alert, Button, Chip, Paper, Snackbar, Stack, Table, TableBody, TableCell,
+  Alert, Button, Chip, Divider, Paper, Snackbar, Stack, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
+import { EncounterVitalsPanel } from '@/features/clinical/components/EncounterVitalsPanel';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { parseApiError } from '@/shared/api/errorUtils';
 import {
@@ -18,6 +19,8 @@ const DEFAULT_BRANCH_ID = '00000000-0000-0000-0000-000000000031';
 export function NursingDashboardPage() {
   const [manualHospitalId, setManualHospitalId] = useState(DEFAULT_HOSPITAL_ID);
   const [manualBranchId, setManualBranchId] = useState(DEFAULT_BRANCH_ID);
+  const [encounterIdInput, setEncounterIdInput] = useState('');
+  const [activeEncounterId, setActiveEncounterId] = useState('');
   const hospitalId = manualHospitalId.trim();
   const branchId = manualBranchId.trim();
   const scopeReady = Boolean(hospitalId && branchId);
@@ -60,9 +63,41 @@ export function NursingDashboardPage() {
   return (
     <AnimatedPage>
       <DashboardPageHeader
-        title="Nursing — Medication (MAR)"
-        subtitle="Record medication administrations for active orders"
+        title="Nursing"
+        subtitle="Record encounter vitals and medication administrations (MAR)"
       />
+
+      <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+        <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+          Encounter vitals
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Enter an encounter ID to record or review clinical vitals for that visit.
+        </Typography>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: activeEncounterId ? 2 : 0 }}>
+          <TextField
+            label="Encounter ID"
+            size="small"
+            fullWidth
+            value={encounterIdInput}
+            onChange={(e) => setEncounterIdInput(e.target.value)}
+          />
+          <Button
+            variant="contained"
+            onClick={() => setActiveEncounterId(encounterIdInput.trim())}
+            disabled={!encounterIdInput.trim()}
+            sx={{ flexShrink: 0 }}
+          >
+            Open vitals
+          </Button>
+        </Stack>
+        {activeEncounterId ? (
+          <>
+            <Divider sx={{ my: 2 }} />
+            <EncounterVitalsPanel key={activeEncounterId} encounterId={activeEncounterId} />
+          </>
+        ) : null}
+      </Paper>
 
       <Alert severity="info" sx={{ mb: 2 }}>
         Enter your assigned hospital and branch IDs. MAR access is scoped to your staff assignment.

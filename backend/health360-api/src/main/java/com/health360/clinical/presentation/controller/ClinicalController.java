@@ -1,6 +1,8 @@
 package com.health360.clinical.presentation.controller;
 
 import com.health360.clinical.application.service.ClinicalOrderService;
+import com.health360.clinical.application.service.ClinicalTimelineService;
+import com.health360.clinical.application.service.ClinicalVitalsService;
 import com.health360.clinical.application.service.EncounterService;
 import com.health360.clinical.presentation.dto.request.*;
 import com.health360.clinical.presentation.dto.response.*;
@@ -27,6 +29,8 @@ public class ClinicalController {
 
     private final EncounterService encounterService;
     private final ClinicalOrderService clinicalOrderService;
+    private final ClinicalVitalsService clinicalVitalsService;
+    private final ClinicalTimelineService clinicalTimelineService;
 
     @PostMapping("/encounters")
     @PreAuthorize("hasAuthority('clinical:encounter:write')")
@@ -189,5 +193,34 @@ public class ClinicalController {
             @PathVariable UUID orderId) {
         return ResponseEntity.ok(ApiResponse.ok(
                 clinicalOrderService.getOrder(principal, encounterId, orderId)));
+    }
+
+    @PostMapping("/encounters/{encounterId}/vitals")
+    @PreAuthorize("hasAuthority('clinical:vitals:write')")
+    public ResponseEntity<ApiResponse<ClinicalVitalSignResponse>> recordVitals(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId,
+            @Valid @RequestBody RecordClinicalVitalsRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
+                clinicalVitalsService.recordVitals(principal, encounterId, request)));
+    }
+
+    @GetMapping("/encounters/{encounterId}/vitals")
+    @PreAuthorize("hasAuthority('clinical:vitals:read')")
+    public ResponseEntity<ApiResponse<List<ClinicalVitalSignResponse>>> listVitals(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                clinicalVitalsService.listVitals(principal, encounterId)));
+    }
+
+    @GetMapping("/patients/{patientId}/timeline")
+    @PreAuthorize("hasAuthority('clinical:timeline:read')")
+    public ResponseEntity<ApiResponse<Page<ClinicalTimelineItemResponse>>> getPatientClinicalTimeline(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID patientId,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                clinicalTimelineService.getStaffTimeline(principal, patientId, pageable)));
     }
 }

@@ -5,12 +5,17 @@ import {
   completeEncounter,
   createClinicalOrder,
   getEncounter,
+  getMyClinicalTimeline,
+  getPatientClinicalTimeline,
   listDoctorMyEncounters,
   listEncounterDiagnoses,
   listEncounterNotes,
   listEncounterOrders,
+  listEncounterVitals,
   listMyEncounters,
+  recordEncounterVitals,
   startEncounter,
+  type RecordClinicalVitalsPayload,
 } from '../api/clinicalApi';
 
 export const clinicalKeys = {
@@ -21,6 +26,10 @@ export const clinicalKeys = {
   diagnoses: (id: string) => ['clinical', 'encounters', id, 'diagnoses'] as const,
   notes: (id: string) => ['clinical', 'encounters', id, 'notes'] as const,
   orders: (id: string) => ['clinical', 'encounters', id, 'orders'] as const,
+  vitals: (id: string) => ['clinical', 'encounters', id, 'vitals'] as const,
+  patientTimeline: (patientId: string, page: number) =>
+    ['clinical', 'patients', patientId, 'timeline', page] as const,
+  myClinicalTimeline: (page: number) => ['clinical', 'me', 'timeline', page] as const,
 };
 
 function isAuthError(error: unknown): boolean {
@@ -79,6 +88,32 @@ export function useEncounterOrders(encounterId: string) {
   });
 }
 
+export function useEncounterVitals(encounterId: string) {
+  return useQuery({
+    queryKey: clinicalKeys.vitals(encounterId),
+    queryFn: () => listEncounterVitals(encounterId),
+    enabled: Boolean(encounterId),
+    retry: (_, error) => !isAuthError(error),
+  });
+}
+
+export function usePatientClinicalTimeline(patientId: string, page = 0, size = 20) {
+  return useQuery({
+    queryKey: clinicalKeys.patientTimeline(patientId, page),
+    queryFn: () => getPatientClinicalTimeline(patientId, page, size),
+    enabled: Boolean(patientId),
+    retry: (_, error) => !isAuthError(error),
+  });
+}
+
+export function useMyClinicalTimeline(page = 0, size = 20) {
+  return useQuery({
+    queryKey: clinicalKeys.myClinicalTimeline(page),
+    queryFn: () => getMyClinicalTimeline(page, size),
+    retry: (_, error) => !isAuthError(error),
+  });
+}
+
 export function useEncounterActions(encounterId: string) {
   const qc = useQueryClient();
   const invalidate = () => {
@@ -90,6 +125,9 @@ export function useEncounterActions(encounterId: string) {
     qc.invalidateQueries({ queryKey: clinicalKeys.orders(encounterId) });
     qc.invalidateQueries({ queryKey: ['lab', 'worklist'] });
   };
+  const invalidateVitals = () => {
+    qc.invalidateQueries({ queryKey: clinicalKeys.vitals(encounterId) });
+  };
 
   return {
     checkIn: useMutation({ mutationFn: () => checkInEncounter(encounterId), onSuccess: invalidate }),
@@ -99,6 +137,10 @@ export function useEncounterActions(encounterId: string) {
       mutationFn: (payload: Parameters<typeof createClinicalOrder>[1]) =>
         createClinicalOrder(encounterId, payload),
       onSuccess: invalidateOrders,
+    }),
+    recordVitals: useMutation({
+      mutationFn: (payload: RecordClinicalVitalsPayload) => recordEncounterVitals(encounterId, payload),
+      onSuccess: invalidateVitals,
     }),
   };
 }

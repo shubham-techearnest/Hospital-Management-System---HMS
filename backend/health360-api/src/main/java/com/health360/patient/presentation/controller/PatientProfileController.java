@@ -1,5 +1,7 @@
 package com.health360.patient.presentation.controller;
 
+import com.health360.clinical.application.service.ClinicalTimelineService;
+import com.health360.clinical.presentation.dto.response.ClinicalTimelineItemResponse;
 import com.health360.config.security.UserPrincipal;
 import com.health360.patient.application.service.*;
 import com.health360.patient.presentation.dto.request.*;
@@ -37,6 +39,7 @@ public class PatientProfileController {
     private final LabValueService labValueService;
     private final HealthDocumentService healthDocumentService;
     private final HealthTimelineService healthTimelineService;
+    private final ClinicalTimelineService clinicalTimelineService;
 
     @GetMapping("/me/profile")
     @PreAuthorize("hasAuthority('patient:profile:read')")
@@ -453,5 +456,14 @@ public class PatientProfileController {
         return ResponseEntity.ok(ApiResponse.ok(
                 healthTimelineService.getTimeline(
                         principal.getUserId(), principal.getTenantId(), pageable)));
+    }
+
+    @GetMapping("/me/clinical-timeline")
+    @PreAuthorize("hasAuthority('patient:profile:read')")
+    public ResponseEntity<ApiResponse<Page<ClinicalTimelineItemResponse>>> getMyClinicalTimeline(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                clinicalTimelineService.getMyClinicalTimeline(principal, pageable)));
     }
 }
