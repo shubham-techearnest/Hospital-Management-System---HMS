@@ -7,6 +7,7 @@ import com.health360.opd.application.service.OpdRegistrationService;
 import com.health360.opd.presentation.dto.request.CheckInAppointmentRequest;
 import com.health360.opd.presentation.dto.request.CreateOpdDeskRequest;
 import com.health360.opd.presentation.dto.request.OpdQueueActionRequest;
+import com.health360.opd.presentation.dto.request.SkipQueueEntryRequest;
 import com.health360.opd.presentation.dto.request.WalkInRegistrationRequest;
 import com.health360.opd.presentation.dto.response.OpdDeskResponse;
 import com.health360.opd.presentation.dto.response.OpdQueueEntryResponse;
@@ -126,5 +127,27 @@ public class OpdController {
             @PathVariable UUID queueEntryId) {
         return ResponseEntity.ok(ApiResponse.ok(
                 queueService.cancelEntry(principal, queueEntryId)));
+    }
+
+    @PostMapping("/queue/{queueEntryId}/skip")
+    @PreAuthorize("hasAuthority('opd:queue:write')")
+    public ResponseEntity<ApiResponse<OpdQueueEntryResponse>> skipPatient(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID queueEntryId,
+            @RequestBody(required = false) SkipQueueEntryRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                queueService.skipPatient(principal, queueEntryId,
+                        request != null ? request : new SkipQueueEntryRequest())));
+    }
+
+    @PostMapping("/queue/{queueEntryId}/recall")
+    @PreAuthorize("hasAuthority('opd:queue:write')")
+    public ResponseEntity<ApiResponse<OpdQueueEntryResponse>> recallPatient(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID queueEntryId,
+            @RequestBody(required = false) OpdQueueActionRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                queueService.recallPatient(principal, queueEntryId,
+                        request != null ? request : new OpdQueueActionRequest())));
     }
 }

@@ -10,17 +10,16 @@ Each transition documents: actor, permission, validation, DB update, audit, noti
 ## Appointment
 
 ```text
-BOOKED → CONFIRMED → ARRIVED → WAITING → IN_CONSULTATION → COMPLETED
-  └→ CANCELLED
-  └→ NO_SHOW
+PENDING → CONFIRMED → ARRIVED → (OPD encounter/queue WAITING) → COMPLETED
+  └→ CANCELLED / NO_SHOW / RESCHEDULED / POSTPONED
 ```
 
 | Transition | Actor | Permission | Audit |
 |------------|-------|------------|-------|
-| → ARRIVED | Receptionist | `scheduling:appointment:arrive` | APPOINTMENT_ARRIVED |
+| → ARRIVED | Receptionist | `appointment:arrive` | APPOINTMENT_ARRIVED |
 | → CANCELLED | Receptionist/Patient | role-specific | APPOINTMENT_CANCELLED |
 
-**Alignment rule (P2-F1):** ARRIVED triggers encounter OPEN + queue WAITING.
+**Alignment rule (P2-F1):** ARRIVED triggers encounter **WAITING** + queue **WAITING** (V45). Slot status uses BOOKED; appointment does not.
 
 ---
 
@@ -28,13 +27,16 @@ BOOKED → CONFIRMED → ARRIVED → WAITING → IN_CONSULTATION → COMPLETED
 
 ```text
 WAITING → CALLED → IN_SERVICE → COMPLETED
-  └→ SKIPPED → RECALLED → CALLED
+  └→ SKIPPED → CALLED (recall)
+  └→ CANCELLED / NO_SHOW
 ```
 
 | Transition | Actor | Permission |
 |------------|-------|------------|
-| SKIP | Receptionist | `opd:queue:manage` |
-| RECALL | Receptionist | `opd:queue:manage` |
+| SKIP | Receptionist | `opd:queue:write` |
+| RECALL | Receptionist | `opd:queue:write` |
+
+Recall: SKIPPED → CALLED, priority += 10, `recalled_at` set (P2-F2 / V46).
 
 ---
 

@@ -3,12 +3,14 @@ import { isAxiosError } from 'axios';
 import {
   callQueuePatient,
   cancelQueueEntry,
-  checkInAppointment,
+  arriveAppointment,
   completeQueueService,
   createOpdDesk,
   listOpdDesks,
   listOpdQueue,
   registerWalkIn,
+  recallQueueEntry,
+  skipQueueEntry,
   startQueueService,
   type CheckInAppointmentPayload,
   type CreateOpdDeskPayload,
@@ -67,7 +69,7 @@ export function useRegisterWalkIn(hospitalId: string, branchId: string) {
 export function useCheckInAppointment(hospitalId: string, branchId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: CheckInAppointmentPayload) => checkInAppointment(payload),
+    mutationFn: (payload: CheckInAppointmentPayload) => arriveAppointment(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['opd', 'queue', hospitalId, branchId] });
     },
@@ -83,5 +85,11 @@ export function useOpdQueueActions(hospitalId: string, branchId: string) {
     start: useMutation({ mutationFn: startQueueService, onSuccess: invalidate }),
     complete: useMutation({ mutationFn: completeQueueService, onSuccess: invalidate }),
     cancel: useMutation({ mutationFn: cancelQueueEntry, onSuccess: invalidate }),
+    skip: useMutation({
+      mutationFn: ({ queueEntryId, reason }: { queueEntryId: string; reason?: string }) =>
+        skipQueueEntry(queueEntryId, reason),
+      onSuccess: invalidate,
+    }),
+    recall: useMutation({ mutationFn: recallQueueEntry, onSuccess: invalidate }),
   };
 }

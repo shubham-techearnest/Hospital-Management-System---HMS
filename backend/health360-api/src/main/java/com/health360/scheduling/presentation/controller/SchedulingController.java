@@ -1,17 +1,20 @@
 package com.health360.scheduling.presentation.controller;
 
 import com.health360.config.security.UserPrincipal;
+import com.health360.scheduling.application.service.AppointmentArrivalService;
 import com.health360.scheduling.application.service.AppointmentLifecycleService;
 import com.health360.scheduling.application.service.AppointmentService;
 import com.health360.scheduling.application.service.DoctorScheduleService;
 import com.health360.scheduling.application.service.SlotBlockService;
 import com.health360.scheduling.presentation.dto.request.AppointmentActionRequest;
+import com.health360.scheduling.presentation.dto.request.ArriveAppointmentRequest;
 import com.health360.scheduling.presentation.dto.request.BlockScheduleRequest;
 import com.health360.scheduling.presentation.dto.request.BookAppointmentRequest;
 import com.health360.scheduling.presentation.dto.request.CancelAppointmentRequest;
 import com.health360.scheduling.presentation.dto.request.CreateScheduleRequest;
 import com.health360.scheduling.presentation.dto.request.RescheduleAppointmentRequest;
 import com.health360.scheduling.presentation.dto.request.UpdateAppointmentStatusRequest;
+import com.health360.scheduling.presentation.dto.response.AppointmentArrivalResponse;
 import com.health360.scheduling.presentation.dto.response.AppointmentBookingResponse;
 import com.health360.scheduling.presentation.dto.response.AppointmentDetailResponse;
 import com.health360.scheduling.presentation.dto.response.AppointmentSummaryResponse;
@@ -44,6 +47,7 @@ public class SchedulingController {
     private final DoctorScheduleService doctorScheduleService;
     private final AppointmentService appointmentService;
     private final AppointmentLifecycleService appointmentLifecycleService;
+    private final AppointmentArrivalService appointmentArrivalService;
     private final SlotBlockService slotBlockService;
 
     @GetMapping("/doctors/me/schedules")
@@ -168,6 +172,17 @@ public class SchedulingController {
         return ResponseEntity.ok(ApiResponse.ok(
                 appointmentLifecycleService.rescheduleAppointment(
                         principal.getUserId(), principal.getTenantId(), appointmentId, request)));
+    }
+
+    @PostMapping("/appointments/{appointmentId:[0-9a-fA-F\\-]{36}}/arrive")
+    @PreAuthorize("hasAuthority('scheduling:appointment:arrive') or hasAuthority('opd:registration:write')")
+    public ResponseEntity<ApiResponse<AppointmentArrivalResponse>> arriveAppointment(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID appointmentId,
+            @RequestBody(required = false) ArriveAppointmentRequest request) {
+        ArriveAppointmentRequest body = request != null ? request : new ArriveAppointmentRequest();
+        return ResponseEntity.ok(ApiResponse.ok(
+                appointmentArrivalService.arrive(principal, appointmentId, body)));
     }
 
     @GetMapping("/doctors/me/appointments")

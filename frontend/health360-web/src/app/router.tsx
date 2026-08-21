@@ -141,6 +141,15 @@ const HospitalStaffPage = lazy(() =>
 const ReceptionDashboardPage = lazy(() =>
   import('@/features/reception/pages/ReceptionDashboardPage').then((m) => ({ default: m.ReceptionDashboardPage })),
 );
+const ReceptionCheckoutPage = lazy(() =>
+  import('@/features/billing/pages/ReceptionCheckoutPage').then((m) => ({ default: m.ReceptionCheckoutPage })),
+);
+const HospitalInvoicesPage = lazy(() =>
+  import('@/features/billing/pages/HospitalInvoicesPage').then((m) => ({ default: m.HospitalInvoicesPage })),
+);
+const HospitalInvoiceDetailPage = lazy(() =>
+  import('@/features/billing/pages/HospitalInvoiceDetailPage').then((m) => ({ default: m.HospitalInvoiceDetailPage })),
+);
 const PatientSearchPage = lazy(() =>
   import('@/features/reception/pages/PatientSearchPage').then((m) => ({ default: m.PatientSearchPage })),
 );
@@ -420,6 +429,9 @@ export function AppRouter() {
           <Route path="doctors" element={<LazyPage><HospitalDoctorRosterPage /></LazyPage>} />
           <Route path="staff" element={<LazyPage><HospitalStaffPage /></LazyPage>} />
           <Route path="opd" element={<LazyPage><HospitalOpdPage /></LazyPage>} />
+          <Route path="billing/invoices" element={<LazyPage><HospitalInvoicesPage /></LazyPage>} />
+          <Route path="billing/invoices/:invoiceId" element={<LazyPage><HospitalInvoiceDetailPage /></LazyPage>} />
+          <Route path="billing/checkout/:encounterId" element={<LazyPage><ReceptionCheckoutPage /></LazyPage>} />
           <Route path="ipd" element={<LazyPage><HospitalIpdPage /></LazyPage>} />
           <Route path="icu" element={<LazyPage><HospitalIcuPage /></LazyPage>} />
           <Route path="lab" element={<LazyPage><LabDashboardPage /></LazyPage>} />
@@ -473,6 +485,7 @@ export function AppRouter() {
         <Route path="/reception" element={<ProtectedRoute><RoleRoute role="RECEPTIONIST"><ReceptionPortalLayout /></RoleRoute></ProtectedRoute>}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<LazyPage><ReceptionDashboardPage /></LazyPage>} />
+          <Route path="checkout/:encounterId" element={<LazyPage><ReceptionCheckoutPage /></LazyPage>} />
           <Route path="patients/search" element={<LazyPage><PatientSearchPage /></LazyPage>} />
           <Route path="patients/new" element={<LazyPage><PatientRegisterPage /></LazyPage>} />
           <Route path="patients/:patientId/receipt" element={<LazyPage><PatientReceiptPage /></LazyPage>} />

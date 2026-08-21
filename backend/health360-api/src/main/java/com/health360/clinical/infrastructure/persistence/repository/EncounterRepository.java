@@ -48,6 +48,8 @@ public interface EncounterRepository extends JpaRepository<EncounterEntity, UUID
 
     boolean existsByTenantIdAndAppointmentIdAndDeletedAtIsNull(UUID tenantId, UUID appointmentId);
 
+    Optional<EncounterEntity> findByTenantIdAndAppointmentIdAndDeletedAtIsNull(UUID tenantId, UUID appointmentId);
+
     long countByTenantIdAndPrimaryDoctorIdAndStatusAndDeletedAtIsNull(
             UUID tenantId, UUID primaryDoctorId, String status);
 

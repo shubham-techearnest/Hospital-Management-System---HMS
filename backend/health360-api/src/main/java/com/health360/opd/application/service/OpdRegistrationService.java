@@ -1,11 +1,9 @@
 package com.health360.opd.application.service;
 
 import com.health360.clinical.application.service.EncounterService;
-import com.health360.clinical.domain.EncounterStatus;
 import com.health360.clinical.infrastructure.persistence.entity.EncounterEntity;
 import com.health360.clinical.infrastructure.persistence.repository.EncounterRepository;
 import com.health360.clinical.presentation.dto.request.CreateEncounterRequest;
-import com.health360.clinical.presentation.dto.request.UpdateEncounterStatusRequest;
 import com.health360.clinical.presentation.dto.response.EncounterResponse;
 import com.health360.config.security.UserPrincipal;
 import com.health360.opd.domain.OpdRegistrationType;
@@ -18,6 +16,7 @@ import com.health360.opd.presentation.dto.response.OpdQueueEntryResponse;
 import com.health360.opd.presentation.dto.response.OpdRegistrationResponse;
 import com.health360.scheduling.infrastructure.persistence.entity.AppointmentEntity;
 import com.health360.scheduling.infrastructure.persistence.repository.AppointmentRepository;
+import com.health360.scheduling.presentation.dto.response.AppointmentArrivalResponse;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -37,7 +36,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OpdRegistrationService {
 
-    private static final Set<String> CHECK_IN_APPOINTMENT_STATUSES = Set.of("PENDING", "CONFIRMED", "POSTPONED");
+    private static final Set<String> CHECK_IN_APPOINTMENT_STATUSES =
+            Set.of("PENDING", "CONFIRMED", "POSTPONED", "ARRIVED");
 
     private final AppointmentRepository appointmentRepository;
     private final EncounterRepository encounterRepository;
@@ -51,11 +51,27 @@ public class OpdRegistrationService {
     @Transactional
     public OpdRegistrationResponse checkInAppointment(
             UserPrincipal principal, CheckInAppointmentRequest request) {
+        AppointmentArrivalResponse arrival = arriveAppointment(principal, request);
+        return OpdRegistrationResponse.builder()
+                .queueEntry(arrival.getQueueEntry())
+                .encounter(arrival.getEncounter())
+                .appointmentId(arrival.getAppointmentId())
+                .appointmentStatus(arrival.getAppointmentStatus())
+                .build();
+    }
+
+    /**
+     * Shared arrive/check-in path (P2-F1). Sets appointment ARRIVED and syncs encounter + queue.
+     */
+    @Transactional
+    public AppointmentArrivalResponse arriveAppointment(
+            UserPrincipal principal, CheckInAppointmentRequest request) {
         opdAccessService.assertCanManageRegistration(principal);
 
         UUID tenantId = principal.getTenantId();
         AppointmentEntity appointment = appointmentRepository
-                .findByIdAndTenantIdAndDeletedAtIsNull(request.getAppointmentId(), tenantId)
+                .findByIdForUpdate(request.getAppointmentId())
+                .filter(a -> a.getTenantId().equals(tenantId) && a.getDeletedAt() == null)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
                         "Appointment not found"));
 
@@ -63,13 +79,7 @@ public class OpdRegistrationService {
 
         if (!CHECK_IN_APPOINTMENT_STATUSES.contains(appointment.getStatus())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
-                    "Appointment is not eligible for check-in");
-        }
-
-        if (encounterRepository.existsByTenantIdAndAppointmentIdAndDeletedAtIsNull(
-                tenantId, appointment.getId())) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
-                    "An encounter already exists for this appointment");
+                    "Appointment is not eligible for arrival");
         }
 
         if (request.getDeskId() != null) {
@@ -77,27 +87,60 @@ public class OpdRegistrationService {
                     appointment.getHospitalId(), appointment.getBranchId());
         }
 
-        CreateEncounterRequest encounterRequest = new CreateEncounterRequest();
-        encounterRequest.setPatientId(appointment.getPatientId());
-        encounterRequest.setHospitalId(appointment.getHospitalId());
-        encounterRequest.setBranchId(appointment.getBranchId());
-        encounterRequest.setPrimaryDoctorId(appointment.getDoctorId());
-        encounterRequest.setAppointmentId(appointment.getId());
-        encounterRequest.setEncounterType("OPD");
-        encounterRequest.setVisitReason(appointment.getReasonForVisit());
+        boolean newlyArrived = !"ARRIVED".equals(appointment.getStatus());
+        if (newlyArrived) {
+            appointment.setStatus("ARRIVED");
+            appointment.setUpdatedBy(principal.getUserId());
+            appointment.touch();
+            appointmentRepository.save(appointment);
+        }
 
-        EncounterResponse encounterResponse = encounterService.createEncounter(principal, encounterRequest);
-        encounterResponse = transitionEncounterToWaiting(principal, encounterResponse.getEncounterId());
+        EncounterEntity existingEncounter = encounterRepository
+                .findByTenantIdAndAppointmentIdAndDeletedAtIsNull(tenantId, appointment.getId())
+                .orElse(null);
 
-        OpdQueueEntryEntity queueEntry = createQueueEntry(
-                principal,
-                encounterResponse.getEncounterId(),
-                appointment.getHospitalId(),
-                appointment.getBranchId(),
-                request.getDeskId(),
-                appointment.getId(),
-                OpdRegistrationType.APPOINTMENT,
-                request.getPriority());
+        EncounterResponse encounterResponse;
+        OpdQueueEntryEntity queueEntry;
+
+        if (existingEncounter != null) {
+            encounterResponse = encounterService.markWaitingForRegistration(principal, existingEncounter.getId());
+            queueEntry = queueEntryRepository
+                    .findByTenantIdAndEncounterIdAndDeletedAtIsNull(tenantId, existingEncounter.getId())
+                    .or(() -> queueEntryRepository.findByTenantIdAndAppointmentIdAndDeletedAtIsNull(
+                            tenantId, appointment.getId()))
+                    .orElseGet(() -> createQueueEntry(
+                            principal,
+                            existingEncounter.getId(),
+                            appointment.getHospitalId(),
+                            appointment.getBranchId(),
+                            request.getDeskId(),
+                            appointment.getId(),
+                            OpdRegistrationType.APPOINTMENT,
+                            request.getPriority()));
+        } else {
+            CreateEncounterRequest encounterRequest = new CreateEncounterRequest();
+            encounterRequest.setPatientId(appointment.getPatientId());
+            encounterRequest.setHospitalId(appointment.getHospitalId());
+            encounterRequest.setBranchId(appointment.getBranchId());
+            encounterRequest.setPrimaryDoctorId(appointment.getDoctorId());
+            encounterRequest.setAppointmentId(appointment.getId());
+            encounterRequest.setEncounterType("OPD");
+            encounterRequest.setVisitReason(appointment.getReasonForVisit());
+
+            encounterResponse = encounterService.createEncounterForRegistration(principal, encounterRequest);
+            encounterResponse = encounterService.markWaitingForRegistration(
+                    principal, encounterResponse.getEncounterId());
+
+            queueEntry = createQueueEntry(
+                    principal,
+                    encounterResponse.getEncounterId(),
+                    appointment.getHospitalId(),
+                    appointment.getBranchId(),
+                    request.getDeskId(),
+                    appointment.getId(),
+                    OpdRegistrationType.APPOINTMENT,
+                    request.getPriority());
+        }
 
         EncounterEntity encounterEntity = encounterRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(encounterResponse.getEncounterId(), tenantId)
@@ -106,14 +149,26 @@ public class OpdRegistrationService {
         OpdQueueEntryResponse queueResponse = opdMapper.toQueueEntryResponse(
                 queueEntry, encounterEntity, encounterResponse);
 
+        if (newlyArrived) {
+            auditLogService.record(tenantId, principal.getUserId(), "APPOINTMENT_ARRIVED", "Appointment",
+                    appointment.getId(),
+                    Map.of(
+                            "encounterId", encounterResponse.getEncounterId().toString(),
+                            "queueEntryId", queueEntry.getId().toString(),
+                            "token", queueEntry.getTokenDisplay()));
+        }
+
         auditLogService.record(tenantId, principal.getUserId(), "OPD_APPOINTMENT_CHECKED_IN",
                 "OpdQueueEntry", queueEntry.getId(),
                 Map.of("appointmentId", appointment.getId().toString(),
+                        "appointmentStatus", appointment.getStatus(),
                         "token", queueEntry.getTokenDisplay()));
 
-        return OpdRegistrationResponse.builder()
-                .queueEntry(queueResponse)
+        return AppointmentArrivalResponse.builder()
+                .appointmentId(appointment.getId())
+                .appointmentStatus(appointment.getStatus())
                 .encounter(encounterResponse)
+                .queueEntry(queueResponse)
                 .build();
     }
 
@@ -139,8 +194,9 @@ public class OpdRegistrationService {
         encounterRequest.setEncounterType("OPD");
         encounterRequest.setVisitReason(request.getVisitReason());
 
-        EncounterResponse encounterResponse = encounterService.createEncounter(principal, encounterRequest);
-        encounterResponse = transitionEncounterToWaiting(principal, encounterResponse.getEncounterId());
+        EncounterResponse encounterResponse = encounterService.createEncounterForRegistration(principal, encounterRequest);
+        encounterResponse = encounterService.markWaitingForRegistration(
+                principal, encounterResponse.getEncounterId());
 
         OpdQueueEntryEntity queueEntry = createQueueEntry(
                 principal,
@@ -168,12 +224,6 @@ public class OpdRegistrationService {
                 .queueEntry(queueResponse)
                 .encounter(encounterResponse)
                 .build();
-    }
-
-    private EncounterResponse transitionEncounterToWaiting(UserPrincipal principal, UUID encounterId) {
-        UpdateEncounterStatusRequest statusRequest = new UpdateEncounterStatusRequest();
-        statusRequest.setStatus(EncounterStatus.WAITING.name());
-        return encounterService.updateEncounterStatus(principal, encounterId, statusRequest);
     }
 
     private OpdQueueEntryEntity createQueueEntry(

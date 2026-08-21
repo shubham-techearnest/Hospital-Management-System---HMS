@@ -48,6 +48,8 @@ export interface OpdQueueEntry {
 export interface OpdRegistrationResult {
   queueEntry: OpdQueueEntry;
   encounter: EncounterSummary;
+  appointmentId?: string;
+  appointmentStatus?: string;
 }
 
 export interface CreateOpdDeskPayload {
@@ -124,6 +126,16 @@ export async function checkInAppointment(payload: CheckInAppointmentPayload): Pr
   return unwrap(data);
 }
 
+/** P2-F1 additive arrive endpoint — same outcome as check-in, returns appointmentStatus ARRIVED */
+export async function arriveAppointment(payload: CheckInAppointmentPayload): Promise<OpdRegistrationResult> {
+  const { appointmentId, deskId, priority } = payload;
+  const { data } = await apiClient.post<ApiEnvelope<OpdRegistrationResult>>(
+    `/scheduling/appointments/${appointmentId}/arrive`,
+    { deskId, priority },
+  );
+  return unwrap(data);
+}
+
 export async function callQueuePatient(queueEntryId: string, deskId?: string): Promise<OpdQueueEntry> {
   const { data } = await apiClient.post<ApiEnvelope<OpdQueueEntry>>(
     `/opd/queue/${queueEntryId}/call`,
@@ -150,6 +162,22 @@ export async function completeQueueService(queueEntryId: string): Promise<OpdQue
 export async function cancelQueueEntry(queueEntryId: string): Promise<OpdQueueEntry> {
   const { data } = await apiClient.post<ApiEnvelope<OpdQueueEntry>>(
     `/opd/queue/${queueEntryId}/cancel`,
+  );
+  return unwrap(data);
+}
+
+export async function skipQueueEntry(queueEntryId: string, reason?: string): Promise<OpdQueueEntry> {
+  const { data } = await apiClient.post<ApiEnvelope<OpdQueueEntry>>(
+    `/opd/queue/${queueEntryId}/skip`,
+    reason ? { reason } : {},
+  );
+  return unwrap(data);
+}
+
+export async function recallQueueEntry(queueEntryId: string): Promise<OpdQueueEntry> {
+  const { data } = await apiClient.post<ApiEnvelope<OpdQueueEntry>>(
+    `/opd/queue/${queueEntryId}/recall`,
+    {},
   );
   return unwrap(data);
 }

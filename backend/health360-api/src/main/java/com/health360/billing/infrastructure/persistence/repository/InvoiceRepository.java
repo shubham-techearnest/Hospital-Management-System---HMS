@@ -20,4 +20,7 @@ public interface InvoiceRepository extends JpaRepository<InvoiceEntity, UUID> {
 
     boolean existsByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNot(
             UUID tenantId, UUID encounterId, String status);
+
+    Optional<InvoiceEntity> findFirstByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNotOrderByIssuedAtDesc(
+            UUID tenantId, UUID encounterId, String status);
 }

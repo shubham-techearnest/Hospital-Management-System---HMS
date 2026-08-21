@@ -4,6 +4,7 @@ import com.health360.clinical.application.service.ClinicalOrderService;
 import com.health360.clinical.application.service.ClinicalTimelineService;
 import com.health360.clinical.application.service.ClinicalVitalsService;
 import com.health360.clinical.application.service.EncounterService;
+import com.health360.clinical.application.service.PrescriptionService;
 import com.health360.clinical.presentation.dto.request.*;
 import com.health360.clinical.presentation.dto.response.*;
 import com.health360.config.security.UserPrincipal;
@@ -31,6 +32,7 @@ public class ClinicalController {
     private final ClinicalOrderService clinicalOrderService;
     private final ClinicalVitalsService clinicalVitalsService;
     private final ClinicalTimelineService clinicalTimelineService;
+    private final PrescriptionService prescriptionService;
 
     @PostMapping("/encounters")
     @PreAuthorize("hasAuthority('clinical:encounter:write')")
@@ -157,6 +159,27 @@ public class ClinicalController {
                 encounterService.addNote(principal, encounterId, request)));
     }
 
+    @PutMapping("/encounters/{encounterId}/notes/{noteId}")
+    @PreAuthorize("hasAuthority('clinical:encounter:write')")
+    public ResponseEntity<ApiResponse<ClinicalNoteResponse>> updateNote(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId,
+            @PathVariable UUID noteId,
+            @Valid @RequestBody UpdateClinicalNoteRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                encounterService.updateNote(principal, encounterId, noteId, request)));
+    }
+
+    @PostMapping("/encounters/{encounterId}/notes/{noteId}/finalize")
+    @PreAuthorize("hasAuthority('clinical:encounter:write')")
+    public ResponseEntity<ApiResponse<ClinicalNoteResponse>> finalizeNote(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId,
+            @PathVariable UUID noteId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                encounterService.finalizeNote(principal, encounterId, noteId)));
+    }
+
     @GetMapping("/encounters/{encounterId}/notes")
     @PreAuthorize("hasAuthority('clinical:encounter:read')")
     public ResponseEntity<ApiResponse<List<ClinicalNoteResponse>>> listNotes(
@@ -193,6 +216,63 @@ public class ClinicalController {
             @PathVariable UUID orderId) {
         return ResponseEntity.ok(ApiResponse.ok(
                 clinicalOrderService.getOrder(principal, encounterId, orderId)));
+    }
+
+    @PostMapping("/encounters/{encounterId}/prescriptions")
+    @PreAuthorize("hasAuthority('clinical:prescription:write')")
+    public ResponseEntity<ApiResponse<PrescriptionResponse>> createPrescription(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId,
+            @Valid @RequestBody CreatePrescriptionRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
+                prescriptionService.create(principal, encounterId, request)));
+    }
+
+    @PutMapping("/encounters/{encounterId}/prescriptions/{prescriptionId}")
+    @PreAuthorize("hasAuthority('clinical:prescription:write')")
+    public ResponseEntity<ApiResponse<PrescriptionResponse>> updatePrescription(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId,
+            @PathVariable UUID prescriptionId,
+            @Valid @RequestBody UpdatePrescriptionRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                prescriptionService.update(principal, encounterId, prescriptionId, request)));
+    }
+
+    @PostMapping("/encounters/{encounterId}/prescriptions/{prescriptionId}/sign")
+    @PreAuthorize("hasAuthority('clinical:prescription:sign')")
+    public ResponseEntity<ApiResponse<PrescriptionResponse>> signPrescription(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId,
+            @PathVariable UUID prescriptionId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                prescriptionService.sign(principal, encounterId, prescriptionId)));
+    }
+
+    @GetMapping("/encounters/{encounterId}/prescriptions")
+    @PreAuthorize("hasAuthority('clinical:prescription:read')")
+    public ResponseEntity<ApiResponse<List<PrescriptionResponse>>> listPrescriptions(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                prescriptionService.listForEncounter(principal, encounterId)));
+    }
+
+    @GetMapping("/encounters/{encounterId}/prescriptions/{prescriptionId}")
+    @PreAuthorize("hasAuthority('clinical:prescription:read')")
+    public ResponseEntity<ApiResponse<PrescriptionResponse>> getPrescription(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId,
+            @PathVariable UUID prescriptionId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                prescriptionService.get(principal, encounterId, prescriptionId)));
+    }
+
+    @GetMapping("/prescriptions/me")
+    @PreAuthorize("hasAuthority('clinical:prescription:read')")
+    public ResponseEntity<ApiResponse<List<PrescriptionResponse>>> listMyPrescriptions(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.ok(prescriptionService.listMySigned(principal)));
     }
 
     @PostMapping("/encounters/{encounterId}/vitals")

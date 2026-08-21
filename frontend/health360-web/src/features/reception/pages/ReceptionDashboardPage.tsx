@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Alert, Button, Chip, MenuItem, Paper, Snackbar, Stack, Tab, Tabs,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -31,6 +32,7 @@ const STATUS_COLOR: Record<string, 'default' | 'warning' | 'info' | 'success' | 
   COMPLETED: 'success',
   CANCELLED: 'error',
   NO_SHOW: 'default',
+  SKIPPED: 'warning',
 };
 
 export function ReceptionDashboardPage() {
@@ -104,7 +106,7 @@ export function ReceptionDashboardPage() {
       setCheckInForm({ appointmentId: '', deskId: '' });
       setSnackbar({
         open: true,
-        message: `Checked in — token ${result.queueEntry.tokenDisplay}`,
+        message: `Arrived — token ${result.queueEntry.tokenDisplay}${result.appointmentStatus ? ` (${result.appointmentStatus})` : ''}`,
         severity: 'success',
       });
       setTab(0);
@@ -114,17 +116,23 @@ export function ReceptionDashboardPage() {
   };
 
   const runQueueAction = async (
-    action: 'call' | 'start' | 'complete' | 'cancel',
+    action: 'call' | 'start' | 'complete' | 'cancel' | 'skip' | 'recall',
     queueEntryId: string,
   ) => {
     try {
-      const mutations = {
-        call: queueActions.call,
-        start: queueActions.start,
-        complete: queueActions.complete,
-        cancel: queueActions.cancel,
-      };
-      await mutations[action].mutateAsync(queueEntryId);
+      if (action === 'skip') {
+        await queueActions.skip.mutateAsync({ queueEntryId });
+      } else if (action === 'recall') {
+        await queueActions.recall.mutateAsync(queueEntryId);
+      } else {
+        const mutations = {
+          call: queueActions.call,
+          start: queueActions.start,
+          complete: queueActions.complete,
+          cancel: queueActions.cancel,
+        };
+        await mutations[action].mutateAsync(queueEntryId);
+      }
       setSnackbar({ open: true, message: `Queue updated (${action}).`, severity: 'success' });
     } catch (e) {
       showError(e);
@@ -135,7 +143,7 @@ export function ReceptionDashboardPage() {
     <AnimatedPage>
       <DashboardPageHeader
         title="Reception — OPD"
-        subtitle="Manage today's queue, walk-ins, and appointment check-in"
+        subtitle="Manage today's queue, walk-ins, and appointment arrival"
         actions={
           <Button variant="outlined" onClick={() => refetchQueue()}>Refresh queue</Button>
         }
@@ -167,7 +175,7 @@ export function ReceptionDashboardPage() {
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label="Queue" />
         <Tab label="Walk-in" />
-        <Tab label="Check-in" />
+        <Tab label="Arrive" />
       </Tabs>
 
       {tab === 0 && (
@@ -177,6 +185,7 @@ export function ReceptionDashboardPage() {
             <MenuItem value="">All active today</MenuItem>
             <MenuItem value="WAITING">Waiting</MenuItem>
             <MenuItem value="CALLED">Called</MenuItem>
+            <MenuItem value="SKIPPED">Skipped</MenuItem>
             <MenuItem value="IN_SERVICE">In service</MenuItem>
             <MenuItem value="COMPLETED">Completed</MenuItem>
           </TextField>
@@ -212,14 +221,32 @@ export function ReceptionDashboardPage() {
                     <TableCell align="right">
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         {entry.status === 'WAITING' && (
-                          <Button size="small" onClick={() => runQueueAction('call', entry.queueEntryId)}>Call</Button>
+                          <>
+                            <Button size="small" onClick={() => runQueueAction('call', entry.queueEntryId)}>Call</Button>
+                            <Button size="small" onClick={() => runQueueAction('skip', entry.queueEntryId)}>Skip</Button>
+                          </>
                         )}
                         {entry.status === 'CALLED' && (
-                          <Button size="small" variant="contained" onClick={() => runQueueAction('start', entry.queueEntryId)}>Start</Button>
+                          <>
+                            <Button size="small" variant="contained" onClick={() => runQueueAction('start', entry.queueEntryId)}>Start</Button>
+                            <Button size="small" onClick={() => runQueueAction('skip', entry.queueEntryId)}>Skip</Button>
+                          </>
+                        )}
+                        {entry.status === 'SKIPPED' && (
+                          <Button size="small" variant="contained" onClick={() => runQueueAction('recall', entry.queueEntryId)}>Recall</Button>
                         )}
                         {entry.status === 'IN_SERVICE' && (
                           <Button size="small" color="success" variant="contained" onClick={() => runQueueAction('complete', entry.queueEntryId)}>Complete</Button>
                         )}
+                        {(entry.status === 'COMPLETED' || entry.status === 'IN_SERVICE') && entry.encounterId ? (
+                          <Button
+                            size="small"
+                            component={RouterLink}
+                            to={`/reception/checkout/${entry.encounterId}`}
+                          >
+                            Checkout
+                          </Button>
+                        ) : null}
                         {!['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(entry.status) && (
                           <Button size="small" color="error" onClick={() => runQueueAction('cancel', entry.queueEntryId)}>Cancel</Button>
                         )}
@@ -278,7 +305,7 @@ export function ReceptionDashboardPage() {
               ))}
             </TextField>
             <Button variant="contained" onClick={handleCheckIn} disabled={!checkInForm.appointmentId.trim()}>
-              Check in appointment
+              Mark arrived
             </Button>
           </Stack>
         </Paper>

@@ -21,7 +21,10 @@
 |---------|--------|---------|---------|
 | **V42** | 1 | P1-F1 | `uhid`, `legal_name`, search indexes, `patient.hospital_registrations`, RBAC `patient:registry:*` |
 | **V43** | 2 | P1-F2 | `clinical.vital_signs` |
-| **V44** | 5–6 | P2-F3/F4 | Structured consultation fields; `clinical.prescriptions`, `prescription_items` |
+| **V47** | 5 | P2-F3 | Structured consultation fields + DRAFT/FINAL on `clinical.notes` |
+| **V48** | 6 | P2-F4 | `clinical.prescriptions`, `prescription_items` + RBAC |
+| **V49** | 7 | P2-F5 | RECEPTIONIST billing RBAC (OPD checkout) |
+| **V50+** | — | TBD | Next release extras |
 | **V45** | 12 | P4-F4 | `ipd.bed_movements` |
 | **V46** | 9 | P3-F1 | Pharmacy batches, stock_transactions |
 | **V47+** | 17+ | Payments/insurance | TBD after ADR-012/013 approval |

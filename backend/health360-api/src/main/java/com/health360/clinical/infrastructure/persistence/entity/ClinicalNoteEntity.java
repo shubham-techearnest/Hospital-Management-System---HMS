@@ -25,6 +25,30 @@ public class ClinicalNoteEntity extends BaseAuditableEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "chief_complaint", columnDefinition = "TEXT")
+    private String chiefComplaint;
+
+    @Column(columnDefinition = "TEXT")
+    private String hpi;
+
+    @Column(columnDefinition = "TEXT")
+    private String examination;
+
+    @Column(columnDefinition = "TEXT")
+    private String assessment;
+
+    @Column(name = "plan", columnDefinition = "TEXT")
+    private String plan;
+
+    @Column(nullable = false, length = 20)
+    private String status = "FINAL";
+
+    @Column(name = "finalized_at")
+    private Instant finalizedAt;
+
+    @Column(name = "finalized_by")
+    private UUID finalizedBy;
+
     @Column(name = "recorded_at", nullable = false)
     private Instant recordedAt = Instant.now();
 }

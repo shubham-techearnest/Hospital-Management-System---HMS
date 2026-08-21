@@ -20,6 +20,8 @@ import { PatientSummaryPanel } from '@/features/doctor/components/PatientSummary
 import { usePatientSummary } from '@/features/doctor/hooks/usePatientSummaryQueries';
 import { EncounterVitalsPanel } from '@/features/clinical/components/EncounterVitalsPanel';
 import { ClinicalTimelinePanel } from '@/features/clinical/components/ClinicalTimelinePanel';
+import { StructuredConsultationPanel } from '@/features/clinical/components/StructuredConsultationPanel';
+import { EPrescriptionPanel } from '@/features/clinical/components/EPrescriptionPanel';
 import {
   useEncounter,
   useEncounterActions,
@@ -177,6 +179,22 @@ export function DoctorEncounterDetailPage() {
         </Box>
 
         <Box>
+          <StructuredConsultationPanel
+            encounterId={encounterId}
+            canEdit={encounter.status === 'IN_PROGRESS' || encounter.status === 'WAITING'}
+          />
+        </Box>
+
+        <Box>
+          <EPrescriptionPanel
+            encounterId={encounterId}
+            hospitalId={encounter.hospitalId}
+            branchId={encounter.branchId}
+            canEdit={encounter.status === 'IN_PROGRESS'}
+          />
+        </Box>
+
+        <Box>
           <ClinicalTimelinePanel patientId={encounter.patientId} title="Patient clinical timeline" />
         </Box>
 
@@ -197,7 +215,10 @@ export function DoctorEncounterDetailPage() {
           <List dense disablePadding>
             {notes.map((note) => (
               <ListItem key={note.noteId} disableGutters alignItems="flex-start">
-                <ListItemText primary={note.noteType} secondary={note.content} />
+                <ListItemText
+                  primary={`${note.noteType}${note.status ? ` · ${note.status}` : ''}`}
+                  secondary={note.content}
+                />
               </ListItem>
             ))}
           </List>

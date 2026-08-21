@@ -13,5 +13,12 @@ public class ClinicalNoteResponse {
     UUID encounterId;
     String noteType;
     String content;
+    String chiefComplaint;
+    String hpi;
+    String examination;
+    String assessment;
+    String plan;
+    String status;
     Instant recordedAt;
+    Instant finalizedAt;
 }

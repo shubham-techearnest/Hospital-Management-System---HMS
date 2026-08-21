@@ -47,7 +47,14 @@ public class ClinicalMapper {
                 .encounterId(entity.getEncounterId())
                 .noteType(entity.getNoteType())
                 .content(entity.getContent())
+                .chiefComplaint(entity.getChiefComplaint())
+                .hpi(entity.getHpi())
+                .examination(entity.getExamination())
+                .assessment(entity.getAssessment())
+                .plan(entity.getPlan())
+                .status(entity.getStatus())
                 .recordedAt(entity.getRecordedAt())
+                .finalizedAt(entity.getFinalizedAt())
                 .build();
     }
 
@@ -73,6 +80,40 @@ public class ClinicalMapper {
                 .quantity(item.getQuantity())
                 .instructions(item.getInstructions())
                 .status(item.getStatus())
+                .build();
+    }
+
+    PrescriptionResponse toPrescriptionResponse(PrescriptionEntity entity, List<PrescriptionItemEntity> items) {
+        return PrescriptionResponse.builder()
+                .prescriptionId(entity.getId())
+                .encounterId(entity.getEncounterId())
+                .patientId(entity.getPatientId())
+                .hospitalId(entity.getHospitalId())
+                .branchId(entity.getBranchId())
+                .prescriptionNumber(entity.getPrescriptionNumber())
+                .status(entity.getStatus())
+                .notes(entity.getNotes())
+                .prescribedBy(entity.getPrescribedBy())
+                .signedAt(entity.getSignedAt())
+                .createdAt(entity.getCreatedAt())
+                .items(items.stream().map(this::toPrescriptionItemResponse).toList())
+                .build();
+    }
+
+    private PrescriptionResponse.Item toPrescriptionItemResponse(PrescriptionItemEntity item) {
+        return PrescriptionResponse.Item.builder()
+                .itemId(item.getId())
+                .medicineId(item.getMedicineId())
+                .medicineCode(item.getMedicineCode())
+                .medicineName(item.getMedicineName())
+                .doseText(item.getDoseText())
+                .route(item.getRoute())
+                .frequency(item.getFrequency())
+                .durationDays(item.getDurationDays())
+                .quantity(item.getQuantity())
+                .instructions(item.getInstructions())
+                .safetyWarning(item.getSafetyWarning())
+                .sortOrder(item.getSortOrder())
                 .build();
     }
 }

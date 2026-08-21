@@ -121,6 +121,25 @@ public class BillingService {
     }
 
     @Transactional(readOnly = true)
+    public InvoiceResponse getInvoiceByEncounter(UserPrincipal principal, UUID encounterId) {
+        accessService.assertCanReadInvoices(principal);
+        UUID tenantId = principal.getTenantId();
+
+        EncounterEntity encounter = encounterRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(encounterId, tenantId)
+                .orElseThrow(() -> notFound("Encounter not found"));
+        hospitalScopeService.assertHospitalScope(
+                principal, encounter.getHospitalId(), encounter.getBranchId());
+
+        InvoiceEntity invoice = invoiceRepository
+                .findFirstByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNotOrderByIssuedAtDesc(
+                        tenantId, encounterId, InvoiceStatus.CANCELLED.name())
+                .orElseThrow(() -> notFound("Invoice not found for encounter"));
+
+        return loadInvoiceResponse(invoice);
+    }
+
+    @Transactional(readOnly = true)
     public InvoiceResponse getInvoice(UserPrincipal principal, UUID invoiceId) {
         InvoiceEntity invoice = requireInvoice(principal.getTenantId(), invoiceId);
         accessService.assertCanReadInvoice(principal, invoice);

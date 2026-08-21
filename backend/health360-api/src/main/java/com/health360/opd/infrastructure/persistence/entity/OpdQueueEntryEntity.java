@@ -61,4 +61,13 @@ public class OpdQueueEntryEntity extends BaseAuditableEntity {
 
     @Column(name = "completed_at")
     private Instant completedAt;
+
+    @Column(name = "skipped_at")
+    private Instant skippedAt;
+
+    @Column(name = "skip_reason", length = 500)
+    private String skipReason;
+
+    @Column(name = "recalled_at")
+    private Instant recalledAt;
 }

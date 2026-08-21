@@ -47,7 +47,13 @@ Live aggregate of encounters, clinical vitals, diagnoses, notes, and orders. Sep
 
 | Method | Path | Permission |
 |--------|------|------------|
-| POST | `/scheduling/appointments/{id}/arrive` | `scheduling:appointment:arrive` |
+| POST | `/scheduling/appointments/{id}/arrive` | `appointment:arrive` (or `opd:registration:write`) |
+
+Also: `POST /opd/registrations/check-in` sets appointment `ARRIVED` (V45).
+
+Migration: **V45**
+
+Feature package: [P2-F1](../09-features/P2-opd/P2-F1/README.md). ADR-015. Compat: OPD check-in also sets ARRIVED.
 
 ---
 

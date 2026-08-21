@@ -3,7 +3,10 @@ import { isAxiosError } from 'axios';
 import {
   checkInEncounter,
   completeEncounter,
+  createClinicalNote,
   createClinicalOrder,
+  createPrescription,
+  finalizeClinicalNote,
   getEncounter,
   getMyClinicalTimeline,
   getPatientClinicalTimeline,
@@ -11,11 +14,18 @@ import {
   listEncounterDiagnoses,
   listEncounterNotes,
   listEncounterOrders,
+  listEncounterPrescriptions,
   listEncounterVitals,
   listMyEncounters,
+  listMyPrescriptions,
   recordEncounterVitals,
+  signPrescription,
   startEncounter,
+  updateClinicalNote,
+  updatePrescription,
+  type CreatePrescriptionPayload,
   type RecordClinicalVitalsPayload,
+  type StructuredConsultationPayload,
 } from '../api/clinicalApi';
 
 export const clinicalKeys = {
@@ -25,6 +35,8 @@ export const clinicalKeys = {
   encounter: (id: string) => ['clinical', 'encounters', id] as const,
   diagnoses: (id: string) => ['clinical', 'encounters', id, 'diagnoses'] as const,
   notes: (id: string) => ['clinical', 'encounters', id, 'notes'] as const,
+  prescriptions: (id: string) => ['clinical', 'encounters', id, 'prescriptions'] as const,
+  myPrescriptions: ['clinical', 'prescriptions', 'me'] as const,
   orders: (id: string) => ['clinical', 'encounters', id, 'orders'] as const,
   vitals: (id: string) => ['clinical', 'encounters', id, 'vitals'] as const,
   patientTimeline: (patientId: string, page: number) =>
@@ -80,6 +92,23 @@ export function useEncounterNotes(encounterId: string) {
   });
 }
 
+export function useEncounterPrescriptions(encounterId: string) {
+  return useQuery({
+    queryKey: clinicalKeys.prescriptions(encounterId),
+    queryFn: () => listEncounterPrescriptions(encounterId),
+    enabled: Boolean(encounterId),
+    retry: (_, error) => !isAuthError(error),
+  });
+}
+
+export function useMyPrescriptions() {
+  return useQuery({
+    queryKey: clinicalKeys.myPrescriptions,
+    queryFn: listMyPrescriptions,
+    retry: (_, error) => !isAuthError(error),
+  });
+}
+
 export function useEncounterOrders(encounterId: string) {
   return useQuery({
     queryKey: clinicalKeys.orders(encounterId),
@@ -128,6 +157,13 @@ export function useEncounterActions(encounterId: string) {
   const invalidateVitals = () => {
     qc.invalidateQueries({ queryKey: clinicalKeys.vitals(encounterId) });
   };
+  const invalidateNotes = () => {
+    qc.invalidateQueries({ queryKey: clinicalKeys.notes(encounterId) });
+  };
+  const invalidatePrescriptions = () => {
+    qc.invalidateQueries({ queryKey: clinicalKeys.prescriptions(encounterId) });
+    qc.invalidateQueries({ queryKey: clinicalKeys.myPrescriptions });
+  };
 
   return {
     checkIn: useMutation({ mutationFn: () => checkInEncounter(encounterId), onSuccess: invalidate }),
@@ -141,6 +177,38 @@ export function useEncounterActions(encounterId: string) {
     recordVitals: useMutation({
       mutationFn: (payload: RecordClinicalVitalsPayload) => recordEncounterVitals(encounterId, payload),
       onSuccess: invalidateVitals,
+    }),
+    createNote: useMutation({
+      mutationFn: (payload: StructuredConsultationPayload & { noteType?: string; content?: string }) =>
+        createClinicalNote(encounterId, payload),
+      onSuccess: invalidateNotes,
+    }),
+    updateNote: useMutation({
+      mutationFn: ({ noteId, payload }: { noteId: string; payload: StructuredConsultationPayload }) =>
+        updateClinicalNote(encounterId, noteId, payload),
+      onSuccess: invalidateNotes,
+    }),
+    finalizeNote: useMutation({
+      mutationFn: (noteId: string) => finalizeClinicalNote(encounterId, noteId),
+      onSuccess: invalidateNotes,
+    }),
+    createPrescription: useMutation({
+      mutationFn: (payload: CreatePrescriptionPayload) => createPrescription(encounterId, payload),
+      onSuccess: invalidatePrescriptions,
+    }),
+    updatePrescription: useMutation({
+      mutationFn: ({
+        prescriptionId,
+        payload,
+      }: {
+        prescriptionId: string;
+        payload: CreatePrescriptionPayload;
+      }) => updatePrescription(encounterId, prescriptionId, payload),
+      onSuccess: invalidatePrescriptions,
+    }),
+    signPrescription: useMutation({
+      mutationFn: (prescriptionId: string) => signPrescription(encounterId, prescriptionId),
+      onSuccess: invalidatePrescriptions,
     }),
   };
 }

@@ -24,6 +24,7 @@ const STATUS_COLOR: Record<string, 'default' | 'warning' | 'info' | 'success' | 
   COMPLETED: 'success',
   CANCELLED: 'error',
   NO_SHOW: 'default',
+  SKIPPED: 'warning',
 };
 
 export function HospitalOpdPage() {
@@ -124,17 +125,23 @@ export function HospitalOpdPage() {
   };
 
   const runQueueAction = async (
-    action: 'call' | 'start' | 'complete' | 'cancel',
+    action: 'call' | 'start' | 'complete' | 'cancel' | 'skip' | 'recall',
     queueEntryId: string,
   ) => {
     try {
-      const mutations = {
-        call: queueActions.call,
-        start: queueActions.start,
-        complete: queueActions.complete,
-        cancel: queueActions.cancel,
-      };
-      await mutations[action].mutateAsync(queueEntryId);
+      if (action === 'skip') {
+        await queueActions.skip.mutateAsync({ queueEntryId });
+      } else if (action === 'recall') {
+        await queueActions.recall.mutateAsync(queueEntryId);
+      } else {
+        const mutations = {
+          call: queueActions.call,
+          start: queueActions.start,
+          complete: queueActions.complete,
+          cancel: queueActions.cancel,
+        };
+        await mutations[action].mutateAsync(queueEntryId);
+      }
       setSnackbar({ open: true, message: `Queue updated (${action}).`, severity: 'success' });
     } catch (e) {
       showError(e);
@@ -155,7 +162,7 @@ export function HospitalOpdPage() {
         <Box>
           <Typography variant="h4" fontWeight={700}>OPD</Typography>
           <Typography variant="body2" color="text.secondary">
-            Queue, walk-in registration, and appointment check-in
+            Queue, walk-in registration, and appointment arrival
             {primaryBranch ? ` — ${primaryBranch.name}` : ''}
           </Typography>
         </Box>
@@ -167,7 +174,7 @@ export function HospitalOpdPage() {
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label="Queue" />
         <Tab label="Walk-in" />
-        <Tab label="Check-in" />
+        <Tab label="Arrive" />
         <Tab label="Desks" />
       </Tabs>
 
@@ -184,6 +191,7 @@ export function HospitalOpdPage() {
             <MenuItem value="">All active today</MenuItem>
             <MenuItem value="WAITING">Waiting</MenuItem>
             <MenuItem value="CALLED">Called</MenuItem>
+            <MenuItem value="SKIPPED">Skipped</MenuItem>
             <MenuItem value="IN_SERVICE">In service</MenuItem>
             <MenuItem value="COMPLETED">Completed</MenuItem>
           </TextField>
@@ -234,13 +242,28 @@ export function HospitalOpdPage() {
                     <TableCell align="right">
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         {entry.status === 'WAITING' && (
-                          <Button size="small" onClick={() => runQueueAction('call', entry.queueEntryId)}>
-                            Call
-                          </Button>
+                          <>
+                            <Button size="small" onClick={() => runQueueAction('call', entry.queueEntryId)}>
+                              Call
+                            </Button>
+                            <Button size="small" onClick={() => runQueueAction('skip', entry.queueEntryId)}>
+                              Skip
+                            </Button>
+                          </>
                         )}
                         {entry.status === 'CALLED' && (
-                          <Button size="small" variant="contained" onClick={() => runQueueAction('start', entry.queueEntryId)}>
-                            Start
+                          <>
+                            <Button size="small" variant="contained" onClick={() => runQueueAction('start', entry.queueEntryId)}>
+                              Start
+                            </Button>
+                            <Button size="small" onClick={() => runQueueAction('skip', entry.queueEntryId)}>
+                              Skip
+                            </Button>
+                          </>
+                        )}
+                        {entry.status === 'SKIPPED' && (
+                          <Button size="small" variant="contained" onClick={() => runQueueAction('recall', entry.queueEntryId)}>
+                            Recall
                           </Button>
                         )}
                         {entry.status === 'IN_SERVICE' && (
@@ -248,6 +271,15 @@ export function HospitalOpdPage() {
                             Complete
                           </Button>
                         )}
+                        {(entry.status === 'COMPLETED' || entry.status === 'IN_SERVICE') && entry.encounterId ? (
+                          <Button
+                            size="small"
+                            component={RouterLink}
+                            to={`/hospital/billing/checkout/${entry.encounterId}`}
+                          >
+                            Checkout
+                          </Button>
+                        ) : null}
                         {!['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(entry.status) && (
                           <Button size="small" color="error" onClick={() => runQueueAction('cancel', entry.queueEntryId)}>
                             Cancel
@@ -336,7 +368,7 @@ export function HospitalOpdPage() {
               ))}
             </TextField>
             <Button variant="contained" onClick={handleCheckIn} disabled={!checkInForm.appointmentId.trim()}>
-              Check in appointment
+              Mark arrived
             </Button>
           </Stack>
         </Paper>

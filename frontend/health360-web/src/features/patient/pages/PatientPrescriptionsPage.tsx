@@ -1,44 +1,65 @@
-import { Link as RouterLink } from 'react-router-dom';
-import { Grid, Paper, Stack, Typography } from '@mui/material';
-import MedicationIcon from '@mui/icons-material/Medication';
-import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
-import HistoryIcon from '@mui/icons-material/History';
+import {
+  Alert,
+  Chip,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  Skeleton,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
-import { StatCard } from '@/shared/dashboard/StatCard';
+import { useMyPrescriptions } from '@/features/clinical/hooks/useClinicalQueries';
+import { parseApiError } from '@/shared/api/errorUtils';
 
 export function PatientPrescriptionsPage() {
+  const { data: prescriptions = [], isLoading, error } = useMyPrescriptions();
+  const parsedError = error ? parseApiError(error) : null;
+
   return (
     <AnimatedPage>
       <DashboardPageHeader
         title="Prescriptions"
-        subtitle="E-prescriptions from your doctors, refill requests, and pharmacy handoff — planned for a future release."
+        subtitle="Signed e-prescriptions from your hospital visits."
       />
 
-      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={4}>
-          <StatCard label="Active prescriptions" value="—" hint="Phase 2" icon={<MedicationIcon />} accent="text.secondary" />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <StatCard label="Ready for pickup" value="—" hint="Phase 2" icon={<LocalPharmacyIcon />} accent="text.secondary" />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <StatCard label="Past prescriptions" value="—" hint="Phase 2" icon={<HistoryIcon />} accent="text.secondary" />
-        </Grid>
-      </Grid>
+      {parsedError ? <Alert severity="error" sx={{ mb: 2 }}>{parsedError.message}</Alert> : null}
+      {isLoading ? <Skeleton variant="rounded" height={160} /> : null}
 
-      <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
-        <Stack spacing={2}>
-          <Typography variant="h6" fontWeight={600}>What&apos;s planned</Typography>
-          <Typography color="text.secondary">
-            After visits, doctors will issue digital prescriptions you can view here, share with pharmacies,
-            and track refill status. Until then, upload prescription documents under Health Documents.
-          </Typography>
-          <Typography component={RouterLink} to="/patient/reports" color="primary">
-            Health documents →
-          </Typography>
-        </Stack>
-      </Paper>
+      {!isLoading && prescriptions.length === 0 ? (
+        <Paper variant="outlined" sx={{ p: 3 }}>
+          <Typography color="text.secondary">No signed prescriptions yet.</Typography>
+        </Paper>
+      ) : null}
+
+      <Stack spacing={2}>
+        {prescriptions.map((rx) => (
+          <Paper key={rx.prescriptionId} variant="outlined" sx={{ p: 2 }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <Typography variant="h6">{rx.prescriptionNumber}</Typography>
+              <Chip size="small" color="success" label={rx.status} />
+            </Stack>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Signed {rx.signedAt ? new Date(rx.signedAt).toLocaleString() : '—'}
+              {rx.notes ? ` · ${rx.notes}` : ''}
+            </Typography>
+            <List dense disablePadding>
+              {rx.items.map((item) => (
+                <ListItem key={item.itemId} disableGutters>
+                  <ListItemText
+                    primary={item.medicineName}
+                    secondary={[item.doseText, item.frequency, item.durationDays != null ? `${item.durationDays} days` : null, item.instructions]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+        ))}
+      </Stack>
     </AnimatedPage>
   );
 }

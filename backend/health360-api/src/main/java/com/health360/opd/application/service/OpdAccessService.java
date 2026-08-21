@@ -19,7 +19,8 @@ public class OpdAccessService {
     private final HospitalScopeService hospitalScopeService;
 
     public void assertCanManageRegistration(UserPrincipal principal) {
-        if (!principal.hasPermission("opd:registration:write")) {
+        if (!principal.hasPermission("opd:registration:write")
+                && !principal.hasPermission("scheduling:appointment:arrive")) {
             throw forbidden();
         }
     }

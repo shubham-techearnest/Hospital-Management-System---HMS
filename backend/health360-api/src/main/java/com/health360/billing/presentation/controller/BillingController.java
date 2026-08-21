@@ -56,6 +56,15 @@ public class BillingController {
                 billingService.listMyInvoices(principal, pageable)));
     }
 
+    @GetMapping("/encounters/{encounterId}/invoice")
+    @PreAuthorize("hasAuthority('billing:invoice:read')")
+    public ResponseEntity<ApiResponse<InvoiceResponse>> getInvoiceByEncounter(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                billingService.getInvoiceByEncounter(principal, encounterId)));
+    }
+
     @GetMapping("/invoices/{invoiceId}")
     @PreAuthorize("hasAuthority('billing:invoice:read')")
     public ResponseEntity<ApiResponse<InvoiceResponse>> getInvoice(

@@ -1,44 +1,72 @@
-import { Link as RouterLink } from 'react-router-dom';
-import { Grid, Paper, Stack, Typography } from '@mui/material';
-import PaymentIcon from '@mui/icons-material/Payment';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import {
+  Alert,
+  Chip,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  Skeleton,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
-import { StatCard } from '@/shared/dashboard/StatCard';
+import { useMyInvoices } from '@/features/billing/hooks/useBillingQueries';
+import { parseApiError } from '@/shared/api/errorUtils';
 
 export function PatientPaymentsPage() {
+  const { data, isLoading, error } = useMyInvoices();
+  const invoices = data?.content ?? [];
+  const outstanding = invoices
+    .filter((inv) => inv.status !== 'PAID' && inv.status !== 'CANCELLED')
+    .reduce((sum, inv) => sum + (Number(inv.totalAmount) - Number(inv.amountPaid)), 0);
+
   return (
     <AnimatedPage>
       <DashboardPageHeader
         title="Payments"
-        subtitle="Consultation fees, invoices, and payment history — planned for a future release."
+        subtitle="Invoices from your hospital visits."
       />
 
-      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={4}>
-          <StatCard label="Outstanding" value="—" hint="Phase 2" icon={<PaymentIcon />} accent="text.secondary" />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <StatCard label="Paid this month" value="—" hint="Phase 2" icon={<AccountBalanceWalletIcon />} accent="text.secondary" />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <StatCard label="Invoices" value="—" hint="Phase 2" icon={<ReceiptLongIcon />} accent="text.secondary" />
-        </Grid>
-      </Grid>
+      {error ? <Alert severity="error" sx={{ mb: 2 }}>{parseApiError(error).message}</Alert> : null}
+      {isLoading ? <Skeleton variant="rounded" height={120} /> : null}
 
-      <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 } }}>
-        <Stack spacing={2}>
-          <Typography variant="h6" fontWeight={600}>What&apos;s planned</Typography>
-          <Typography color="text.secondary">
-            Pay consultation fees online, download receipts, and review billing history linked to your appointments.
-            Appointment booking remains available today without online payment.
-          </Typography>
-          <Typography component={RouterLink} to="/patient/appointments" color="primary">
-            My appointments →
-          </Typography>
-        </Stack>
-      </Paper>
+      {!isLoading ? (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Outstanding balance: ₹{outstanding.toFixed(2)} · {invoices.length} invoice(s)
+        </Typography>
+      ) : null}
+
+      {!isLoading && invoices.length === 0 ? (
+        <Paper variant="outlined" sx={{ p: 3 }}>
+          <Typography color="text.secondary">No invoices yet.</Typography>
+        </Paper>
+      ) : null}
+
+      <Stack spacing={2}>
+        {invoices.map((inv) => (
+          <Paper key={inv.invoiceId} variant="outlined" sx={{ p: 2 }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <Typography variant="h6">{inv.invoiceNumber}</Typography>
+              <Chip size="small" label={inv.status} color={inv.status === 'PAID' ? 'success' : 'warning'} />
+            </Stack>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Total ₹{Number(inv.totalAmount).toFixed(2)} · Paid ₹{Number(inv.amountPaid).toFixed(2)}
+              {inv.issuedAt ? ` · ${new Date(inv.issuedAt).toLocaleString()}` : ''}
+            </Typography>
+            <List dense disablePadding>
+              {inv.lineItems.map((line) => (
+                <ListItem key={line.lineItemId} disableGutters>
+                  <ListItemText
+                    primary={line.description}
+                    secondary={`₹${Number(line.lineTotal).toFixed(2)}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+        ))}
+      </Stack>
     </AnimatedPage>
   );
 }

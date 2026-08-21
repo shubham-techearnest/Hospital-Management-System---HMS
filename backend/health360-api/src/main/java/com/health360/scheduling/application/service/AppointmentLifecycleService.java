@@ -254,9 +254,9 @@ public class AppointmentLifecycleService {
             throw forbidden();
         }
 
-        if (!"CONFIRMED".equals(appointment.getStatus())) {
+        if (!Set.of("CONFIRMED", "ARRIVED").contains(appointment.getStatus())) {
             throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, HttpStatus.BAD_REQUEST,
-                    "Only confirmed appointments can be marked completed or no-show");
+                    "Only confirmed or arrived appointments can be marked completed or no-show");
         }
 
         String newStatus = request.getStatus();

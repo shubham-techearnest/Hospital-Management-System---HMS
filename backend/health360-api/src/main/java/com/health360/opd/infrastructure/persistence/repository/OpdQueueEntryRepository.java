@@ -20,6 +20,10 @@ public interface OpdQueueEntryRepository extends JpaRepository<OpdQueueEntryEnti
 
     boolean existsByTenantIdAndEncounterIdAndDeletedAtIsNull(UUID tenantId, UUID encounterId);
 
+    Optional<OpdQueueEntryEntity> findByTenantIdAndAppointmentIdAndDeletedAtIsNull(UUID tenantId, UUID appointmentId);
+
+    Optional<OpdQueueEntryEntity> findByTenantIdAndEncounterIdAndDeletedAtIsNull(UUID tenantId, UUID encounterId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT COALESCE(MAX(q.tokenNumber), 0)

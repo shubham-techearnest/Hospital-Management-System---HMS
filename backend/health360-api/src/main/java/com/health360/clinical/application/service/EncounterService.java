@@ -51,7 +51,46 @@ public class EncounterService {
         if (!principal.hasPermission("clinical:encounter:write")) {
             throw forbidden();
         }
+        return doCreateEncounter(principal, request);
+    }
 
+    /**
+     * Creates an encounter for OPD registration / appointment arrive flows.
+     * Caller must already authorize via opd:registration:write or scheduling:appointment:arrive.
+     */
+    @Transactional
+    public EncounterResponse createEncounterForRegistration(
+            UserPrincipal principal, CreateEncounterRequest request) {
+        return doCreateEncounter(principal, request);
+    }
+
+    /**
+     * Transitions REGISTERED → WAITING for registration/arrive flows without clinical:encounter:write.
+     */
+    @Transactional
+    public EncounterResponse markWaitingForRegistration(UserPrincipal principal, UUID encounterId) {
+        EncounterEntity encounter = requireEncounter(principal.getTenantId(), encounterId);
+        EncounterStatus current = parseEncounterStatus(encounter.getStatus());
+        if (current == EncounterStatus.WAITING) {
+            return mapper.toEncounterResponse(encounter);
+        }
+        if (current != EncounterStatus.REGISTERED) {
+            throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, HttpStatus.BAD_REQUEST,
+                    "Cannot mark encounter waiting from " + current);
+        }
+        encounter.setStatus(EncounterStatus.WAITING.name());
+        encounter.setUpdatedBy(principal.getUserId());
+        applyStatusTimestamps(encounter, EncounterStatus.WAITING);
+        encounterRepository.save(encounter);
+
+        auditLogService.record(principal.getTenantId(), principal.getUserId(),
+                "ENCOUNTER_STATUS_UPDATED", "Encounter", encounter.getId(),
+                Map.of("status", EncounterStatus.WAITING.name(), "source", "REGISTRATION"));
+
+        return mapper.toEncounterResponse(encounter);
+    }
+
+    private EncounterResponse doCreateEncounter(UserPrincipal principal, CreateEncounterRequest request) {
         UUID tenantId = principal.getTenantId();
         UUID userId = principal.getUserId();
 
@@ -306,11 +345,39 @@ public class EncounterService {
         EncounterEntity encounter = requireEncounter(principal.getTenantId(), encounterId);
         accessService.assertCanWriteEncounter(principal, encounter);
 
+        boolean structured = hasStructuredSections(
+                request.getChiefComplaint(), request.getHpi(), request.getExamination(),
+                request.getAssessment(), request.getPlan());
+
+        String content = trimToNull(request.getContent());
+        if (structured) {
+            content = buildConsultationSummary(request.getChiefComplaint(), request.getHpi(),
+                    request.getExamination(), request.getAssessment(), request.getPlan(), content);
+        }
+        if (content == null || content.isBlank()) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Note content or structured consultation sections are required");
+        }
+
         ClinicalNoteEntity note = new ClinicalNoteEntity();
         note.setTenantId(principal.getTenantId());
         note.setEncounterId(encounterId);
-        note.setNoteType(parseNoteType(request.getNoteType()).name());
-        note.setContent(request.getContent().trim());
+        note.setNoteType(structured
+                ? ClinicalNoteType.CONSULTATION.name()
+                : parseNoteType(request.getNoteType()).name());
+        note.setContent(content);
+        note.setChiefComplaint(trimToNull(request.getChiefComplaint()));
+        note.setHpi(trimToNull(request.getHpi()));
+        note.setExamination(trimToNull(request.getExamination()));
+        note.setAssessment(trimToNull(request.getAssessment()));
+        note.setPlan(trimToNull(request.getPlan()));
+        if (structured) {
+            note.setStatus("DRAFT");
+        } else {
+            note.setStatus("FINAL");
+            note.setFinalizedAt(Instant.now());
+            note.setFinalizedBy(principal.getUserId());
+        }
         note.setCreatedBy(principal.getUserId());
         note.setUpdatedBy(principal.getUserId());
 
@@ -318,6 +385,96 @@ public class EncounterService {
 
         auditLogService.record(principal.getTenantId(), principal.getUserId(),
                 "CLINICAL_NOTE_ADDED", "ClinicalNote", saved.getId(),
+                Map.of("encounterId", encounterId.toString(), "status", saved.getStatus()));
+
+        return mapper.toNoteResponse(saved);
+    }
+
+    @Transactional
+    public ClinicalNoteResponse updateNote(
+            UserPrincipal principal, UUID encounterId, UUID noteId, UpdateClinicalNoteRequest request) {
+        EncounterEntity encounter = requireEncounter(principal.getTenantId(), encounterId);
+        accessService.assertCanWriteEncounter(principal, encounter);
+
+        ClinicalNoteEntity note = noteRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(noteId, principal.getTenantId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Clinical note not found"));
+
+        if (!note.getEncounterId().equals(encounterId)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Note does not belong to this encounter");
+        }
+        if (!"DRAFT".equals(note.getStatus())) {
+            throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, HttpStatus.CONFLICT,
+                    "Only DRAFT notes can be updated");
+        }
+
+        if (request.getChiefComplaint() != null) {
+            note.setChiefComplaint(trimToNull(request.getChiefComplaint()));
+        }
+        if (request.getHpi() != null) {
+            note.setHpi(trimToNull(request.getHpi()));
+        }
+        if (request.getExamination() != null) {
+            note.setExamination(trimToNull(request.getExamination()));
+        }
+        if (request.getAssessment() != null) {
+            note.setAssessment(trimToNull(request.getAssessment()));
+        }
+        if (request.getPlan() != null) {
+            note.setPlan(trimToNull(request.getPlan()));
+        }
+
+        String content = trimToNull(request.getContent());
+        boolean structured = hasStructuredSections(
+                note.getChiefComplaint(), note.getHpi(), note.getExamination(),
+                note.getAssessment(), note.getPlan());
+        if (structured) {
+            note.setContent(buildConsultationSummary(
+                    note.getChiefComplaint(), note.getHpi(), note.getExamination(),
+                    note.getAssessment(), note.getPlan(), content));
+        } else if (content != null) {
+            note.setContent(content);
+        }
+        note.setUpdatedBy(principal.getUserId());
+
+        ClinicalNoteEntity saved = noteRepository.save(note);
+        auditLogService.record(principal.getTenantId(), principal.getUserId(),
+                "CLINICAL_NOTE_UPDATED", "ClinicalNote", saved.getId(),
+                Map.of("encounterId", encounterId.toString()));
+
+        return mapper.toNoteResponse(saved);
+    }
+
+    @Transactional
+    public ClinicalNoteResponse finalizeNote(
+            UserPrincipal principal, UUID encounterId, UUID noteId) {
+        EncounterEntity encounter = requireEncounter(principal.getTenantId(), encounterId);
+        accessService.assertCanWriteEncounter(principal, encounter);
+
+        ClinicalNoteEntity note = noteRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(noteId, principal.getTenantId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Clinical note not found"));
+
+        if (!note.getEncounterId().equals(encounterId)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Note does not belong to this encounter");
+        }
+        if (!"DRAFT".equals(note.getStatus())) {
+            throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, HttpStatus.CONFLICT,
+                    "Only DRAFT notes can be finalized");
+        }
+
+        note.setStatus("FINAL");
+        note.setFinalizedAt(Instant.now());
+        note.setFinalizedBy(principal.getUserId());
+        note.setUpdatedBy(principal.getUserId());
+
+        ClinicalNoteEntity saved = noteRepository.save(note);
+        auditLogService.record(principal.getTenantId(), principal.getUserId(),
+                "CLINICAL_NOTE_FINALIZED", "ClinicalNote", saved.getId(),
                 Map.of("encounterId", encounterId.toString()));
 
         return mapper.toNoteResponse(saved);
@@ -329,6 +486,35 @@ public class EncounterService {
         accessService.assertCanReadEncounter(principal, encounter);
         return noteRepository.findByEncounterIdAndDeletedAtIsNullOrderByRecordedAtDesc(encounterId)
                 .stream().map(mapper::toNoteResponse).toList();
+    }
+
+    private boolean hasStructuredSections(String... sections) {
+        return Arrays.stream(sections).anyMatch(s -> s != null && !s.isBlank());
+    }
+
+    private String buildConsultationSummary(
+            String chiefComplaint, String hpi, String examination, String assessment, String plan,
+            String fallbackContent) {
+        StringBuilder sb = new StringBuilder();
+        appendSection(sb, "Chief complaint", chiefComplaint);
+        appendSection(sb, "HPI", hpi);
+        appendSection(sb, "Examination", examination);
+        appendSection(sb, "Assessment", assessment);
+        appendSection(sb, "Plan", plan);
+        if (sb.isEmpty() && fallbackContent != null && !fallbackContent.isBlank()) {
+            return fallbackContent.trim();
+        }
+        return sb.toString().trim();
+    }
+
+    private void appendSection(StringBuilder sb, String label, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        if (!sb.isEmpty()) {
+            sb.append("\n\n");
+        }
+        sb.append(label).append(":\n").append(value.trim());
     }
 
     EncounterEntity requireEncounter(UUID tenantId, UUID encounterId) {

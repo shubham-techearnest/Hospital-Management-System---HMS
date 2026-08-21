@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface ClinicalNoteRepository extends JpaRepository<ClinicalNoteEntity, UUID> {
 
     List<ClinicalNoteEntity> findByEncounterIdAndDeletedAtIsNullOrderByRecordedAtDesc(UUID encounterId);
+
+    java.util.Optional<ClinicalNoteEntity> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
 }

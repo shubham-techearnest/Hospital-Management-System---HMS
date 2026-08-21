@@ -134,5 +134,11 @@ class BillingIntegrationTest {
                         .header("Authorization", IntegrationTestAuth.bearer(patientToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content").isArray());
+
+        mockMvc.perform(get("/api/v1/billing/encounters/" + encounterId + "/invoice")
+                        .header("Authorization", IntegrationTestAuth.bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.invoiceId").value(invoiceId))
+                .andExpect(jsonPath("$.data.status").value("PAID"));
     }
 }

@@ -11,6 +11,7 @@ import com.health360.opd.domain.QueueEntryStatus;
 import com.health360.opd.infrastructure.persistence.entity.OpdQueueEntryEntity;
 import com.health360.opd.infrastructure.persistence.repository.OpdQueueEntryRepository;
 import com.health360.opd.presentation.dto.request.OpdQueueActionRequest;
+import com.health360.opd.presentation.dto.request.SkipQueueEntryRequest;
 import com.health360.opd.presentation.dto.response.OpdQueueEntryResponse;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
@@ -115,6 +116,83 @@ public class OpdQueueService {
                 "OPD_QUEUE_CANCELLED", "OpdQueueEntry", entry.getId(), Map.of());
 
         return toQueueResponse(principal.getTenantId(), entry, encounter);
+    }
+
+    @Transactional
+    public OpdQueueEntryResponse skipPatient(
+            UserPrincipal principal, UUID queueEntryId, SkipQueueEntryRequest request) {
+        opdAccessService.assertCanWriteQueue(principal);
+        OpdQueueEntryEntity entry = requireQueueEntry(principal, queueEntryId);
+        QueueEntryStatus current = parseQueueStatus(entry.getStatus());
+
+        if (!current.canTransitionTo(QueueEntryStatus.SKIPPED)) {
+            throw invalidTransition(current, QueueEntryStatus.SKIPPED);
+        }
+
+        String reason = request != null ? request.getReason() : null;
+        if (reason != null && reason.length() > 500) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Skip reason must be at most 500 characters");
+        }
+
+        UUID deskId = request != null ? request.getDeskId() : null;
+        if (deskId != null) {
+            deskService.requireActiveDesk(
+                    principal.getTenantId(), deskId, entry.getHospitalId(), entry.getBranchId());
+            entry.setDeskId(deskId);
+        }
+
+        Instant now = Instant.now();
+        entry.setStatus(QueueEntryStatus.SKIPPED.name());
+        entry.setSkippedAt(now);
+        entry.setSkipReason(reason != null && !reason.isBlank() ? reason.trim() : null);
+        entry.setUpdatedBy(principal.getUserId());
+        queueEntryRepository.save(entry);
+
+        auditLogService.record(principal.getTenantId(), principal.getUserId(),
+                "OPD_QUEUE_SKIPPED", "OpdQueueEntry", entry.getId(),
+                Map.of(
+                        "priorStatus", current.name(),
+                        "reason", entry.getSkipReason() != null ? entry.getSkipReason() : ""));
+
+        return toQueueResponse(principal.getTenantId(), entry);
+    }
+
+    @Transactional
+    public OpdQueueEntryResponse recallPatient(
+            UserPrincipal principal, UUID queueEntryId, OpdQueueActionRequest request) {
+        opdAccessService.assertCanWriteQueue(principal);
+        OpdQueueEntryEntity entry = requireQueueEntry(principal, queueEntryId);
+        QueueEntryStatus current = parseQueueStatus(entry.getStatus());
+
+        if (!current.canTransitionTo(QueueEntryStatus.CALLED)) {
+            throw invalidTransition(current, QueueEntryStatus.CALLED);
+        }
+        if (current != QueueEntryStatus.SKIPPED) {
+            throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, HttpStatus.BAD_REQUEST,
+                    "Only skipped queue entries can be recalled");
+        }
+
+        UUID deskId = request != null ? request.getDeskId() : null;
+        if (deskId != null) {
+            deskService.requireActiveDesk(
+                    principal.getTenantId(), deskId, entry.getHospitalId(), entry.getBranchId());
+            entry.setDeskId(deskId);
+        }
+
+        Instant now = Instant.now();
+        entry.setStatus(QueueEntryStatus.CALLED.name());
+        entry.setCalledAt(now);
+        entry.setRecalledAt(now);
+        entry.setPriority(entry.getPriority() + 10);
+        entry.setUpdatedBy(principal.getUserId());
+        queueEntryRepository.save(entry);
+
+        auditLogService.record(principal.getTenantId(), principal.getUserId(),
+                "OPD_QUEUE_RECALLED", "OpdQueueEntry", entry.getId(),
+                Map.of("priority", entry.getPriority()));
+
+        return toQueueResponse(principal.getTenantId(), entry);
     }
 
     private OpdQueueEntryResponse transitionQueueEntry(
