@@ -34,7 +34,7 @@
 
 **Impact:** P1-F1 register API behavior, override workflow.
 
-**Status:** **APPROVED** — Option A (block on mobile exact or name+DOB)
+**Status:** **UPDATED 2026-08-21** — Block only on **name+DOB** match. Exact mobile shows candidates (family may share one phone across multiple patient accounts) but does **not** block registration.
 
 ---
 

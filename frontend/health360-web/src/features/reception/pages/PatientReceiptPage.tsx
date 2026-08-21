@@ -42,6 +42,14 @@ export function PatientReceiptPage() {
           <Typography sx={{ mt: 2 }}><strong>Name:</strong> {data.legalName}</Typography>
           <Typography><strong>Mobile:</strong> {data.primaryPhone ?? '—'}</Typography>
           <Typography><strong>Registered:</strong> {new Date(data.registeredAt).toLocaleString()}</Typography>
+          {patientId && window.sessionStorage.getItem(`portalInvite:${patientId}`) ? (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              Portal invite (also in API logs — SMS later):
+              <Typography sx={{ mt: 1, wordBreak: 'break-all', fontFamily: 'monospace', fontSize: 12 }}>
+                {window.sessionStorage.getItem(`portalInvite:${patientId}`)}
+              </Typography>
+            </Alert>
+          ) : null}
         </Stack>
 
         <Stack direction="row" spacing={2} sx={{ mt: 4 }}>

@@ -10,6 +10,7 @@ import { RoleRoute } from '@/features/auth/components/RoleRoute';
 import { AccountSettingsPage } from '@/features/settings/pages/AccountSettingsPage';
 import { NotificationPreferencesPage } from '@/features/settings/pages/NotificationPreferencesPage';
 import { ConsentPage } from '@/features/patient/pages/ConsentPage';
+import { CompletePatientAccountPage } from '@/features/patient/pages/CompletePatientAccountPage';
 import { PatientPortalLayout } from '@/features/patient/layout/PatientPortalLayout';
 import { DoctorPortalLayout } from '@/features/doctor/layout/DoctorPortalLayout';
 import { AdminPortalLayout } from '@/features/admin/layout/AdminPortalLayout';
@@ -255,6 +256,7 @@ export function AppRouter() {
         <Route path="/login" element={<GuestOnlyRoute><LoginPage /></GuestOnlyRoute>} />
         <Route path="/register" element={<GuestOnlyRoute><RegisterPage /></GuestOnlyRoute>} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/complete-patient-account" element={<CompletePatientAccountPage />} />
         <Route path="/doctors/:doctorId" element={<LazyPage><PublicDoctorProfilePage /></LazyPage>} />
         <Route path="/hospitals/:hospitalId" element={<LazyPage><PublicHospitalProfilePage /></LazyPage>} />
         <Route

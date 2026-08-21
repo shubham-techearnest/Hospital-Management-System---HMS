@@ -62,7 +62,8 @@ export interface CreateOpdDeskPayload {
 }
 
 export interface WalkInRegistrationPayload {
-  patientId: string;
+  patientId?: string;
+  patientUhid?: string;
   hospitalId: string;
   branchId: string;
   departmentId?: string;
@@ -90,6 +91,21 @@ export async function listOpdDesks(hospitalId: string, branchId: string): Promis
     params: { hospitalId, branchId },
   });
   return unwrap(data);
+}
+
+export interface OpdDoctorOption {
+  doctorId: string;
+  doctorName: string;
+  specialization?: string;
+  branchId?: string;
+  status: string;
+}
+
+export async function listOpdDoctors(hospitalId: string, branchId?: string): Promise<OpdDoctorOption[]> {
+  const { data } = await apiClient.get<ApiEnvelope<OpdDoctorOption[]>>('/opd/doctors', {
+    params: { hospitalId, branchId: branchId || undefined },
+  });
+  return unwrap(data) ?? [];
 }
 
 export async function createOpdDesk(payload: CreateOpdDeskPayload): Promise<OpdDesk> {

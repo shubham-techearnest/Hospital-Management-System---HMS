@@ -12,6 +12,26 @@ export interface HospitalPatientSummary {
   bloodGroup?: string;
   permanentCity?: string;
   permanentState?: string;
+  portalAccountStatus?: string;
+}
+
+export interface RegisterHospitalPatientResult {
+  patientId: string;
+  uhid: string;
+  hospitalRegistrationId: string;
+  receiptPath: string;
+  portalInviteLink?: string;
+  portalInviteMessage?: string;
+  temporaryLoginEmail?: string;
+  temporaryPassword?: string;
+}
+
+export interface PortalInviteResult {
+  patientId: string;
+  uhid?: string;
+  primaryPhone?: string;
+  inviteLink: string;
+  message: string;
 }
 
 export interface RegisterHospitalPatientPayload {
@@ -30,13 +50,6 @@ export interface RegisterHospitalPatientPayload {
   permanentCountry?: string;
   duplicateOverride?: boolean;
   duplicateOverrideReason?: string;
-}
-
-export interface RegisterHospitalPatientResult {
-  patientId: string;
-  uhid: string;
-  hospitalRegistrationId: string;
-  receiptPath: string;
 }
 
 export interface DuplicateCandidate {
@@ -113,6 +126,23 @@ export async function getRegistrationReceipt(patientId: string): Promise<Registr
     `/hospital/patients/${patientId}/registration-receipt`,
   );
   return unwrap(data);
+}
+
+export async function createPortalInvite(patientId: string): Promise<PortalInviteResult> {
+  const { data } = await apiClient.post<ApiEnvelope<PortalInviteResult>>(
+    `/hospital/patients/${patientId}/portal-invite`,
+    {},
+  );
+  return unwrap(data);
+}
+
+export async function completePatientPortalAccount(payload: {
+  token: string;
+  email: string;
+  password: string;
+}): Promise<void> {
+  const { data } = await apiClient.post<ApiEnvelope<null>>('/auth/complete-patient-account', payload);
+  unwrap(data);
 }
 
 export function extractDuplicateCandidates(error: unknown): DuplicateCandidate[] | null {

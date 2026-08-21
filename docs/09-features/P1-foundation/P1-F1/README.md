@@ -27,7 +27,7 @@
 |----------|------------|
 | DEC-001 | Tenant-global UHID (`H360-{year}-{seq}`) |
 | DEC-002 | Block on exact mobile OR name+DOB match |
-| DEC-004 | Stub IAM user (DEACTIVATED, internal email) |
+| DEC-004 | Desk patient gets ACTIVE portal login (`{uhid}@patient.health360.local` + temp password logged); optional invite to set personal email |
 | DEC-003 | ILIKE/JPA name search for MVP |
 | DEC-005 | No registration SMS (default off) |
 

@@ -4,8 +4,10 @@ import com.health360.config.security.UserPrincipal;
 import com.health360.patient.application.service.HospitalPatientRegistryService;
 import com.health360.patient.presentation.dto.request.RegisterHospitalPatientRequest;
 import com.health360.patient.presentation.dto.response.HospitalPatientSummaryResponse;
+import com.health360.patient.presentation.dto.response.PortalInviteResponse;
 import com.health360.patient.presentation.dto.response.RegisterHospitalPatientResponse;
 import com.health360.patient.presentation.dto.response.RegistrationReceiptResponse;
+import com.health360.patient.application.service.PatientPortalInviteService;
 import com.health360.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ import java.util.UUID;
 public class HospitalPatientRegistryController {
 
     private final HospitalPatientRegistryService registryService;
+    private final PatientPortalInviteService portalInviteService;
 
     @GetMapping("/search")
     @PreAuthorize("hasAuthority('patient:registry:read')")
@@ -75,5 +78,13 @@ public class HospitalPatientRegistryController {
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable UUID patientId) {
         return ResponseEntity.ok(ApiResponse.ok(registryService.getRegistrationReceipt(principal, patientId)));
+    }
+
+    @PostMapping("/{patientId}/portal-invite")
+    @PreAuthorize("hasAuthority('patient:registry:write')")
+    public ResponseEntity<ApiResponse<PortalInviteResponse>> createPortalInvite(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID patientId) {
+        return ResponseEntity.ok(ApiResponse.ok(portalInviteService.createInvite(principal, patientId)));
     }
 }

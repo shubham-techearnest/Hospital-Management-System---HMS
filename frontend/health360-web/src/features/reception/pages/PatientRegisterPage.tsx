@@ -37,6 +37,9 @@ export function PatientRegisterPage() {
         duplicateOverride,
         duplicateOverrideReason,
       });
+      if (result.portalInviteLink) {
+        window.sessionStorage.setItem(`portalInvite:${result.patientId}`, result.portalInviteLink);
+      }
       navigate(`/reception/patients/${result.patientId}/receipt`);
     } catch (error) {
       const candidates = extractDuplicateCandidates(error);

@@ -2,6 +2,7 @@ package com.health360.opd.presentation.controller;
 
 import com.health360.config.security.UserPrincipal;
 import com.health360.opd.application.service.OpdDeskService;
+import com.health360.opd.application.service.OpdDoctorCatalogService;
 import com.health360.opd.application.service.OpdQueueService;
 import com.health360.opd.application.service.OpdRegistrationService;
 import com.health360.opd.presentation.dto.request.CheckInAppointmentRequest;
@@ -10,6 +11,7 @@ import com.health360.opd.presentation.dto.request.OpdQueueActionRequest;
 import com.health360.opd.presentation.dto.request.SkipQueueEntryRequest;
 import com.health360.opd.presentation.dto.request.WalkInRegistrationRequest;
 import com.health360.opd.presentation.dto.response.OpdDeskResponse;
+import com.health360.opd.presentation.dto.response.OpdDoctorOptionResponse;
 import com.health360.opd.presentation.dto.response.OpdQueueEntryResponse;
 import com.health360.opd.presentation.dto.response.OpdRegistrationResponse;
 import com.health360.shared.dto.ApiResponse;
@@ -37,6 +39,7 @@ public class OpdController {
     private final OpdDeskService deskService;
     private final OpdRegistrationService registrationService;
     private final OpdQueueService queueService;
+    private final OpdDoctorCatalogService doctorCatalogService;
 
     @PostMapping("/desks")
     @PreAuthorize("hasAuthority('opd:desk:write')")
@@ -55,6 +58,16 @@ public class OpdController {
             @RequestParam UUID branchId) {
         return ResponseEntity.ok(ApiResponse.ok(
                 deskService.listDesks(principal, hospitalId, branchId)));
+    }
+
+    @GetMapping("/doctors")
+    @PreAuthorize("hasAnyAuthority('opd:registration:write', 'opd:queue:read', 'hospital:doctors:read')")
+    public ResponseEntity<ApiResponse<List<OpdDoctorOptionResponse>>> listDoctors(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam UUID hospitalId,
+            @RequestParam(required = false) UUID branchId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                doctorCatalogService.listDoctors(principal, hospitalId, branchId)));
     }
 
     @PostMapping("/registrations/walk-in")

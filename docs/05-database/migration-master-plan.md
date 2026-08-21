@@ -24,7 +24,8 @@
 | **V47** | 5 | P2-F3 | Structured consultation fields + DRAFT/FINAL on `clinical.notes` |
 | **V48** | 6 | P2-F4 | `clinical.prescriptions`, `prescription_items` + RBAC |
 | **V49** | 7 | P2-F5 | RECEPTIONIST billing RBAC (OPD checkout) |
-| **V50+** | — | TBD | Next release extras |
+| **V50** | — | Patient portal | Portal invite tokens for desk-registered patients |
+| **V51+** | — | TBD | Next extras |
 | **V45** | 12 | P4-F4 | `ipd.bed_movements` |
 | **V46** | 9 | P3-F1 | Pharmacy batches, stock_transactions |
 | **V47+** | 17+ | Payments/insurance | TBD after ADR-012/013 approval |

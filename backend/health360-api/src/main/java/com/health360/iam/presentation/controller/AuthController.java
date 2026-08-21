@@ -11,6 +11,8 @@ import com.health360.iam.presentation.dto.request.LoginRequest;
 import com.health360.iam.presentation.dto.request.RefreshTokenRequest;
 import com.health360.iam.presentation.dto.request.RegisterRequest;
 import com.health360.iam.presentation.dto.request.ResendVerificationRequest;
+import com.health360.patient.application.service.PatientPortalInviteService;
+import com.health360.patient.presentation.dto.request.CompletePortalAccountRequest;
 import com.health360.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class AuthController {
     private final EmailVerificationService emailVerificationService;
     private final PasswordChangeService passwordChangeService;
     private final Health360Properties properties;
+    private final PatientPortalInviteService patientPortalInviteService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<?>> register(@Valid @RequestBody RegisterRequest request) {
@@ -54,6 +57,14 @@ public class AuthController {
             @Valid @RequestBody ResendVerificationRequest request) {
         emailVerificationService.resendVerification(request.getEmail(), properties.getDefaultTenantId());
         return ResponseEntity.ok(ApiResponse.message("Verification email sent"));
+    }
+
+    @PostMapping("/complete-patient-account")
+    public ResponseEntity<ApiResponse<Void>> completePatientAccount(
+            @Valid @RequestBody CompletePortalAccountRequest request) {
+        patientPortalInviteService.completeAccount(request);
+        return ResponseEntity.ok(ApiResponse.message(
+                "Account activated. You can now log in with your email and password."));
     }
 
     @PostMapping("/login")

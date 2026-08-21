@@ -18,4 +18,6 @@ public class HospitalPatientSummaryResponse {
     String bloodGroup;
     String permanentCity;
     String permanentState;
+    /** ACTIVE | PENDING_ACTIVATION — desk stub users need portal invite. */
+    String portalAccountStatus;
 }

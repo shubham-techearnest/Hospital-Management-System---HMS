@@ -10,20 +10,21 @@
 
 ## CURRENT STATUS
 
-**P2-F5 IMPLEMENTATION COMPLETE — IN QA**
+**Walk-in find-or-register + desk credentials + OPD doctor pick — READY FOR QA**
 
-- Docs: [09-features/P2-opd/P2-F5/](./09-features/P2-opd/P2-F5/)
-- V49: RECEPTIONIST billing RBAC
-- API: `GET /billing/encounters/{id}/invoice` (+ existing V41 invoice/payment APIs)
-- Web: Reception/Hospital checkout, hospital invoice list/detail, patient invoices
+- Auto UHID + temp login (logged to terminal + returned once) on desk patient register
+- Walk-in UI: search existing or create new, then queue with optional doctor
+- `GET /api/v1/opd/doctors` for reception/hospital OPD
+- V51: receptionist doctor-read RBAC
+- Backlog: [HOSPITAL-OPD-REALISM-BACKLOG.md](./hms/HOSPITAL-OPD-REALISM-BACKLOG.md)
 
 ---
 
 ## IMMEDIATE NEXT ACTION
 
-1. Run `BillingIntegrationTest` (Docker)
-2. UAT: issue invoice + collect payment from OPD queue Checkout
-3. Phase 2 OPD (R2) feature set complete for board — plan next epic/release as needed
+1. Restart API so Flyway V51 applies; register a new walk-in and confirm terminal shows `PATIENT DESK CREDENTIALS`
+2. Login as patient with printed temp email/password; confirm portal access
+3. Pick next backlog item: reception slot booking **or** hospital clinical catalogs
 
 ---
 
@@ -31,8 +32,5 @@
 
 | Item | Status | Date |
 |------|--------|------|
-| P2-F1 Appointment arrival | IN QA | 2026-08-21 |
-| P2-F2 Queue skip/recall | IN QA | 2026-08-21 |
-| P2-F3 Structured consultation | IN QA | 2026-08-21 |
-| P2-F4 E-prescription | IN QA | 2026-08-21 |
-| P2-F5 OPD billing UI | IN QA | 2026-08-21 |
+| Walk-in find-or-register + credentials | IN QA | 2026-08-21 |
+| P2-F1…F5 OPD features | IN QA | 2026-08-21 |

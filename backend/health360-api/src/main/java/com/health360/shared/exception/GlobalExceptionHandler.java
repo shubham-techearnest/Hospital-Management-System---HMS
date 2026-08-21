@@ -16,6 +16,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -70,6 +71,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(
                 ErrorResponse.of(ErrorCode.VALIDATION_ERROR.name(), "Request validation failed",
                         correlationId(), details));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException ex) {
+        String message = "Invalid request body";
+        Throwable cause = ex.getMostSpecificCause();
+        if (cause != null && cause.getMessage() != null && cause.getMessage().contains("UUID")) {
+            message = "Invalid UUID value. Use patient UUID or send patientUhid (e.g. H360-2026-00000001) for walk-in.";
+        }
+        log.warn("Malformed request body [correlationId={}]: {}", correlationId(), cause != null ? cause.getMessage() : ex.getMessage());
+        return ResponseEntity.badRequest().body(
+                ErrorResponse.of(ErrorCode.VALIDATION_ERROR.name(), message, correlationId()));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)

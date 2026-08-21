@@ -17,6 +17,7 @@ import com.health360.patient.infrastructure.persistence.repository.PatientProfil
 import com.health360.patient.presentation.dto.request.RegisterHospitalPatientRequest;
 import com.health360.patient.presentation.dto.response.DuplicateCandidateResponse;
 import com.health360.patient.presentation.dto.response.HospitalPatientSummaryResponse;
+import com.health360.patient.presentation.dto.response.PortalInviteResponse;
 import com.health360.patient.presentation.dto.response.RegisterHospitalPatientResponse;
 import com.health360.patient.presentation.dto.response.RegistrationReceiptResponse;
 import com.health360.shared.application.AuditLogService;
@@ -54,6 +55,7 @@ public class HospitalPatientRegistryService {
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
+    private final PatientPortalInviteService portalInviteService;
 
     @Transactional(readOnly = true)
     public Page<HospitalPatientSummaryResponse> searchPatients(
@@ -70,7 +72,8 @@ public class HospitalPatientRegistryService {
         scopeService.resolveScope(principal);
 
         if (uhid != null && !uhid.isBlank()) {
-            return patientProfileRepository.findByTenantIdAndUhidAndDeletedAtIsNull(tenantId, uhid.trim())
+            String normalized = uhid.trim().toUpperCase();
+            return patientProfileRepository.findByTenantIdAndUhidAndDeletedAtIsNull(tenantId, normalized)
                     .map(profile -> new PageImpl<>(List.of(toSummary(profile)), pageable, 1))
                     .orElseGet(() -> new PageImpl<>(List.of(), pageable, 0));
         }
@@ -136,7 +139,10 @@ public class HospitalPatientRegistryService {
                             "candidateCount", candidates.size()));
         }
 
-        UserEntity user = createStubPatientUser(request, tenantId, storedPhone, principal.getUserId());
+        String uhid = uhidGenerationService.allocateUhid(tenantId);
+        String tempPassword = generateTemporaryPassword();
+        UserEntity user = createStubPatientUser(
+                request, tenantId, storedPhone, principal.getUserId(), uhid, tempPassword);
         assignPatientRole(tenantId, user.getId(), principal.getUserId());
 
         PatientProfileEntity profile = new PatientProfileEntity();
@@ -162,8 +168,6 @@ public class HospitalPatientRegistryService {
         profile.setConsentAcceptedAt(Instant.now());
         profile.setCreatedBy(principal.getUserId());
         profile.setUpdatedBy(principal.getUserId());
-
-        String uhid = uhidGenerationService.allocateUhid(tenantId);
         profile.setUhid(uhid);
 
         PatientProfileEntity savedProfile = patientProfileRepository.save(profile);
@@ -187,11 +191,17 @@ public class HospitalPatientRegistryService {
                 "PatientProfile", savedProfile.getId(),
                 Map.of("uhid", uhid));
 
+        PortalInviteResponse invite = portalInviteService.createInvite(principal, savedProfile.getId());
+
         return RegisterHospitalPatientResponse.builder()
                 .patientId(savedProfile.getId())
                 .uhid(uhid)
                 .hospitalRegistrationId(savedRegistration.getId())
                 .receiptPath("/api/v1/hospital/patients/" + savedProfile.getId() + "/registration-receipt")
+                .portalInviteLink(invite.getInviteLink())
+                .portalInviteMessage(invite.getMessage())
+                .temporaryLoginEmail(user.getEmail())
+                .temporaryPassword(tempPassword)
                 .build();
     }
 
@@ -285,20 +295,56 @@ public class HospitalPatientRegistryService {
             RegisterHospitalPatientRequest request,
             UUID tenantId,
             String storedPhone,
-            UUID actorId) {
+            UUID actorId,
+            String uhid,
+            String temporaryPassword) {
 
+        String loginEmail = toDeskLoginEmail(uhid);
         UserEntity user = new UserEntity();
         user.setTenantId(tenantId);
-        user.setEmail("desk.patient." + UUID.randomUUID() + "@health360.internal");
-        user.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setEmail(loginEmail);
+        user.setPasswordHash(passwordEncoder.encode(temporaryPassword));
         user.setFirstName(request.getLegalFirstName().trim());
         user.setLastName(request.getLegalLastName().trim());
         user.setPhone(storedPhone);
-        user.setStatus(UserStatus.DEACTIVATED);
-        user.setEmailVerified(false);
+        // ACTIVE so patient can log in immediately with desk credentials (SMS deferred → terminal log).
+        user.setStatus(UserStatus.ACTIVE);
+        user.setEmailVerified(true);
         user.setCreatedBy(actorId);
         user.setUpdatedBy(actorId);
-        return userRepository.save(user);
+        UserEntity saved = userRepository.save(user);
+
+        logDeskCredentials(uhid, loginEmail, temporaryPassword, storedPhone);
+        return saved;
+    }
+
+    private static String toDeskLoginEmail(String uhid) {
+        return uhid.trim().toLowerCase().replace('_', '-') + "@patient.health360.local";
+    }
+
+    private static String generateTemporaryPassword() {
+        String alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        StringBuilder sb = new StringBuilder(10);
+        for (int i = 0; i < 10; i++) {
+            sb.append(alphabet.charAt(random.nextInt(alphabet.length())));
+        }
+        return sb.toString();
+    }
+
+    private void logDeskCredentials(String uhid, String loginEmail, String temporaryPassword, String phone) {
+        org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HospitalPatientRegistryService.class);
+        log.info("""
+                
+                ===== PATIENT DESK CREDENTIALS (SMS deferred — verify manually) =====
+                UHID: {}
+                Phone: {}
+                Login email (username): {}
+                Temporary password: {}
+                Login URL: /login  (patient should change password after first login)
+                ======================================================================
+                """,
+                uhid, phone, loginEmail, temporaryPassword);
     }
 
     private void assignPatientRole(UUID tenantId, UUID userId, UUID assignedBy) {
@@ -320,6 +366,14 @@ public class HospitalPatientRegistryService {
     }
 
     private HospitalPatientSummaryResponse toSummary(PatientProfileEntity profile) {
+        String portalStatus = "PENDING_ACTIVATION";
+        if (profile.getUserId() != null) {
+            portalStatus = userRepository.findById(profile.getUserId())
+                    .map(u -> UserStatus.ACTIVE.equals(u.getStatus()) && u.isEmailVerified()
+                            ? "ACTIVE"
+                            : "PENDING_ACTIVATION")
+                    .orElse("PENDING_ACTIVATION");
+        }
         return HospitalPatientSummaryResponse.builder()
                 .patientId(profile.getId())
                 .uhid(profile.getUhid())
@@ -330,6 +384,7 @@ public class HospitalPatientRegistryService {
                 .bloodGroup(profile.getBloodGroup())
                 .permanentCity(profile.getPermanentCity())
                 .permanentState(profile.getPermanentState())
+                .portalAccountStatus(portalStatus)
                 .build();
     }
 

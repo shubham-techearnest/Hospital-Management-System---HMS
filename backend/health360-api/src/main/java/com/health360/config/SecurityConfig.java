@@ -42,6 +42,7 @@ public class SecurityConfig {
             "/api/v1/auth/refresh",
             "/api/v1/auth/verify-email",
             "/api/v1/auth/resend-verification",
+            "/api/v1/auth/complete-patient-account",
             "/api/v1/doctors/*/public",
             "/api/v1/doctors/*/reviews",
             "/api/v1/hospitals/*/public",

@@ -14,6 +14,8 @@ import com.health360.opd.presentation.dto.request.CheckInAppointmentRequest;
 import com.health360.opd.presentation.dto.request.WalkInRegistrationRequest;
 import com.health360.opd.presentation.dto.response.OpdQueueEntryResponse;
 import com.health360.opd.presentation.dto.response.OpdRegistrationResponse;
+import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
+import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.scheduling.infrastructure.persistence.entity.AppointmentEntity;
 import com.health360.scheduling.infrastructure.persistence.repository.AppointmentRepository;
 import com.health360.scheduling.presentation.dto.response.AppointmentArrivalResponse;
@@ -47,6 +49,7 @@ public class OpdRegistrationService {
     private final OpdAccessService opdAccessService;
     private final OpdMapper opdMapper;
     private final AuditLogService auditLogService;
+    private final PatientProfileRepository patientProfileRepository;
 
     @Transactional
     public OpdRegistrationResponse checkInAppointment(
@@ -179,6 +182,7 @@ public class OpdRegistrationService {
         opdAccessService.assertHospitalScope(principal, request.getHospitalId());
 
         UUID tenantId = principal.getTenantId();
+        UUID patientId = resolvePatientId(tenantId, request);
 
         if (request.getDeskId() != null) {
             deskService.requireActiveDesk(tenantId, request.getDeskId(),
@@ -186,7 +190,7 @@ public class OpdRegistrationService {
         }
 
         CreateEncounterRequest encounterRequest = new CreateEncounterRequest();
-        encounterRequest.setPatientId(request.getPatientId());
+        encounterRequest.setPatientId(patientId);
         encounterRequest.setHospitalId(request.getHospitalId());
         encounterRequest.setBranchId(request.getBranchId());
         encounterRequest.setDepartmentId(request.getDepartmentId());
@@ -217,13 +221,33 @@ public class OpdRegistrationService {
 
         auditLogService.record(tenantId, principal.getUserId(), "OPD_WALK_IN_REGISTERED",
                 "OpdQueueEntry", queueEntry.getId(),
-                Map.of("patientId", request.getPatientId().toString(),
+                Map.of("patientId", patientId.toString(),
                         "token", queueEntry.getTokenDisplay()));
 
         return OpdRegistrationResponse.builder()
                 .queueEntry(queueResponse)
                 .encounter(encounterResponse)
                 .build();
+    }
+
+    private UUID resolvePatientId(UUID tenantId, WalkInRegistrationRequest request) {
+        if (request.getPatientId() != null) {
+            PatientProfileEntity profile = patientProfileRepository.findById(request.getPatientId())
+                    .filter(p -> p.getDeletedAt() == null && p.getTenantId().equals(tenantId))
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                            "Patient not found"));
+            return profile.getId();
+        }
+        if (request.getPatientUhid() != null && !request.getPatientUhid().isBlank()) {
+            String uhid = request.getPatientUhid().trim().toUpperCase();
+            return patientProfileRepository.findByTenantIdAndUhidAndDeletedAtIsNull(tenantId, uhid)
+                    .map(PatientProfileEntity::getId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                            "No patient found for UHID " + uhid
+                                    + ". Search/register the patient first, then walk-in."));
+        }
+        throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                "Provide patientId (UUID) or patientUhid (e.g. H360-2026-00000001)");
     }
 
     private OpdQueueEntryEntity createQueueEntry(

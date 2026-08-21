@@ -21,6 +21,7 @@ import {
   useOpdQueueActions,
   useRegisterWalkIn,
 } from '@/features/opd/hooks/useOpdQueries';
+import { WalkInRegistrationPanel } from '@/features/reception/components/WalkInRegistrationPanel';
 
 const DEFAULT_HOSPITAL_ID = '00000000-0000-0000-0000-000000000030';
 const DEFAULT_BRANCH_ID = '00000000-0000-0000-0000-000000000031';
@@ -65,8 +66,8 @@ export function ReceptionDashboardPage() {
   const checkIn = useCheckInAppointment(hospitalId, branchId);
   const queueActions = useOpdQueueActions(hospitalId, branchId);
 
-  const [walkInForm, setWalkInForm] = useState({ patientId: '', visitReason: '', deskId: '' });
   const [checkInForm, setCheckInForm] = useState({ appointmentId: '', deskId: '' });
+  // walk-in form state lives in WalkInRegistrationPanel
 
   const deskOptions = useMemo(
     () => desks.map((d) => ({ id: d.deskId, label: `${d.name} (${d.code})` })),
@@ -75,27 +76,6 @@ export function ReceptionDashboardPage() {
 
   const showError = (e: unknown) =>
     setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
-
-  const handleWalkIn = async () => {
-    try {
-      const result = await registerWalkIn.mutateAsync({
-        patientId: walkInForm.patientId.trim(),
-        hospitalId,
-        branchId,
-        deskId: walkInForm.deskId || undefined,
-        visitReason: walkInForm.visitReason || undefined,
-      });
-      setWalkInForm({ patientId: '', visitReason: '', deskId: '' });
-      setSnackbar({
-        open: true,
-        message: `Walk-in registered — token ${result.queueEntry.tokenDisplay}`,
-        severity: 'success',
-      });
-      setTab(0);
-    } catch (e) {
-      showError(e);
-    }
-  };
 
   const handleCheckIn = async () => {
     try {
@@ -272,24 +252,28 @@ export function ReceptionDashboardPage() {
       )}
 
       {tab === 1 && (
-        <Paper variant="outlined" sx={{ p: 2, maxWidth: 480 }}>
-          <Stack spacing={2}>
-            <TextField label="Patient ID" required fullWidth
-              value={walkInForm.patientId} onChange={(e) => setWalkInForm((f) => ({ ...f, patientId: e.target.value }))} />
-            <TextField label="Visit reason" fullWidth multiline minRows={2}
-              value={walkInForm.visitReason} onChange={(e) => setWalkInForm((f) => ({ ...f, visitReason: e.target.value }))} />
-            <TextField select label="Desk (optional)" fullWidth
-              value={walkInForm.deskId} onChange={(e) => setWalkInForm((f) => ({ ...f, deskId: e.target.value }))}>
-              <MenuItem value="">None</MenuItem>
-              {deskOptions.map((d) => (
-                <MenuItem key={d.id} value={d.id}>{d.label}</MenuItem>
-              ))}
-            </TextField>
-            <Button variant="contained" onClick={handleWalkIn} disabled={!walkInForm.patientId.trim()}>
-              Register walk-in
-            </Button>
-          </Stack>
-        </Paper>
+        <WalkInRegistrationPanel
+          hospitalId={hospitalId}
+          branchId={branchId}
+          desks={deskOptions}
+          pending={registerWalkIn.isPending}
+          onSubmit={async ({ patientId, visitReason, deskId, primaryDoctorId }) => {
+            const result = await registerWalkIn.mutateAsync({
+              patientId,
+              hospitalId,
+              branchId,
+              deskId,
+              visitReason,
+              primaryDoctorId,
+            });
+            setSnackbar({
+              open: true,
+              message: `Walk-in registered — token ${result.queueEntry.tokenDisplay}`,
+              severity: 'success',
+            });
+            setTab(0);
+          }}
+        />
       )}
 
       {tab === 2 && (

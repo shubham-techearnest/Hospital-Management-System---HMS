@@ -13,6 +13,7 @@
 | P2-F3 | EPIC-05 | Structured consultation | 5 | [P2-F3](../09-features/P2-opd/P2-F3/README.md) | APPROVED | DONE | IN QA | **IN QA** |
 | P2-F4 | EPIC-06 | E-prescription | 6 | [P2-F4](../09-features/P2-opd/P2-F4/README.md) | APPROVED | DONE | IN QA | **IN QA** |
 | P2-F5 | EPIC-10 | OPD billing UI | 7 | [P2-F5](../09-features/P2-opd/P2-F5/README.md) | APPROVED | DONE | IN QA | **IN QA** |
+| P2-F6 | EPIC-04 | Walk-in find-or-register + desk credentials + doctor pick | 8 | [backlog](../hms/HOSPITAL-OPD-REALISM-BACKLOG.md) | APPROVED | DONE | IN QA | **IN QA** |
 | P2-B1 | EPIC-10 | Billing backend (V41) | — | [post-hms](../post-hms/P2-B1-BILLING-FLOW.md) | — | DONE | PARTIAL | **RELEASED (backend)** |
 
 **HMS as-built (HMS-0…11):** RELEASED — see [hms/HMS-SPRINT-STATUS.md](../hms/HMS-SPRINT-STATUS.md)

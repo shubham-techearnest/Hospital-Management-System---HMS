@@ -7,6 +7,7 @@ import {
   completeQueueService,
   createOpdDesk,
   listOpdDesks,
+  listOpdDoctors,
   listOpdQueue,
   registerWalkIn,
   recallQueueEntry,
@@ -21,6 +22,7 @@ export const opdKeys = {
   desks: (hospitalId: string, branchId: string) => ['opd', 'desks', hospitalId, branchId] as const,
   queue: (hospitalId: string, branchId: string, status?: string, page = 0) =>
     ['opd', 'queue', hospitalId, branchId, status ?? 'ALL', page] as const,
+  doctors: (hospitalId: string, branchId: string) => ['opd', 'doctors', hospitalId, branchId] as const,
 };
 
 export function useOpdDesks(hospitalId?: string, branchId?: string) {
@@ -28,6 +30,15 @@ export function useOpdDesks(hospitalId?: string, branchId?: string) {
     queryKey: opdKeys.desks(hospitalId ?? '', branchId ?? ''),
     queryFn: () => listOpdDesks(hospitalId!, branchId!),
     enabled: Boolean(hospitalId && branchId),
+    retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function useOpdDoctors(hospitalId?: string, branchId?: string) {
+  return useQuery({
+    queryKey: opdKeys.doctors(hospitalId ?? '', branchId ?? ''),
+    queryFn: () => listOpdDoctors(hospitalId!, branchId),
+    enabled: Boolean(hospitalId),
     retry: (_, error) => isRetryableError(error),
   });
 }

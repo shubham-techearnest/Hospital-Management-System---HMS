@@ -54,7 +54,9 @@ public class DuplicateDetectionService {
     }
 
     public boolean shouldBlockRegistration(List<DuplicateCandidateResponse> candidates) {
-        return candidates.stream().anyMatch(c -> c.getMatchScore() >= NAME_DOB_BLOCK_THRESHOLD);
+        // Family may share one mobile across multiple patient accounts.
+        // Block only when name+DOB strongly matches an existing person.
+        return candidates.stream().anyMatch(c -> "NAME_DOB_MATCH".equals(c.getMatchReason()));
     }
 
     private DuplicateCandidateResponse toCandidate(PatientProfileEntity profile, double score, String reason) {

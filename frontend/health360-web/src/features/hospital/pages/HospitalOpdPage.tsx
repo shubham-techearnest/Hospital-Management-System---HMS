@@ -16,6 +16,7 @@ import {
   useOpdQueueActions,
   useRegisterWalkIn,
 } from '@/features/opd/hooks/useOpdQueries';
+import { WalkInRegistrationPanel } from '@/features/reception/components/WalkInRegistrationPanel';
 
 const STATUS_COLOR: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> = {
   WAITING: 'warning',
@@ -60,7 +61,6 @@ export function HospitalOpdPage() {
 
   const [deskOpen, setDeskOpen] = useState(false);
   const [deskForm, setDeskForm] = useState({ name: '', code: '' });
-  const [walkInForm, setWalkInForm] = useState({ patientId: '', visitReason: '', deskId: '' });
   const [checkInForm, setCheckInForm] = useState({ appointmentId: '', deskId: '' });
 
   const showError = (e: unknown) =>
@@ -78,28 +78,6 @@ export function HospitalOpdPage() {
       setDeskOpen(false);
       setDeskForm({ name: '', code: '' });
       setSnackbar({ open: true, message: 'Desk created.', severity: 'success' });
-    } catch (e) {
-      showError(e);
-    }
-  };
-
-  const handleWalkIn = async () => {
-    if (!hospitalId || !branchId) return;
-    try {
-      const result = await registerWalkIn.mutateAsync({
-        patientId: walkInForm.patientId.trim(),
-        hospitalId,
-        branchId,
-        deskId: walkInForm.deskId || undefined,
-        visitReason: walkInForm.visitReason || undefined,
-      });
-      setWalkInForm({ patientId: '', visitReason: '', deskId: '' });
-      setSnackbar({
-        open: true,
-        message: `Walk-in registered — token ${result.queueEntry.tokenDisplay}`,
-        severity: 'success',
-      });
-      setTab(0);
     } catch (e) {
       showError(e);
     }
@@ -308,42 +286,30 @@ export function HospitalOpdPage() {
         </Stack>
       )}
 
-      {tab === 1 && (
-        <Paper variant="outlined" sx={{ p: 3, maxWidth: 480 }}>
-          <Stack spacing={2}>
-            <TextField
-              label="Patient profile ID"
-              value={walkInForm.patientId}
-              onChange={(e) => setWalkInForm({ ...walkInForm, patientId: e.target.value })}
-              helperText="UUID from the patient profile record"
-              fullWidth
-            />
-            <TextField
-              label="Visit reason"
-              value={walkInForm.visitReason}
-              onChange={(e) => setWalkInForm({ ...walkInForm, visitReason: e.target.value })}
-              fullWidth
-              multiline
-              minRows={2}
-            />
-            <TextField
-              select
-              label="Desk (optional)"
-              value={walkInForm.deskId}
-              onChange={(e) => setWalkInForm({ ...walkInForm, deskId: e.target.value })}
-              fullWidth
-            >
-              <MenuItem value="">None</MenuItem>
-              {desks.map((d) => (
-                <MenuItem key={d.deskId} value={d.deskId}>{d.name} ({d.code})</MenuItem>
-              ))}
-            </TextField>
-            <Button variant="contained" onClick={handleWalkIn} disabled={!walkInForm.patientId.trim()}>
-              Register walk-in
-            </Button>
-          </Stack>
-        </Paper>
-      )}
+      {tab === 1 && hospitalId && branchId ? (
+        <WalkInRegistrationPanel
+          hospitalId={hospitalId}
+          branchId={branchId}
+          desks={desks.map((d) => ({ id: d.deskId, label: `${d.name} (${d.code})` }))}
+          pending={registerWalkIn.isPending}
+          onSubmit={async ({ patientId, visitReason, deskId, primaryDoctorId }) => {
+            const result = await registerWalkIn.mutateAsync({
+              patientId,
+              hospitalId,
+              branchId,
+              deskId,
+              visitReason,
+              primaryDoctorId,
+            });
+            setSnackbar({
+              open: true,
+              message: `Walk-in registered — token ${result.queueEntry.tokenDisplay}`,
+              severity: 'success',
+            });
+            setTab(0);
+          }}
+        />
+      ) : null}
 
       {tab === 2 && (
         <Paper variant="outlined" sx={{ p: 3, maxWidth: 480 }}>

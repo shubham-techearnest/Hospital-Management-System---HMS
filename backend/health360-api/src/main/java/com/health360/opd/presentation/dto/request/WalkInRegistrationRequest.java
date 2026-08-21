@@ -11,8 +11,12 @@ import java.util.UUID;
 @Setter
 public class WalkInRegistrationRequest {
 
-    @NotNull
+    /** Internal patient profile UUID (preferred when known). */
     private UUID patientId;
+
+    /** Tenant UHID e.g. H360-2026-00000001 — resolved to patientId server-side. */
+    @Size(max = 40)
+    private String patientUhid;
 
     @NotNull
     private UUID hospitalId;
