@@ -1,5 +1,6 @@
 package com.health360.scheduling;
 
+import com.health360.config.security.UserPrincipal;
 import com.health360.scheduling.application.service.AppointmentService;
 import com.health360.scheduling.presentation.dto.request.BookAppointmentRequest;
 import com.health360.shared.exception.BusinessException;
@@ -18,6 +19,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -131,7 +133,10 @@ class BookingConcurrencyIntegrationTest {
                 request.setBranchId(BRANCH_ID);
                 request.setSlotId(slotId);
                 request.setConsultationType("IN_PERSON");
-                appointmentService.bookAppointment(patientUserId, TENANT_ID, request);
+                UserPrincipal principal = new UserPrincipal(
+                        patientUserId, TENANT_ID, "patient@health360.test", "test-jti",
+                        List.of("PATIENT"), List.of("appointment:book"));
+                appointmentService.bookAppointment(principal, request);
                 successes.incrementAndGet();
             } catch (BusinessException ex) {
                 if (ErrorCode.SLOT_UNAVAILABLE.equals(ex.getCode())) {

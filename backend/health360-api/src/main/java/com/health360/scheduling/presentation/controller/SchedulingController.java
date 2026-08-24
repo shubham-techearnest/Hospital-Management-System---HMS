@@ -122,12 +122,33 @@ public class SchedulingController {
     }
 
     @PostMapping("/appointments")
-    @PreAuthorize("hasAuthority('appointment:book')")
+    @PreAuthorize("hasAuthority('appointment:book') or hasAuthority('appointment:book:staff')")
     public ResponseEntity<ApiResponse<AppointmentBookingResponse>> bookAppointment(
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody BookAppointmentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
-                appointmentService.bookAppointment(principal.getUserId(), principal.getTenantId(), request)));
+                appointmentService.bookAppointment(principal, request)));
+    }
+
+    @GetMapping("/hospitals/{hospitalId}/appointments")
+    @PreAuthorize("hasAuthority('appointment:view:hospital')")
+    public ResponseEntity<ApiResponse<List<AppointmentSummaryResponse>>> listHospitalAppointments(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID hospitalId,
+            @RequestParam(required = false) UUID branchId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                appointmentLifecycleService.listHospitalAppointments(principal, hospitalId, branchId, date)));
+    }
+
+    @PatchMapping("/appointments/{appointmentId:[0-9a-fA-F\\-]{36}}/hospital-status")
+    @PreAuthorize("hasAuthority('appointment:close:hospital')")
+    public ResponseEntity<ApiResponse<AppointmentDetailResponse>> closeHospitalAppointment(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID appointmentId,
+            @Valid @RequestBody UpdateAppointmentStatusRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                appointmentLifecycleService.closeHospitalAppointment(principal, appointmentId, request)));
     }
 
     @GetMapping("/appointments/me")

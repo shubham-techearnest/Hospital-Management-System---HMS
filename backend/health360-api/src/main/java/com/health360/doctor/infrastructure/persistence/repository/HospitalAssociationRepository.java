@@ -14,4 +14,7 @@ public interface HospitalAssociationRepository extends JpaRepository<HospitalAss
     Optional<HospitalAssociationEntity> findByIdAndHospitalIdAndDeletedAtIsNull(UUID id, UUID hospitalId);
     boolean existsByDoctorIdAndHospitalIdAndBranchIdAndStatusAndDeletedAtIsNull(
             UUID doctorId, UUID hospitalId, UUID branchId, String status);
+
+    boolean existsByDoctorIdAndHospitalIdAndStatusAndDeletedAtIsNull(
+            UUID doctorId, UUID hospitalId, String status);
 }

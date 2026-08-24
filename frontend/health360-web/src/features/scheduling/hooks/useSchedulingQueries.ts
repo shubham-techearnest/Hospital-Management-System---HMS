@@ -4,12 +4,14 @@ import {
   bookAppointment,
   cancelDoctorAppointment,
   cancelMyAppointment,
+  closeHospitalAppointment,
   createSchedule,
   getDoctorAppointment,
   getDoctorAvailability,
   getDoctorBookingLocations,
   getMyAppointment,
   listDoctorAppointments,
+  listHospitalAppointments,
   listMyAppointments,
   listMySchedules,
   confirmDoctorAppointment,
@@ -35,6 +37,8 @@ export const schedulingKeys = {
   myAppointment: (id: string) => ['scheduling', 'appointments', 'me', id] as const,
   doctorAppointments: (filter: AppointmentFilter) => ['scheduling', 'appointments', 'doctor', filter] as const,
   doctorAppointment: (id: string) => ['scheduling', 'appointments', 'doctor', id] as const,
+  hospitalAppointments: (hospitalId: string, branchId: string, date: string) =>
+    ['scheduling', 'appointments', 'hospital', hospitalId, branchId, date] as const,
 };
 
 export function useMySchedules() {
@@ -90,6 +94,27 @@ export function useBookAppointment() {
     mutationFn: (payload: BookAppointmentPayload) => bookAppointment(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduling', 'appointments'] });
+    },
+  });
+}
+
+export function useHospitalAppointments(hospitalId?: string, branchId?: string, date?: string) {
+  const day = date ?? new Date().toISOString().slice(0, 10);
+  return useQuery({
+    queryKey: schedulingKeys.hospitalAppointments(hospitalId ?? '', branchId ?? '', day),
+    queryFn: () => listHospitalAppointments({ hospitalId: hospitalId!, branchId, date: day }),
+    enabled: Boolean(hospitalId),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useCloseHospitalAppointment(hospitalId: string, branchId?: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ appointmentId, status }: { appointmentId: string; status: 'COMPLETED' | 'NO_SHOW' }) =>
+      closeHospitalAppointment(appointmentId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scheduling', 'appointments', 'hospital', hospitalId] });
     },
   });
 }

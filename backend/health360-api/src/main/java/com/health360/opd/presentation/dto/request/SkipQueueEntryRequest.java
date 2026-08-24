@@ -11,4 +11,5 @@ public class SkipQueueEntryRequest {
 
     private String reason;
     private UUID deskId;
+    private UUID primaryDoctorId;
 }

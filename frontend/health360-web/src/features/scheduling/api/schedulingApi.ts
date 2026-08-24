@@ -65,6 +65,8 @@ export interface BookAppointmentPayload {
   slotId: string;
   consultationType: string;
   reasonForVisit?: string;
+  /** Staff desk booking: book for this patient instead of the caller */
+  patientId?: string;
 }
 
 export interface AppointmentBooking {
@@ -160,6 +162,26 @@ export async function getDoctorAvailability(
 
 export async function bookAppointment(payload: BookAppointmentPayload) {
   const { data } = await apiClient.post<ApiEnvelope<AppointmentBooking>>('/scheduling/appointments', payload);
+  return data.data;
+}
+
+export async function listHospitalAppointments(params: {
+  hospitalId: string;
+  branchId?: string;
+  date?: string;
+}) {
+  const { data } = await apiClient.get<ApiEnvelope<AppointmentSummary[]>>(
+    `/scheduling/hospitals/${params.hospitalId}/appointments`,
+    { params: { branchId: params.branchId, date: params.date } },
+  );
+  return data.data ?? [];
+}
+
+export async function closeHospitalAppointment(appointmentId: string, status: 'COMPLETED' | 'NO_SHOW') {
+  const { data } = await apiClient.patch<ApiEnvelope<AppointmentDetail>>(
+    `/scheduling/appointments/${appointmentId}/hospital-status`,
+    { status },
+  );
   return data.data;
 }
 

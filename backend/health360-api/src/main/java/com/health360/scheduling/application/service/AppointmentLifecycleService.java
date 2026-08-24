@@ -1,8 +1,10 @@
 package com.health360.scheduling.application.service;
 
+import com.health360.config.security.UserPrincipal;
 import com.health360.doctor.application.service.DoctorProfileProvisioningService;
 import com.health360.doctor.infrastructure.persistence.entity.DoctorProfileEntity;
 import com.health360.doctor.infrastructure.persistence.repository.DoctorProfileRepository;
+import com.health360.hospital.application.service.HospitalScopeService;
 import com.health360.iam.application.service.TransactionalNotificationService;
 import com.health360.iam.domain.NotificationType;
 import com.health360.patient.application.service.PatientProfileService;
@@ -32,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
@@ -59,6 +62,7 @@ public class AppointmentLifecycleService {
     private final AppointmentSummaryMapper appointmentSummaryMapper;
     private final TransactionalNotificationService notificationService;
     private final AuditLogService auditLogService;
+    private final HospitalScopeService hospitalScopeService;
 
     @Transactional(readOnly = true)
     public Page<AppointmentSummaryResponse> listPatientAppointments(
@@ -395,6 +399,64 @@ public class AppointmentLifecycleService {
                 appointment.getId(), Map.of("status", "CONFIRMED"));
 
         notifyResumed(appointment);
+        return appointmentSummaryMapper.toDetail(appointment, ViewContext.DOCTOR);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AppointmentSummaryResponse> listHospitalAppointments(
+            UserPrincipal principal, UUID hospitalId, UUID branchId, LocalDate date) {
+        hospitalScopeService.assertHospitalScope(principal, hospitalId, branchId);
+
+        LocalDate effectiveDate = date != null ? date : LocalDate.now(ZoneOffset.UTC);
+        Instant from = effectiveDate.atStartOfDay().toInstant(ZoneOffset.UTC);
+        Instant to = effectiveDate.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+
+        List<AppointmentEntity> appointments = appointmentRepository
+                .findByHospitalIdAndTenantIdAndOptionalBranchAndScheduledAtBetween(
+                        hospitalId, principal.getTenantId(), branchId, from, to);
+
+        return appointmentSummaryMapper.toSummaries(appointments, ViewContext.DOCTOR);
+    }
+
+    @Transactional
+    public AppointmentDetailResponse closeHospitalAppointment(
+            UserPrincipal principal,
+            UUID appointmentId,
+            UpdateAppointmentStatusRequest request) {
+        AppointmentEntity appointment = appointmentRepository.findByIdForUpdate(appointmentId)
+                .filter(a -> a.getTenantId().equals(principal.getTenantId()))
+                .orElseThrow(this::notFound);
+
+        hospitalScopeService.assertHospitalScope(
+                principal, appointment.getHospitalId(), appointment.getBranchId());
+
+        if (!Set.of("CONFIRMED", "ARRIVED").contains(appointment.getStatus())) {
+            throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, HttpStatus.BAD_REQUEST,
+                    "Only confirmed or arrived appointments can be marked completed or no-show");
+        }
+
+        String newStatus = request.getStatus();
+        if ("COMPLETED".equals(newStatus)) {
+            appointment.setStatus("COMPLETED");
+            appointment.setCompletedAt(Instant.now());
+        } else if ("NO_SHOW".equals(newStatus)) {
+            appointment.setStatus("NO_SHOW");
+        } else {
+            throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, HttpStatus.BAD_REQUEST,
+                    "Invalid status transition");
+        }
+
+        appointment.setUpdatedBy(principal.getUserId());
+        appointmentRepository.save(appointment);
+
+        auditLogService.record(principal.getTenantId(), principal.getUserId(),
+                "APPOINTMENT_STATUS_UPDATED", "Appointment",
+                appointment.getId(), Map.of("status", newStatus, "closedBy", "hospital"));
+
+        if ("COMPLETED".equals(newStatus)) {
+            notifyCompleted(appointment);
+        }
+
         return appointmentSummaryMapper.toDetail(appointment, ViewContext.DOCTOR);
     }
 

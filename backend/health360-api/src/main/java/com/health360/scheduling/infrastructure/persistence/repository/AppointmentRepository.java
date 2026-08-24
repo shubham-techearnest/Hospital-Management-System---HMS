@@ -69,4 +69,21 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
             @Param("doctorId") UUID doctorId,
             @Param("tenantId") UUID tenantId,
             @Param("from") Instant from);
+
+    @Query("""
+            SELECT a FROM AppointmentEntity a
+            WHERE a.hospitalId = :hospitalId
+              AND a.tenantId = :tenantId
+              AND a.deletedAt IS NULL
+              AND a.scheduledAt >= :from
+              AND a.scheduledAt < :to
+              AND (:branchId IS NULL OR a.branchId = :branchId)
+            ORDER BY a.scheduledAt ASC
+            """)
+    List<AppointmentEntity> findByHospitalIdAndTenantIdAndOptionalBranchAndScheduledAtBetween(
+            @Param("hospitalId") UUID hospitalId,
+            @Param("tenantId") UUID tenantId,
+            @Param("branchId") UUID branchId,
+            @Param("from") Instant from,
+            @Param("to") Instant to);
 }

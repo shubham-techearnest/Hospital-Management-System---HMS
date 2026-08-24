@@ -4,27 +4,37 @@
 |-----------|-------|
 | **Document ID** | HMS-NEXT-001 |
 | **Status** | **ACTIVE** |
-| **Last Updated** | 2026-08-21 |
+| **Last Updated** | 2026-08-24 |
 
 ---
 
 ## CURRENT STATUS
 
-**Walk-in find-or-register + desk credentials + OPD doctor pick — READY FOR QA**
+**P2-F6 + P2-F7 OPD realism — IN QA**
 
-- Auto UHID + temp login (logged to terminal + returned once) on desk patient register
-- Walk-in UI: search existing or create new, then queue with optional doctor
-- `GET /api/v1/opd/doctors` for reception/hospital OPD
-- V51: receptionist doctor-read RBAC
-- Backlog: [HOSPITAL-OPD-REALISM-BACKLOG.md](./hms/HOSPITAL-OPD-REALISM-BACKLOG.md)
+Delivered:
+1. Walk-in find-or-register → auto UHID + ACTIVE desk login (temp email/password in API log + UI once)
+2. Doctor pick on walk-in + queue Call/Start/Assign (`GET /opd/doctors`)
+3. Reception slot booking + hospital appointment complete/no-show
+4. Patient portal live OPD status (`/patient/opd`) + in-app hospital reminders
+5. Hospital clinical catalogs (symptoms, dosage templates) on doctor consultation / e-Rx
+
+Flyway: **V51** (receptionist doctor read), **V52** (RBAC + catalogs), **V53** (catalog version columns)
+
+Backlog remaining: SMS/WhatsApp gateway, ICD diagnosis catalog, guided vitals→bill checklist.
 
 ---
 
 ## IMMEDIATE NEXT ACTION
 
-1. Restart API so Flyway V51 applies; register a new walk-in and confirm terminal shows `PATIENT DESK CREDENTIALS`
-2. Login as patient with printed temp email/password; confirm portal access
-3. Pick next backlog item: reception slot booking **or** hospital clinical catalogs
+1. Restart API so Flyway applies **V51–V53**
+2. Sign in again (JWT must pick up new permissions)
+3. UAT checklist:
+   - Walk-in: search miss → Create patient → copy credentials from UI/terminal → register walk-in with doctor
+   - Desk: Book / close — book slot, complete/no-show
+   - Queue: assign doctor on Call/Start
+   - Patient: login with desk credentials → `/patient/opd` + reminders after Call
+   - Hospital: `/hospital/catalogs` → symptoms on doctor consultation
 
 ---
 
@@ -32,5 +42,5 @@
 
 | Item | Status | Date |
 |------|--------|------|
-| Walk-in find-or-register + credentials | IN QA | 2026-08-21 |
-| P2-F1…F5 OPD features | IN QA | 2026-08-21 |
+| P2-F6/F7 OPD realism (walk-in credentials, book/close, portal, catalogs) | IN QA | 2026-08-24 |
+| P2-F1…F5 | IN QA | 2026-08-21 |

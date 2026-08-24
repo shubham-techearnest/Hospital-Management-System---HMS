@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -15,16 +15,20 @@ import {
 } from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { useDoctorEncounters } from '@/features/clinical/hooks/useClinicalQueries';
+import { startEncounter } from '@/features/clinical/api/clinicalApi';
 import { encounterStatusColor, encounterStatusLabel, formatEncounterDate } from '@/features/clinical/utils/encounterUtils';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 
 const PAGE_SIZE = 20;
-const STATUS_FILTERS = ['', 'WAITING', 'IN_PROGRESS', 'COMPLETED'] as const;
+const STATUS_FILTERS = ['', 'REGISTERED', 'WAITING', 'IN_PROGRESS', 'COMPLETED'] as const;
 
 export function DoctorOpdPage() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState('');
+  const [startingId, setStartingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const { data, isLoading, error, refetch, isFetching } = useDoctorEncounters(
     page,
     PAGE_SIZE,
@@ -35,11 +39,25 @@ export function DoctorOpdPage() {
   const totalPages = data?.totalPages ?? 0;
   const parsedError = error ? parseApiError(error) : null;
 
+  const startConsult = async (encounterId: string) => {
+    setActionError(null);
+    setStartingId(encounterId);
+    try {
+      await startEncounter(encounterId);
+      await refetch();
+      navigate(`/doctor/encounters/${encounterId}`);
+    } catch (e) {
+      setActionError(parseApiError(e).message);
+    } finally {
+      setStartingId(null);
+    }
+  };
+
   return (
     <AnimatedPage>
       <DashboardPageHeader
         title="Today's OPD"
-        subtitle="Encounters assigned to you for today. Queue refreshes automatically."
+        subtitle="Patients assigned to you today. Open a consult to record notes, diagnosis, prescription, and tests."
         actions={
           <Button variant="outlined" onClick={() => refetch()} disabled={isFetching}>
             Refresh
@@ -66,6 +84,7 @@ export function DoctorOpdPage() {
           {parsedError.message}
         </Alert>
       ) : null}
+      {actionError ? <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert> : null}
 
       {isLoading ? (
         <Stack spacing={1.5}>
@@ -75,45 +94,68 @@ export function DoctorOpdPage() {
       ) : null}
 
       {!isLoading && encounters.length === 0 ? (
-        <Alert severity="info">No OPD encounters for today in this view.</Alert>
+        <Alert severity="info">
+          No OPD encounters assigned to you today. Reception must assign you as the consulting doctor on the queue.
+        </Alert>
       ) : null}
 
       <Stack spacing={1.5}>
-        {encounters.map((enc) => (
-          <Card key={enc.encounterId} variant="outlined">
-            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1.5}>
-                <Box>
-                  <Typography variant="subtitle1" fontWeight={600}>{enc.encounterNumber}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Patient {enc.patientId.slice(0, 8)}…
-                  </Typography>
-                  {enc.visitReason ? (
-                    <Typography variant="body2" sx={{ mt: 0.5 }}>{enc.visitReason}</Typography>
-                  ) : null}
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    {formatEncounterDate(enc.startedAt ?? enc.createdAt)}
-                  </Typography>
-                </Box>
-                <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.75}>
-                  <Chip
-                    label={encounterStatusLabel(enc.status)}
-                    color={encounterStatusColor(enc.status)}
-                    size="small"
-                  />
-                  <Button
-                    component={RouterLink}
-                    to={`/doctor/encounters/${enc.encounterId}`}
-                    size="small"
-                    variant="contained"
-                  >
-                    Open encounter
-                  </Button>
+        {encounters.map((enc) => {
+          const canStart = enc.status === 'WAITING' || enc.status === 'REGISTERED';
+          return (
+            <Card key={enc.encounterId} variant="outlined">
+              <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1.5}>
+                  <Box>
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                      {enc.tokenDisplay ? (
+                        <Typography variant="subtitle1" fontWeight={700}>{enc.tokenDisplay}</Typography>
+                      ) : null}
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {enc.patientName || 'Patient'}
+                      </Typography>
+                    </Stack>
+                    <Typography variant="body2" color="text.secondary">
+                      {enc.uhid ? `${enc.uhid} · ` : ''}{enc.encounterNumber}
+                    </Typography>
+                    {enc.visitReason ? (
+                      <Typography variant="body2" sx={{ mt: 0.5 }}>{enc.visitReason}</Typography>
+                    ) : null}
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {formatEncounterDate(enc.startedAt ?? enc.createdAt)}
+                    </Typography>
+                  </Box>
+                  <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.75}>
+                    <Chip
+                      label={encounterStatusLabel(enc.status)}
+                      color={encounterStatusColor(enc.status)}
+                      size="small"
+                    />
+                    {canStart ? (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        disabled={startingId === enc.encounterId}
+                        onClick={() => startConsult(enc.encounterId)}
+                      >
+                        Start consultation
+                      </Button>
+                    ) : (
+                      <Button
+                        component={RouterLink}
+                        to={`/doctor/encounters/${enc.encounterId}`}
+                        size="small"
+                        variant="contained"
+                      >
+                        Open encounter
+                      </Button>
+                    )}
+                  </Stack>
                 </Stack>
-              </Stack>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </Stack>
 
       {totalPages > 1 ? (

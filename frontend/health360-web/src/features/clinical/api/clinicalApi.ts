@@ -6,6 +6,9 @@ export interface Encounter {
   encounterId: string;
   encounterNumber: string;
   patientId: string;
+  patientName?: string;
+  uhid?: string;
+  tokenDisplay?: string;
   hospitalId: string;
   branchId: string;
   departmentId?: string;
@@ -173,6 +176,17 @@ export async function completeEncounter(encounterId: string): Promise<Encounter>
 export async function listEncounterDiagnoses(encounterId: string): Promise<Diagnosis[]> {
   const { data } = await apiClient.get<ApiEnvelope<Diagnosis[]>>(`/clinical/encounters/${encounterId}/diagnoses`);
   return unwrap(data) ?? [];
+}
+
+export async function addEncounterDiagnosis(
+  encounterId: string,
+  payload: { diagnosisText: string; diagnosisCode?: string; diagnosisType?: string; notes?: string },
+): Promise<Diagnosis> {
+  const { data } = await apiClient.post<ApiEnvelope<Diagnosis>>(
+    `/clinical/encounters/${encounterId}/diagnoses`,
+    payload,
+  );
+  return unwrap(data);
 }
 
 export async function listEncounterNotes(encounterId: string): Promise<ClinicalNote[]> {

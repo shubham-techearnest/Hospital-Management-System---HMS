@@ -24,6 +24,8 @@ public interface OpdQueueEntryRepository extends JpaRepository<OpdQueueEntryEnti
 
     Optional<OpdQueueEntryEntity> findByTenantIdAndEncounterIdAndDeletedAtIsNull(UUID tenantId, UUID encounterId);
 
+    List<OpdQueueEntryEntity> findByTenantIdAndEncounterIdInAndDeletedAtIsNull(UUID tenantId, List<UUID> encounterIds);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT COALESCE(MAX(q.tokenNumber), 0)
@@ -103,4 +105,17 @@ public interface OpdQueueEntryRepository extends JpaRepository<OpdQueueEntryEnti
             @Param("branchId") UUID branchId,
             @Param("queueDate") LocalDate queueDate,
             @Param("status") String status);
+
+    @Query("""
+            SELECT q, e FROM OpdQueueEntryEntity q
+            JOIN EncounterEntity e ON e.id = q.encounterId
+            WHERE q.tenantId = :tenantId
+              AND e.patientId = :patientId
+              AND q.queueDate = :queueDate
+            ORDER BY q.checkedInAt ASC
+            """)
+    List<Object[]> findTodayVisitsForPatient(
+            @Param("tenantId") UUID tenantId,
+            @Param("patientId") UUID patientId,
+            @Param("queueDate") LocalDate queueDate);
 }

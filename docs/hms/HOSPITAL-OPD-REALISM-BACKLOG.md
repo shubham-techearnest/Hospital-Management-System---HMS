@@ -4,7 +4,7 @@
 |-----------|-------|
 | **Document ID** | HMS-OPD-BACKLOG-001 |
 | **Status** | ACTIVE |
-| **Updated** | 2026-08-21 |
+| **Updated** | 2026-08-24 |
 
 ---
 
@@ -16,27 +16,23 @@
 - Optional portal invite link to set a personal email later
 - Doctor selection on walk-in (`primaryDoctorId`) via `GET /api/v1/opd/doctors`
 
+## Done in P2-F7 (2026-08-21)
+
+1. Reception **slot booking** + hospital **complete / no-show** (`Book / close` tab)
+2. **Reassign doctor** on queue Call/Start/Skip/Recall + Assign button; patient OPD_* in-app notifications
+3. Patient portal **`/patient/opd`** live token status + hospital reminders inbox
+4. Hospital **`/hospital/catalogs`** symptoms + dosage templates; doctor consultation / e-Rx dropdowns (meds/labs still Pharmacy/Lab modules)
+
 ---
 
 ## Remaining real-hospital steps (prioritized)
 
-### P3 — OPD operations
+### Later
 
-1. **Slot booking from reception** — pick doctor → availability → book appointment (reuse scheduling APIs); close by hospital or doctor
-2. **Queue status + doctor change** — reassign doctor when calling / skipping / recalling
-3. **Patient portal OPD status** — live token / encounter / billing / Rx status + hospital reminders (notifications module)
-4. **SMS / WhatsApp gateway** — replace terminal credential logs with real delivery
-
-### P3 — Clinical catalogs (hospital-scoped)
-
-5. **Master data dropdowns** for doctor charting: symptoms, diagnoses (ICD later), medicines, dosages, lab/radiology tests
-6. Wire structured notes + e-Rx item pickers to those catalogs (reduce free typing)
-7. Hospital admin UI to maintain catalogs per hospital/branch
-
-### P3 — Full visit loop polish
-
-8. Vitals → consult → Rx → labs orders → billing → pharmacy handoff as one guided reception/doctor checklist
-9. Patient notifications for each status change (called, in consult, Rx ready, bill due)
+1. **SMS / WhatsApp gateway** — replace terminal credential / reminder logs with real delivery
+2. **ICD / diagnosis catalog** favorites for assessment
+3. Patient notifications polish for Rx ready / bill due
+4. Guided end-to-end checklist UI across vitals → consult → Rx → labs → billing
 
 ---
 
@@ -44,4 +40,4 @@
 
 - Parallel Patient/Visit tables
 - SMS provider choice (log-first until DEC)
-- Editing Flyway V1–V50
+- Editing Flyway V1–V53

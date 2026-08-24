@@ -7,12 +7,16 @@ import com.health360.clinical.infrastructure.persistence.repository.EncounterRep
 import com.health360.clinical.presentation.dto.request.UpdateEncounterStatusRequest;
 import com.health360.clinical.presentation.dto.response.EncounterResponse;
 import com.health360.config.security.UserPrincipal;
+import com.health360.doctor.infrastructure.persistence.repository.HospitalAssociationRepository;
+import com.health360.iam.application.service.TransactionalNotificationService;
+import com.health360.iam.domain.NotificationType;
 import com.health360.opd.domain.QueueEntryStatus;
 import com.health360.opd.infrastructure.persistence.entity.OpdQueueEntryEntity;
 import com.health360.opd.infrastructure.persistence.repository.OpdQueueEntryRepository;
 import com.health360.opd.presentation.dto.request.OpdQueueActionRequest;
 import com.health360.opd.presentation.dto.request.SkipQueueEntryRequest;
 import com.health360.opd.presentation.dto.response.OpdQueueEntryResponse;
+import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -40,6 +44,9 @@ public class OpdQueueService {
     private final OpdAccessService opdAccessService;
     private final OpdMapper opdMapper;
     private final AuditLogService auditLogService;
+    private final HospitalAssociationRepository hospitalAssociationRepository;
+    private final PatientProfileRepository patientProfileRepository;
+    private final TransactionalNotificationService notificationService;
 
     @Transactional(readOnly = true)
     public Page<OpdQueueEntryResponse> listQueue(
@@ -149,13 +156,17 @@ public class OpdQueueService {
         entry.setUpdatedBy(principal.getUserId());
         queueEntryRepository.save(entry);
 
+        EncounterEntity encounter = requireEncounter(principal.getTenantId(), entry.getEncounterId());
+        applyDoctorAssignment(principal, entry, encounter,
+                request != null ? request.getPrimaryDoctorId() : null);
+
         auditLogService.record(principal.getTenantId(), principal.getUserId(),
                 "OPD_QUEUE_SKIPPED", "OpdQueueEntry", entry.getId(),
                 Map.of(
                         "priorStatus", current.name(),
                         "reason", entry.getSkipReason() != null ? entry.getSkipReason() : ""));
 
-        return toQueueResponse(principal.getTenantId(), entry);
+        return toQueueResponse(principal.getTenantId(), entry, encounter);
     }
 
     @Transactional
@@ -188,11 +199,27 @@ public class OpdQueueService {
         entry.setUpdatedBy(principal.getUserId());
         queueEntryRepository.save(entry);
 
+        EncounterEntity encounter = requireEncounter(principal.getTenantId(), entry.getEncounterId());
+        applyDoctorAssignment(principal, entry, encounter,
+                request != null ? request.getPrimaryDoctorId() : null);
+
         auditLogService.record(principal.getTenantId(), principal.getUserId(),
                 "OPD_QUEUE_RECALLED", "OpdQueueEntry", entry.getId(),
                 Map.of("priority", entry.getPriority()));
 
-        return toQueueResponse(principal.getTenantId(), entry);
+        notifyPatientQueueStatus(principal.getTenantId(), encounter, QueueEntryStatus.CALLED);
+
+        return toQueueResponse(principal.getTenantId(), entry, encounter);
+    }
+
+    @Transactional
+    public OpdQueueEntryResponse assignDoctor(
+            UserPrincipal principal, UUID queueEntryId, UUID primaryDoctorId) {
+        opdAccessService.assertCanWriteQueue(principal);
+        OpdQueueEntryEntity entry = requireQueueEntry(principal, queueEntryId);
+        EncounterEntity encounter = requireEncounter(principal.getTenantId(), entry.getEncounterId());
+        applyDoctorAssignment(principal, entry, encounter, primaryDoctorId);
+        return toQueueResponse(principal.getTenantId(), entry, encounter);
     }
 
     private OpdQueueEntryResponse transitionQueueEntry(
@@ -231,6 +258,9 @@ public class OpdQueueService {
         queueEntryRepository.save(entry);
 
         EncounterEntity encounter = requireEncounter(principal.getTenantId(), entry.getEncounterId());
+        applyDoctorAssignment(principal, entry, encounter,
+                request != null ? request.getPrimaryDoctorId() : null);
+
         if (encounterTarget != null) {
             UpdateEncounterStatusRequest statusRequest = new UpdateEncounterStatusRequest();
             statusRequest.setStatus(encounterTarget.name());
@@ -240,13 +270,79 @@ public class OpdQueueService {
             auditLogService.record(principal.getTenantId(), principal.getUserId(),
                     "OPD_QUEUE_" + targetStatus.name(), "OpdQueueEntry", entry.getId(),
                     Map.of("encounterStatus", updated.getStatus()));
+            notifyPatientQueueStatus(principal.getTenantId(), encounter, targetStatus);
             return toQueueResponse(principal.getTenantId(), entry, encounter, updated);
         }
 
         auditLogService.record(principal.getTenantId(), principal.getUserId(),
                 "OPD_QUEUE_" + targetStatus.name(), "OpdQueueEntry", entry.getId(), Map.of());
 
+        notifyPatientQueueStatus(principal.getTenantId(), encounter, targetStatus);
+
         return toQueueResponse(principal.getTenantId(), entry, encounter);
+    }
+
+    private void applyDoctorAssignment(
+            UserPrincipal principal,
+            OpdQueueEntryEntity entry,
+            EncounterEntity encounter,
+            UUID primaryDoctorId) {
+        if (primaryDoctorId == null) {
+            return;
+        }
+
+        if (!hospitalAssociationRepository.existsByDoctorIdAndHospitalIdAndStatusAndDeletedAtIsNull(
+                primaryDoctorId, entry.getHospitalId(), "ACTIVE")) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Doctor must have an active association with this hospital");
+        }
+
+        encounter.setPrimaryDoctorId(primaryDoctorId);
+        encounter.setUpdatedBy(principal.getUserId());
+        encounterRepository.save(encounter);
+
+        auditLogService.record(principal.getTenantId(), principal.getUserId(),
+                "OPD_DOCTOR_ASSIGNED", "Encounter", encounter.getId(),
+                Map.of(
+                        "queueEntryId", entry.getId().toString(),
+                        "primaryDoctorId", primaryDoctorId.toString()));
+    }
+
+    private void notifyPatientQueueStatus(
+            UUID tenantId, EncounterEntity encounter, QueueEntryStatus status) {
+        NotificationType type;
+        String title;
+        String message;
+        switch (status) {
+            case CALLED -> {
+                type = NotificationType.OPD_CALLED;
+                title = "You have been called";
+                message = "Please proceed to the consultation desk.";
+            }
+            case IN_SERVICE -> {
+                type = NotificationType.OPD_IN_SERVICE;
+                title = "Consultation in progress";
+                message = "Your consultation has started.";
+            }
+            case COMPLETED -> {
+                type = NotificationType.OPD_COMPLETED;
+                title = "Consultation completed";
+                message = "Your consultation is complete.";
+            }
+            default -> {
+                return;
+            }
+        }
+
+        patientProfileRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(encounter.getPatientId(), tenantId)
+                .ifPresent(patient -> {
+                    if (patient.getUserId() != null) {
+                        notificationService.send(
+                                tenantId, patient.getUserId(), type, title, message,
+                                "OpdQueueEntry", encounter.getId());
+                    }
+                });
     }
 
     private OpdQueueEntryEntity requireQueueEntry(UserPrincipal principal, UUID queueEntryId) {

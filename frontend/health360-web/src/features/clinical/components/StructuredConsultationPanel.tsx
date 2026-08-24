@@ -1,10 +1,11 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
-import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import {
   useEncounterActions,
   useEncounterNotes,
 } from '@/features/clinical/hooks/useClinicalQueries';
 import type { ClinicalNote } from '@/features/clinical/api/clinicalApi';
+import { useSymptoms } from '@/features/hospital/hooks/useClinicalCatalogQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
 
 type FormState = {
@@ -44,11 +45,14 @@ function pickLatestConsultation(notes: ClinicalNote[]): ClinicalNote | undefined
 
 type Props = {
   encounterId: string;
+  hospitalId?: string;
+  branchId?: string;
   canEdit: boolean;
 };
 
-export function StructuredConsultationPanel({ encounterId, canEdit }: Props) {
+export function StructuredConsultationPanel({ encounterId, hospitalId, branchId, canEdit }: Props) {
   const { data: notes = [], isLoading } = useEncounterNotes(encounterId);
+  const { data: symptoms = [] } = useSymptoms(hospitalId, branchId);
   const actions = useEncounterActions(encounterId);
   const draft = pickActiveDraft(notes);
   const latest = pickLatestConsultation(notes);
@@ -142,6 +146,32 @@ export function StructuredConsultationPanel({ encounterId, canEdit }: Props) {
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 
       <Stack spacing={1.5}>
+        {!readOnly && symptoms.length > 0 ? (
+          <TextField
+            select
+            label="Add common symptom"
+            fullWidth
+            value=""
+            onChange={(e) => {
+              const name = e.target.value;
+              if (!name) return;
+              setForm((prev) => ({
+                ...prev,
+                chiefComplaint: prev.chiefComplaint
+                  ? `${prev.chiefComplaint}; ${name}`
+                  : name,
+              }));
+            }}
+            disabled={pending}
+          >
+            <MenuItem value="">Select from hospital catalog…</MenuItem>
+            {symptoms.map((s) => (
+              <MenuItem key={s.symptomId} value={s.name}>
+                {s.name}{s.category ? ` (${s.category})` : ''}
+              </MenuItem>
+            ))}
+          </TextField>
+        ) : null}
         <TextField
           label="Chief complaint"
           multiline

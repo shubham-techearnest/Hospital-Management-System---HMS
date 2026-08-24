@@ -11,6 +11,7 @@ import com.health360.analytics.infrastructure.persistence.repository.HealthMetri
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,7 +60,7 @@ public class MetricHistoryService {
 
     private List<MetricHistoryPointResponse> buildBmiHistory(UUID patientId, Pageable pageable) {
         Page<PhysicalMeasurementHistoryEntity> page = measurementHistoryRepository
-                .findByPatientIdOrderByMeasuredAtDesc(patientId, pageable);
+                .findByPatientIdOrderByMeasuredAtDesc(patientId, unpagedSort(pageable));
 
         List<MetricHistoryPointResponse> points = new ArrayList<>();
         for (PhysicalMeasurementHistoryEntity record : page.getContent()) {
@@ -67,6 +68,9 @@ public class MetricHistoryService {
                 continue;
             }
             double heightM = record.getHeightCm().doubleValue() / 100.0;
+            if (heightM <= 0) {
+                continue;
+            }
             double bmi = record.getWeightKg().doubleValue() / (heightM * heightM);
             BigDecimal value = BigDecimal.valueOf(bmi).setScale(1, RoundingMode.HALF_UP);
             points.add(MetricHistoryPointResponse.builder()
@@ -81,7 +85,7 @@ public class MetricHistoryService {
 
     private List<MetricHistoryPointResponse> buildWeightHistory(UUID patientId, Pageable pageable) {
         Page<PhysicalMeasurementHistoryEntity> page = measurementHistoryRepository
-                .findByPatientIdOrderByMeasuredAtDesc(patientId, pageable);
+                .findByPatientIdOrderByMeasuredAtDesc(patientId, unpagedSort(pageable));
 
         return page.getContent().stream()
                 .filter(r -> r.getWeightKg() != null)
@@ -101,9 +105,9 @@ public class MetricHistoryService {
         Page<VitalSignRecordEntity> page;
         if (from != null && to != null) {
             page = vitalSignRecordRepository.findByPatientIdAndRecordedAtBetweenOrderByRecordedAtDesc(
-                    patientId, from, to, pageable);
+                    patientId, from, to, unpagedSort(pageable));
         } else {
-            page = vitalSignRecordRepository.findByPatientIdOrderByRecordedAtDesc(patientId, pageable);
+            page = vitalSignRecordRepository.findByPatientIdOrderByRecordedAtDesc(patientId, unpagedSort(pageable));
         }
 
         return page.getContent().stream()
@@ -139,7 +143,7 @@ public class MetricHistoryService {
             UUID patientId, UUID tenantId, Pageable pageable, SnapshotField field) {
 
         Page<HealthMetricsSnapshotEntity> page = snapshotRepository
-                .findByPatientIdAndTenantIdOrderByCalculatedAtDesc(patientId, tenantId, pageable);
+                .findByPatientIdAndTenantIdOrderByCalculatedAtDesc(patientId, tenantId, unpagedSort(pageable));
 
         return page.getContent().stream()
                 .map(snapshot -> {
@@ -162,9 +166,15 @@ public class MetricHistoryService {
                 .toList();
     }
 
+    private static Pageable unpagedSort(Pageable pageable) {
+        return PageRequest.of(pageable.getPageNumber(), Math.max(pageable.getPageSize(), 1));
+    }
+
     private Page<MetricHistoryPointResponse> paginate(List<MetricHistoryPointResponse> points, Pageable pageable) {
         List<MetricHistoryPointResponse> sorted = points.stream()
-                .sorted(Comparator.comparing(MetricHistoryPointResponse::getRecordedAt).reversed())
+                .sorted(Comparator.comparing(
+                        MetricHistoryPointResponse::getRecordedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList();
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), sorted.size());

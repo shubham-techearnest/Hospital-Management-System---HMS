@@ -10,6 +10,10 @@ import com.health360.hospital.infrastructure.persistence.entity.BranchEntity;
 import com.health360.hospital.infrastructure.persistence.entity.DepartmentEntity;
 import com.health360.hospital.infrastructure.persistence.repository.BranchRepository;
 import com.health360.hospital.infrastructure.persistence.repository.DepartmentRepository;
+import com.health360.opd.infrastructure.persistence.entity.OpdQueueEntryEntity;
+import com.health360.opd.infrastructure.persistence.repository.OpdQueueEntryRepository;
+import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
+import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.scheduling.infrastructure.persistence.entity.AppointmentEntity;
 import com.health360.scheduling.infrastructure.persistence.repository.AppointmentRepository;
 import com.health360.shared.application.AuditLogService;
@@ -29,6 +33,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +50,8 @@ public class EncounterService {
     private final EncounterNumberService encounterNumberService;
     private final ClinicalMapper mapper;
     private final AuditLogService auditLogService;
+    private final PatientProfileRepository patientProfileRepository;
+    private final OpdQueueEntryRepository opdQueueEntryRepository;
 
     @Transactional
     public EncounterResponse createEncounter(
@@ -135,14 +143,14 @@ public class EncounterService {
         auditLogService.record(tenantId, userId, "ENCOUNTER_CREATED", "Encounter", saved.getId(),
                 Map.of("encounterNumber", saved.getEncounterNumber(), "patientId", saved.getPatientId().toString()));
 
-        return mapper.toEncounterResponse(saved);
+        return toResponse(saved, tenantId);
     }
 
     @Transactional(readOnly = true)
     public EncounterResponse getEncounter(UserPrincipal principal, UUID encounterId) {
         EncounterEntity encounter = requireEncounter(principal.getTenantId(), encounterId);
         accessService.assertCanReadEncounter(principal, encounter);
-        return mapper.toEncounterResponse(encounter);
+        return toResponse(encounter, principal.getTenantId());
     }
 
     @Transactional(readOnly = true)
@@ -217,29 +225,26 @@ public class EncounterService {
             return Page.empty(pageable);
         }
 
-        if (!todayOnly && (status == null || status.isBlank())) {
-            return encounterRepository
-                    .findByTenantIdAndPrimaryDoctorIdAndDeletedAtIsNullOrderByCreatedAtDesc(
-                            tenantId, doctorId, pageable)
-                    .map(mapper::toEncounterResponse);
-        }
+        String normalizedStatus = status != null && !status.isBlank()
+                ? parseEncounterStatus(status).name() : "";
 
-        Instant from = null;
-        Instant to = null;
-        String encounterType = null;
         if (todayOnly) {
             LocalDate today = LocalDate.now(ZoneId.systemDefault());
-            from = today.atStartOfDay(ZoneId.systemDefault()).toInstant();
-            to = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
-            encounterType = EncounterType.OPD.name();
+            Instant from = today.atStartOfDay(ZoneId.systemDefault()).toInstant();
+            Instant to = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+            return toResponses(encounterRepository.findDoctorEncountersInRange(
+                    tenantId, doctorId, from, to, normalizedStatus, pageable), tenantId);
         }
 
-        String normalizedStatus = status != null && !status.isBlank()
-                ? parseEncounterStatus(status).name() : null;
+        if (!normalizedStatus.isEmpty()) {
+            return toResponses(encounterRepository
+                    .findByTenantIdAndPrimaryDoctorIdAndStatusAndDeletedAtIsNullOrderByCreatedAtDesc(
+                            tenantId, doctorId, normalizedStatus, pageable), tenantId);
+        }
 
-        return encounterRepository.findDoctorEncountersFiltered(
-                        tenantId, doctorId, encounterType, from, to, normalizedStatus, pageable)
-                .map(mapper::toEncounterResponse);
+        return toResponses(encounterRepository
+                .findByTenantIdAndPrimaryDoctorIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+                        tenantId, doctorId, pageable), tenantId);
     }
 
     @Transactional(readOnly = true)
@@ -625,6 +630,54 @@ public class EncounterService {
             return null;
         }
         return value.trim();
+    }
+
+    private Page<EncounterResponse> toResponses(Page<EncounterEntity> page, UUID tenantId) {
+        List<EncounterEntity> content = page.getContent();
+        if (content.isEmpty()) {
+            return page.map(e -> mapper.toEncounterResponse(e));
+        }
+        Map<UUID, PatientProfileEntity> patients = patientProfileRepository
+                .findAllById(content.stream().map(EncounterEntity::getPatientId).distinct().toList())
+                .stream()
+                .collect(Collectors.toMap(PatientProfileEntity::getId, Function.identity()));
+        List<UUID> encounterIds = content.stream().map(EncounterEntity::getId).toList();
+        Map<UUID, String> tokens = opdQueueEntryRepository
+                .findByTenantIdAndEncounterIdInAndDeletedAtIsNull(tenantId, encounterIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        OpdQueueEntryEntity::getEncounterId,
+                        OpdQueueEntryEntity::getTokenDisplay,
+                        (left, right) -> left));
+        return page.map(entity -> enrich(mapper.toEncounterResponse(entity), entity, patients, tokens));
+    }
+
+    private EncounterResponse toResponse(EncounterEntity entity, UUID tenantId) {
+        return toResponses(new org.springframework.data.domain.PageImpl<>(List.of(entity)), tenantId)
+                .getContent().get(0);
+    }
+
+    private EncounterResponse enrich(
+            EncounterResponse base,
+            EncounterEntity entity,
+            Map<UUID, PatientProfileEntity> patients,
+            Map<UUID, String> tokens) {
+        PatientProfileEntity patient = patients.get(entity.getPatientId());
+        String name = null;
+        String uhid = null;
+        if (patient != null) {
+            name = ((patient.getLegalFirstName() == null ? "" : patient.getLegalFirstName()) + " "
+                    + (patient.getLegalLastName() == null ? "" : patient.getLegalLastName())).trim();
+            if (name.isBlank()) {
+                name = null;
+            }
+            uhid = patient.getUhid();
+        }
+        return base.toBuilder()
+                .patientName(name)
+                .uhid(uhid)
+                .tokenDisplay(tokens.get(entity.getId()))
+                .build();
     }
 
     private BusinessException forbidden() {

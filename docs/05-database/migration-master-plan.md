@@ -25,10 +25,10 @@
 | **V48** | 6 | P2-F4 | `clinical.prescriptions`, `prescription_items` + RBAC |
 | **V49** | 7 | P2-F5 | RECEPTIONIST billing RBAC (OPD checkout) |
 | **V50** | — | Patient portal | Portal invite tokens for desk-registered patients |
-| **V51+** | — | TBD | Next extras |
-| **V45** | 12 | P4-F4 | `ipd.bed_movements` |
-| **V46** | 9 | P3-F1 | Pharmacy batches, stock_transactions |
-| **V47+** | 17+ | Payments/insurance | TBD after ADR-012/013 approval |
+| **V51** | 8 | P2-F6 | RECEPTIONIST `hospital:doctors:read` (+ desk read) for walk-in doctor pick |
+| **V52** | 9 | P2-F7 | Staff book/close RBAC, patient `opd:status:own`, symptom/dosage catalogs |
+| **V53** | 9 | P2-F7 | Catalog JPA version columns |
+| **V54+** | — | TBD | SMS gateway, ICD catalog, etc. |
 
 ---
 

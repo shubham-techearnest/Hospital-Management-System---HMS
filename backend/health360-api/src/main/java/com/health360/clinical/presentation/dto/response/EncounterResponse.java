@@ -7,11 +7,14 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 public class EncounterResponse {
     UUID encounterId;
     String encounterNumber;
     UUID patientId;
+    String patientName;
+    String uhid;
+    String tokenDisplay;
     UUID hospitalId;
     UUID branchId;
     UUID departmentId;

@@ -152,18 +152,24 @@ export async function arriveAppointment(payload: CheckInAppointmentPayload): Pro
   return unwrap(data);
 }
 
-export async function callQueuePatient(queueEntryId: string, deskId?: string): Promise<OpdQueueEntry> {
+export async function callQueuePatient(
+  queueEntryId: string,
+  opts?: { deskId?: string; primaryDoctorId?: string },
+): Promise<OpdQueueEntry> {
   const { data } = await apiClient.post<ApiEnvelope<OpdQueueEntry>>(
     `/opd/queue/${queueEntryId}/call`,
-    deskId ? { deskId } : {},
+    opts ?? {},
   );
   return unwrap(data);
 }
 
-export async function startQueueService(queueEntryId: string): Promise<OpdQueueEntry> {
+export async function startQueueService(
+  queueEntryId: string,
+  opts?: { deskId?: string; primaryDoctorId?: string },
+): Promise<OpdQueueEntry> {
   const { data } = await apiClient.post<ApiEnvelope<OpdQueueEntry>>(
     `/opd/queue/${queueEntryId}/start`,
-    {},
+    opts ?? {},
   );
   return unwrap(data);
 }
@@ -182,18 +188,53 @@ export async function cancelQueueEntry(queueEntryId: string): Promise<OpdQueueEn
   return unwrap(data);
 }
 
-export async function skipQueueEntry(queueEntryId: string, reason?: string): Promise<OpdQueueEntry> {
+export async function skipQueueEntry(
+  queueEntryId: string,
+  opts?: { reason?: string; deskId?: string; primaryDoctorId?: string },
+): Promise<OpdQueueEntry> {
   const { data } = await apiClient.post<ApiEnvelope<OpdQueueEntry>>(
     `/opd/queue/${queueEntryId}/skip`,
-    reason ? { reason } : {},
+    opts ?? {},
   );
   return unwrap(data);
 }
 
-export async function recallQueueEntry(queueEntryId: string): Promise<OpdQueueEntry> {
+export async function recallQueueEntry(
+  queueEntryId: string,
+  opts?: { deskId?: string; primaryDoctorId?: string },
+): Promise<OpdQueueEntry> {
   const { data } = await apiClient.post<ApiEnvelope<OpdQueueEntry>>(
     `/opd/queue/${queueEntryId}/recall`,
-    {},
+    opts ?? {},
   );
   return unwrap(data);
+}
+
+export async function assignQueueDoctor(queueEntryId: string, primaryDoctorId: string): Promise<OpdQueueEntry> {
+  const { data } = await apiClient.post<ApiEnvelope<OpdQueueEntry>>(
+    `/opd/queue/${queueEntryId}/assign-doctor`,
+    { primaryDoctorId },
+  );
+  return unwrap(data);
+}
+
+export interface PatientOpdVisitStatus {
+  queueEntryId: string;
+  tokenDisplay: string;
+  tokenNumber: number;
+  status: string;
+  hospitalId: string;
+  branchId: string;
+  encounterId: string;
+  encounterStatus: string;
+  primaryDoctorId?: string;
+  checkedInAt?: string;
+  calledAt?: string;
+  serviceStartedAt?: string;
+  completedAt?: string;
+}
+
+export async function getMyTodayOpdVisits(): Promise<PatientOpdVisitStatus[]> {
+  const { data } = await apiClient.get<ApiEnvelope<PatientOpdVisitStatus[]>>('/opd/me/today');
+  return unwrap(data) ?? [];
 }

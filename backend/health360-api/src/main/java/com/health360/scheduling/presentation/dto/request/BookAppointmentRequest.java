@@ -24,6 +24,9 @@ public class BookAppointmentRequest {
     @NotNull
     private String consultationType;
 
+    /** When set, staff books on behalf of this patient (requires appointment:book:staff). */
+    private UUID patientId;
+
     @Size(max = 500)
     private String reasonForVisit;
 }

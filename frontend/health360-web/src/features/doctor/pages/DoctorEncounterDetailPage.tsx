@@ -65,6 +65,8 @@ export function DoctorEncounterDetailPage() {
   const [procedureInstructions, setProcedureInstructions] = useState('');
   const [selectedMedicineId, setSelectedMedicineId] = useState('');
   const [medicationInstructions, setMedicationInstructions] = useState('');
+  const [diagnosisText, setDiagnosisText] = useState('');
+  const [diagnosisCode, setDiagnosisCode] = useState('');
   const parsedError = error ? parseApiError(error) : null;
 
   const runAction = async (label: string, fn: () => Promise<unknown>) => {
@@ -121,6 +123,9 @@ export function DoctorEncounterDetailPage() {
         />
       </Stack>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        {encounter.patientName ? `${encounter.patientName} · ` : ''}
+        {encounter.uhid ? `${encounter.uhid} · ` : ''}
+        {encounter.tokenDisplay ? `Token ${encounter.tokenDisplay} · ` : ''}
         {encounter.encounterType} · {formatEncounterDate(encounter.startedAt ?? encounter.createdAt)}
       </Typography>
 
@@ -162,6 +167,12 @@ export function DoctorEncounterDetailPage() {
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle2" color="text.secondary">Reason for visit</Typography>
           <Typography>{encounter.visitReason}</Typography>
+          {encounter.patientName ? (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {encounter.patientName}{encounter.uhid ? ` · ${encounter.uhid}` : ''}
+              {encounter.tokenDisplay ? ` · Token ${encounter.tokenDisplay}` : ''}
+            </Typography>
+          ) : null}
         </Box>
       ) : null}
 
@@ -181,6 +192,8 @@ export function DoctorEncounterDetailPage() {
         <Box>
           <StructuredConsultationPanel
             encounterId={encounterId}
+            hospitalId={encounter.hospitalId}
+            branchId={encounter.branchId}
             canEdit={encounter.status === 'IN_PROGRESS' || encounter.status === 'WAITING'}
           />
         </Box>
@@ -198,7 +211,40 @@ export function DoctorEncounterDetailPage() {
           <ClinicalTimelinePanel patientId={encounter.patientId} title="Patient clinical timeline" />
         </Box>
 
-        <DetailSection title="Diagnoses" empty={diagnoses.length === 0}>
+        <DetailSection title="Diagnoses" empty={diagnoses.length === 0 && encounter.status !== 'IN_PROGRESS'}>
+          {encounter.status === 'IN_PROGRESS' || encounter.status === 'WAITING' ? (
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
+              <TextField
+                label="Diagnosis"
+                size="small"
+                fullWidth
+                value={diagnosisText}
+                onChange={(e) => setDiagnosisText(e.target.value)}
+              />
+              <TextField
+                label="Code (optional)"
+                size="small"
+                sx={{ minWidth: 140 }}
+                value={diagnosisCode}
+                onChange={(e) => setDiagnosisCode(e.target.value)}
+              />
+              <Button
+                variant="outlined"
+                disabled={!diagnosisText.trim() || actions.addDiagnosis.isPending}
+                onClick={() => runAction('Diagnosis', async () => {
+                  await actions.addDiagnosis.mutateAsync({
+                    diagnosisText: diagnosisText.trim(),
+                    diagnosisCode: diagnosisCode.trim() || undefined,
+                    diagnosisType: diagnoses.length === 0 ? 'PRIMARY' : 'SECONDARY',
+                  });
+                  setDiagnosisText('');
+                  setDiagnosisCode('');
+                })}
+              >
+                Add
+              </Button>
+            </Stack>
+          ) : null}
           <List dense disablePadding>
             {diagnoses.map((dx) => (
               <ListItem key={dx.diagnosisId} disableGutters>

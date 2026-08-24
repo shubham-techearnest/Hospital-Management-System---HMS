@@ -14,6 +14,8 @@ import java.util.UUID;
 
 public interface PatientProfileRepository extends JpaRepository<PatientProfileEntity, UUID> {
 
+    Optional<PatientProfileEntity> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
+
     Optional<PatientProfileEntity> findByTenantIdAndUserIdAndDeletedAtIsNull(UUID tenantId, UUID userId);
 
     Optional<PatientProfileEntity> findByTenantIdAndUhidAndDeletedAtIsNull(UUID tenantId, String uhid);

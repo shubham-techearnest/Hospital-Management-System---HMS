@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { Box, Skeleton } from '@mui/material';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import QueueOutlinedIcon from '@mui/icons-material/QueueOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import MonitorHeartOutlinedIcon from '@mui/icons-material/MonitorHeartOutlined';
@@ -19,6 +20,7 @@ import { usePatientProfile } from '../hooks/usePatientQueries';
 
 const navItems: PortalNavItem[] = [
   { section: 'Navigation', label: 'Overview', path: '/patient/dashboard', icon: <DashboardOutlinedIcon /> },
+  { section: 'Care', label: 'OPD today', path: '/patient/opd', icon: <QueueOutlinedIcon /> },
   { section: 'Care', label: 'Appointments', path: '/patient/appointments', icon: <EventNoteOutlinedIcon /> },
   { section: 'Care', label: 'Visits', path: '/patient/encounters', icon: <MedicalServicesOutlinedIcon /> },
   { section: 'Care', label: 'Find care', path: '/patient/search', icon: <SearchOutlinedIcon /> },

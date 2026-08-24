@@ -18,6 +18,7 @@ import {
 } from '@/features/clinical/hooks/useClinicalQueries';
 import type { Prescription, PrescriptionItemPayload } from '@/features/clinical/api/clinicalApi';
 import { useMedicines } from '@/features/pharmacy/hooks/usePharmacyQueries';
+import { useDosageTemplates } from '@/features/hospital/hooks/useClinicalCatalogQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
 
 type LineForm = PrescriptionItemPayload & { key: string };
@@ -44,6 +45,7 @@ type Props = {
 export function EPrescriptionPanel({ encounterId, hospitalId, branchId, canEdit }: Props) {
   const { data: prescriptions = [], isLoading } = useEncounterPrescriptions(encounterId);
   const { data: medicines = [] } = useMedicines(hospitalId, branchId);
+  const { data: dosageTemplates = [] } = useDosageTemplates(hospitalId, branchId);
   const actions = useEncounterActions(encounterId);
 
   const draft = prescriptions.find((p) => p.status === 'DRAFT');
@@ -211,6 +213,33 @@ export function EPrescriptionPanel({ encounterId, hospitalId, branchId, canEdit 
                     onChange={(e) => updateLine(line.key, { medicineName: e.target.value, medicineId: undefined })}
                     disabled={pending || Boolean(line.medicineId)}
                   />
+                  {dosageTemplates.length > 0 ? (
+                    <TextField
+                      select
+                      label="Dosage template"
+                      size="small"
+                      sx={{ minWidth: 180 }}
+                      value=""
+                      onChange={(e) => {
+                        const t = dosageTemplates.find((d) => d.dosageTemplateId === e.target.value);
+                        if (!t) return;
+                        updateLine(line.key, {
+                          doseText: t.doseText ?? line.doseText,
+                          route: t.route ?? line.route,
+                          frequency: t.frequency ?? line.frequency,
+                          durationDays: t.durationDays ?? line.durationDays,
+                        });
+                      }}
+                      disabled={pending}
+                    >
+                      <MenuItem value="">Apply template…</MenuItem>
+                      {dosageTemplates.map((d) => (
+                        <MenuItem key={d.dosageTemplateId} value={d.dosageTemplateId}>
+                          {d.label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  ) : null}
                   <IconButton
                     aria-label="Remove line"
                     disabled={pending || lines.length <= 1}

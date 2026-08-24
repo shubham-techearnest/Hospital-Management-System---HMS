@@ -3,8 +3,10 @@ package com.health360.opd.presentation.controller;
 import com.health360.config.security.UserPrincipal;
 import com.health360.opd.application.service.OpdDeskService;
 import com.health360.opd.application.service.OpdDoctorCatalogService;
+import com.health360.opd.application.service.OpdPatientStatusService;
 import com.health360.opd.application.service.OpdQueueService;
 import com.health360.opd.application.service.OpdRegistrationService;
+import com.health360.opd.presentation.dto.request.AssignDoctorRequest;
 import com.health360.opd.presentation.dto.request.CheckInAppointmentRequest;
 import com.health360.opd.presentation.dto.request.CreateOpdDeskRequest;
 import com.health360.opd.presentation.dto.request.OpdQueueActionRequest;
@@ -14,6 +16,7 @@ import com.health360.opd.presentation.dto.response.OpdDeskResponse;
 import com.health360.opd.presentation.dto.response.OpdDoctorOptionResponse;
 import com.health360.opd.presentation.dto.response.OpdQueueEntryResponse;
 import com.health360.opd.presentation.dto.response.OpdRegistrationResponse;
+import com.health360.opd.presentation.dto.response.PatientOpdVisitStatusResponse;
 import com.health360.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +43,15 @@ public class OpdController {
     private final OpdRegistrationService registrationService;
     private final OpdQueueService queueService;
     private final OpdDoctorCatalogService doctorCatalogService;
+    private final OpdPatientStatusService patientStatusService;
+
+    @GetMapping("/me/today")
+    @PreAuthorize("hasAuthority('opd:status:own')")
+    public ResponseEntity<ApiResponse<List<PatientOpdVisitStatusResponse>>> getMyTodayVisits(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                patientStatusService.getMyTodayVisits(principal)));
+    }
 
     @PostMapping("/desks")
     @PreAuthorize("hasAuthority('opd:desk:write')")
@@ -162,5 +174,15 @@ public class OpdController {
         return ResponseEntity.ok(ApiResponse.ok(
                 queueService.recallPatient(principal, queueEntryId,
                         request != null ? request : new OpdQueueActionRequest())));
+    }
+
+    @PostMapping("/queue/{queueEntryId}/assign-doctor")
+    @PreAuthorize("hasAuthority('opd:queue:write')")
+    public ResponseEntity<ApiResponse<OpdQueueEntryResponse>> assignDoctor(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID queueEntryId,
+            @Valid @RequestBody AssignDoctorRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                queueService.assignDoctor(principal, queueEntryId, request.getPrimaryDoctorId())));
     }
 }

@@ -1,11 +1,13 @@
 package com.health360.scheduling.application.service;
 
+import com.health360.config.security.UserPrincipal;
 import com.health360.doctor.infrastructure.persistence.entity.ConsultationDefaultEntity;
 import com.health360.doctor.infrastructure.persistence.entity.DoctorProfileEntity;
 import com.health360.doctor.infrastructure.persistence.entity.HospitalAssociationEntity;
 import com.health360.doctor.infrastructure.persistence.repository.HospitalAssociationRepository;
 import com.health360.doctor.infrastructure.persistence.repository.ConsultationDefaultRepository;
 import com.health360.doctor.infrastructure.persistence.repository.DoctorProfileRepository;
+import com.health360.hospital.application.service.HospitalScopeService;
 import com.health360.hospital.infrastructure.persistence.entity.BranchEntity;
 import com.health360.hospital.infrastructure.persistence.entity.HospitalEntity;
 import com.health360.hospital.infrastructure.persistence.repository.BranchRepository;
@@ -14,6 +16,7 @@ import com.health360.iam.infrastructure.persistence.entity.UserEntity;
 import com.health360.iam.infrastructure.persistence.repository.UserRepository;
 import com.health360.patient.application.service.PatientProfileService;
 import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
+import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.scheduling.infrastructure.persistence.entity.AppointmentEntity;
 import com.health360.scheduling.infrastructure.persistence.entity.TimeSlotEntity;
 import com.health360.scheduling.infrastructure.persistence.repository.AppointmentRepository;
@@ -56,6 +59,7 @@ public class AppointmentService {
     private final TimeSlotRepository timeSlotRepository;
     private final DoctorProfileRepository doctorProfileRepository;
     private final PatientProfileService patientProfileService;
+    private final PatientProfileRepository patientProfileRepository;
     private final ConsultationDefaultRepository consultationDefaultRepository;
     private final HospitalAssociationRepository hospitalAssociationRepository;
     private final HospitalRepository hospitalRepository;
@@ -66,6 +70,7 @@ public class AppointmentService {
     private final TransactionalNotificationService notificationService;
     private final PlanLimitService planLimitService;
     private final FeatureAccessService featureAccessService;
+    private final HospitalScopeService hospitalScopeService;
 
     @Transactional(readOnly = true)
     public List<DoctorBookingLocationResponse> getDoctorBookingLocations(UUID doctorId, UUID tenantId) {
@@ -152,8 +157,10 @@ public class AppointmentService {
     }
 
     @Transactional
-    public AppointmentBookingResponse bookAppointment(UUID userId, UUID tenantId, BookAppointmentRequest request) {
-        PatientProfileEntity patient = patientProfileService.requireConsentedProfile(userId, tenantId);
+    public AppointmentBookingResponse bookAppointment(UserPrincipal principal, BookAppointmentRequest request) {
+        UUID userId = principal.getUserId();
+        UUID tenantId = principal.getTenantId();
+        PatientProfileEntity patient = resolvePatientForBooking(principal, request);
 
         DoctorProfileEntity doctor = doctorProfileRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(request.getDoctorId(), tenantId)
@@ -236,6 +243,28 @@ public class AppointmentService {
         notifyBookingConfirmation(tenantId, patient, doctor, appointment);
 
         return buildBookingResponse(appointment, doctor, request.getHospitalId(), request.getBranchId());
+    }
+
+    private PatientProfileEntity resolvePatientForBooking(UserPrincipal principal, BookAppointmentRequest request) {
+        if (request.getPatientId() == null) {
+            return patientProfileService.requireConsentedProfile(principal.getUserId(), principal.getTenantId());
+        }
+
+        if (!principal.hasPermission("appointment:book:staff")
+                && !principal.getRoles().contains("PLATFORM_ADMIN")) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN,
+                    "Staff booking permission required");
+        }
+
+        PatientProfileEntity patient = patientProfileRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(request.getPatientId(), principal.getTenantId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Patient not found"));
+
+        hospitalScopeService.assertHospitalScope(
+                principal, request.getHospitalId(), request.getBranchId());
+
+        return patient;
     }
 
     private void notifyBookingConfirmation(

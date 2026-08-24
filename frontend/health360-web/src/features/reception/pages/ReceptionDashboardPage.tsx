@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 import {
-  Alert, Button, Chip, MenuItem, Paper, Snackbar, Stack, Tab, Tabs,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Alert, Button, MenuItem, Paper, Snackbar, Stack, Tab, Tabs,
   TextField, Typography,
 } from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
@@ -18,23 +16,14 @@ import {
   useCheckInAppointment,
   useOpdDesks,
   useOpdQueue,
-  useOpdQueueActions,
   useRegisterWalkIn,
 } from '@/features/opd/hooks/useOpdQueries';
+import { OpdQueueTable } from '@/features/opd/components/OpdQueueTable';
 import { WalkInRegistrationPanel } from '@/features/reception/components/WalkInRegistrationPanel';
+import { ReceptionSlotBookingPanel } from '@/features/reception/components/ReceptionSlotBookingPanel';
 
 const DEFAULT_HOSPITAL_ID = '00000000-0000-0000-0000-000000000030';
 const DEFAULT_BRANCH_ID = '00000000-0000-0000-0000-000000000031';
-
-const STATUS_COLOR: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> = {
-  WAITING: 'warning',
-  CALLED: 'info',
-  IN_SERVICE: 'info',
-  COMPLETED: 'success',
-  CANCELLED: 'error',
-  NO_SHOW: 'default',
-  SKIPPED: 'warning',
-};
 
 export function ReceptionDashboardPage() {
   const [manualHospitalId, setManualHospitalId] = useState(DEFAULT_HOSPITAL_ID);
@@ -64,10 +53,8 @@ export function ReceptionDashboardPage() {
 
   const registerWalkIn = useRegisterWalkIn(hospitalId, branchId);
   const checkIn = useCheckInAppointment(hospitalId, branchId);
-  const queueActions = useOpdQueueActions(hospitalId, branchId);
 
   const [checkInForm, setCheckInForm] = useState({ appointmentId: '', deskId: '' });
-  // walk-in form state lives in WalkInRegistrationPanel
 
   const deskOptions = useMemo(
     () => desks.map((d) => ({ id: d.deskId, label: `${d.name} (${d.code})` })),
@@ -95,35 +82,11 @@ export function ReceptionDashboardPage() {
     }
   };
 
-  const runQueueAction = async (
-    action: 'call' | 'start' | 'complete' | 'cancel' | 'skip' | 'recall',
-    queueEntryId: string,
-  ) => {
-    try {
-      if (action === 'skip') {
-        await queueActions.skip.mutateAsync({ queueEntryId });
-      } else if (action === 'recall') {
-        await queueActions.recall.mutateAsync(queueEntryId);
-      } else {
-        const mutations = {
-          call: queueActions.call,
-          start: queueActions.start,
-          complete: queueActions.complete,
-          cancel: queueActions.cancel,
-        };
-        await mutations[action].mutateAsync(queueEntryId);
-      }
-      setSnackbar({ open: true, message: `Queue updated (${action}).`, severity: 'success' });
-    } catch (e) {
-      showError(e);
-    }
-  };
-
   return (
     <AnimatedPage>
       <DashboardPageHeader
         title="Reception — OPD"
-        subtitle="Manage today's queue, walk-ins, and appointment arrival"
+        subtitle="Queue, walk-ins, slot booking, and appointment arrival"
         actions={
           <Button variant="outlined" onClick={() => refetchQueue()}>Refresh queue</Button>
         }
@@ -155,6 +118,7 @@ export function ReceptionDashboardPage() {
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label="Queue" />
         <Tab label="Walk-in" />
+        <Tab label="Book / close" />
         <Tab label="Arrive" />
       </Tabs>
 
@@ -178,68 +142,13 @@ export function ReceptionDashboardPage() {
             </Alert>
           )}
 
-          <TableContainer component={Paper} variant="outlined">
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Token</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Encounter</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {queue.map((entry) => (
-                  <TableRow key={entry.queueEntryId}>
-                    <TableCell><Typography fontWeight={700}>{entry.tokenDisplay}</Typography></TableCell>
-                    <TableCell>{entry.registrationType}</TableCell>
-                    <TableCell>
-                      <Chip size="small" label={entry.status} color={STATUS_COLOR[entry.status] ?? 'default'} />
-                    </TableCell>
-                    <TableCell>{entry.encounterNumber}</TableCell>
-                    <TableCell align="right">
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        {entry.status === 'WAITING' && (
-                          <>
-                            <Button size="small" onClick={() => runQueueAction('call', entry.queueEntryId)}>Call</Button>
-                            <Button size="small" onClick={() => runQueueAction('skip', entry.queueEntryId)}>Skip</Button>
-                          </>
-                        )}
-                        {entry.status === 'CALLED' && (
-                          <>
-                            <Button size="small" variant="contained" onClick={() => runQueueAction('start', entry.queueEntryId)}>Start</Button>
-                            <Button size="small" onClick={() => runQueueAction('skip', entry.queueEntryId)}>Skip</Button>
-                          </>
-                        )}
-                        {entry.status === 'SKIPPED' && (
-                          <Button size="small" variant="contained" onClick={() => runQueueAction('recall', entry.queueEntryId)}>Recall</Button>
-                        )}
-                        {entry.status === 'IN_SERVICE' && (
-                          <Button size="small" color="success" variant="contained" onClick={() => runQueueAction('complete', entry.queueEntryId)}>Complete</Button>
-                        )}
-                        {(entry.status === 'COMPLETED' || entry.status === 'IN_SERVICE') && entry.encounterId ? (
-                          <Button
-                            size="small"
-                            component={RouterLink}
-                            to={`/reception/checkout/${entry.encounterId}`}
-                          >
-                            Checkout
-                          </Button>
-                        ) : null}
-                        {!['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(entry.status) && (
-                          <Button size="small" color="error" onClick={() => runQueueAction('cancel', entry.queueEntryId)}>Cancel</Button>
-                        )}
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {queue.length === 0 && (
-                  <TableRow><TableCell colSpan={5}>No patients in queue for today.</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <OpdQueueTable
+            hospitalId={hospitalId}
+            branchId={branchId}
+            queue={queue}
+            onError={showError}
+            onSuccess={(message) => setSnackbar({ open: true, message, severity: 'success' })}
+          />
 
           {queueTotalPages > 1 && (
             <Stack direction="row" justifyContent="center" alignItems="center" spacing={2}>
@@ -276,7 +185,11 @@ export function ReceptionDashboardPage() {
         />
       )}
 
-      {tab === 2 && (
+      {tab === 2 && scopeReady ? (
+        <ReceptionSlotBookingPanel hospitalId={hospitalId} branchId={branchId} />
+      ) : null}
+
+      {tab === 3 && (
         <Paper variant="outlined" sx={{ p: 2, maxWidth: 480 }}>
           <Stack spacing={2}>
             <TextField label="Appointment ID" required fullWidth

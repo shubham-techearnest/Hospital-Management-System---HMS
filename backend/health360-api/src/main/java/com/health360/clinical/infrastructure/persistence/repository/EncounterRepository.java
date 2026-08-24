@@ -24,25 +24,37 @@ public interface EncounterRepository extends JpaRepository<EncounterEntity, UUID
     Page<EncounterEntity> findByTenantIdAndPrimaryDoctorIdAndDeletedAtIsNullOrderByCreatedAtDesc(
             UUID tenantId, UUID primaryDoctorId, Pageable pageable);
 
-    @Query("""
-            SELECT e FROM EncounterEntity e
-            WHERE e.tenantId = :tenantId
-              AND e.primaryDoctorId = :doctorId
-              AND e.deletedAt IS NULL
-              AND (:encounterType IS NULL OR e.encounterType = :encounterType)
-              AND (:from IS NULL OR e.createdAt >= :from)
-              AND (:to IS NULL OR e.createdAt < :to)
-              AND (:status IS NULL OR e.status = :status)
-            ORDER BY e.createdAt DESC
-            """)
-    Page<EncounterEntity> findDoctorEncountersFiltered(
+    @Query(
+            value = """
+                    SELECT * FROM clinical.encounters e
+                    WHERE e.tenant_id = :tenantId
+                      AND e.primary_doctor_id = :doctorId
+                      AND e.deleted_at IS NULL
+                      AND e.created_at >= CAST(:from AS timestamptz)
+                      AND e.created_at < CAST(:to AS timestamptz)
+                      AND (CAST(:status AS varchar) = '' OR e.status = CAST(:status AS varchar))
+                    ORDER BY e.created_at DESC
+                    """,
+            countQuery = """
+                    SELECT count(*) FROM clinical.encounters e
+                    WHERE e.tenant_id = :tenantId
+                      AND e.primary_doctor_id = :doctorId
+                      AND e.deleted_at IS NULL
+                      AND e.created_at >= CAST(:from AS timestamptz)
+                      AND e.created_at < CAST(:to AS timestamptz)
+                      AND (CAST(:status AS varchar) = '' OR e.status = CAST(:status AS varchar))
+                    """,
+            nativeQuery = true)
+    Page<EncounterEntity> findDoctorEncountersInRange(
             @Param("tenantId") UUID tenantId,
             @Param("doctorId") UUID doctorId,
-            @Param("encounterType") String encounterType,
             @Param("from") Instant from,
             @Param("to") Instant to,
             @Param("status") String status,
             Pageable pageable);
+
+    Page<EncounterEntity> findByTenantIdAndPrimaryDoctorIdAndStatusAndDeletedAtIsNullOrderByCreatedAtDesc(
+            UUID tenantId, UUID primaryDoctorId, String status, Pageable pageable);
 
     long countByTenantIdAndHospitalIdAndDeletedAtIsNull(UUID tenantId, UUID hospitalId);
 

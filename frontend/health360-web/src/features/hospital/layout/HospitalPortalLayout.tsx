@@ -15,6 +15,7 @@ import MedicalInformationOutlinedIcon from '@mui/icons-material/MedicalInformati
 import HealingOutlinedIcon from '@mui/icons-material/HealingOutlined';
 import LocalPharmacyOutlinedIcon from '@mui/icons-material/LocalPharmacyOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
+import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
 import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
@@ -22,6 +23,7 @@ import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShe
 const navItems: PortalNavItem[] = [
   { label: 'Overview', path: '/hospital/dashboard', icon: <DashboardOutlinedIcon /> },
   { section: 'Clinical', label: 'OPD', path: '/hospital/opd', icon: <QueueOutlinedIcon /> },
+  { section: 'Clinical', label: 'Catalogs', path: '/hospital/catalogs', icon: <ListAltOutlinedIcon /> },
   { section: 'Clinical', label: 'IPD', path: '/hospital/ipd', icon: <HotelOutlinedIcon /> },
   { section: 'Clinical', label: 'ICU', path: '/hospital/icu', icon: <MonitorHeartOutlinedIcon /> },
   { section: 'Clinical', label: 'Laboratory', path: '/hospital/lab', icon: <ScienceOutlinedIcon /> },

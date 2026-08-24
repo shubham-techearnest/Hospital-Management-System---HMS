@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import {
+  assignQueueDoctor,
   callQueuePatient,
   cancelQueueEntry,
   arriveAppointment,
   completeQueueService,
   createOpdDesk,
+  getMyTodayOpdVisits,
   listOpdDesks,
   listOpdDoctors,
   listOpdQueue,
@@ -18,11 +20,14 @@ import {
   type WalkInRegistrationPayload,
 } from '../api/opdApi';
 
+export type QueueActionOpts = { deskId?: string; primaryDoctorId?: string; reason?: string };
+
 export const opdKeys = {
   desks: (hospitalId: string, branchId: string) => ['opd', 'desks', hospitalId, branchId] as const,
   queue: (hospitalId: string, branchId: string, status?: string, page = 0) =>
     ['opd', 'queue', hospitalId, branchId, status ?? 'ALL', page] as const,
   doctors: (hospitalId: string, branchId: string) => ['opd', 'doctors', hospitalId, branchId] as const,
+  myToday: ['opd', 'me', 'today'] as const,
 };
 
 export function useOpdDesks(hospitalId?: string, branchId?: string) {
@@ -40,6 +45,15 @@ export function useOpdDoctors(hospitalId?: string, branchId?: string) {
     queryFn: () => listOpdDoctors(hospitalId!, branchId),
     enabled: Boolean(hospitalId),
     retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function useMyTodayOpd(enabled = true) {
+  return useQuery({
+    queryKey: opdKeys.myToday,
+    queryFn: getMyTodayOpdVisits,
+    enabled,
+    refetchInterval: 10_000,
   });
 }
 
@@ -89,18 +103,38 @@ export function useCheckInAppointment(hospitalId: string, branchId: string) {
 
 export function useOpdQueueActions(hospitalId: string, branchId: string) {
   const qc = useQueryClient();
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['opd', 'queue', hospitalId, branchId] });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['opd', 'queue', hospitalId, branchId] });
+    qc.invalidateQueries({ queryKey: opdKeys.myToday });
+  };
 
   return {
-    call: useMutation({ mutationFn: (queueEntryId: string) => callQueuePatient(queueEntryId), onSuccess: invalidate }),
-    start: useMutation({ mutationFn: startQueueService, onSuccess: invalidate }),
-    complete: useMutation({ mutationFn: completeQueueService, onSuccess: invalidate }),
-    cancel: useMutation({ mutationFn: cancelQueueEntry, onSuccess: invalidate }),
-    skip: useMutation({
-      mutationFn: ({ queueEntryId, reason }: { queueEntryId: string; reason?: string }) =>
-        skipQueueEntry(queueEntryId, reason),
+    call: useMutation({
+      mutationFn: ({ queueEntryId, ...opts }: { queueEntryId: string } & QueueActionOpts) =>
+        callQueuePatient(queueEntryId, opts),
       onSuccess: invalidate,
     }),
-    recall: useMutation({ mutationFn: recallQueueEntry, onSuccess: invalidate }),
+    start: useMutation({
+      mutationFn: ({ queueEntryId, ...opts }: { queueEntryId: string } & QueueActionOpts) =>
+        startQueueService(queueEntryId, opts),
+      onSuccess: invalidate,
+    }),
+    complete: useMutation({ mutationFn: (queueEntryId: string) => completeQueueService(queueEntryId), onSuccess: invalidate }),
+    cancel: useMutation({ mutationFn: cancelQueueEntry, onSuccess: invalidate }),
+    skip: useMutation({
+      mutationFn: ({ queueEntryId, ...opts }: { queueEntryId: string } & QueueActionOpts) =>
+        skipQueueEntry(queueEntryId, opts),
+      onSuccess: invalidate,
+    }),
+    recall: useMutation({
+      mutationFn: ({ queueEntryId, ...opts }: { queueEntryId: string } & QueueActionOpts) =>
+        recallQueueEntry(queueEntryId, opts),
+      onSuccess: invalidate,
+    }),
+    assignDoctor: useMutation({
+      mutationFn: ({ queueEntryId, primaryDoctorId }: { queueEntryId: string; primaryDoctorId: string }) =>
+        assignQueueDoctor(queueEntryId, primaryDoctorId),
+      onSuccess: invalidate,
+    }),
   };
 }
