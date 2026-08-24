@@ -114,7 +114,9 @@ export function useCloseHospitalAppointment(hospitalId: string, branchId?: strin
     mutationFn: ({ appointmentId, status }: { appointmentId: string; status: 'COMPLETED' | 'NO_SHOW' }) =>
       closeHospitalAppointment(appointmentId, status),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scheduling', 'appointments', 'hospital', hospitalId] });
+      queryClient.invalidateQueries({
+        queryKey: ['scheduling', 'appointments', 'hospital', hospitalId, branchId ?? ''],
+      });
     },
   });
 }
