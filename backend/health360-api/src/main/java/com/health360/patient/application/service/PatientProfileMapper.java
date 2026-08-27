@@ -19,6 +19,7 @@ public class PatientProfileMapper {
 
         return PatientProfileResponse.builder()
                 .id(profile.getId())
+                .uhid(profile.getUhid())
                 .consentAccepted(profile.isConsentAccepted())
                 .consentAcceptedAt(profile.getConsentAcceptedAt())
                 .completionScore(profile.getCompletionScore())

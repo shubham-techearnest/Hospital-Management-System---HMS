@@ -58,6 +58,9 @@ export function PatientDetailPage() {
               View Receipt
             </Button>
           )}
+          <Button variant="contained" color="secondary" onClick={() => navigate('/reception/dashboard')}>
+            OPD queue / arrive
+          </Button>
           {data.portalAccountStatus !== 'ACTIVE' ? (
             <Button variant="outlined" disabled={invitePending} onClick={sendInvite}>
               Generate portal invite link

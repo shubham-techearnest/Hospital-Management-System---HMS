@@ -65,9 +65,15 @@ export interface PatientSummary {
   healthGoals: PatientSummaryGoal[];
 }
 
-export async function getPatientSummary(patientId: string, appointmentId: string) {
+export async function getPatientSummary(
+  patientId: string,
+  options: { appointmentId?: string; encounterId?: string },
+) {
   const { data } = await apiClient.get<ApiEnvelope<PatientSummary>>(`/patients/${patientId}/summary`, {
-    params: { appointmentId },
+    params: {
+      appointmentId: options.appointmentId || undefined,
+      encounterId: options.encounterId || undefined,
+    },
   });
   return data.data;
 }

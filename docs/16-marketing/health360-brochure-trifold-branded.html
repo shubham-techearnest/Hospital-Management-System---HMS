@@ -1,0 +1,3245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Health360 — Premium A4 Tri-Fold Brochure</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    /* =========================================================
+       HEALTH360 PREMIUM TRI-FOLD
+       A4 LANDSCAPE
+       297mm × 210mm
+       ========================================================= */
+
+    :root {
+      --purple: #5a429e;
+      --purple-dark: #46327f;
+      --purple-bright: #7c5cff;
+
+      --lavender: #b09eff;
+      --lavender-soft: #d9d0ff;
+      --lavender-mid: #e8e1fa;
+      --lavender-bg: #f2effb;
+
+      --navy: #1a1635;
+      --navy-deep: #12101f;
+
+      --ink: #25223c;
+      --muted: #62677b;
+      --muted-light: #85899a;
+
+      --white: #ffffff;
+      --line: rgba(90, 66, 158, 0.14);
+
+      /*
+        Professional roll-fold proportions.
+        Total = 97 + 100 + 100 = 297mm
+      */
+      --panel-back: 97mm;
+      --panel-main: 100mm;
+      --panel-front: 100mm;
+
+      --page-width: 297mm;
+      --page-height: 210mm;
+
+      --safe: 5mm;
+      --fold-safe: 3.5mm;
+
+      --radius-sm: 5px;
+      --radius-md: 9px;
+      --radius-lg: 14px;
+      --radius-xl: 24px;
+
+      --shadow-soft: 0 6px 20px rgba(26, 22, 53, 0.10);
+      --shadow-medium: 0 10px 28px rgba(26, 22, 53, 0.16);
+
+      --font: "Outfit", "Segoe UI", system-ui, sans-serif;
+    }
+
+    /* =========================================================
+       RESET
+       ========================================================= */
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background: #0c0a17;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    img {
+      max-width: 100%;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    p {
+      margin: 0;
+    }
+
+    .upper {
+      text-transform: uppercase;
+      letter-spacing: 0.055em;
+    }
+
+    /* =========================================================
+       PREVIEW TOOLBAR
+       ========================================================= */
+
+    .bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+
+      min-height: 48px;
+      padding: 9px 14px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      color: #fff;
+      background: rgba(18, 16, 31, 0.97);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .bar strong {
+      font-weight: 800;
+    }
+
+    .bar-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .bar a,
+    .bar button {
+      appearance: none;
+      border: 0;
+      text-decoration: none;
+
+      padding: 7px 12px;
+      border-radius: 999px;
+
+      background: var(--purple);
+      color: #fff;
+
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 700;
+
+      cursor: pointer;
+    }
+
+    .bar a.ghost {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    /* =========================================================
+       PREVIEW STAGE
+       ========================================================= */
+
+    .stage {
+      width: 100%;
+      padding: 28px 12px 60px;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .spread-label {
+      width: var(--page-width);
+
+      margin-bottom: -18px;
+
+      color: rgba(255, 255, 255, 0.48);
+
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 700;
+
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+    }
+
+    /* =========================================================
+       SPREAD
+       ========================================================= */
+
+    .spread {
+      position: relative;
+
+      width: var(--page-width);
+      height: var(--page-height);
+
+      display: grid;
+      grid-template-columns:
+        var(--panel-back)
+        var(--panel-main)
+        var(--panel-front);
+
+      overflow: hidden;
+
+      background: var(--white);
+
+      box-shadow: 0 24px 65px rgba(0, 0, 0, 0.42);
+
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* Fold guides for screen preview */
+    .spread::before,
+    .spread::after {
+      content: "";
+
+      position: absolute;
+      top: 0;
+      bottom: 0;
+
+      width: 0;
+
+      border-left: 1px dashed rgba(90, 66, 158, 0.20);
+
+      z-index: 80;
+      pointer-events: none;
+    }
+
+    .spread::before {
+      left: var(--panel-back);
+    }
+
+    .spread::after {
+      left: calc(var(--panel-back) + var(--panel-main));
+    }
+
+    /* =========================================================
+       PANELS
+       ========================================================= */
+
+    .panel {
+      position: relative;
+
+      height: var(--page-height);
+
+      overflow: hidden;
+
+      padding: var(--safe);
+
+      background: #fff;
+
+      display: flex;
+      flex-direction: column;
+
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .edge-back {
+      width: var(--panel-back);
+      padding-right: calc(var(--safe) + var(--fold-safe));
+    }
+
+    .edge-middle {
+      width: var(--panel-main);
+      padding-left: calc(var(--safe) + var(--fold-safe));
+      padding-right: calc(var(--safe) + var(--fold-safe));
+    }
+
+    .edge-front {
+      width: var(--panel-front);
+      padding-left: calc(var(--safe) + var(--fold-safe));
+    }
+
+    /* =========================================================
+       HEALTH360 BRAND MARK
+       ========================================================= */
+
+    .h360-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .h360-mark svg {
+      width: 31px;
+      height: 31px;
+      flex: 0 0 auto;
+    }
+
+    .h360-mark .nm {
+      color: var(--navy);
+
+      font-size: 16px;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+    }
+
+    .h360-mark .tg {
+      margin-top: 3px;
+
+      color: var(--purple);
+
+      font-size: 7.5px;
+      line-height: 1;
+
+      font-weight: 700;
+      letter-spacing: 0.13em;
+
+      text-transform: uppercase;
+    }
+
+    /* =========================================================
+       OUTSIDE — BACK COVER
+       ========================================================= */
+
+    .back {
+      background:
+        radial-gradient(
+          circle at 95% 4%,
+          rgba(124, 92, 255, 0.08),
+          transparent 28%
+        ),
+        #fff;
+    }
+
+    .te-lockup {
+      display: inline-flex;
+      align-items: center;
+
+      align-self: flex-start;
+
+      margin-bottom: 7px;
+      padding: 7px 10px;
+
+      border-radius: 7px;
+
+      background: var(--navy);
+    }
+
+    .te-logo {
+      display: block;
+
+      width: auto;
+      height: 27px;
+
+      object-fit: contain;
+    }
+
+    .te-line {
+      max-width: 78mm;
+
+      margin-bottom: 11px;
+
+      color: var(--muted);
+
+      font-size: 8.5px;
+      line-height: 1.45;
+      font-weight: 500;
+    }
+
+    .back-product {
+      margin-bottom: 5px;
+
+      color: var(--purple);
+
+      font-size: 10px;
+      font-weight: 800;
+
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .back-intro {
+      margin-bottom: 11px;
+
+      color: var(--muted);
+
+      font-size: 8.6px;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    .back-intro strong {
+      color: var(--navy);
+      font-weight: 800;
+    }
+
+    /* =========================================================
+       BACK CTA
+       ========================================================= */
+
+    .explore {
+      display: grid;
+      grid-template-columns: 1fr 24mm;
+      gap: 9px;
+
+      align-items: center;
+
+      padding: 9px;
+
+      border: 1px solid rgba(90, 66, 158, 0.10);
+      border-radius: var(--radius-md);
+
+      background:
+        linear-gradient(
+          135deg,
+          #f1edfc 0%,
+          #f8f6fd 100%
+        );
+    }
+
+    .explore h3 {
+      margin-bottom: 3px;
+
+      color: var(--navy);
+
+      font-size: 9.5px;
+      line-height: 1.15;
+      font-weight: 800;
+
+      letter-spacing: 0.055em;
+    }
+
+    .explore p {
+      color: var(--muted);
+
+      font-size: 7.9px;
+      line-height: 1.4;
+      font-weight: 500;
+    }
+
+    .explore img {
+      width: 24mm;
+      height: 24mm;
+
+      padding: 3px;
+
+      object-fit: contain;
+
+      background: #fff;
+
+      border: 1px solid rgba(90, 66, 158, 0.18);
+      border-radius: 6px;
+    }
+
+    /* =========================================================
+       BACK CONTACT
+       ========================================================= */
+
+    .touch {
+      margin-top: auto;
+
+      margin-left: calc(-1 * var(--safe));
+      margin-right: calc(-1 * (var(--safe) + var(--fold-safe)));
+
+      padding:
+        12px
+        calc(var(--safe) + var(--fold-safe))
+        10px
+        var(--safe);
+
+      border-radius: 22px 22px 0 0;
+
+      background:
+        linear-gradient(
+          180deg,
+          #f1edfc 0%,
+          #fff 85%
+        );
+    }
+
+    .touch h3 {
+      margin-bottom: 7px;
+
+      color: var(--purple);
+
+      font-size: 8.8px;
+      line-height: 1;
+      font-weight: 800;
+
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .touch-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+
+      margin-bottom: 5px;
+
+      color: var(--ink);
+
+      font-size: 7.8px;
+      line-height: 1.35;
+      font-weight: 500;
+    }
+
+    .touch-row strong {
+      font-weight: 700;
+    }
+
+    .touch-icon {
+      width: 15px;
+      height: 15px;
+
+      flex: 0 0 15px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 50%;
+
+      background: var(--purple);
+    }
+
+    .touch-icon svg {
+      width: 8px;
+      height: 8px;
+
+      fill: #fff;
+    }
+
+    .socials {
+      display: flex;
+      gap: 5px;
+
+      margin-top: 7px;
+    }
+
+    .socials span {
+      width: 20px;
+      height: 20px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 50%;
+
+      background: var(--purple);
+    }
+
+    .socials svg {
+      width: 10px;
+      height: 10px;
+
+      fill: #fff;
+    }
+
+    /* =========================================================
+       OUTSIDE — WHY HEALTH360
+       ========================================================= */
+
+    .why {
+      background: #fff;
+    }
+
+    .section-kicker {
+      margin-bottom: 4px;
+
+      color: var(--purple);
+
+      font-size: 7px;
+      line-height: 1;
+      font-weight: 800;
+
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .why h2 {
+      margin-bottom: 13px;
+
+      color: var(--navy);
+
+      font-size: 19px;
+      line-height: 1.05;
+      font-weight: 800;
+
+      letter-spacing: -0.025em;
+    }
+
+    .why h2 span {
+      color: var(--purple);
+    }
+
+    .why-list {
+      flex: 1;
+
+      display: flex;
+      flex-direction: column;
+
+      justify-content: space-between;
+
+      min-height: 0;
+    }
+
+    .why-item {
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      gap: 9px;
+
+      padding: 7px 0;
+
+      border-bottom: 1px solid var(--line);
+    }
+
+    .why-item:last-child {
+      border-bottom: 0;
+    }
+
+    .why-bubble {
+      width: 30px;
+      height: 30px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 50%;
+
+      background:
+        linear-gradient(
+          145deg,
+          var(--purple-bright),
+          var(--purple)
+        );
+
+      box-shadow: 0 5px 12px rgba(90, 66, 158, 0.20);
+    }
+
+    .why-bubble svg {
+      width: 14px;
+      height: 14px;
+
+      fill: #fff;
+    }
+
+    .why-item strong {
+      display: block;
+
+      margin-bottom: 2px;
+
+      color: var(--navy);
+
+      font-size: 9.4px;
+      line-height: 1.1;
+      font-weight: 800;
+
+      letter-spacing: 0.045em;
+    }
+
+    .why-item p {
+      color: var(--muted);
+
+      font-size: 8px;
+      line-height: 1.38;
+      font-weight: 500;
+    }
+
+    /* =========================================================
+       WHY CTA
+       ========================================================= */
+
+    .why-cta {
+      margin-top: 10px;
+
+      padding: 9px;
+
+      border-radius: var(--radius-md);
+
+      background:
+        linear-gradient(
+          135deg,
+          #f0ebfc,
+          #faf9fd
+        );
+    }
+
+    .why-cta h3 {
+      margin-bottom: 2px;
+
+      color: var(--navy);
+
+      font-size: 8.5px;
+      line-height: 1.15;
+      font-weight: 800;
+
+      letter-spacing: 0.055em;
+    }
+
+    .why-steps {
+      margin-bottom: 7px;
+
+      color: var(--purple);
+
+      font-size: 7.5px;
+      line-height: 1;
+      font-weight: 700;
+
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .why-qr {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .why-qr img {
+      width: 22mm;
+      height: 22mm;
+
+      padding: 3px;
+
+      object-fit: contain;
+
+      background: #fff;
+
+      border: 1px solid rgba(90, 66, 158, 0.18);
+      border-radius: 6px;
+    }
+
+    .why-arrow {
+      flex: 1;
+
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .why-arrow svg {
+      width: 40px;
+      height: 22px;
+    }
+
+    /* =========================================================
+       OUTSIDE — FRONT COVER
+       ========================================================= */
+
+    .front {
+      padding: 0;
+
+      background:
+        radial-gradient(
+          circle at 95% 8%,
+          rgba(124, 92, 255, 0.12),
+          transparent 35%
+        ),
+        #fff;
+    }
+
+    .front-top {
+      position: relative;
+      z-index: 2;
+
+      flex: 1;
+
+      min-height: 0;
+
+      padding:
+        7mm
+        calc(var(--safe) + var(--fold-safe))
+        0
+        calc(var(--safe) + var(--fold-safe));
+
+      display: flex;
+      flex-direction: column;
+    }
+
+    .front-brand {
+      margin-bottom: 10px;
+    }
+
+    .front h1 {
+      max-width: 82mm;
+
+      margin-bottom: 6px;
+
+      color: var(--navy);
+
+      font-size: 20px;
+      line-height: 1.04;
+      font-weight: 800;
+
+      letter-spacing: -0.035em;
+    }
+
+    .front h1 .accent {
+      color: var(--purple);
+    }
+
+    .front-deck {
+      max-width: 82mm;
+
+      color: var(--muted);
+
+      font-size: 8.8px;
+      line-height: 1.42;
+      font-weight: 500;
+    }
+
+    /* =========================================================
+       HERO IMAGE
+       ========================================================= */
+
+    .hero-area {
+      position: relative;
+
+      flex: 1;
+
+      min-height: 0;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      margin-top: 4mm;
+      margin-bottom: 2mm;
+    }
+
+    .hero-orbit {
+      position: absolute;
+
+      width: 67mm;
+      height: 67mm;
+
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          circle,
+          rgba(176, 158, 255, 0.35) 0%,
+          rgba(176, 158, 255, 0.13) 48%,
+          transparent 70%
+        );
+    }
+
+    .hero-circle {
+      position: relative;
+      z-index: 2;
+
+      width: 59mm;
+      height: 59mm;
+
+      overflow: hidden;
+
+      border-radius: 50%;
+
+      border: 4px solid #fff;
+
+      box-shadow:
+        0 12px 30px rgba(26, 22, 53, 0.22),
+        0 0 0 1px rgba(90, 66, 158, 0.10);
+    }
+
+    .hero-circle img {
+      width: 100%;
+      height: 100%;
+
+      display: block;
+
+      object-fit: cover;
+      object-position: center 24%;
+    }
+
+    .hero-ring {
+      position: absolute;
+
+      width: 72mm;
+      height: 72mm;
+
+      border-radius: 50%;
+
+      border: 1px solid rgba(90, 66, 158, 0.16);
+    }
+
+    .float-ico {
+      position: absolute;
+      z-index: 4;
+
+      width: 27px;
+      height: 27px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 50%;
+
+      background:
+        linear-gradient(
+          145deg,
+          var(--purple-bright),
+          var(--purple)
+        );
+
+      box-shadow: 0 5px 13px rgba(90, 66, 158, 0.28);
+    }
+
+    .float-ico svg {
+      width: 13px;
+      height: 13px;
+
+      fill: #fff;
+    }
+
+    .float-ico.a {
+      top: 12%;
+      right: 7mm;
+    }
+
+    .float-ico.b {
+      top: 48%;
+      right: 1mm;
+    }
+
+    .float-ico.c {
+      bottom: 13%;
+      left: 8mm;
+    }
+
+    /* =========================================================
+       FRONT FOOTER
+       ========================================================= */
+
+    .front-foot {
+      position: relative;
+      z-index: 5;
+
+      display: grid;
+      grid-template-columns: 1fr 24mm;
+      gap: 8px;
+
+      align-items: center;
+
+      padding:
+        10px
+        calc(var(--safe) + var(--fold-safe))
+        11px
+        calc(var(--safe) + var(--fold-safe));
+
+      color: #fff;
+
+      border-radius: 25px 25px 0 0;
+
+      background:
+        linear-gradient(
+          135deg,
+          var(--purple),
+          var(--purple-dark)
+        );
+    }
+
+    .front-foot .lbl {
+      margin-bottom: 3px;
+
+      font-size: 9.2px;
+      line-height: 1.15;
+      font-weight: 800;
+
+      letter-spacing: 0.055em;
+    }
+
+    .front-foot .by {
+      color: rgba(255, 255, 255, 0.84);
+
+      font-size: 7.4px;
+      line-height: 1.2;
+      font-weight: 500;
+    }
+
+    .front-foot img {
+      width: 24mm;
+      height: 24mm;
+
+      padding: 3px;
+
+      object-fit: contain;
+
+      background: #fff;
+
+      border-radius: 6px;
+    }
+
+    /* =========================================================
+       INSIDE — JOURNEY
+       ========================================================= */
+
+    .journey {
+      background:
+        radial-gradient(
+          circle at 0% 100%,
+          rgba(124, 92, 255, 0.08),
+          transparent 32%
+        ),
+        #fff;
+    }
+
+    .journey h2,
+    .platform h2,
+    .stakeholders h2 {
+      color: var(--navy);
+
+      font-size: 14px;
+      line-height: 1.08;
+      font-weight: 800;
+
+      letter-spacing: -0.015em;
+    }
+
+    .journey h2 {
+      margin-bottom: 9px;
+    }
+
+    .journey h2 span {
+      color: var(--purple);
+    }
+
+    .journey-layout {
+      flex: 1;
+
+      min-height: 0;
+
+      display: grid;
+      grid-template-columns: 35mm 1fr;
+      gap: 8px;
+    }
+
+    .journey-phone {
+      height: 100%;
+
+      min-height: 0;
+
+      overflow: hidden;
+
+      border-radius: 11px;
+
+      background: #f0edf8;
+
+      box-shadow: var(--shadow-soft);
+
+      border: 2px solid #fff;
+      outline: 1px solid rgba(90, 66, 158, 0.12);
+    }
+
+    .journey-phone img {
+      width: 100%;
+      height: 100%;
+
+      display: block;
+
+      object-fit: cover;
+      object-position: center top;
+    }
+
+    .journey-flow {
+      position: relative;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+
+      min-height: 0;
+
+      padding: 1px 0;
+    }
+
+    .flow-step {
+      position: relative;
+
+      display: grid;
+      grid-template-columns: 20px 1fr;
+      gap: 6px;
+
+      align-items: center;
+
+      min-height: 18px;
+    }
+
+    .flow-step:not(:last-child)::before {
+      content: "";
+
+      position: absolute;
+
+      left: 9px;
+      top: 19px;
+      bottom: -7px;
+
+      width: 1px;
+
+      background:
+        linear-gradient(
+          180deg,
+          var(--lavender),
+          rgba(176, 158, 255, 0.20)
+        );
+    }
+
+    .flow-number {
+      position: relative;
+      z-index: 2;
+
+      width: 18px;
+      height: 18px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 50%;
+
+      color: #fff;
+
+      background:
+        linear-gradient(
+          145deg,
+          var(--purple-bright),
+          var(--purple)
+        );
+
+      font-size: 6.5px;
+      line-height: 1;
+      font-weight: 800;
+    }
+
+    .flow-step strong {
+      color: var(--navy);
+
+      font-size: 8px;
+      line-height: 1.1;
+      font-weight: 800;
+
+      letter-spacing: 0.045em;
+    }
+
+    .journey-callout {
+      margin-top: 8px;
+
+      display: flex;
+      align-items: center;
+      gap: 7px;
+
+      padding: 8px 9px;
+
+      border-radius: 9px;
+
+      color: #fff;
+
+      background:
+        linear-gradient(
+          135deg,
+          var(--purple),
+          var(--purple-dark)
+        );
+
+      font-size: 7.5px;
+      line-height: 1.35;
+      font-weight: 600;
+    }
+
+    .journey-callout svg {
+      width: 14px;
+      height: 14px;
+
+      flex: 0 0 auto;
+
+      fill: var(--lavender-soft);
+    }
+
+    /* =========================================================
+       INSIDE — COMPLETE PLATFORM
+       ========================================================= */
+
+    .platform {
+      background: #fff;
+    }
+
+    .platform h2 {
+      margin-bottom: 8px;
+    }
+
+    .platform-subtitle {
+      margin-bottom: 8px;
+
+      color: var(--muted);
+
+      font-size: 7.4px;
+      line-height: 1.35;
+      font-weight: 500;
+    }
+
+    .platform-list {
+      flex: 1;
+
+      display: flex;
+      flex-direction: column;
+
+      min-height: 0;
+    }
+
+    .platform-item {
+      display: grid;
+      grid-template-columns: 23px 1fr;
+      gap: 7px;
+
+      align-items: center;
+
+      min-height: 0;
+
+      padding: 4px 0;
+
+      border-bottom: 1px solid var(--line);
+    }
+
+    .platform-item:last-child {
+      border-bottom: 0;
+    }
+
+    .platform-icon {
+      width: 22px;
+      height: 22px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 50%;
+
+      background:
+        linear-gradient(
+          145deg,
+          var(--purple-bright),
+          var(--purple)
+        );
+    }
+
+    .platform-icon svg {
+      width: 10px;
+      height: 10px;
+
+      fill: #fff;
+    }
+
+    .platform-item strong {
+      display: block;
+
+      margin-bottom: 1px;
+
+      color: var(--navy);
+
+      font-size: 7.9px;
+      line-height: 1.1;
+      font-weight: 800;
+
+      letter-spacing: 0.025em;
+    }
+
+    .platform-item span {
+      display: block;
+
+      color: var(--muted);
+
+      font-size: 6.8px;
+      line-height: 1.25;
+      font-weight: 500;
+    }
+
+    .platform-footer {
+      margin-top: 7px;
+
+      display: flex;
+      align-items: center;
+      gap: 7px;
+
+      padding: 7px 8px;
+
+      border-radius: 8px;
+
+      background: var(--lavender-bg);
+
+      color: var(--navy);
+
+      font-size: 7.2px;
+      line-height: 1.3;
+      font-weight: 600;
+    }
+
+    .platform-footer svg {
+      width: 17px;
+      height: 17px;
+
+      flex: 0 0 auto;
+
+      fill: var(--purple);
+    }
+
+    /* =========================================================
+       INSIDE — STAKEHOLDERS / ECOSYSTEM
+       ========================================================= */
+
+    .stakeholders {
+      background:
+        radial-gradient(
+          circle at 100% 0%,
+          rgba(124, 92, 255, 0.10),
+          transparent 32%
+        ),
+        #fff;
+    }
+
+    .stakeholders h2 {
+      margin-bottom: 7px;
+    }
+
+    .stakeholders-intro {
+      margin-bottom: 7px;
+
+      color: var(--muted);
+
+      font-size: 7.5px;
+      line-height: 1.35;
+      font-weight: 500;
+    }
+
+    .stakeholder-list {
+      display: flex;
+      flex-direction: column;
+
+      gap: 5px;
+
+      flex: 0 0 auto;
+    }
+
+    .stakeholder {
+      display: grid;
+      grid-template-columns: 26px 1fr;
+
+      gap: 7px;
+
+      align-items: center;
+
+      padding: 5px 6px;
+
+      border-radius: 8px;
+
+      background: #faf9fd;
+
+      border: 1px solid rgba(90, 66, 158, 0.08);
+    }
+
+    .stakeholder-icon {
+      width: 25px;
+      height: 25px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 50%;
+
+      background: var(--lavender-bg);
+    }
+
+    .stakeholder-icon svg {
+      width: 12px;
+      height: 12px;
+
+      fill: var(--purple);
+    }
+
+    .stakeholder strong {
+      display: block;
+
+      margin-bottom: 1px;
+
+      color: var(--navy);
+
+      font-size: 7.9px;
+      line-height: 1.1;
+      font-weight: 800;
+
+      letter-spacing: 0.035em;
+    }
+
+    .stakeholder span {
+      display: block;
+
+      color: var(--muted);
+
+      font-size: 6.9px;
+      line-height: 1.25;
+      font-weight: 500;
+    }
+
+    /* =========================================================
+       STAKEHOLDER IMAGE
+       ========================================================= */
+
+    .stakeholder-image {
+      position: relative;
+
+      flex: 1;
+
+      min-height: 30mm;
+
+      margin-top: 8px;
+
+      overflow: hidden;
+
+      border-radius: 11px;
+
+      box-shadow: var(--shadow-soft);
+    }
+
+    .stakeholder-image img {
+      width: 100%;
+      height: 100%;
+
+      display: block;
+
+      object-fit: cover;
+      object-position: center 35%;
+    }
+
+    .stakeholder-image-label {
+      position: absolute;
+
+      left: 7px;
+      bottom: 7px;
+
+      padding: 6px 9px;
+
+      border-radius: 7px;
+
+      color: #fff;
+
+      background: rgba(26, 22, 53, 0.88);
+
+      font-size: 7.5px;
+      line-height: 1.2;
+      font-weight: 700;
+
+      letter-spacing: 0.035em;
+    }
+
+    /* =========================================================
+       CONNECTED ECOSYSTEM VISUAL
+       ========================================================= */
+
+    .ecosystem {
+      margin-top: 7px;
+
+      position: relative;
+
+      height: 49mm;
+
+      flex: 0 0 49mm;
+
+      overflow: hidden;
+
+      border-radius: 11px;
+
+      background:
+        radial-gradient(
+          circle at center,
+          #fff 0%,
+          #eee9fb 38%,
+          #e1d9f6 100%
+        );
+    }
+
+    .ecosystem-lines {
+      position: absolute;
+      inset: 0;
+    }
+
+    .ecosystem-lines span {
+      position: absolute;
+
+      left: 50%;
+      top: 50%;
+
+      width: 1px;
+      height: 44%;
+
+      transform-origin: center bottom;
+
+      background:
+        linear-gradient(
+          180deg,
+          rgba(90, 66, 158, 0.45),
+          rgba(90, 66, 158, 0.06)
+        );
+    }
+
+    .ecosystem-lines span:nth-child(1) {
+      transform: translate(-50%, -100%) rotate(0deg);
+    }
+
+    .ecosystem-lines span:nth-child(2) {
+      transform: translate(-50%, -100%) rotate(72deg);
+    }
+
+    .ecosystem-lines span:nth-child(3) {
+      transform: translate(-50%, -100%) rotate(144deg);
+    }
+
+    .ecosystem-lines span:nth-child(4) {
+      transform: translate(-50%, -100%) rotate(216deg);
+    }
+
+    .ecosystem-lines span:nth-child(5) {
+      transform: translate(-50%, -100%) rotate(288deg);
+    }
+
+    .eco-core {
+      position: absolute;
+
+      left: 50%;
+      top: 50%;
+
+      transform: translate(-50%, -50%);
+
+      width: 34mm;
+      height: 34mm;
+
+      display: flex;
+      flex-direction: column;
+
+      align-items: center;
+      justify-content: center;
+
+      text-align: center;
+
+      border-radius: 50%;
+
+      background: #fff;
+
+      border: 2px solid var(--purple);
+
+      box-shadow: 0 8px 24px rgba(90, 66, 158, 0.20);
+    }
+
+    .eco-core svg {
+      width: 22px;
+      height: 22px;
+
+      margin-bottom: 3px;
+    }
+
+    .eco-core strong {
+      color: var(--navy);
+
+      font-size: 9px;
+      line-height: 1;
+
+      font-weight: 800;
+    }
+
+    .eco-core small {
+      margin-top: 3px;
+
+      color: var(--purple);
+
+      font-size: 5.5px;
+      line-height: 1;
+
+      font-weight: 700;
+
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .eco-node {
+      position: absolute;
+
+      z-index: 3;
+
+      padding: 4px 7px;
+
+      border-radius: 999px;
+
+      color: var(--purple);
+
+      background: #fff;
+
+      border: 1px solid rgba(90, 66, 158, 0.18);
+
+      box-shadow: 0 3px 8px rgba(26, 22, 53, 0.08);
+
+      font-size: 5.8px;
+      line-height: 1;
+      font-weight: 800;
+
+      letter-spacing: 0.035em;
+
+      white-space: nowrap;
+    }
+
+    .eco-node.n1 {
+      top: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .eco-node.n2 {
+      top: 30%;
+      right: 4%;
+    }
+
+    .eco-node.n3 {
+      bottom: 10%;
+      right: 9%;
+    }
+
+    .eco-node.n4 {
+      bottom: 10%;
+      left: 9%;
+    }
+
+    .eco-node.n5 {
+      top: 30%;
+      left: 4%;
+    }
+
+    .eco-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+
+      gap: 3px;
+
+      margin: 6px 0;
+    }
+
+    .eco-tags span {
+      padding: 3px 6px;
+
+      border-radius: 999px;
+
+      color: var(--purple);
+
+      background: var(--lavender-mid);
+
+      font-size: 5.8px;
+      line-height: 1;
+      font-weight: 700;
+
+      letter-spacing: 0.035em;
+    }
+
+    .eco-foot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      padding: 7px 8px;
+
+      border-radius: 8px;
+
+      color: var(--ink);
+
+      background: var(--lavender-bg);
+
+      font-size: 7px;
+      line-height: 1.3;
+      font-weight: 600;
+    }
+
+    .eco-foot svg {
+      width: 18px;
+      height: 12px;
+
+      flex: 0 0 auto;
+    }
+
+    /* =========================================================
+       PRINT
+       ========================================================= */
+
+    @media print {
+
+      @page {
+        size: A4 landscape;
+        margin: 0;
+      }
+
+      html,
+      body {
+        width: 297mm;
+        background: #fff;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      .bar,
+      .spread-label {
+        display: none !important;
+      }
+
+      .stage {
+        width: 297mm;
+
+        padding: 0;
+        margin: 0;
+
+        gap: 0;
+
+        display: block;
+      }
+
+      .spread {
+        width: 297mm;
+        height: 210mm;
+
+        margin: 0;
+
+        box-shadow: none;
+
+        page-break-after: always;
+        break-after: page;
+
+        overflow: hidden;
+
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .spread:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .spread::before,
+      .spread::after {
+        display: none;
+      }
+
+      .panel {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      img {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+
+    /* =========================================================
+       CAPTURE MODE
+       ========================================================= */
+
+    body.capture-mode {
+      background: #fff;
+    }
+
+    body.capture-mode .bar,
+    body.capture-mode .spread-label {
+      display: none !important;
+    }
+
+    body.capture-mode .stage {
+      padding: 0;
+      gap: 0;
+    }
+
+    body.capture-mode .spread {
+      box-shadow: none;
+    }
+
+    /* =========================================================
+       SMALL SCREEN PREVIEW
+       ========================================================= */
+
+    @media screen and (max-width: 900px) {
+
+      .stage {
+        align-items: flex-start;
+
+        overflow-x: auto;
+      }
+
+      .spread-label {
+        align-self: flex-start;
+      }
+
+      .spread {
+        flex: 0 0 auto;
+      }
+
+      .bar {
+        position: relative;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- =======================================================
+       PREVIEW TOOLBAR
+       ======================================================= -->
+
+  <div class="bar">
+
+    <span>
+      <strong>Health360 Tri-Fold</strong>
+      · Premium A4 Landscape · Print-Ready Layout
+    </span>
+
+    <div class="bar-actions">
+
+      <a
+        class="ghost"
+        href="./health360-brochure-trifold-v2.html"
+      >
+        Hospital V2
+      </a>
+
+      <a
+        class="ghost"
+        href="./health360-event-pamphlet.html"
+      >
+        Event Pamphlet
+      </a>
+
+      <button
+        type="button"
+        onclick="window.print()"
+      >
+        Print / PDF
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <main class="stage">
+
+
+    <!-- =====================================================
+         OUTSIDE SPREAD
+         BACK | WHY HEALTH360 | FRONT
+         ===================================================== -->
+
+    <div class="spread-label">
+      Outside · Back Cover | Why Health360 | Front Cover
+    </div>
+
+    <article class="spread" id="outside">
+
+
+      <!-- ===================================================
+           PANEL 1 — BACK COVER
+           =================================================== -->
+
+      <section class="panel edge-back back">
+
+        <div class="te-lockup">
+
+          <img
+            class="te-logo"
+            src="./assets/techearnest-logo-on-dark.png"
+            alt="TechEarnest"
+          />
+
+        </div>
+
+        <p class="te-line">
+          Building Digital Solutions for a Healthier Tomorrow.
+          <br />
+          Empowering Possibilities.
+        </p>
+
+
+        <div class="back-product">
+          Health360
+        </div>
+
+        <p class="back-intro">
+          <strong>A Healthcare Product by TechEarnest</strong> —
+          Health360 simplifies hospital operations and connects
+          patients, doctors, labs and pharmacies through one
+          digital healthcare platform.
+        </p>
+
+
+        <!-- CTA -->
+
+        <div class="explore">
+
+          <div>
+
+            <h3 class="upper">
+              Explore Health360
+            </h3>
+
+            <p>
+              Scan the QR code to learn more about the platform
+              and request a conversation.
+            </p>
+
+          </div>
+
+          <img
+            src="./assets/qr-explore-health360.png"
+            alt="QR code — Explore Health360"
+          />
+
+        </div>
+
+
+        <!-- CONTACT -->
+
+        <div class="touch">
+
+          <h3>
+            Get in Touch
+          </h3>
+
+
+          <div class="touch-row">
+
+            <span class="touch-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/>
+              </svg>
+
+            </span>
+
+            <div>
+              Office 221, VTP Trade Park,
+              Undri, Pune 411060
+            </div>
+
+          </div>
+
+
+          <div class="touch-row">
+
+            <span class="touch-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/>
+              </svg>
+
+            </span>
+
+            <div>
+              <strong>info@techearnest.com</strong>
+              · techearnest.com
+            </div>
+
+          </div>
+
+
+          <div class="touch-row">
+
+            <span class="touch-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.3 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.3 1.1L6.6 10.8z"/>
+              </svg>
+
+            </span>
+
+            <div>
+              <strong>+91 20 6708 7147</strong>
+            </div>
+
+          </div>
+
+
+          <div
+            class="socials"
+            aria-label="Social media"
+          >
+
+            <span title="LinkedIn">
+              <svg viewBox="0 0 24 24">
+                <path d="M6.5 8.5H3.5V20h3V8.5zM5 3.5A1.8 1.8 0 1 0 5 7.1 1.8 1.8 0 0 0 5 3.5zM20.5 20h-3v-5.6c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9V20h-3V8.5h2.9v1.6h.1c.4-.8 1.4-1.6 2.9-1.6 3.1 0 3.7 2 3.7 4.7V20z"/>
+              </svg>
+            </span>
+
+            <span title="X">
+              <svg viewBox="0 0 24 24">
+                <path d="M18 4h-2.4l-3.2 4.2L9.4 4H4.8l5.1 7.2L4.5 20h2.4l3.6-4.7L14.6 20h4.6l-5.4-7.5L18 4z"/>
+              </svg>
+            </span>
+
+            <span title="Facebook">
+              <svg viewBox="0 0 24 24">
+                <path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H9v3h2v7h3v-7h2.5l.5-3H14V9z"/>
+              </svg>
+            </span>
+
+            <span title="Instagram">
+              <svg viewBox="0 0 24 24">
+                <path d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm5 4.5A4.5 4.5 0 1 0 16.5 12 4.5 4.5 0 0 0 12 7.5zm5.2-.9a1.1 1.1 0 1 0 1.1 1.1 1.1 0 0 0-1.1-1.1zM12 9.5A2.5 2.5 0 1 1 9.5 12 2.5 2.5 0 0 1 12 9.5z"/>
+              </svg>
+            </span>
+
+            <span title="YouTube">
+              <svg viewBox="0 0 24 24">
+                <path d="M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8zM10 15.5v-7l6 3.5-6 3.5z"/>
+              </svg>
+            </span>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- ===================================================
+           PANEL 2 — WHY HEALTH360
+           =================================================== -->
+
+      <section class="panel edge-middle why">
+
+        <div class="section-kicker">
+          A Connected Healthcare Experience
+        </div>
+
+        <h2>
+          Why <span>Health360?</span>
+        </h2>
+
+
+        <div class="why-list">
+
+
+          <div class="why-item">
+
+            <div class="why-bubble">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong class="upper">
+                One Connected Platform
+              </strong>
+
+              <p>
+                Connect patients, doctors, hospital staff,
+                laboratory, pharmacy and administration.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div class="why-item">
+
+            <div class="why-bubble">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong class="upper">
+                Better Patient Experience
+              </strong>
+
+              <p>
+                Reduce friction across appointments,
+                queues, consultation and follow-up.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div class="why-item">
+
+            <div class="why-bubble">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h10v2H4v-2z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong class="upper">
+                Smarter Hospital Operations
+              </strong>
+
+              <p>
+                Digitize major OPD, IPD and
+                hospital workflows.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div class="why-item">
+
+            <div class="why-bubble">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong class="upper">
+                Patient-First
+              </strong>
+
+              <p>
+                Designed around a smoother,
+                connected healthcare journey.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div class="why-item">
+
+            <div class="why-bubble">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M12 3v18M3 12h18"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong class="upper">
+                Data-Driven Decisions
+              </strong>
+
+              <p>
+                Support operational visibility through
+                reports, dashboards and insights.
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="why-cta">
+
+          <h3 class="upper">
+            Start Your Health360 Journey
+          </h3>
+
+          <div class="why-steps">
+            Scan · Register · Experience
+          </div>
+
+          <div class="why-qr">
+
+            <img
+              src="./assets/qr-join-health360-event.png"
+              alt="QR code — Join Health360"
+            />
+
+            <div class="why-arrow">
+
+              <svg
+                viewBox="0 0 80 40"
+                fill="none"
+              >
+                <path
+                  d="M4 20h52"
+                  stroke="#5A429E"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M48 8l16 12-16 12"
+                  stroke="#5A429E"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- ===================================================
+           PANEL 3 — FRONT COVER
+           =================================================== -->
+
+      <section class="panel edge-front front">
+
+        <div class="front-top">
+
+          <div class="front-brand h360-mark">
+
+            <svg
+              viewBox="0 0 48 48"
+              aria-hidden="true"
+            >
+
+              <defs>
+
+                <linearGradient
+                  id="healthGradient"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stop-color="#7C5CFF"
+                  />
+
+                  <stop
+                    offset="100%"
+                    stop-color="#5A429E"
+                  />
+
+                </linearGradient>
+
+              </defs>
+
+              <circle
+                cx="24"
+                cy="24"
+                r="22"
+                fill="url(#healthGradient)"
+              />
+
+              <path
+                fill="#fff"
+                d="M24 34.5c-.4 0-.7-.1-1-.4C17.2 28.6 14 25.6 14 22c0-2.4 1.8-4.2 4.2-4.2 1.3 0 2.5.6 3.3 1.6.8-1 2-1.6 3.3-1.6 2.4 0 4.2 1.8 4.2 4.2 0 3.6-3.2 6.6-8 12.1-.3.3-.6.4-1 .4z"
+              />
+
+              <rect
+                x="22.2"
+                y="17.5"
+                width="3.6"
+                height="10"
+                rx="1"
+                fill="#5A429E"
+              />
+
+              <rect
+                x="19"
+                y="20.7"
+                width="10"
+                height="3.6"
+                rx="1"
+                fill="#5A429E"
+              />
+
+            </svg>
+
+
+            <div>
+
+              <div class="nm">
+                Health360
+              </div>
+
+              <div class="tg">
+                Experience Digital Care
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <h1>
+            YOUR HEALTH.<br />
+            YOUR JOURNEY.<br />
+            <span class="accent">
+              ONE PLATFORM.
+            </span>
+          </h1>
+
+
+          <p class="front-deck">
+            A complete digital hospital management platform
+            connecting patients, clinical teams and hospital
+            operations through one connected healthcare journey.
+          </p>
+
+
+          <div class="hero-area">
+
+            <div class="hero-orbit"></div>
+
+            <div class="hero-ring"></div>
+
+
+            <div class="float-ico a">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z"/>
+              </svg>
+
+            </div>
+
+
+            <div class="float-ico b">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16l6-3 6 3V4a2 2 0 0 0-2-2z"/>
+              </svg>
+
+            </div>
+
+
+            <div class="float-ico c">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+
+            </div>
+
+
+            <div class="hero-circle">
+
+              <img
+                src="./assets/brochure-doctor-patient-hero.png"
+                alt="Doctor consulting with patient"
+              />
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="front-foot">
+
+          <div>
+
+            <div class="lbl upper">
+              Health360 by TechEarnest
+            </div>
+
+            <div class="by">
+              Experience Digital Care
+            </div>
+
+          </div>
+
+          <img
+            src="./assets/qr-join-health360-event.png"
+            alt="QR code — Join Health360"
+          />
+
+        </div>
+
+      </section>
+
+    </article>
+
+
+    <!-- =====================================================
+         INSIDE SPREAD
+         JOURNEY | PLATFORM | STAKEHOLDERS
+         ===================================================== -->
+
+    <div class="spread-label">
+      Inside · Connected Patient Journey | Complete Platform | Hospital Stakeholders
+    </div>
+
+
+    <article class="spread" id="inside">
+
+
+      <!-- ===================================================
+           PANEL 4 — CONNECTED PATIENT JOURNEY
+           =================================================== -->
+
+      <section class="panel edge-back journey">
+
+        <div class="section-kicker">
+          From Access to Follow-Up
+        </div>
+
+        <h2>
+          One Connected<br />
+          <span>Patient Journey.</span>
+        </h2>
+
+
+        <div class="journey-layout">
+
+          <div class="journey-phone">
+
+            <img
+              src="./assets/flyer-patient-phone.png"
+              alt="Health360 mobile patient experience"
+            />
+
+          </div>
+
+
+          <div class="journey-flow">
+
+
+            <div class="flow-step">
+
+              <div class="flow-number">
+                01
+              </div>
+
+              <strong class="upper">
+                Register
+              </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+              <div class="flow-number">
+                02
+              </div>
+
+              <strong class="upper">
+                Appointment
+              </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+              <div class="flow-number">
+                03
+              </div>
+
+              <strong class="upper">
+                OPD Queue
+              </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+              <div class="flow-number">
+                04
+              </div>
+
+              <strong class="upper">
+                Consultation
+              </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+              <div class="flow-number">
+                05
+              </div>
+
+              <strong class="upper">
+                Diagnosis
+              </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+              <div class="flow-number">
+                06
+              </div>
+
+              <strong class="upper">
+                Laboratory
+              </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+              <div class="flow-number">
+                07
+              </div>
+
+              <strong class="upper">
+                Prescription
+              </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+              <div class="flow-number">
+                08
+              </div>
+
+              <strong class="upper">
+                Pharmacy
+              </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+              <div class="flow-number">
+                09
+              </div>
+
+              <strong class="upper">
+                IPD
+              </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+              <div class="flow-number">
+                10
+              </div>
+
+              <strong class="upper">
+                Discharge
+              </strong>
+
+            </div>
+
+
+            <div class="flow-step">
+
+              <div class="flow-number">
+                11
+              </div>
+
+              <strong class="upper">
+                Follow-Up
+              </strong>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="journey-callout">
+
+          <svg viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+
+          <span>
+            One patient. One connected healthcare journey.
+          </span>
+
+        </div>
+
+      </section>
+
+
+      <!-- ===================================================
+           PANEL 5 — COMPLETE HOSPITAL PLATFORM
+           =================================================== -->
+
+      <section class="panel edge-middle platform">
+
+        <div class="section-kicker">
+          Connected Hospital Operations
+        </div>
+
+        <h2>
+          One Platform.<br />
+          Complete Hospital Management.
+        </h2>
+
+        <p class="platform-subtitle">
+          Health360 connects the major clinical, operational
+          and administrative workflows of a modern hospital.
+        </p>
+
+
+        <div class="platform-list">
+
+
+          <div class="platform-item">
+
+            <div class="platform-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4 0-8 2-8 4.5V21h16v-2.5C20 16 16 14 12 14z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                PATIENT MANAGEMENT
+              </strong>
+
+              <span>
+                UHID · Registration · Profiles · Medical History
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="platform-item">
+
+            <div class="platform-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                OPD MANAGEMENT
+              </strong>
+
+              <span>
+                Appointments · Queue · Consultation · Vitals · Diagnosis · e-Prescription
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="platform-item">
+
+            <div class="platform-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                IPD MANAGEMENT
+              </strong>
+
+              <span>
+                Admission · Beds · Nursing · Doctor Rounds · Medication · Discharge
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="platform-item">
+
+            <div class="platform-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-2h2zm2.1-7.3-.9.9A3.5 3.5 0 0 0 13 13.2V14h-2v-1.1a3.2 3.2 0 0 1 1.2-2.5l1.1-1a1.7 1.7 0 1 0-2.8-1.3H8.5a3.7 3.7 0 1 1 6.6 2.6z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                ICU & OT
+              </strong>
+
+              <span>
+                Critical Care · Monitoring · Surgery Workflows
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="platform-item">
+
+            <div class="platform-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M9 2h6v2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V2zm0 6v2h6V8H9zm0 4v2h6v-2H9zm0 4v2h4v-2H9z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                LABORATORY
+              </strong>
+
+              <span>
+                Orders · Samples · Results · Reports
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="platform-item">
+
+            <div class="platform-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M4 5h16v14H4zM7 8h10v2H7zm0 4h7v2H7z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                PHARMACY
+              </strong>
+
+              <span>
+                Prescription · Dispensing · Inventory
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="platform-item">
+
+            <div class="platform-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M3 5h18v14H3zM7 9h10v2H7zm0 4h6v2H7z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                BILLING
+              </strong>
+
+              <span>
+                OPD · IPD · Payments · Packages
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="platform-item">
+
+            <div class="platform-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M4 19h16v2H4zM6 17V9h3v8H6zm5 0V5h3v12h-3zm5 0v-5h3v5h-3z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                ANALYTICS
+              </strong>
+
+              <span>
+                Dashboards · Reports · Management Insights
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="platform-item">
+
+            <div class="platform-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M12 2 3 6v6c0 5.5 3.8 9.7 9 10 5.2-.3 9-4.5 9-10V6l-9-4z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                SECURITY & ADMINISTRATION
+              </strong>
+
+              <span>
+                Role-Based Access · Secure Workflows · Audit-Ready Operations
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="platform-item">
+
+            <div class="platform-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M4 4h16v16H4zM7 7h10v3H7zm0 5h4v5H7zm6 0h4v5h-4z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                ASSET MANAGEMENT
+              </strong>
+
+              <span>
+                Biomedical Equipment · Beds · Facility & IT Assets
+              </span>
+
+            </div>
+
+          </div>
+
+
+        </div>
+
+
+        <div class="platform-footer">
+
+          <svg viewBox="0 0 24 24">
+
+            <path d="M12 2 2 7v5c0 5.5 3.8 9.7 10 11 6.2-1.3 10-5.5 10-11V7L12 2zm0 18c-4.8-1.1-8-4.5-8-8V8l8-4 8 4v4c0 3.5-3.2 6.9-8 8z"/>
+
+          </svg>
+
+          <span>
+            Designed to connect clinical workflows,
+            operational processes and hospital management.
+          </span>
+
+        </div>
+
+      </section>
+
+
+      <!-- ===================================================
+           PANEL 6 — BUILT FOR EVERYONE
+           =================================================== -->
+
+      <section class="panel edge-front stakeholders">
+
+        <div class="section-kicker">
+          Patient · Clinical · Operations · Management
+        </div>
+
+        <h2>
+          Built for Everyone<br />
+          in the Hospital.
+        </h2>
+
+        <p class="stakeholders-intro">
+          Health360 brings different hospital stakeholders
+          together around a connected digital experience.
+        </p>
+
+
+        <div class="stakeholder-list">
+
+
+          <div class="stakeholder">
+
+            <div class="stakeholder-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4 0-8 2-8 4.5V21h16v-2.5C20 16 16 14 12 14z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                PATIENTS
+              </strong>
+
+              <span>
+                Less waiting. Better experience.
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="stakeholder">
+
+            <div class="stakeholder-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M19 3H5a2 2 0 0 0-2 2v14l4-2 4 2 4-2 4 2V5a2 2 0 0 0-2-2z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                DOCTORS
+              </strong>
+
+              <span>
+                Complete information. Better clinical workflow.
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="stakeholder">
+
+            <div class="stakeholder-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M4 6h16v12H4zM7 9h3v6H7zm5 0h5v2h-5zm0 4h5v2h-5z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                NURSES & STAFF
+              </strong>
+
+              <span>
+                Less manual work. Better coordination.
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="stakeholder">
+
+            <div class="stakeholder-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M9 2h6v2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V2z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                LAB & PHARMACY
+              </strong>
+
+              <span>
+                Connected orders, reports and workflows.
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="stakeholder">
+
+            <div class="stakeholder-icon">
+
+              <svg viewBox="0 0 24 24">
+                <path d="M4 19h16v2H4zM6 17V9h3v8H6zm5 0V5h3v12h-3zm5 0v-5h3v5h-3z"/>
+              </svg>
+
+            </div>
+
+            <div>
+
+              <strong>
+                MANAGEMENT
+              </strong>
+
+              <span>
+                Visibility. Control. Insights.
+              </span>
+
+            </div>
+
+          </div>
+
+
+        </div>
+
+
+        <!-- STORY IMAGE -->
+
+        <div class="stakeholder-image">
+
+          <img
+            src="./assets/brochure-digital-care.png"
+            alt="Healthcare professional using digital healthcare technology"
+          />
+
+          <div class="stakeholder-image-label">
+            Human care · Connected technology
+          </div>
+
+        </div>
+
+
+        <!-- ECOSYSTEM -->
+
+        <div class="ecosystem">
+
+          <div class="ecosystem-lines">
+
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+
+          </div>
+
+
+          <span class="eco-node n1">
+            HOSPITALS
+          </span>
+
+          <span class="eco-node n2">
+            DOCTORS
+          </span>
+
+          <span class="eco-node n3">
+            LABORATORY
+          </span>
+
+          <span class="eco-node n4">
+            PHARMACY
+          </span>
+
+          <span class="eco-node n5">
+            PATIENTS
+          </span>
+
+
+          <div class="eco-core">
+
+            <svg
+              viewBox="0 0 48 48"
+              aria-hidden="true"
+            >
+
+              <circle
+                cx="24"
+                cy="24"
+                r="22"
+                fill="#5A429E"
+              />
+
+              <path
+                fill="#fff"
+                d="M24 34.5c-.4 0-.7-.1-1-.4C17.2 28.6 14 25.6 14 22c0-2.4 1.8-4.2 4.2-4.2 1.3 0 2.5.6 3.3 1.6.8-1 2-1.6 3.3-1.6 2.4 0 4.2 1.8 4.2 4.2 0 3.6-3.2 6.6-8 12.1-.3.3-.6.4-1 .4z"
+              />
+
+              <rect
+                x="22.2"
+                y="17.5"
+                width="3.6"
+                height="10"
+                rx="1"
+                fill="#B09EFF"
+              />
+
+              <rect
+                x="19"
+                y="20.7"
+                width="10"
+                height="3.6"
+                rx="1"
+                fill="#B09EFF"
+              />
+
+            </svg>
+
+            <strong>
+              Health360
+            </strong>
+
+            <small>
+              Connected Care
+            </small>
+
+          </div>
+
+        </div>
+
+
+        <div class="eco-tags">
+
+          <span>OPD</span>
+          <span>IPD</span>
+          <span>ICU</span>
+          <span>OT</span>
+          <span>LAB</span>
+          <span>PHARMACY</span>
+          <span>BILLING</span>
+          <span>ANALYTICS</span>
+
+        </div>
+
+
+        <div class="eco-foot">
+
+          <svg
+            viewBox="0 0 48 24"
+            fill="none"
+          >
+
+            <path
+              d="M1 12h8l3-8 4 16 3-8h8l2-4 3 8 2-4h13"
+              stroke="#5A429E"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+
+          </svg>
+
+          <span>
+            From the first appointment to final discharge,
+            Health360 connects the complete healthcare journey.
+          </span>
+
+        </div>
+
+      </section>
+
+    </article>
+
+  </main>
+
+
+  <!-- =======================================================
+       CAPTURE SCRIPT
+       ======================================================= -->
+
+  <script>
+
+    (function () {
+
+      const params =
+        new URLSearchParams(window.location.search);
+
+      const mode = params.get("capture");
+
+      if (!mode) {
+        return;
+      }
+
+      document.body.classList.add("capture-mode");
+
+      const outside =
+        document.getElementById("outside");
+
+      const inside =
+        document.getElementById("inside");
+
+      if (mode === "outside" && inside) {
+        inside.remove();
+      }
+
+      if (mode === "inside" && outside) {
+        outside.remove();
+      }
+
+    })();
+
+  </script>
+
+</body>
+</html>

@@ -19,12 +19,16 @@ import { startEncounter } from '@/features/clinical/api/clinicalApi';
 import { encounterStatusColor, encounterStatusLabel, formatEncounterDate } from '@/features/clinical/utils/encounterUtils';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
+import { OpdFloorStatusHelp } from '@/features/opd/components/OpdFloorStatusHelp';
+import { queueStatusLabel } from '@/shared/status/visitStatus';
+import { useQueryClient } from '@tanstack/react-query';
 
 const PAGE_SIZE = 20;
 const STATUS_FILTERS = ['', 'REGISTERED', 'WAITING', 'IN_PROGRESS', 'COMPLETED'] as const;
 
 export function DoctorOpdPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState('');
   const [startingId, setStartingId] = useState<string | null>(null);
@@ -44,6 +48,7 @@ export function DoctorOpdPage() {
     setStartingId(encounterId);
     try {
       await startEncounter(encounterId);
+      await queryClient.invalidateQueries({ queryKey: ['opd'] });
       await refetch();
       navigate(`/doctor/encounters/${encounterId}`);
     } catch (e) {
@@ -57,7 +62,7 @@ export function DoctorOpdPage() {
     <AnimatedPage>
       <DashboardPageHeader
         title="Today's OPD"
-        subtitle="Patients assigned to you today. Open a consult to record notes, diagnosis, prescription, and tests."
+        subtitle="Patients assigned to you today. Start consult updates the hospital and reception queue."
         actions={
           <Button variant="outlined" onClick={() => refetch()} disabled={isFetching}>
             Refresh
@@ -85,6 +90,8 @@ export function DoctorOpdPage() {
         </Alert>
       ) : null}
       {actionError ? <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert> : null}
+
+      <OpdFloorStatusHelp audience="doctor" />
 
       {isLoading ? (
         <Stack spacing={1.5}>
@@ -126,11 +133,16 @@ export function DoctorOpdPage() {
                     </Typography>
                   </Box>
                   <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.75}>
-                    <Chip
-                      label={encounterStatusLabel(enc.status)}
-                      color={encounterStatusColor(enc.status)}
-                      size="small"
-                    />
+                    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap justifyContent="flex-end">
+                      {enc.queueStatus ? (
+                        <Chip label={`Queue ${queueStatusLabel(enc.queueStatus)}`} size="small" variant="outlined" />
+                      ) : null}
+                      <Chip
+                        label={encounterStatusLabel(enc.status)}
+                        color={encounterStatusColor(enc.status)}
+                        size="small"
+                      />
+                    </Stack>
                     {canStart ? (
                       <Button
                         size="small"

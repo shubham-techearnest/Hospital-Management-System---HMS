@@ -11,4 +11,7 @@ public interface ClinicalNoteRepository extends JpaRepository<ClinicalNoteEntity
     List<ClinicalNoteEntity> findByEncounterIdAndDeletedAtIsNullOrderByRecordedAtDesc(UUID encounterId);
 
     java.util.Optional<ClinicalNoteEntity> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
+
+    boolean existsByEncounterIdAndNoteTypeAndStatusAndDeletedAtIsNull(
+            UUID encounterId, String noteType, String status);
 }

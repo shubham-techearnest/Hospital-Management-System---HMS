@@ -127,8 +127,11 @@ export function PatientRegisterPage() {
         <DialogTitle>Possible duplicate patient found</DialogTitle>
         <DialogContent>
           <Typography gutterBottom>
-            A matching patient already exists. Open the existing record instead of creating a duplicate.
+            A matching patient already exists. Open the existing record — do not create a second identity.
           </Typography>
+          <Alert severity="warning" sx={{ mb: 1 }}>
+            Shared family phones are allowed only when name + DOB differ. Same name + DOB must reuse the existing UHID.
+          </Alert>
           <Stack spacing={2} sx={{ mt: 2 }}>
             {duplicateCandidates?.map((candidate) => (
               <Paper key={candidate.patientId} variant="outlined" sx={{ p: 2 }}>

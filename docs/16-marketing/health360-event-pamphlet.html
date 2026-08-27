@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Health360 Event Pamphlet — Join / User Acquisition (Print)</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Outfit:wght@400;500;600;700;800&display=swap");
+
+    :root {
+      --purple: #5a429e;
+      --purple-bright: #7c5cff;
+      --lavender: #b09eff;
+      --lavender-soft: #d4c8ff;
+      --lavender-bg: #f4f0ff;
+      --navy: #1a1635;
+      --navy-deep: #12101f;
+      --ink: #16132a;
+      --muted: #5c6478;
+      --panel-w: 99mm;
+      --page-w: 297mm;
+      --page-h: 210mm;
+      --safe: 7mm;
+      --fold: 4.5mm;
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "Outfit", "Segoe UI", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: var(--sans);
+      background: #0d0b1a;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .bar {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; flex-wrap: wrap; padding: 10px 14px;
+      background: rgba(26,22,53,.96); color: #fff; font-size: .78rem;
+      border-bottom: 1px solid rgba(176,158,255,.28);
+    }
+    .bar a, .bar button {
+      background: var(--purple); color: #fff; border: 0; border-radius: 999px;
+      padding: 7px 12px; font-weight: 700; text-decoration: none; cursor: pointer; font-size: .72rem;
+    }
+    .bar a.ghost { background: transparent; border: 1px solid rgba(255,255,255,.35); }
+    .bar .tag {
+      background: rgba(124,92,255,.35); border: 1px solid rgba(176,158,255,.4);
+      border-radius: 999px; padding: 4px 10px; font-size: .68rem; font-weight: 700;
+    }
+
+    .stage {
+      padding: 20px 10px 48px;
+      display: flex; flex-direction: column; align-items: center; gap: 26px;
+    }
+    .spread-label {
+      width: var(--page-w);
+      color: rgba(255,255,255,.55);
+      font-size: 10px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700;
+      margin-bottom: -16px;
+    }
+
+    .spread {
+      width: var(--page-w);
+      height: var(--page-h);
+      display: grid;
+      grid-template-columns: var(--panel-w) var(--panel-w) var(--panel-w);
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 22px 55px rgba(0,0,0,.45);
+      position: relative;
+    }
+    .spread::before, .spread::after {
+      content: ""; position: absolute; top: 0; bottom: 0; width: 0;
+      border-left: 1px dashed rgba(90,66,158,.2); z-index: 30; pointer-events: none;
+    }
+    .spread::before { left: var(--panel-w); }
+    .spread::after { left: calc(var(--panel-w) * 2); }
+
+    .panel {
+      width: var(--panel-w); height: var(--page-h);
+      position: relative; overflow: hidden;
+      padding: var(--safe);
+    }
+    .edge-l { padding-right: calc(var(--safe) + var(--fold)); }
+    .edge-m { padding-left: calc(var(--safe) + var(--fold)); padding-right: calc(var(--safe) + var(--fold)); }
+    .edge-r { padding-left: calc(var(--safe) + var(--fold)); }
+
+    .kicker {
+      margin: 0 0 5px;
+      font-size: 8.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+      color: var(--purple-bright);
+    }
+    .kicker.on-dark { color: var(--lavender-soft); }
+    h1, h2, h3 { margin: 0; line-height: 1.12; }
+    .serif { font-family: var(--serif); font-weight: 700; }
+    p { margin: 0; }
+
+    /* ——— BACK ——— */
+    .back {
+      background: linear-gradient(180deg, var(--navy-deep), var(--navy) 50%, #2a2158);
+      color: #fff;
+      display: flex; flex-direction: column;
+    }
+    .back .product-lockup { margin-bottom: 10px; }
+    .back .product-lockup .name {
+      font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+    }
+    .back .product-lockup .tagline {
+      font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--lavender-soft); font-weight: 700; margin-top: 2px;
+    }
+    .back .by {
+      font-size: 9px; color: rgba(255,255,255,.75); font-weight: 600; margin: 6px 0 14px;
+    }
+    .back h2 {
+      font-family: var(--serif); font-size: 18px; margin-bottom: 8px;
+    }
+    .back .intro {
+      font-size: 10px; line-height: 1.45; color: rgba(255,255,255,.85);
+      margin-bottom: 12px; font-weight: 500;
+    }
+    .uhid-box {
+      background: rgba(124,92,255,.2);
+      border: 1px solid rgba(176,158,255,.4);
+      border-radius: 10px; padding: 10px; margin-bottom: 12px;
+    }
+    .uhid-box .t {
+      font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--lavender-soft); font-weight: 800; margin-bottom: 3px;
+    }
+    .uhid-box strong { display: block; font-size: 13px; margin-bottom: 4px; }
+    .uhid-box p { font-size: 9.5px; line-height: 1.4; color: rgba(255,255,255,.8); font-weight: 500; }
+    .after-scan {
+      margin-top: auto;
+      border-top: 1px solid rgba(255,255,255,.18);
+      padding-top: 10px;
+    }
+    .after-scan h3 {
+      font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--lavender-soft); margin-bottom: 8px;
+    }
+    .mini-flow {
+      display: flex; flex-direction: column; gap: 4px;
+      font-size: 10px; font-weight: 600; margin-bottom: 10px;
+    }
+    .mini-flow span { display: flex; align-items: center; gap: 6px; }
+    .mini-flow i {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--purple-bright); font-style: normal;
+      display: grid; place-items: center; font-size: 8px; font-weight: 800;
+    }
+    .back-cta {
+      display: grid; grid-template-columns: 24mm 1fr; gap: 8px; align-items: center;
+    }
+    .back-cta img {
+      width: 24mm; height: 24mm; background: #fff; border-radius: 6px; padding: 2px; object-fit: contain;
+    }
+    .back-cta .a { font-size: 11px; font-weight: 800; }
+    .back-cta .b { font-size: 9px; color: rgba(255,255,255,.8); margin-top: 2px; line-height: 1.35; }
+    .contact {
+      margin-top: 10px; font-size: 9px; line-height: 1.4; color: rgba(255,255,255,.75);
+    }
+    .contact strong { color: #fff; }
+
+    /* ——— WHY (flap) ——— */
+    .why {
+      background: #fff;
+      display: flex; flex-direction: column;
+    }
+    .why h2 {
+      font-family: var(--serif); font-size: 26px; color: var(--navy); margin-bottom: 10px;
+    }
+    .why-list { flex: 1; }
+    .why-item {
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(90,66,158,.16);
+    }
+    .why-item:last-child { border-bottom: 0; }
+    .why-item strong {
+      display: block; font-size: 12px; letter-spacing: .06em;
+      color: var(--purple); font-weight: 800; margin-bottom: 2px;
+    }
+    .why-item p { font-size: 10.5px; line-height: 1.4; color: var(--muted); font-weight: 500; }
+    .how {
+      background: var(--lavender-bg);
+      border-radius: 10px; padding: 10px; margin: 10px 0;
+    }
+    .how h3 {
+      font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--purple); margin-bottom: 7px;
+    }
+    .how-steps { display: flex; flex-direction: column; gap: 5px; }
+    .how-steps div {
+      display: grid; grid-template-columns: 18px 1fr; gap: 7px; align-items: start;
+      font-size: 10px; color: var(--ink); font-weight: 600;
+    }
+    .how-steps b {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--purple); color: #fff;
+      display: grid; place-items: center; font-size: 8px;
+    }
+    .how-steps span { font-weight: 500; color: var(--muted); display: block; font-size: 9px; margin-top: 1px; }
+    .cta-navy {
+      background: var(--navy); color: #fff; border-radius: 10px;
+      padding: 10px; display: grid; grid-template-columns: 22mm 1fr; gap: 8px; align-items: center;
+      margin-top: auto;
+    }
+    .cta-navy img {
+      width: 22mm; height: 22mm; background: #fff; border-radius: 5px; padding: 2px; object-fit: contain;
+    }
+    .cta-navy .t1 {
+      font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--lavender-soft); font-weight: 700;
+    }
+    .cta-navy .t2 { font-size: 13px; font-weight: 800; margin-top: 2px; }
+    .cta-navy .t3 { font-size: 9px; opacity: .85; margin-top: 2px; }
+
+    /* ——— FRONT ——— */
+    .front {
+      padding: 0; color: #fff; background: var(--navy);
+      display: flex; flex-direction: column;
+    }
+    .front-bg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: center 30%;
+    }
+    .front-veil {
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(180deg, rgba(26,22,53,.5) 0%, rgba(26,22,53,.2) 32%, rgba(26,22,53,.78) 68%, rgba(26,22,53,.95) 100%);
+    }
+    .front-inner {
+      position: relative; z-index: 2; height: 100%;
+      padding: var(--safe);
+      padding-left: calc(var(--safe) + var(--fold));
+      display: flex; flex-direction: column;
+    }
+    .front-brand { margin-bottom: 12px; }
+    .front-brand .name { font-size: 16px; font-weight: 800; letter-spacing: -.02em; }
+    .front-brand .tag {
+      font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--lavender-soft); font-weight: 700; margin-top: 2px;
+    }
+    .front h1 {
+      font-family: var(--serif); font-size: 26px; line-height: 1.05;
+      margin: auto 0 8px; max-width: 80mm;
+    }
+    .front .deck {
+      font-size: 11px; line-height: 1.4; color: rgba(255,255,255,.92);
+      margin-bottom: 12px; font-weight: 500; max-width: 80mm;
+    }
+    .scan-card {
+      background: #fff; color: var(--navy); border-radius: 12px;
+      padding: 11px; display: grid; grid-template-columns: 28mm 1fr; gap: 9px; align-items: center;
+      margin-bottom: 8px;
+    }
+    .scan-card img {
+      width: 28mm; height: 28mm; object-fit: contain; border-radius: 4px;
+    }
+    .scan-card .a {
+      font-size: 12px; font-weight: 800; color: var(--purple); letter-spacing: .02em;
+    }
+    .scan-card .b {
+      font-size: 10px; color: var(--muted); margin-top: 3px; line-height: 1.35; font-weight: 500;
+    }
+    .scan-card .c {
+      margin-top: 5px; font-size: 9px; font-weight: 800; letter-spacing: .08em;
+      color: var(--navy); text-transform: uppercase;
+    }
+    .front .by {
+      font-size: 8px; letter-spacing: .08em; text-transform: uppercase;
+      color: rgba(255,255,255,.75); font-weight: 700; text-align: right;
+    }
+
+    /* ——— INSIDE: JOURNEY ——— */
+    .journey {
+      background: linear-gradient(180deg, var(--navy), #241c4a);
+      color: #fff;
+      display: flex; flex-direction: column;
+    }
+    .journey h2 {
+      font-family: var(--serif); font-size: 20px; margin-bottom: 6px;
+    }
+    .compare {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+      margin-bottom: 10px;
+    }
+    .compare .box {
+      border-radius: 8px; padding: 7px;
+      font-size: 8.5px; line-height: 1.35; font-weight: 500;
+    }
+    .compare .before {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+    }
+    .compare .with {
+      background: rgba(124,92,255,.28);
+      border: 1px solid rgba(176,158,255,.4);
+    }
+    .compare .lbl {
+      display: block; font-size: 7.5px; letter-spacing: .1em; text-transform: uppercase;
+      font-weight: 800; margin-bottom: 3px; color: var(--lavender-soft);
+    }
+    .steps { flex: 1; display: flex; flex-direction: column; }
+    .step {
+      display: grid; grid-template-columns: 22px 1fr; gap: 8px;
+      position: relative; padding-bottom: 6px;
+    }
+    .step::before {
+      content: ""; position: absolute; left: 10px; top: 18px; bottom: 0;
+      width: 1.5px; background: rgba(176,158,255,.4);
+    }
+    .step:last-child::before { display: none; }
+    .step .n {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple-bright), var(--purple));
+      display: grid; place-items: center; font-size: 8px; font-weight: 800; z-index: 1;
+    }
+    .step strong {
+      display: block; font-size: 11px; font-weight: 800; letter-spacing: .04em;
+    }
+    .journey-close {
+      margin-top: 6px; padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,.18);
+      font-size: 11px; font-weight: 700; color: var(--lavender-soft);
+    }
+
+    /* ——— INSIDE: WHAT YOU GET ——— */
+    .gets {
+      background: #fff;
+      display: flex; flex-direction: column;
+    }
+    .gets h2 {
+      font-family: var(--serif); font-size: 20px; color: var(--navy); margin-bottom: 8px;
+    }
+    .get-list { flex: 1; display: flex; flex-direction: column; gap: 0; }
+    .get {
+      display: grid; grid-template-columns: 14px 1fr; gap: 8px;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(90,66,158,.14);
+      align-items: start;
+    }
+    .get:last-child { border-bottom: 0; }
+    .get .check {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--purple); color: #fff;
+      display: grid; place-items: center; font-size: 9px; font-weight: 800; margin-top: 1px;
+    }
+    .get strong { display: block; font-size: 11px; color: var(--navy); font-weight: 800; }
+    .get span { font-size: 9.5px; color: var(--muted); line-height: 1.3; font-weight: 500; }
+    .howto-title {
+      margin-top: 10px; font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--purple); font-weight: 800; margin-bottom: 6px;
+    }
+    .howto {
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .howto .row {
+      display: grid; grid-template-columns: 22px 1fr; gap: 7px; align-items: center;
+    }
+    .howto .num {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 1.5px solid var(--purple); color: var(--purple);
+      display: grid; place-items: center; font-size: 8px; font-weight: 800;
+    }
+    .howto strong { font-size: 10.5px; color: var(--navy); }
+    .howto span { display: block; font-size: 9px; color: var(--muted); font-weight: 500; }
+    .gets-foot {
+      margin-top: 10px; text-align: center;
+      font-size: 11px; font-weight: 800; color: var(--purple);
+    }
+    .gets-foot span { display: block; font-size: 9px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+
+    /* ——— INSIDE: FOR EVERYONE / ECO ——— */
+    .eco {
+      background: linear-gradient(180deg, var(--navy-deep), var(--navy) 55%, #2f2560);
+      color: #fff;
+      display: flex; flex-direction: column;
+    }
+    .eco h2 {
+      font-family: var(--serif); font-size: 18px; margin-bottom: 10px;
+    }
+    .roles { display: flex; flex-direction: column; gap: 7px; margin-bottom: 10px; }
+    .role {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 8px; padding: 8px 9px;
+    }
+    .role strong { display: block; font-size: 11px; font-weight: 800; margin-bottom: 2px; color: var(--lavender-soft); }
+    .role span { font-size: 9.5px; line-height: 1.35; color: rgba(255,255,255,.85); font-weight: 500; }
+    .one-line {
+      text-align: center; font-size: 11px; font-weight: 800;
+      letter-spacing: .06em; text-transform: uppercase;
+      color: var(--lavender-soft); margin: 4px 0 10px;
+    }
+    .depts {
+      display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
+      margin-bottom: 10px;
+    }
+    .depts span {
+      border: 1px solid rgba(176,158,255,.45);
+      border-radius: 999px; padding: 4px 8px;
+      font-size: 8px; font-weight: 700; letter-spacing: .04em;
+    }
+    .eco-copy {
+      font-size: 10px; line-height: 1.4; color: rgba(255,255,255,.82);
+      text-align: center; font-weight: 500; margin-bottom: 10px;
+    }
+    .eco-cta {
+      margin-top: auto;
+      background: #fff; color: var(--navy); border-radius: 10px;
+      padding: 9px; display: grid; grid-template-columns: 22mm 1fr; gap: 8px; align-items: center;
+    }
+    .eco-cta img {
+      width: 22mm; height: 22mm; object-fit: contain; border-radius: 4px;
+    }
+    .eco-cta .a { font-size: 11px; font-weight: 800; color: var(--purple); }
+    .eco-cta .b { font-size: 9px; color: var(--muted); margin-top: 2px; font-weight: 600; letter-spacing: .06em; }
+
+    @media print {
+      @page { size: A4 landscape; margin: 0; }
+      body { background: #fff; }
+      .bar, .spread-label { display: none !important; }
+      .stage { padding: 0; gap: 0; }
+      .spread {
+        box-shadow: none;
+        page-break-after: always;
+        break-after: page;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .spread:last-child { page-break-after: auto; break-after: auto; }
+      .spread::before, .spread::after { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span>
+      <span class="tag">EVENT PAMPHLET · USER ACQUISITION</span>
+      Health360 — “Why should a person join?” · Does not replace hospital B2B brochure
+    </span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <a class="ghost" href="./health360-brochure-trifold-v2.html">Hospital brochure V2</a>
+      <a class="ghost" href="./health360-event-pamphlet-web.html">RGB web</a>
+      <a class="ghost" href="./BROCHURE-TRIFOLD.md">Guide</a>
+      <button type="button" onclick="window.print()">Print / PDF</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="spread-label">Outside · Back | Why + How | Front (Join)</div>
+    <article class="spread" id="outside">
+      <!-- BACK -->
+      <section class="panel edge-l back">
+        <div class="product-lockup">
+          <div class="name">Health360</div>
+          <div class="tagline">Experience Digital Care</div>
+        </div>
+        <p class="by">A Healthcare Product by TechEarnest</p>
+        <h2>Scan to join Health360</h2>
+        <p class="intro">A digital healthcare platform connecting patients, doctors, and hospitals—so your healthcare journey stays organized in one place.</p>
+        <div class="uhid-box">
+          <div class="t">Your healthcare ID</div>
+          <strong>One identity. One healthcare journey.</strong>
+          <p>Your Health360 profile can be associated with your UHID, helping keep your healthcare journey connected across relevant hospital interactions.</p>
+        </div>
+        <div class="after-scan">
+          <h3>What happens after scanning?</h3>
+          <div class="mini-flow">
+            <span><i>1</i> Scan the QR</span>
+            <span><i>2</i> Create your account</span>
+            <span><i>3</i> Complete your profile</span>
+            <span><i>4</i> Start using Health360</span>
+          </div>
+          <div class="back-cta">
+            <img src="./assets/qr-join-health360-event.png" alt="QR — Join Health360" />
+            <div>
+              <div class="a">SCAN → REGISTER → GET STARTED</div>
+              <div class="b">hms.techearnest.com<br />Event campaign QR</div>
+            </div>
+          </div>
+          <p class="contact">
+            <strong>Built by TechEarnest</strong><br />
+            +91 20 6708 7147 · info@techearnest.com<br />
+            techearnest.com · hms.techearnest.com
+          </p>
+        </div>
+      </section>
+
+      <!-- WHY / FLAP -->
+      <section class="panel edge-m why">
+        <p class="kicker">Why should I use it?</p>
+        <h2 class="serif">Why Health360?</h2>
+        <div class="why-list">
+          <div class="why-item">
+            <strong>Simple</strong>
+            <p>Your healthcare journey in one connected experience.</p>
+          </div>
+          <div class="why-item">
+            <strong>Connected</strong>
+            <p>Patients, doctors, and hospitals connected on one platform.</p>
+          </div>
+          <div class="why-item">
+            <strong>Digital</strong>
+            <p>Relevant healthcare information digitally organized—less paper confusion.</p>
+          </div>
+          <div class="why-item">
+            <strong>Patient-first</strong>
+            <p>Designed around the healthcare journey you actually live—from appointment to follow-up.</p>
+          </div>
+        </div>
+        <div class="how">
+          <h3>How it works</h3>
+          <div class="how-steps">
+            <div><b>01</b><div><strong>Join</strong><span>Create your Health360 account</span></div></div>
+            <div><b>02</b><div><strong>Connect</strong><span>Connect with your healthcare provider</span></div></div>
+            <div><b>03</b><div><strong>Manage</strong><span>Appointments, visits &amp; healthcare information</span></div></div>
+            <div><b>04</b><div><strong>Access</strong><span>Prescriptions, reports &amp; relevant records</span></div></div>
+            <div><b>05</b><div><strong>Continue</strong><span>Stay connected through your journey</span></div></div>
+          </div>
+        </div>
+        <div class="cta-navy">
+          <img src="./assets/qr-join-health360-event.png" alt="QR Join" />
+          <div>
+            <div class="t1">Scan. Register. Experience.</div>
+            <div class="t2">Join Health360</div>
+            <div class="t3">hms.techearnest.com</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FRONT -->
+      <section class="panel edge-r front">
+        <img class="front-bg" src="./assets/brochure-doctor-patient-hero.png" alt="" />
+        <div class="front-veil"></div>
+        <div class="front-inner">
+          <div class="front-brand">
+            <div class="name">Health360</div>
+            <div class="tag">Experience Digital Care</div>
+          </div>
+          <h1>Your healthcare journey.<br />Connected.</h1>
+          <p class="deck">A digital healthcare platform connecting patients, doctors and hospitals.</p>
+          <div class="scan-card">
+            <img src="./assets/qr-join-health360-event.png" alt="QR — Join Health360" />
+            <div>
+              <div class="a">Scan to join Health360</div>
+              <div class="b">Create your account.<br />Connect with your healthcare journey.</div>
+              <div class="c">Scan → Register → Get started</div>
+            </div>
+          </div>
+          <div class="by">A Healthcare Product by TechEarnest</div>
+        </div>
+      </section>
+    </article>
+
+    <div class="spread-label">Inside · Journey | What you get | For everyone</div>
+    <article class="spread" id="inside">
+      <!-- JOURNEY HERO -->
+      <section class="panel edge-l journey">
+        <p class="kicker on-dark">One connected journey</p>
+        <h2>From appointment to follow-up—connected.</h2>
+        <div class="compare">
+          <div class="box before">
+            <span class="lbl">Before</span>
+            Find hospital → Register → Wait → Doctor → Rx → Lab → Reports → Pharmacy → Follow-up
+          </div>
+          <div class="box with">
+            <span class="lbl">With Health360</span>
+            One connected healthcare journey—organized digitally around you.
+          </div>
+        </div>
+        <div class="steps">
+          <div class="step"><div class="n">01</div><div><strong>Register</strong></div></div>
+          <div class="step"><div class="n">02</div><div><strong>Appointment</strong></div></div>
+          <div class="step"><div class="n">03</div><div><strong>OPD / Consult</strong></div></div>
+          <div class="step"><div class="n">04</div><div><strong>Diagnosis</strong></div></div>
+          <div class="step"><div class="n">05</div><div><strong>Prescription</strong></div></div>
+          <div class="step"><div class="n">06</div><div><strong>Reports</strong></div></div>
+          <div class="step"><div class="n">07</div><div><strong>Follow-up</strong></div></div>
+        </div>
+        <p class="journey-close">One patient. One connected healthcare journey.</p>
+      </section>
+
+      <!-- WHAT YOU GET -->
+      <section class="panel edge-m gets">
+        <p class="kicker">With Health360</p>
+        <h2 class="serif">What can you do?</h2>
+        <div class="get-list">
+          <div class="get"><div class="check">✓</div><div><strong>Appointments &amp; queues</strong><span>Manage booking and visit flow information</span></div></div>
+          <div class="get"><div class="check">✓</div><div><strong>Digital prescriptions</strong><span>Keep e-prescriptions connected to your visit</span></div></div>
+          <div class="get"><div class="check">✓</div><div><strong>Laboratory information</strong><span>Access orders, status, and reports</span></div></div>
+          <div class="get"><div class="check">✓</div><div><strong>OPD &amp; IPD journey</strong><span>Follow hospital visit information across care</span></div></div>
+          <div class="get"><div class="check">✓</div><div><strong>Healthcare profile</strong><span>Maintain your Health360 profile and history</span></div></div>
+          <div class="get"><div class="check">✓</div><div><strong>Connected interactions</strong><span>Keep relevant healthcare records in one journey</span></div></div>
+          <div class="get"><div class="check">✓</div><div><strong>Follow-up continuity</strong><span>Continue care information after your visit</span></div></div>
+        </div>
+        <div class="howto-title">Get started in four steps</div>
+        <div class="howto">
+          <div class="row"><div class="num">1</div><div><strong>Scan</strong><span>Open the event QR</span></div></div>
+          <div class="row"><div class="num">2</div><div><strong>Register</strong><span>Create your account</span></div></div>
+          <div class="row"><div class="num">3</div><div><strong>Profile</strong><span>Complete your details</span></div></div>
+          <div class="row"><div class="num">4</div><div><strong>Use</strong><span>Start your Health360 journey</span></div></div>
+        </div>
+        <div class="gets-foot">
+          Health360
+          <span>Experience Digital Care</span>
+        </div>
+      </section>
+
+      <!-- FOR EVERYONE -->
+      <section class="panel edge-r eco">
+        <p class="kicker on-dark">For everyone</p>
+        <h2>One connected healthcare ecosystem.</h2>
+        <div class="roles">
+          <div class="role"><strong>Patients</strong><span>Manage your healthcare journey.</span></div>
+          <div class="role"><strong>Doctors</strong><span>Access relevant clinical information.</span></div>
+          <div class="role"><strong>Hospitals</strong><span>Connect departments and workflows.</span></div>
+        </div>
+        <div class="one-line">One connected platform</div>
+        <div class="depts">
+          <span>OPD</span><span>IPD</span><span>ICU</span><span>OT</span>
+          <span>Lab</span><span>Pharmacy</span><span>Billing</span>
+        </div>
+        <p class="eco-copy">Health360 connects people and care teams through one digital experience—not just another appointment app.</p>
+        <div class="eco-cta">
+          <img src="./assets/qr-join-health360-event.png" alt="QR Join" />
+          <div>
+            <div class="a">Scan to join Health360</div>
+            <div class="b">SCAN → REGISTER → GET STARTED</div>
+          </div>
+        </div>
+      </section>
+    </article>
+  </div>
+
+  <script>
+    (function () {
+      var mode = new URLSearchParams(location.search).get("capture");
+      if (!mode) return;
+      document.querySelector(".bar")?.remove();
+      document.querySelectorAll(".spread-label").forEach(function (el) { el.remove(); });
+      document.body.style.background = "#fff";
+      var stage = document.querySelector(".stage");
+      if (stage) { stage.style.padding = "0"; stage.style.gap = "0"; }
+      var outside = document.getElementById("outside");
+      var inside = document.getElementById("inside");
+      if (mode === "outside" && inside) inside.remove();
+      if (mode === "inside" && outside) outside.remove();
+      document.querySelectorAll(".spread").forEach(function (s) { s.style.boxShadow = "none"; });
+    })();
+  </script>
+</body>
+</html>

@@ -7,20 +7,18 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { useMyTodayOpd } from '@/features/opd/hooks/useOpdQueries';
 import { useMyNotifications, useMarkNotificationRead } from '@/features/settings/hooks/useNotificationQueries';
+import { OpdFloorStatusHelp } from '@/features/opd/components/OpdFloorStatusHelp';
 import { parseApiError } from '@/shared/api/errorUtils';
-
-const STATUS_COLOR: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> = {
-  WAITING: 'warning',
-  CALLED: 'info',
-  IN_SERVICE: 'info',
-  COMPLETED: 'success',
-  CANCELLED: 'error',
-  SKIPPED: 'warning',
-};
+import {
+  queueStatusColor,
+  queueStatusLabel,
+  visitEncounterStatusLabel,
+} from '@/shared/status/visitStatus';
 
 export function PatientOpdStatusPage() {
   const { data: visits = [], isLoading, isError, error, refetch } = useMyTodayOpd();
@@ -34,22 +32,31 @@ export function PatientOpdStatusPage() {
       <DashboardPageHeader
         title="My OPD today"
         subtitle="Live token status and hospital reminders for today's visits"
-        actions={<Button variant="outlined" onClick={() => refetch()}>Refresh</Button>}
+        actions={
+          <Stack direction="row" spacing={1}>
+            <Button component={RouterLink} to="/patient/book" variant="contained">Book OPD</Button>
+            <Button variant="outlined" onClick={() => refetch()}>Refresh</Button>
+          </Stack>
+        }
       />
 
       {isError ? <Alert severity="error" sx={{ mb: 2 }}>{parseApiError(error).message}</Alert> : null}
 
+      <OpdFloorStatusHelp audience="patient" />
+
       <Stack spacing={2} sx={{ mb: 3 }}>
         {isLoading ? <Typography color="text.secondary">Loading…</Typography> : null}
         {!isLoading && visits.length === 0 ? (
-          <Alert severity="info">No OPD visits registered for you today.</Alert>
+          <Alert severity="info">
+            No OPD visits at the hospital today. Book a slot, then reception will issue a token when you arrive.
+          </Alert>
         ) : null}
         {visits.map((v) => (
           <Paper key={v.queueEntryId} variant="outlined" sx={{ p: 2 }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
               <Typography variant="h5" fontWeight={700}>{v.tokenDisplay}</Typography>
-              <Chip size="small" label={v.status} color={STATUS_COLOR[v.status] ?? 'default'} />
-              <Chip size="small" variant="outlined" label={v.encounterStatus} />
+              <Chip size="small" label={queueStatusLabel(v.status)} color={queueStatusColor(v.status)} />
+              <Chip size="small" variant="outlined" label={visitEncounterStatusLabel(v.encounterStatus)} />
             </Stack>
             <Typography variant="body2" color="text.secondary">
               Encounter {v.encounterId.slice(0, 8)}…

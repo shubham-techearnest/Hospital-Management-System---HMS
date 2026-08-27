@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Health360 Flyer — A4 · Brief v2.0</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&display=swap");
+
+    :root {
+      --navy: #1a1635;
+      --purple: #5a429e;
+      --bright: #7c5cff;
+      --lavender: #b09eff;
+      --soft: #d4c8ff;
+      --paper: #ffffff;
+      --mist: #efeafe;
+      --muted: #5c5678;
+      --line: #e6e0f5;
+      --bleed: 3mm;
+      --w: 210mm;
+      --h: 297mm;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: "Outfit", system-ui, sans-serif;
+      background: #0d0b1a;
+      color: var(--navy);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .bar {
+      position: sticky; top: 0; z-index: 40;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; flex-wrap: wrap; padding: 10px 14px;
+      background: rgba(26,22,53,.97); color: #fff; font-size: .78rem;
+    }
+    .bar a, .bar button {
+      background: var(--purple); color: #fff; border: 0; border-radius: 999px;
+      padding: 7px 12px; font-weight: 700; text-decoration: none; cursor: pointer;
+      font-size: .72rem; font-family: inherit;
+    }
+    .bar a.ghost { background: transparent; border: 1px solid rgba(255,255,255,.35); }
+    .stage { padding: 24px; display: flex; justify-content: center; }
+
+    #flyer {
+      width: calc(var(--w) + (var(--bleed) * 2));
+      height: calc(var(--h) + (var(--bleed) * 2));
+      background: var(--paper);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,.45);
+    }
+
+    .trim {
+      position: absolute;
+      inset: var(--bleed);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 100% 0%, rgba(176,158,255,.18), transparent 42%),
+        radial-gradient(ellipse at 0% 85%, rgba(90,66,158,.07), transparent 38%),
+        var(--paper);
+    }
+
+    .curve {
+      position: absolute;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .curve.a {
+      width: 260px; height: 260px;
+      border-radius: 50%;
+      border: 1px solid rgba(90,66,158,.14);
+      top: -70px; right: -50px;
+    }
+    .curve.b {
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(90,66,158,.09), rgba(176,158,255,.14));
+      bottom: 100px; left: -55px;
+    }
+
+    .top {
+      position: relative; z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 16px 20px 0;
+      gap: 14px;
+    }
+    .brand-block .product {
+      margin: 0;
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      color: var(--navy);
+      line-height: 1;
+    }
+    .brand-block .tag {
+      margin: 5px 0 0;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--purple);
+    }
+    .logo {
+      height: 38px;
+      width: auto;
+      display: block;
+      background: var(--navy);
+      padding: 5px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(176,158,255,.35);
+    }
+
+    .hero-copy {
+      position: relative; z-index: 1;
+      padding: 16px 20px 0;
+      max-width: 82%;
+    }
+    .hero-copy h1 {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.12;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      color: var(--navy);
+    }
+    .hero-copy .deck {
+      margin: 10px 0 0;
+      font-size: 13.5px;
+      line-height: 1.45;
+      font-weight: 500;
+      color: var(--muted);
+      max-width: 540px;
+    }
+
+    .visual {
+      position: relative; z-index: 1;
+      margin: 14px 20px 0;
+      height: 92mm;
+      border-radius: 26px 26px 64px 26px;
+      overflow: hidden;
+      background: var(--navy);
+      box-shadow: 0 12px 32px rgba(26,22,53,.15);
+    }
+    .visual img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 28%;
+      display: block;
+    }
+    .visual .veil {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(100deg, rgba(26,22,53,.5) 0%, rgba(26,22,53,.08) 55%, transparent 100%);
+    }
+
+    .section-label {
+      position: relative; z-index: 1;
+      margin: 12px 20px 0;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--purple);
+    }
+
+    .journey {
+      position: relative; z-index: 1;
+      margin: 6px 20px 0;
+      padding: 10px 12px;
+      background: var(--mist);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 5px 3px;
+    }
+    .journey span {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--navy);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 8px;
+      white-space: nowrap;
+    }
+    .journey i {
+      font-style: normal;
+      color: var(--lavender);
+      font-weight: 800;
+      font-size: 11px;
+      padding: 0 1px;
+    }
+
+    .caps {
+      position: relative; z-index: 1;
+      margin: 10px 20px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .caps b {
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--navy);
+      border-radius: 999px;
+      padding: 6px 11px;
+      white-space: nowrap;
+    }
+    .caps b:nth-child(even) { background: var(--purple); }
+
+    .micro {
+      position: relative; z-index: 1;
+      margin: 8px 20px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .micro span {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--navy);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 9px;
+      white-space: nowrap;
+    }
+
+    .values {
+      position: relative; z-index: 1;
+      margin: 12px 20px 0;
+      text-align: center;
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--purple);
+    }
+
+    .cta {
+      position: relative; z-index: 1;
+      margin: 12px 20px 0;
+      background: linear-gradient(135deg, #1a1635 0%, #5a429e 100%);
+      color: #fff;
+      border-radius: 16px;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+    .cta .qr-wrap {
+      width: 22mm;
+      height: 22mm;
+      min-width: 22mm;
+      background: #fff;
+      border-radius: 8px;
+      padding: 3px;
+      display: grid;
+      place-items: center;
+    }
+    .cta .qr-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .cta .lbl {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--soft);
+    }
+    .cta .big {
+      margin-top: 3px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      line-height: 1.15;
+      text-transform: uppercase;
+    }
+    .cta .sub {
+      margin-top: 3px;
+      font-size: 12.5px;
+      font-weight: 500;
+      opacity: .92;
+    }
+
+    .own {
+      position: relative; z-index: 1;
+      margin: 10px 20px 0;
+      text-align: center;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .own small {
+      display: block;
+      margin-top: 2px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .foot {
+      position: relative; z-index: 1;
+      margin-top: auto;
+      background: var(--navy);
+      color: #fff;
+      padding: 11px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      align-items: center;
+      text-align: center;
+    }
+    .foot .row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+    .foot .row span {
+      padding: 0 9px;
+      border-right: 1px solid rgba(176,158,255,.45);
+      white-space: nowrap;
+    }
+    .foot .row span:last-child { border-right: 0; }
+    .foot .addr {
+      font-size: 10.5px;
+      font-weight: 500;
+      color: var(--soft);
+    }
+
+    @media print {
+      @page { size: 216mm 303mm; margin: 0; }
+      body { background: #fff; }
+      .bar { display: none !important; }
+      .stage { padding: 0; }
+      #flyer {
+        box-shadow: none;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span><strong>Health360</strong> · A4 flyer · Brief v2.0</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <a class="ghost" href="./HEALTH360-FLYER-DESIGN-BRIEF.md">Design brief</a>
+      <a class="ghost" href="./health360-flyer-designs.html">Designs</a>
+      <button type="button" onclick="window.print()">Print / PDF</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <article id="flyer">
+      <div class="trim">
+        <div class="curve a" aria-hidden="true"></div>
+        <div class="curve b" aria-hidden="true"></div>
+
+        <header class="top">
+          <div class="brand-block">
+            <p class="product">Health360</p>
+            <p class="tag">Experience Digital Care</p>
+          </div>
+          <img class="logo" src="./assets/techearnest-logo-on-dark.png" alt="TechEarnest" />
+        </header>
+
+        <div class="hero-copy">
+          <h1>Your hospital.<br />One connected platform.</h1>
+          <p class="deck">
+            Health360 is a complete digital healthcare platform that connects patients, clinicians,
+            hospitals, diagnostics, and pharmacy operations on one unified system — so care stays
+            continuous, not fragmented.
+          </p>
+        </div>
+
+        <div class="visual">
+          <img src="./assets/health360-flyer-final-hero.png" alt="" />
+          <div class="veil" aria-hidden="true"></div>
+        </div>
+
+        <p class="section-label">Connected care journey</p>
+        <div class="journey" aria-label="Connected care journey">
+          <span>UHID</span><i>→</i>
+          <span>Appointment</span><i>→</i>
+          <span>Check-in</span><i>→</i>
+          <span>OPD Queue</span><i>→</i>
+          <span>Consultation</span><i>→</i>
+          <span>Diagnosis · e-Rx · Wellness</span><i>→</i>
+          <span>Laboratory</span><i>→</i>
+          <span>Pharmacy</span><i>→</i>
+          <span>IPD</span><i>→</i>
+          <span>Billing</span><i>→</i>
+          <span>Follow-up · Timeline</span>
+        </div>
+
+        <p class="section-label">Platform capabilities</p>
+        <div class="caps" aria-label="Primary capabilities">
+          <b>Patient &amp; UHID</b>
+          <b>Appointments</b>
+          <b>OPD</b>
+          <b>Clinical Workflows</b>
+          <b>Laboratory</b>
+          <b>Pharmacy</b>
+          <b>IPD</b>
+          <b>Billing</b>
+        </div>
+        <div class="micro" aria-label="Additional capabilities">
+          <span>ICU</span>
+          <span>OT</span>
+          <span>Radiology</span>
+          <span>Wellness</span>
+          <span>Notifications</span>
+          <span>Analytics</span>
+          <span>Asset Management</span>
+          <span>RBAC</span>
+          <span>Portals</span>
+        </div>
+
+        <p class="values">Connected · Digital · Simple · Patient-First · Hospital-Ready</p>
+
+        <div class="cta">
+          <div class="qr-wrap">
+            <img src="./assets/qr-explore-health360.png" alt="QR code — scan to explore Health360" />
+          </div>
+          <div>
+            <div class="lbl">Scan the QR code</div>
+            <div class="big">Explore Health360</div>
+            <div class="sub">hms.techearnest.com</div>
+          </div>
+        </div>
+
+        <p class="own">
+          A Healthcare Product by TechEarnest
+          <small>Empowering Possibilities</small>
+        </p>
+
+        <footer class="foot">
+          <div class="row">
+            <span>info@techearnest.com</span>
+            <span>+91 20 6708 7147</span>
+            <span>techearnest.com</span>
+            <span>hms.techearnest.com</span>
+          </div>
+          <div class="addr">Office 221, VTP Trade Park, Undri, Pune 411060</div>
+        </footer>
+      </div>
+    </article>
+  </div>
+</body>
+</html>

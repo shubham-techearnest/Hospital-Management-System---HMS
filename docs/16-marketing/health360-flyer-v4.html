@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Health360 Flyer V4 — Dense Midnight</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@550;600;700;800&display=swap");
+    *{box-sizing:border-box} html,body{margin:0}
+    body{font-family:Manrope,system-ui,sans-serif;background:#05070d;color:#e2e8f0}
+    .bar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#0b1020;color:#fff;border-bottom:1px solid #1e293b;font-size:.8rem}
+    .bar a,.bar button{background:#c9a227;color:#0b1020;border:0;border-radius:999px;padding:7px 11px;font-weight:800;text-decoration:none;cursor:pointer;font-size:.75rem}
+    .bar a.ghost{background:transparent;color:#e2e8f0;border:1px solid #334155}
+    .stage{padding:16px 10px 36px;display:flex;justify-content:center}
+    #flyer{width:210mm;height:297mm;overflow:hidden;display:flex;flex-direction:column;background:radial-gradient(circle at 85% 0,rgba(201,162,39,.16),transparent 32%),linear-gradient(180deg,#0b1020,#111827 50%,#0b1020);color:#f8fafc;box-shadow:0 16px 40px rgba(0,0,0,.55)}
+    .hero{padding:10px 12px 6px}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+    .logo{font-weight:800;letter-spacing:-.02em;font-size:15px}.logo span{color:#e8c547}
+    .tag{font-size:8px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#e8c547;border:1px solid rgba(232,197,71,.4);border-radius:999px;padding:4px 8px}
+    h1{margin:0 0 5px;font-size:23px;line-height:1.08;letter-spacing:-.035em}
+    h1 em{font-style:normal;color:#e8c547}
+    .sub{margin:0;color:#cbd5e1;font-size:10.5px;line-height:1.35}
+    .grid3{margin-top:7px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+    .grid3 div{background:rgba(255,255,255,.04);border:1px solid rgba(232,197,71,.22);border-radius:8px;padding:6px 7px}
+    .grid3 b{display:block;color:#e8c547;font-size:10px;margin-bottom:1px}
+    .grid3 span{font-size:9px;color:#94a3b8;line-height:1.3}
+    .mosaic{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:4px;padding:0 10px}
+    .mosaic figure{margin:0;position:relative;border-radius:8px;overflow:hidden;height:64px;border:1px solid rgba(255,255,255,.08)}
+    .mosaic .wide{height:132px;grid-row:span 2}
+    .mosaic img{width:100%;height:100%;object-fit:cover;display:block}
+    .mosaic figcaption{position:absolute;left:0;right:0;bottom:0;padding:5px 6px;background:linear-gradient(transparent,rgba(0,0,0,.88));font-size:9px;font-weight:700}
+    .body{padding:7px 10px;flex:1;display:flex;flex-direction:column;gap:6px;min-height:0}
+    .body h2{margin:0;font-size:10px;color:#e8c547;letter-spacing:.06em;text-transform:uppercase}
+    .services{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+    .svc{background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.2);border-radius:8px;padding:6px 7px;display:flex;gap:7px}
+    .svc img{width:32px;height:32px;border-radius:7px;object-fit:cover;flex:0 0 auto}
+    .svc b{display:block;font-size:10.5px;margin-bottom:1px}
+    .svc span{font-size:9px;color:#94a3b8;line-height:1.3}
+    .rail{display:flex;flex-wrap:wrap;gap:4px}
+    .rail i{font-style:normal;font-size:9px;font-weight:700;background:rgba(232,197,71,.1);color:#fde68a;border:1px solid rgba(232,197,71,.25);border-radius:999px;padding:3px 7px}
+    .note{font-size:9.5px;color:#94a3b8;line-height:1.35;border-top:1px solid rgba(232,197,71,.2);padding-top:5px}
+    .foot{margin-top:auto;padding:7px 11px;border-top:1px solid rgba(232,197,71,.25);display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:rgba(0,0,0,.28)}
+    .foot img{height:26px;width:auto}
+    .foot strong{display:block;font-size:11px}
+    .foot span{font-size:9px;color:#94a3b8}
+    .cta{background:#e8c547;color:#0b1020;font-weight:800;font-size:10px;padding:6px 10px;border-radius:999px}
+    @media print{@page{size:A4 portrait;margin:0}body{background:#fff}.bar{display:none!important}.stage{padding:0}#flyer{box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style>
+</head>
+<body>
+  <div class="bar"><span><strong>Flyer V4</strong> · Dense midnight · premium</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="ghost" href="./health360-flyer-v1.html">V1</a><a class="ghost" href="./health360-flyer-v2.html">V2</a><a class="ghost" href="./health360-flyer-v3.html">V3</a><button onclick="window.print()">Print / PDF</button></div>
+  </div>
+  <div class="stage"><article id="flyer">
+    <div class="hero">
+      <div class="top"><div class="logo">Health<span>360</span></div><div class="tag">Why this flyer · AI hospital OS</div></div>
+      <h1>Purpose: sell the <em>complete hospital</em> story — AI &amp; modules, one page</h1>
+      <p class="sub">This flyer exists to brief decision-makers fast: Health360 by TechEarnest manages the full hospital with AI-assisted workflows and modular services — clinical to assets.</p>
+      <div class="grid3">
+        <div><b>Purpose</b><span>One-page product advertisement for Health360 — clear, dense, presentation-ready.</span></div>
+        <div><b>Aim</b><span>Prove we cover OPD → clinical → lab → pharmacy → IPD → billing → assets.</span></div>
+        <div><b>Behind it</b><span>End paper handoffs &amp; tool sprawl with one encounter-driven platform.</span></div>
+      </div>
+    </div>
+    <div class="mosaic">
+      <figure class="wide"><img src="./assets/flyer-banner-energy.png" alt="" /><figcaption>Intelligent care network</figcaption></figure>
+      <figure><img src="./assets/flyer-patient-phone.png" alt="" /><figcaption>Patient</figcaption></figure>
+      <figure><img src="./assets/flyer-lab-pharmacy.png" alt="" /><figcaption>Lab/Rx</figcaption></figure>
+      <figure><img src="./assets/health360-journey-icon.png" alt="" /><figcaption>Journey</figcaption></figure>
+      <figure><img src="./assets/health360-assets-module.png" alt="" /><figcaption>Assets</figcaption></figure>
+    </div>
+    <div class="body">
+      <h2>Service modules we manage</h2>
+      <div class="services">
+        <div class="svc"><img src="./assets/icon-patient.png" alt="" /><div><b>Identity &amp; portals</b><span>UHID, 8 role portals, notifications, web + mobile access.</span></div></div>
+        <div class="svc"><img src="./assets/icon-consult.png" alt="" /><div><b>Clinical services</b><span>Encounter hub, e-Rx, wellness, follow-up, checkout completeness.</span></div></div>
+        <div class="svc"><img src="./assets/icon-lab.png" alt="" /><div><b>Diagnostics &amp; medicines</b><span>Lab journey, pharmacy fulfil, MAR, radiology &amp; OT.</span></div></div>
+        <div class="svc"><img src="./assets/icon-analytics.png" alt="" /><div><b>AI analytics &amp; assets</b><span>Health score, trends, biomedical &amp; facility asset control.</span></div></div>
+      </div>
+      <div class="rail">
+        <i>OPD Queue</i><i>E-Prescription</i><i>Wellness</i><i>Lab Reports</i><i>Pharmacy</i><i>IPD / ICU</i><i>Billing</i><i>Asset Mgmt</i><i>RBAC</i><i>Multi-hospital SaaS</i>
+      </div>
+      <p class="note"><strong>Flyer intention:</strong> leave the reader knowing Health360 is a ready TechEarnest product that runs the hospital as connected services — with AI helping teams move faster and safer.</p>
+    </div>
+    <footer class="foot">
+      <img src="./assets/techearnest-logo-on-dark.png" alt="TechEarnest" />
+      <div><strong>Health360 by TechEarnest</strong><span>Empowering Possibilities · techearnest.com</span></div>
+      <div class="cta">Discover Health360</div>
+    </footer>
+  </article></div>
+</body>
+</html>

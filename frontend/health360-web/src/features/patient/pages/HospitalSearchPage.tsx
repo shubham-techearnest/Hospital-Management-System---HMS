@@ -25,6 +25,8 @@ export function HospitalSearchPage() {
   const [department, setDepartment] = useState('');
   const [emergency24x7, setEmergency24x7] = useState(false);
   const [icuAvailable, setIcuAvailable] = useState(false);
+  const [ambulance, setAmbulance] = useState(false);
+  const [minRating, setMinRating] = useState('');
   const [sort, setSort] = useState('RELEVANCE');
   const [page, setPage] = useState(0);
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -34,6 +36,8 @@ export function HospitalSearchPage() {
     department: department || undefined,
     emergency24x7: emergency24x7 || undefined,
     icuAvailable: icuAvailable || undefined,
+    facility: ambulance ? 'ambulance' : undefined,
+    minRating: minRating ? Number(minRating) : undefined,
     latitude: coords?.latitude,
     longitude: coords?.longitude,
     maxDistance: coords ? 50 : undefined,
@@ -49,7 +53,7 @@ export function HospitalSearchPage() {
     <AnimatedPage>
       <DashboardPageHeader
         title="Find a Hospital"
-        subtitle="Search by name, department, emergency facilities, and distance."
+        subtitle="Search by name, department, emergency / ICU / ambulance, rating, and distance."
       />
 
       <CollapsibleFilterPanel
@@ -58,10 +62,11 @@ export function HospitalSearchPage() {
             <TextField label="Search" size="small" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} fullWidth />
             <TextField label="Department" size="small" value={department} onChange={(e) => { setDepartment(e.target.value); setPage(0); }} fullWidth />
             <Stack direction="row" flexWrap="wrap" gap={1} alignItems="center">
-              <FormControlLabel control={<Switch size="small" checked={emergency24x7} onChange={(e) => setEmergency24x7(e.target.checked)} />} label="24×7 Emergency" />
-              <FormControlLabel control={<Switch size="small" checked={icuAvailable} onChange={(e) => setIcuAvailable(e.target.checked)} />} label="ICU" />
+              <FormControlLabel control={<Switch size="small" checked={emergency24x7} onChange={(e) => { setEmergency24x7(e.target.checked); setPage(0); }} />} label="24×7 Emergency" />
+              <FormControlLabel control={<Switch size="small" checked={icuAvailable} onChange={(e) => { setIcuAvailable(e.target.checked); setPage(0); }} />} label="ICU" />
+              <FormControlLabel control={<Switch size="small" checked={ambulance} onChange={(e) => { setAmbulance(e.target.checked); setPage(0); }} />} label="Ambulance" />
               <Button size="small" variant="outlined" startIcon={<MyLocationIcon />} onClick={async () => {
-                try { setCoords(await detectUserLocation()); } catch { setCoords(null); }
+                try { setCoords(await detectUserLocation()); setPage(0); } catch { setCoords(null); }
               }}>
                 {coords ? 'Location on' : 'Near me'}
               </Button>
@@ -69,11 +74,26 @@ export function HospitalSearchPage() {
           </>
         }
         advanced={
-          <TextField select label="Sort by" size="small" value={sort} onChange={(e) => setSort(e.target.value)} sx={{ maxWidth: 240 }}>
-            <MenuItem value="RELEVANCE">Relevance</MenuItem>
-            <MenuItem value="NEAREST" disabled={!coords}>Nearest</MenuItem>
-            <MenuItem value="HIGHEST_RATED">Highest rated</MenuItem>
-          </TextField>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ maxWidth: 480 }}>
+            <TextField
+              select
+              label="Minimum rating"
+              size="small"
+              value={minRating}
+              onChange={(e) => { setMinRating(e.target.value); setPage(0); }}
+              fullWidth
+            >
+              <MenuItem value="">Any</MenuItem>
+              <MenuItem value="3">3+</MenuItem>
+              <MenuItem value="4">4+</MenuItem>
+              <MenuItem value="4.5">4.5+</MenuItem>
+            </TextField>
+            <TextField select label="Sort by" size="small" value={sort} onChange={(e) => setSort(e.target.value)} fullWidth>
+              <MenuItem value="RELEVANCE">Relevance</MenuItem>
+              <MenuItem value="NEAREST" disabled={!coords}>Nearest</MenuItem>
+              <MenuItem value="HIGHEST_RATED">Highest rated</MenuItem>
+            </TextField>
+          </Stack>
         }
       />
 

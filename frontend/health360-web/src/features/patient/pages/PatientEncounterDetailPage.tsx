@@ -18,6 +18,8 @@ import {
   useEncounterDiagnoses,
   useEncounterNotes,
   useEncounterOrders,
+  useEncounterPrescriptions,
+  useEncounterWellnessPlan,
 } from '@/features/clinical/hooks/useClinicalQueries';
 import { useEncounterLabReports } from '@/features/lab/hooks/useLabQueries';
 import { useEncounterImagingReports } from '@/features/radiology/hooks/useRadiologyQueries';
@@ -32,11 +34,23 @@ export function PatientEncounterDetailPage() {
   const { data: diagnoses = [] } = useEncounterDiagnoses(encounterId);
   const { data: notes = [] } = useEncounterNotes(encounterId);
   const { data: orders = [] } = useEncounterOrders(encounterId);
+  const { data: prescriptions = [] } = useEncounterPrescriptions(encounterId);
+  const { data: wellness } = useEncounterWellnessPlan(encounterId);
   const { data: labReports = [] } = useEncounterLabReports(encounterId);
   const { data: imagingReports = [] } = useEncounterImagingReports(encounterId);
   const { data: procedures = [] } = useEncounterProcedures(encounterId);
   const { data: administrations = [] } = useEncounterAdministrations(encounterId);
   const parsedError = error ? parseApiError(error) : null;
+
+  const consultationNote = notes.find((n) => n.noteType === 'CONSULTATION');
+  const wellnessHasContent = Boolean(
+    wellness?.diet ||
+      wellness?.restGuidance ||
+      wellness?.exercise ||
+      wellness?.lifestyle ||
+      wellness?.notes ||
+      wellness?.followUpDate,
+  );
 
   if (isLoading) {
     return (
@@ -67,8 +81,11 @@ export function PatientEncounterDetailPage() {
           size="small"
         />
       </Stack>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
         {encounter.encounterType} · {formatEncounterDate(encounter.startedAt ?? encounter.createdAt)}
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Consultation package: diagnosis, medicines, care plan, wellness guidance, and follow-up.
       </Typography>
 
       {encounter.visitReason ? (
@@ -92,17 +109,102 @@ export function PatientEncounterDetailPage() {
           </List>
         </Section>
 
-        <Section title="Clinical notes" empty={notes.length === 0}>
+        <Section title="Prescriptions" empty={prescriptions.length === 0}>
           <List dense disablePadding>
-            {notes.map((note) => (
-              <ListItem key={note.noteId} disableGutters alignItems="flex-start">
+            {prescriptions.map((rx) => (
+              <ListItem key={rx.prescriptionId} disableGutters alignItems="flex-start">
                 <ListItemText
-                  primary={note.noteType}
-                  secondary={note.content}
+                  primary={`${rx.prescriptionNumber} — ${rx.status}`}
+                  secondary={
+                    <>
+                      {rx.items.map((item) => (
+                        <Typography key={item.itemId} variant="body2" color="text.secondary">
+                          {item.medicineName}
+                          {item.doseText ? ` · ${item.doseText}` : ''}
+                          {item.frequency ? ` · ${item.frequency}` : ''}
+                          {item.durationDays != null ? ` · ${item.durationDays}d` : ''}
+                          {item.instructions ? ` — ${item.instructions}` : ''}
+                        </Typography>
+                      ))}
+                      {rx.notes ? (
+                        <Typography variant="body2" color="text.secondary">
+                          Notes: {rx.notes}
+                        </Typography>
+                      ) : null}
+                    </>
+                  }
                 />
               </ListItem>
             ))}
           </List>
+        </Section>
+
+        <Section title="Care plan / consultation notes" empty={!consultationNote && notes.length === 0}>
+          {consultationNote ? (
+            <Stack spacing={1}>
+              {consultationNote.assessment ? (
+                <Typography variant="body2">
+                  <strong>Assessment:</strong> {consultationNote.assessment}
+                </Typography>
+              ) : null}
+              {consultationNote.plan ? (
+                <Typography variant="body2">
+                  <strong>Plan:</strong> {consultationNote.plan}
+                </Typography>
+              ) : null}
+              {!consultationNote.assessment && !consultationNote.plan && consultationNote.content ? (
+                <Typography variant="body2">{consultationNote.content}</Typography>
+              ) : null}
+              <Typography variant="caption" color="text.secondary">
+                Status: {consultationNote.status}
+              </Typography>
+            </Stack>
+          ) : (
+            <List dense disablePadding>
+              {notes.map((note) => (
+                <ListItem key={note.noteId} disableGutters alignItems="flex-start">
+                  <ListItemText primary={note.noteType} secondary={note.content} />
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </Section>
+
+        <Section title="Wellness & follow-up" empty={!wellnessHasContent}>
+          <Stack spacing={1}>
+            {wellness?.diet ? (
+              <Typography variant="body2">
+                <strong>Diet:</strong> {wellness.diet}
+              </Typography>
+            ) : null}
+            {wellness?.restGuidance ? (
+              <Typography variant="body2">
+                <strong>Rest:</strong> {wellness.restGuidance}
+              </Typography>
+            ) : null}
+            {wellness?.exercise ? (
+              <Typography variant="body2">
+                <strong>Exercise:</strong> {wellness.exercise}
+              </Typography>
+            ) : null}
+            {wellness?.lifestyle ? (
+              <Typography variant="body2">
+                <strong>Lifestyle:</strong> {wellness.lifestyle}
+              </Typography>
+            ) : null}
+            {wellness?.notes ? (
+              <Typography variant="body2">
+                <strong>Notes:</strong> {wellness.notes}
+              </Typography>
+            ) : null}
+            {wellness?.followUpDate ? (
+              <Typography variant="body2">
+                <strong>Follow-up:</strong> {wellness.followUpDate}
+                {wellness.followUpReason ? ` — ${wellness.followUpReason}` : ''}
+                {wellness.followUpStatus ? ` (${wellness.followUpStatus})` : ''}
+              </Typography>
+            ) : null}
+          </Stack>
         </Section>
 
         <Section title="Orders" empty={orders.length === 0}>

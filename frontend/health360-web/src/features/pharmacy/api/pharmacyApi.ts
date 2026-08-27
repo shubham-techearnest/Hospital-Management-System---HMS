@@ -172,3 +172,85 @@ export async function listEncounterAdministrations(encounterId: string): Promise
   );
   return unwrap(data) ?? [];
 }
+
+export interface PharmacyRequestItem {
+  itemId: string;
+  prescriptionItemId: string;
+  medicineId?: string;
+  medicineName: string;
+  quantityRequested: number;
+  quantityDispensed: number;
+  availabilityStatus: string;
+  notes?: string;
+}
+
+export interface PharmacyRequest {
+  pharmacyRequestId: string;
+  requestNumber: string;
+  prescriptionId: string;
+  prescriptionNumber?: string;
+  encounterId: string;
+  patientId: string;
+  patientName?: string;
+  uhid?: string;
+  hospitalId: string;
+  branchId: string;
+  status: string;
+  requestedAt: string;
+  receivedAt?: string;
+  underReviewAt?: string;
+  readyAt?: string;
+  dispensedAt?: string;
+  dispensedBy?: string;
+  pharmacistNotes?: string;
+  canSendHospital: boolean;
+  items: PharmacyRequestItem[];
+}
+
+export async function listMyPharmacyRequests(): Promise<PharmacyRequest[]> {
+  const { data } = await apiClient.get<ApiEnvelope<PharmacyRequest[]>>('/pharmacy/me/requests');
+  return unwrap(data) ?? [];
+}
+
+export async function sendPrescriptionToHospitalPharmacy(prescriptionId: string): Promise<PharmacyRequest> {
+  const { data } = await apiClient.post<ApiEnvelope<PharmacyRequest>>(
+    `/pharmacy/me/prescriptions/${prescriptionId}/send-hospital`,
+    {},
+  );
+  return unwrap(data);
+}
+
+export async function listPharmacyRequests(
+  hospitalId: string,
+  branchId: string,
+  status?: string,
+): Promise<PharmacyRequest[]> {
+  const { data } = await apiClient.get<ApiEnvelope<PharmacyRequest[]>>('/pharmacy/requests', {
+    params: { hospitalId, branchId, status },
+  });
+  return unwrap(data) ?? [];
+}
+
+export async function receivePharmacyRequest(requestId: string): Promise<PharmacyRequest> {
+  const { data } = await apiClient.post<ApiEnvelope<PharmacyRequest>>(`/pharmacy/requests/${requestId}/receive`, {});
+  return unwrap(data);
+}
+
+export async function reviewPharmacyRequest(requestId: string, notes?: string): Promise<PharmacyRequest> {
+  const { data } = await apiClient.post<ApiEnvelope<PharmacyRequest>>(`/pharmacy/requests/${requestId}/review`, {
+    notes,
+  });
+  return unwrap(data);
+}
+
+export async function markPharmacyRequestReady(requestId: string, notes?: string): Promise<PharmacyRequest> {
+  const { data } = await apiClient.post<ApiEnvelope<PharmacyRequest>>(`/pharmacy/requests/${requestId}/ready`, {
+    notes,
+  });
+  return unwrap(data);
+}
+
+export async function dispensePharmacyRequest(requestId: string): Promise<PharmacyRequest> {
+  const { data } = await apiClient.post<ApiEnvelope<PharmacyRequest>>(`/pharmacy/requests/${requestId}/dispense`, {});
+  return unwrap(data);
+}

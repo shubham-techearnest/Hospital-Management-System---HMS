@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Health360 Flyers — All Sizes (Letter · A5 · A6 · DL)</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&display=swap");
+    body { margin: 0; font-family: "Outfit", system-ui, sans-serif; background: #0d0b1a; color: #fff; }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 28px 18px 64px; }
+    h1 { font-size: 1.6rem; margin: 0 0 8px; }
+    p { color: rgba(255,255,255,.72); line-height: 1.5; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 22px; }
+    a.card {
+      display: block; text-decoration: none; color: #fff;
+      background: linear-gradient(160deg, #1a1635, #5a429e);
+      border: 1px solid rgba(176,158,255,.35); border-radius: 14px; padding: 18px 16px;
+    }
+    a.card:hover { border-color: #b09eff; }
+    a.card .size {
+      display: inline-block; width: 100%; max-width: 72px; margin-bottom: 12px;
+      background: #3b82f6; border-radius: 4px; aspect-ratio: var(--ar, 8.5/11);
+    }
+    a.card.letter .size { --ar: 8.5 / 11; }
+    a.card.a5 .size { --ar: 5.8 / 8.3; }
+    a.card.a6 .size { --ar: 4.1 / 5.8; }
+    a.card.dl .size { --ar: 3.9 / 8.3; max-width: 48px; }
+    a.card strong { display: block; font-size: 1.05rem; margin-bottom: 4px; }
+    a.card span { font-size: .82rem; color: rgba(255,255,255,.75); }
+    .links { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .links a {
+      background: transparent; border: 1px solid rgba(255,255,255,.35); color: #fff;
+      border-radius: 999px; padding: 8px 12px; text-decoration: none; font-size: .78rem; font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Health360 flyers — all sizes</h1>
+    <p>Print-ready flyers for <strong>Health360 · Experience Digital Care</strong> in the four standard formats from your size guide. Open any size → Print → Save as PDF (enable background graphics).</p>
+    <div class="grid">
+      <a class="card letter" href="./health360-flyer-letter.html">
+        <span class="size" aria-hidden="true"></span>
+        <strong>Letter</strong>
+        <span>8.5 × 11 in · richest detail</span>
+      </a>
+      <a class="card a5" href="./health360-flyer-a5.html">
+        <span class="size" aria-hidden="true"></span>
+        <strong>A5</strong>
+        <span>5.8 × 8.3 in · 148 × 210 mm</span>
+      </a>
+      <a class="card a6" href="./health360-flyer-a6.html">
+        <span class="size" aria-hidden="true"></span>
+        <strong>A6</strong>
+        <span>4.1 × 5.8 in · 105 × 148 mm</span>
+      </a>
+      <a class="card dl" href="./health360-flyer-dl.html">
+        <span class="size" aria-hidden="true"></span>
+        <strong>DL</strong>
+        <span>3.9 × 8.3 in · 99 × 210 mm</span>
+      </a>
+    </div>
+    <div class="links">
+      <a href="./Health360-Flyer-Letter.pdf">Letter PDF</a>
+      <a href="./Health360-Flyer-A5.pdf">A5 PDF</a>
+      <a href="./Health360-Flyer-A6.pdf">A6 PDF</a>
+      <a href="./Health360-Flyer-DL.pdf">DL PDF</a>
+      <a href="./health360-brochure-trifold-v2.html">Tri-fold brochure</a>
+      <a href="./README.md">Marketing README</a>
+    </div>
+  </div>
+</body>
+</html>

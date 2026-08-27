@@ -22,6 +22,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -131,5 +132,65 @@ class OpdIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.data.encounterStatus").value("COMPLETED"));
+    }
+
+    @Test
+    void doctorStartAndCompleteSyncHospitalQueue() throws Exception {
+        String hospitalToken = IntegrationTestAuth.loginAndGetAccessToken(mockMvc, objectMapper, HOSPITAL_ADMIN_EMAIL);
+        String doctorToken = IntegrationTestAuth.loginAndGetAccessToken(
+                mockMvc, objectMapper, "siddharth.deshmukh@health360.test");
+
+        WalkInRegistrationRequest walkInRequest = new WalkInRegistrationRequest();
+        walkInRequest.setPatientId(PATIENT_PROFILE_ID);
+        walkInRequest.setHospitalId(HOSPITAL_ID);
+        walkInRequest.setBranchId(BRANCH_ID);
+        walkInRequest.setPrimaryDoctorId(UUID.fromString("00000000-0000-0000-0000-000000000063"));
+        walkInRequest.setVisitReason("Doctor-driven status sync");
+
+        MvcResult registrationResult = mockMvc.perform(post("/api/v1/opd/registrations/walk-in")
+                        .header("Authorization", IntegrationTestAuth.bearer(hospitalToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(walkInRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        JsonNode registration = objectMapper.readTree(registrationResult.getResponse().getContentAsString())
+                .path("data");
+        String encounterId = registration.path("encounter").path("encounterId").asText();
+        String queueEntryId = registration.path("queueEntry").path("queueEntryId").asText();
+
+        mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId + "/start")
+                        .header("Authorization", IntegrationTestAuth.bearer(doctorToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.data.queueStatus").value("IN_SERVICE"));
+
+        mockMvc.perform(get("/api/v1/opd/queue")
+                        .header("Authorization", IntegrationTestAuth.bearer(hospitalToken))
+                        .param("hospitalId", HOSPITAL_ID.toString())
+                        .param("branchId", BRANCH_ID.toString())
+                        .param("status", "IN_SERVICE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[?(@.queueEntryId == '" + queueEntryId + "')].status",
+                        hasItem("IN_SERVICE")))
+                .andExpect(jsonPath("$.data.content[?(@.queueEntryId == '" + queueEntryId + "')].encounterStatus",
+                        hasItem("IN_PROGRESS")));
+
+        mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId + "/complete")
+                        .header("Authorization", IntegrationTestAuth.bearer(doctorToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.data.queueStatus").value("COMPLETED"));
+
+        mockMvc.perform(get("/api/v1/opd/queue")
+                        .header("Authorization", IntegrationTestAuth.bearer(hospitalToken))
+                        .param("hospitalId", HOSPITAL_ID.toString())
+                        .param("branchId", BRANCH_ID.toString())
+                        .param("status", "COMPLETED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[?(@.queueEntryId == '" + queueEntryId + "')].status",
+                        hasItem("COMPLETED")))
+                .andExpect(jsonPath("$.data.content[?(@.queueEntryId == '" + queueEntryId + "')].encounterStatus",
+                        hasItem("COMPLETED")));
     }
 }

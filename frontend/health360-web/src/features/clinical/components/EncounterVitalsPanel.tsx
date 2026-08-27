@@ -52,6 +52,51 @@ function parseOptionalFloat(value: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+/** API stores °C (30–45). Values 46–113 are treated as °F (Indian OPD often records 98.6°F). */
+function normalizeTemperatureC(value: number | undefined): number | undefined {
+  if (value == null) return undefined;
+  if (value > 45 && value <= 113) {
+    return Number((((value - 32) * 5) / 9).toFixed(1));
+  }
+  return value;
+}
+
+/** API stores mg/dL (20–600). Values 1–19 are treated as mmol/L. */
+function normalizeGlucoseMgDl(value: number | undefined): number | undefined {
+  if (value == null) return undefined;
+  if (value > 0 && value < 20) {
+    return Number((value * 18.0182).toFixed(1));
+  }
+  return value;
+}
+
+function vitalsClientError(payload: {
+  systolicBp?: number;
+  diastolicBp?: number;
+  heartRate?: number;
+  temperature?: number;
+  respiratoryRate?: number;
+  spo2?: number;
+  bloodGlucose?: number;
+}): string | null {
+  if (payload.systolicBp != null && payload.diastolicBp != null && payload.systolicBp <= payload.diastolicBp) {
+    return 'Systolic BP must be greater than diastolic BP.';
+  }
+  if (payload.temperature != null && (payload.temperature < 30 || payload.temperature > 45)) {
+    return 'Temperature must be 30–45 °C, or enter °F (for example 98.6).';
+  }
+  if (payload.respiratoryRate != null && (payload.respiratoryRate < 1 || payload.respiratoryRate > 100)) {
+    return 'Respiratory rate must be between 1 and 100 breaths/min.';
+  }
+  if (payload.spo2 != null && (payload.spo2 < 50 || payload.spo2 > 100)) {
+    return 'SpO2 must be between 50 and 100%.';
+  }
+  if (payload.bloodGlucose != null && (payload.bloodGlucose < 20 || payload.bloodGlucose > 600)) {
+    return 'Glucose must be 20–600 mg/dL, or enter mmol/L (for example 7.8).';
+  }
+  return null;
+}
+
 function bpChipColor(classification?: string): 'default' | 'success' | 'warning' | 'error' {
   if (classification === 'NORMAL') return 'success';
   if (classification === 'WARNING') return 'warning';
@@ -101,18 +146,24 @@ export function EncounterVitalsPanel({
       setFormError('Enter at least one vital sign value.');
       return;
     }
+    const payload = {
+      systolicBp: parseOptionalInt(form.systolicBp),
+      diastolicBp: parseOptionalInt(form.diastolicBp),
+      heartRate: parseOptionalInt(form.heartRate),
+      temperature: normalizeTemperatureC(parseOptionalFloat(form.temperature)),
+      respiratoryRate: parseOptionalInt(form.respiratoryRate),
+      spo2: parseOptionalInt(form.spo2),
+      bloodGlucose: normalizeGlucoseMgDl(parseOptionalFloat(form.bloodGlucose)),
+      notes: form.notes.trim() || undefined,
+      recordedAt: new Date().toISOString(),
+    };
+    const clientError = vitalsClientError(payload);
+    if (clientError) {
+      setFormError(clientError);
+      return;
+    }
     try {
-      await actions.recordVitals.mutateAsync({
-        systolicBp: parseOptionalInt(form.systolicBp),
-        diastolicBp: parseOptionalInt(form.diastolicBp),
-        heartRate: parseOptionalInt(form.heartRate),
-        temperature: parseOptionalFloat(form.temperature),
-        respiratoryRate: parseOptionalInt(form.respiratoryRate),
-        spo2: parseOptionalInt(form.spo2),
-        bloodGlucose: parseOptionalFloat(form.bloodGlucose),
-        notes: form.notes.trim() || undefined,
-        recordedAt: new Date().toISOString(),
-      });
+      await actions.recordVitals.mutateAsync(payload);
       setForm(EMPTY_FORM);
       setSuccess('Vitals recorded.');
       refetch();
@@ -161,16 +212,37 @@ export function EncounterVitalsPanel({
               <TextField label="Heart rate" size="small" fullWidth value={form.heartRate} onChange={setField('heartRate')} />
             </Grid>
             <Grid item xs={6} sm={4} md={3}>
-              <TextField label="Temp °C" size="small" fullWidth value={form.temperature} onChange={setField('temperature')} />
+              <TextField
+                label="Temp"
+                helperText="°C (36.5) or °F (98.6)"
+                size="small"
+                fullWidth
+                value={form.temperature}
+                onChange={setField('temperature')}
+              />
             </Grid>
             <Grid item xs={6} sm={4} md={3}>
-              <TextField label="Resp. rate" size="small" fullWidth value={form.respiratoryRate} onChange={setField('respiratoryRate')} />
+              <TextField
+                label="Resp. rate"
+                helperText="/min"
+                size="small"
+                fullWidth
+                value={form.respiratoryRate}
+                onChange={setField('respiratoryRate')}
+              />
             </Grid>
             <Grid item xs={6} sm={4} md={3}>
               <TextField label="SpO2 %" size="small" fullWidth value={form.spo2} onChange={setField('spo2')} />
             </Grid>
             <Grid item xs={6} sm={4} md={3}>
-              <TextField label="Glucose" size="small" fullWidth value={form.bloodGlucose} onChange={setField('bloodGlucose')} />
+              <TextField
+                label="Glucose"
+                helperText="mg/dL or mmol/L"
+                size="small"
+                fullWidth
+                value={form.bloodGlucose}
+                onChange={setField('bloodGlucose')}
+              />
             </Grid>
             <Grid item xs={12} sm={8} md={6}>
               <TextField label="Notes (optional)" size="small" fullWidth value={form.notes} onChange={setField('notes')} />

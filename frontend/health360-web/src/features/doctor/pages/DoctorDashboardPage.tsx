@@ -8,7 +8,7 @@ import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { useDoctorProfile } from '../hooks/useDoctorQueries';
 import { useDoctorAppointments } from '@/features/scheduling/hooks/useSchedulingQueries';
-import { formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
+import { appointmentLabel, formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { DashboardSection } from '@/shared/dashboard/DashboardSection';
 import { DashboardStatsGrid } from '@/features/dashboard/components/DashboardStatsGrid';
@@ -86,7 +86,7 @@ export function DoctorDashboardPage() {
                       primary={appt.patient.name}
                       secondary={`${formatAppointmentDate(appt.scheduledAt)} · ${appt.consultationType?.replace(/_/g, ' ') ?? 'Visit'}`}
                     />
-                    <Chip label={appt.status} size="small" color={statusColor(appt.status)} />
+                    <Chip label={appointmentLabel(appt.status)} size="small" color={statusColor(appt.status)} />
                   </ListItem>
                 ))}
               </List>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Health360 Flyer V3 — Dense Professional</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@550;600;700;800&family=Source+Serif+4:opsz,wght@8..60,650;8..60,700&display=swap");
+    *{box-sizing:border-box} html,body{margin:0}
+    body{font-family:"Source Sans 3",system-ui,sans-serif;background:#e8eef5;color:#0f172a}
+    .bar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#1e293b;color:#fff;font-size:.8rem}
+    .bar a,.bar button{background:#2563eb;color:#fff;border:0;border-radius:6px;padding:7px 11px;font-weight:700;text-decoration:none;cursor:pointer;font-size:.75rem}
+    .stage{padding:16px 10px 36px;display:flex;justify-content:center}
+    #flyer{width:210mm;height:297mm;background:#fff;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(0,0,0,.25);border-top:5px solid #5a429e}
+    .head{padding:10px 12px 8px;border-bottom:1px solid #e2e8f0}
+    .row1{display:grid;grid-template-columns:1.4fr .8fr;gap:10px;align-items:start}
+    .brand{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#5a429e;font-weight:700;margin-bottom:3px}
+    h1{font-family:"Source Serif 4",Georgia,serif;margin:0;font-size:22px;line-height:1.12;color:#1a1635}
+    .badge{background:#f7f4ff;color:#5a429e;border:1px solid #d4c8ff;border-radius:8px;padding:7px 8px;font-size:10px;font-weight:700;line-height:1.3}
+    .intro{margin:7px 0 0;color:#475569;font-size:10.5px;line-height:1.35}
+    .why{margin-top:7px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+    .why div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:6px 7px}
+    .why b{display:block;font-size:10px;color:#1a1635;margin-bottom:1px}
+    .why span{font-size:9px;color:#64748b;line-height:1.3}
+    .visual{display:grid;grid-template-columns:1.45fr 1fr;min-height:62mm}
+    .visual .a img,.visual .b img{width:100%;height:100%;object-fit:cover;display:block;min-height:62mm}
+    .visual .b{display:grid;grid-template-rows:1fr 1fr}
+    .visual .b img{min-height:31mm}
+    .content{padding:8px 12px;flex:1;display:flex;flex-direction:column;gap:6px;min-height:0}
+    .content h2{margin:0;font-size:12.5px;color:#5a429e}
+    .table{width:100%;border-collapse:collapse;font-size:9.5px}
+    .table th{text-align:left;background:#1a1635;color:#fff;padding:5px 7px;font-weight:700}
+    .table td{padding:4.5px 7px;border-bottom:1px solid #e2e8f0;vertical-align:top;line-height:1.3}
+    .table tr:nth-child(even) td{background:#f8fafc}
+    .table td:first-child{font-weight:700;color:#0f172a;width:30%}
+    .table td:last-child{color:#475569}
+    .bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+    .bc{border:1px solid #ebe4ff;border-radius:7px;padding:6px 7px;background:#f7f4ff}
+    .bc b{display:block;color:#5a429e;font-size:10px;margin-bottom:1px}
+    .bc p{margin:0;font-size:9px;color:#475569;line-height:1.3}
+    .foot{margin-top:auto;padding:7px 12px;background:#1a1635;color:#fff;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+    .foot img{height:26px;width:auto}
+    .foot strong{display:block;font-size:11px}
+    .foot span{font-size:9px;color:#b09eff}
+    .cta{background:#5a429e;color:#fff;font-weight:800;font-size:10px;padding:6px 10px;border-radius:6px}
+    @media print{@page{size:A4 portrait;margin:0}body{background:#fff}.bar{display:none!important}.stage{padding:0}#flyer{box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style>
+</head>
+<body>
+  <div class="bar"><span><strong>Flyer V3</strong> · Dense capability sheet</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><a href="./health360-flyer-v1.html">V1</a><a href="./health360-flyer-v2.html">V2</a><a href="./health360-flyer-v4.html">V4</a><button onclick="window.print()">Print / PDF</button></div>
+  </div>
+  <div class="stage"><article id="flyer">
+    <div class="head">
+      <div class="row1">
+        <div>
+          <div class="brand">Health360 by TechEarnest · Product flyer</div>
+          <h1>Purpose-built flyer for complete hospital management with AI &amp; modular services</h1>
+        </div>
+        <div class="badge">Use this page to brief decision-makers on why Health360 exists and what it delivers today.</div>
+      </div>
+      <p class="intro"><strong>Purpose:</strong> advertise Health360 as TechEarnest’s hospital operating system. <strong>Aim:</strong> show how AI-assisted workflows and service modules replace fragmented tools. <strong>Goal:</strong> one memorable product story — patient journey connected from OPD to assets.</p>
+      <div class="why">
+        <div><b>Why create this flyer</b><span>Carry a single-page story into meetings, stalls, and partner briefings without a long deck.</span></div>
+        <div><b>What it aims for</b><span>Clarity on modules, AI value, and TechEarnest credibility in under one minute of reading.</span></div>
+        <div><b>Who it targets</b><span>Hospital CIOs, medical directors, pharmacy/lab leaders, and IT partners.</span></div>
+      </div>
+    </div>
+    <div class="visual">
+      <div class="a"><img src="./assets/health360-hero.png" alt="" /></div>
+      <div class="b">
+        <img src="./assets/flyer-lab-pharmacy.png" alt="" />
+        <img src="./assets/health360-assets-module.png" alt="" />
+      </div>
+    </div>
+    <div class="content">
+      <h2>Service modules — complete hospital coverage</h2>
+      <table class="table">
+        <thead><tr><th>Module service</th><th>Capability delivered</th></tr></thead>
+        <tbody>
+          <tr><td>Patient &amp; UHID</td><td>Lifelong identity, profile, consent, timeline across visits</td></tr>
+          <tr><td>Scheduling &amp; OPD</td><td>Book, arrive, live queue, tokens, doctor reassignment</td></tr>
+          <tr><td>Clinical + Wellness</td><td>Encounter hub, Dx catalogs, e-Rx, wellness plan, follow-up</td></tr>
+          <tr><td>Lab &amp; Pharmacy</td><td>Hospital lab journey, report notify, send Rx, dispense, MAR</td></tr>
+          <tr><td>IPD · ICU · OT · Billing</td><td>Beds, nursing, theatre notes, encounter invoices</td></tr>
+          <tr><td>AI Analytics &amp; Assets</td><td>Health score, lab trends, biomedical / facility / IT assets</td></tr>
+        </tbody>
+      </table>
+      <div class="bottom">
+        <div class="bc"><b>8 portals</b><p>Patient, Doctor, Reception, Admin, Lab, Pharmacy, Nursing, Platform.</p></div>
+        <div class="bc"><b>AI layer</b><p>Summaries, metrics ingestion, operational visibility across roles.</p></div>
+        <div class="bc"><b>Enterprise DNA</b><p>RBAC, audit, multi-hospital SaaS — TechEarnest delivery standard.</p></div>
+      </div>
+    </div>
+    <footer class="foot">
+      <img src="./assets/techearnest-logo-on-dark.png" alt="TechEarnest" />
+      <div><strong>Health360 · Complete hospital platform</strong><span>techearnest.com · Empowering Possibilities</span></div>
+      <div class="cta">Discover Health360</div>
+    </footer>
+  </article></div>
+</body>
+</html>

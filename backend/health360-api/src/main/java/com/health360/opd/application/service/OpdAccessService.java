@@ -25,6 +25,12 @@ public class OpdAccessService {
         }
     }
 
+    public void assertCanSelfCheckIn(UserPrincipal principal) {
+        if (!principal.hasPermission("opd:checkin:own")) {
+            throw forbidden();
+        }
+    }
+
     public void assertCanReadQueue(UserPrincipal principal) {
         if (!principal.hasPermission("opd:queue:read")) {
             throw forbidden();

@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -72,13 +73,56 @@ public class OpdRegistrationService {
         opdAccessService.assertCanManageRegistration(principal);
 
         UUID tenantId = principal.getTenantId();
-        AppointmentEntity appointment = appointmentRepository
-                .findByIdForUpdate(request.getAppointmentId())
+        AppointmentEntity appointment = requireAppointmentForUpdate(tenantId, request.getAppointmentId());
+        opdAccessService.assertHospitalScope(principal, appointment.getHospitalId());
+
+        return performArrive(principal, appointment, request, "DESK");
+    }
+
+    /**
+     * ECO-P5: patient self check-in — same ARRIVED + encounter + queue outcome as desk arrive.
+     */
+    @Transactional
+    public AppointmentArrivalResponse selfCheckIn(UserPrincipal principal, UUID appointmentId) {
+        opdAccessService.assertCanSelfCheckIn(principal);
+
+        UUID tenantId = principal.getTenantId();
+        PatientProfileEntity profile = patientProfileRepository
+                .findByTenantIdAndUserIdAndDeletedAtIsNull(tenantId, principal.getUserId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Patient profile not found"));
+
+        AppointmentEntity appointment = requireAppointmentForUpdate(tenantId, appointmentId);
+        if (!appointment.getPatientId().equals(profile.getId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        if (appointment.getScheduledAt() == null
+                || !LocalDate.now(ZoneOffset.UTC).equals(
+                appointment.getScheduledAt().atZone(ZoneOffset.UTC).toLocalDate())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Self check-in is only available on the appointment day");
+        }
+
+        CheckInAppointmentRequest request = new CheckInAppointmentRequest();
+        request.setAppointmentId(appointmentId);
+        return performArrive(principal, appointment, request, "SELF");
+    }
+
+    private AppointmentEntity requireAppointmentForUpdate(UUID tenantId, UUID appointmentId) {
+        return appointmentRepository
+                .findByIdForUpdate(appointmentId)
                 .filter(a -> a.getTenantId().equals(tenantId) && a.getDeletedAt() == null)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
                         "Appointment not found"));
+    }
 
-        opdAccessService.assertHospitalScope(principal, appointment.getHospitalId());
+    private AppointmentArrivalResponse performArrive(
+            UserPrincipal principal,
+            AppointmentEntity appointment,
+            CheckInAppointmentRequest request,
+            String source) {
+        UUID tenantId = principal.getTenantId();
 
         if (!CHECK_IN_APPOINTMENT_STATUSES.contains(appointment.getStatus())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
@@ -158,14 +202,17 @@ public class OpdRegistrationService {
                     Map.of(
                             "encounterId", encounterResponse.getEncounterId().toString(),
                             "queueEntryId", queueEntry.getId().toString(),
-                            "token", queueEntry.getTokenDisplay()));
+                            "token", queueEntry.getTokenDisplay(),
+                            "source", source));
         }
 
-        auditLogService.record(tenantId, principal.getUserId(), "OPD_APPOINTMENT_CHECKED_IN",
+        auditLogService.record(tenantId, principal.getUserId(),
+                "SELF".equals(source) ? "OPD_PATIENT_SELF_CHECKED_IN" : "OPD_APPOINTMENT_CHECKED_IN",
                 "OpdQueueEntry", queueEntry.getId(),
                 Map.of("appointmentId", appointment.getId().toString(),
                         "appointmentStatus", appointment.getStatus(),
-                        "token", queueEntry.getTokenDisplay()));
+                        "token", queueEntry.getTokenDisplay(),
+                        "source", source));
 
         return AppointmentArrivalResponse.builder()
                 .appointmentId(appointment.getId())

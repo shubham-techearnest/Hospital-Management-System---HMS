@@ -19,6 +19,7 @@ import {
   requestDoctorReschedule,
   resumeDoctorAppointment,
   rescheduleMyAppointment,
+  selfCheckInMyAppointment,
   updateDoctorAppointmentStatus,
   updateSchedule,
   blockScheduleSlots,
@@ -152,6 +153,17 @@ export function useRescheduleMyAppointment() {
     mutationFn: ({ appointmentId, newSlotId }: { appointmentId: string; newSlotId: string }) =>
       rescheduleMyAppointment(appointmentId, newSlotId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['scheduling', 'appointments'] }),
+  });
+}
+
+export function useSelfCheckInMyAppointment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (appointmentId: string) => selfCheckInMyAppointment(appointmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scheduling', 'appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['opd'] });
+    },
   });
 }
 

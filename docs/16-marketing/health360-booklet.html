@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Health360 by TechEarnest — Product Booklet</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap");
+    :root {
+      --purple: #5a429e;
+      --purple-mid: #6f57c2;
+      --lavender: #b09eff;
+      --lavender-soft: #d4c8ff;
+      --navy: #1a1635;
+      --navy-2: #22244c;
+      --ink: #101828;
+      --muted: #667085;
+      --paper: #f7f5ff;
+      --white: #ffffff;
+      --grad: linear-gradient(135deg, #1a1635 0%, #5a429e 55%, #8b74e8 100%);
+      --page-w: 210mm;
+      --page-h: 297mm;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Outfit", "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 10% 0%, rgba(90,66,158,.45), transparent 40%),
+        #0d0b1a;
+      line-height: 1.45;
+    }
+    .toolbar {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; gap: 12px; align-items: center; justify-content: space-between;
+      padding: 10px 18px;
+      background: rgba(26,22,53,.92); backdrop-filter: blur(8px);
+      color: #fff; border-bottom: 1px solid rgba(176,158,255,.35);
+    }
+    .toolbar a, .toolbar button {
+      color: #fff; text-decoration: none; background: var(--purple);
+      border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-weight: 600;
+    }
+    .toolbar .ghost { background: transparent; border: 1px solid rgba(255,255,255,.35); }
+    .book {
+      max-width: 980px; margin: 24px auto 64px; padding: 0 16px;
+      display: flex; flex-direction: column; gap: 28px;
+    }
+    .page {
+      background: var(--white);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,.35);
+      min-height: 720px;
+      position: relative;
+    }
+    .page::after {
+      content: "";
+      position: absolute; right: -40px; top: -40px;
+      width: 160px; height: 160px;
+      background: linear-gradient(135deg, var(--lavender), transparent);
+      opacity: .25; transform: rotate(18deg);
+      pointer-events: none;
+    }
+    .hero {
+      background: var(--grad);
+      color: #fff;
+      padding: 48px 48px 36px;
+      min-height: 720px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute; right: -80px; top: -60px;
+      width: 280px; height: 280px;
+      background: radial-gradient(circle, rgba(176,158,255,.35), transparent 70%);
+      pointer-events: none;
+    }
+    .cover-top {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+      position: relative; z-index: 1;
+    }
+    .product-mark {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-weight: 800; font-size: 1.05rem; letter-spacing: -.02em;
+    }
+    .product-mark .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--lavender-soft), #fff);
+      box-shadow: 0 0 14px rgba(212,200,255,.8);
+    }
+    .logo-lockup {
+      display: inline-flex; align-items: center;
+      padding: 0;
+      background: transparent;
+      border: 0;
+    }
+    .logo-lockup img {
+      height: 48px; width: auto; display: block;
+      background: transparent; filter: none;
+    }
+    .cover-bottom {
+      display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
+      position: relative; z-index: 1;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,.2);
+    }
+    .mod-ico {
+      width: 48px; height: 48px; border-radius: 12px; overflow: hidden;
+      margin-bottom: 10px; border: 1px solid #ebe4ff; background: #fff;
+      box-shadow: 0 4px 12px rgba(90,66,158,.1);
+    }
+    .mod-ico img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .step .mod-ico { width: 40px; height: 40px; margin: 0 auto 8px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25);
+      border-radius: 999px; padding: 6px 14px; font-size: 12px; letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    h1 { font-size: clamp(2.6rem, 5vw, 3.8rem); margin: 14px 0 12px; letter-spacing: -0.04em; font-weight: 800; }
+    h2 { font-size: 1.75rem; margin: 0 0 12px; color: var(--navy); letter-spacing: -0.02em; font-weight: 800; }
+    h3 { margin: 0 0 8px; color: var(--purple); font-size: 1.05rem; }
+    .lead { font-size: 1.18rem; opacity: .95; max-width: 40ch; line-height: 1.5; }
+    .hero-visual {
+      width: 100%; border-radius: 16px; border: 1px solid rgba(255,255,255,.25);
+      max-height: 300px; object-fit: cover;
+      box-shadow: 0 20px 50px rgba(0,0,0,.3);
+      margin-top: 18px;
+    }
+    .meta { display: flex; flex-wrap: wrap; gap: 18px; font-size: .9rem; opacity: .9; }
+    .cover-mid { position: relative; z-index: 1; }
+    .body { padding: 42px 48px 48px; }
+    .kicker {
+      color: var(--purple); font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; font-size: .75rem; margin-bottom: 8px;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    @media (max-width: 820px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .body, .hero { padding: 28px 22px; }
+    }
+    .card {
+      background: var(--paper);
+      border: 1px solid #e8e2ff;
+      border-radius: 14px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(90,66,158,.12);
+    }
+    .card::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+      background: linear-gradient(var(--purple), var(--lavender));
+    }
+    .card strong { display: block; color: var(--navy); margin-bottom: 6px; }
+    .card p { margin: 0; color: var(--muted); font-size: .92rem; }
+    .pill {
+      display: inline-block; background: #efe9ff; color: var(--purple);
+      border-radius: 999px; padding: 4px 10px; font-size: .72rem; font-weight: 700;
+      letter-spacing: .04em; text-transform: uppercase; margin-bottom: 8px;
+    }
+    .journey {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;
+    }
+    .step {
+      flex: 1 1 120px; background: #fff; border: 1px solid #e4dcff;
+      border-radius: 12px; padding: 12px; text-align: center; font-size: .8rem;
+      color: var(--navy-2); font-weight: 600;
+    }
+    .step .n { display: block; color: var(--purple); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+    .feature-img {
+      width: 100%; border-radius: 14px; display: block;
+      border: 1px solid #e4dcff; object-fit: cover; max-height: 260px;
+    }
+    .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; }
+    .stat {
+      background: var(--navy); color: #fff; border-radius: 14px; padding: 16px; text-align: center;
+    }
+    .stat b { display: block; font-size: 1.5rem; color: var(--lavender-soft); }
+    .stat small { opacity: .85; font-size: .75rem; }
+    @media (max-width: 820px) { .stat-row { grid-template-columns: 1fr 1fr; } }
+    .highlight {
+      background: var(--grad); color: #fff; border-radius: 16px; padding: 22px 24px; margin-top: 18px;
+    }
+    .highlight h3 { color: #fff; }
+    ul.clean { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+    ul.clean li { margin: 4px 0; }
+    .footer-bar {
+      margin-top: 28px; padding-top: 16px; border-top: 1px solid #ebe6ff;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+      font-size: .8rem; color: var(--muted);
+    }
+    .footer-bar .mini-logo {
+      height: 28px; width: auto; opacity: .85;
+    }
+    .cta-page {
+      background: var(--grad); color: #fff; padding: 56px 48px;
+      min-height: 720px; display: flex; flex-direction: column; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .cta-page::before {
+      content: "";
+      position: absolute; left: -60px; bottom: -40px;
+      width: 260px; height: 260px;
+      background: radial-gradient(circle, rgba(255,255,255,.12), transparent 70%);
+    }
+    .cta-page h2 { color: #fff; font-size: 2.4rem; position: relative; z-index: 1; }
+    .cta-page a {
+      display: inline-block; margin-top: 18px; background: #fff; color: var(--purple);
+      text-decoration: none; font-weight: 700; padding: 12px 20px; border-radius: 999px;
+      position: relative; z-index: 1;
+      box-shadow: 0 10px 28px rgba(0,0,0,.25);
+    }
+    .cta-brand {
+      margin-top: auto; padding-top: 40px;
+      display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap;
+      position: relative; z-index: 1;
+    }
+    .modules-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    .modules-table th, .modules-table td {
+      text-align: left; padding: 11px 12px; border-bottom: 1px solid #ebe6ff;
+      vertical-align: top;
+    }
+    .modules-table th { background: var(--paper); color: var(--navy); }
+    .modules-table td:first-child { width: 32%; }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 820px) { .feature-grid { grid-template-columns: 1fr; } }
+
+    @media print {
+      body { background: #fff; }
+      .toolbar { display: none !important; }
+      .book { max-width: none; margin: 0; padding: 0; gap: 0; }
+      .page, .hero, .cta-page {
+        box-shadow: none; border-radius: 0;
+        page-break-after: always; break-after: page;
+        min-height: var(--page-h);
+      }
+      .page::after { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <div><strong>Health360</strong> · TechEarnest product booklet</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="ghost" href="./health360-flyer.html">Open flyer</a>
+      <button onclick="window.print()">Print / Save PDF</button>
+    </div>
+  </div>
+
+  <div class="book">
+    <!-- COVER -->
+    <section class="page hero">
+      <div class="cover-top">
+        <div class="product-mark"><span class="dot"></span> Health360</div>
+        <div class="badge">Ready product</div>
+      </div>
+      <div class="cover-mid">
+        <div class="badge">Digital Healthcare Ecosystem</div>
+        <h1>One platform.<br />Every care step.</h1>
+        <p class="lead">From OPD queue to e-prescription, lab, pharmacy, inpatient care, and hospital asset intelligence — Health360 connects the full hospital journey.</p>
+        <img class="hero-visual" src="./assets/health360-hero.png" alt="Health360 connected care visual" />
+      </div>
+      <div class="cover-bottom">
+        <div class="meta">
+          <div>Enterprise DNA: ServiceNow · Salesforce · Microsoft</div>
+          <div>techearnest.com</div>
+        </div>
+        <div class="logo-lockup">
+          <img src="./assets/techearnest-logo-on-dark.png" alt="TechEarnest — Empowering Possibilities" />
+        </div>
+      </div>
+    </section>
+
+    <!-- WHY -->
+    <section class="page">
+      <div class="body">
+        <div class="kicker">The opportunity</div>
+        <h2>Healthcare is still fragmented. Health360 connects the journey.</h2>
+        <div class="grid-2">
+          <div>
+            <p style="color:var(--muted)">Patients still carry paper prescriptions, wait without visibility, and lose history between hospital, lab, and pharmacy. Hospitals run disconnected tools for desk, clinical, billing, and assets.</p>
+            <p style="color:var(--muted)"><strong style="color:var(--navy)">Health360</strong> is TechEarnest’s digital healthcare product: a patient-centric, encounter-driven Hospital Management + Digital Health ecosystem — built for clinics through multi-branch hospitals.</p>
+            <div class="journey">
+              <div class="step"><div class="mod-ico"><img src="./assets/icon-patient.png" alt="" /></div><span class="n">Step 1</span>Register &amp; UHID</div>
+              <div class="step"><div class="mod-ico"><img src="./assets/icon-queue.png" alt="" /></div><span class="n">Step 2</span>Book &amp; queue</div>
+              <div class="step"><div class="mod-ico"><img src="./assets/icon-consult.png" alt="" /></div><span class="n">Step 3</span>Consult &amp; e-Rx</div>
+              <div class="step"><div class="mod-ico"><img src="./assets/icon-lab.png" alt="" /></div><span class="n">Step 4</span>Lab &amp; pharmacy</div>
+              <div class="step"><div class="mod-ico"><img src="./assets/icon-analytics.png" alt="" /></div><span class="n">Step 5</span>Follow-up</div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <span class="pill">Built by</span>
+              <strong>TechEarnest</strong>
+              <p>ServiceNow &amp; Salesforce consulting experts helping enterprises transform operations — now bringing the same discipline to digital healthcare product delivery.</p>
+            </div>
+            <div class="card" style="margin-top:12px">
+              <span class="pill">Enterprise DNA</span>
+              <strong>ServiceNow-grade thinking</strong>
+              <p>ITSM / ITAM / workflow culture applied to hospital operations: audit trails, RBAC, lifecycle status, and asset visibility — not just clinical screens.</p>
+            </div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><b>1</b><small>Patient identity (UHID)</small></div>
+          <div class="stat"><b>1</b><small>Encounter hub per visit</small></div>
+          <div class="stat"><b>20+</b><small>Ready capabilities</small></div>
+          <div class="stat"><b>8</b><small>Role portals</small></div>
+        </div>
+        <div class="footer-bar">
+          <span>Health360 Product Booklet · TechEarnest</span>
+          <span>Page 02</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE MAP -->
+    <section class="page">
+      <div class="body">
+        <div class="kicker">Platform capabilities</div>
+        <h2>Complete hospital system — ready to run</h2>
+        <p style="color:var(--muted);margin:0 0 16px">Health360 ships as a full digital healthcare product. Every module below is part of the platform you present and sell today.</p>
+        <table class="modules-table">
+          <thead>
+            <tr><th>Capability</th><th>What your hospital / patient gets</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Patient &amp; UHID</strong></td><td>Lifelong healthcare identity, profile, consent, and a unified health timeline across visits</td></tr>
+            <tr><td><strong>Scheduling &amp; OPD</strong></td><td>Doctor search, appointments, desk arrive / walk-in, live queue tokens, call / skip / recall</td></tr>
+            <tr><td><strong>Clinical Encounter</strong></td><td>Consult notes, diagnosis catalog, vitals, symptoms, and one encounter hub for the visit</td></tr>
+            <tr><td><strong>E-Prescription</strong></td><td>Signed digital Rx, dosage templates, checkout gate so incomplete consults don’t slip through</td></tr>
+            <tr><td><strong>Wellness &amp; Follow-up</strong></td><td>Diet / rest / exercise plans plus structured follow-up dates that stay on the patient journey</td></tr>
+            <tr><td><strong>Laboratory</strong></td><td>Doctor order → hospital lab booking → unique sample ID → verify → publish report → notify patient</td></tr>
+            <tr><td><strong>Radiology &amp; OT</strong></td><td>Imaging orders and reports; theatre scheduling and procedure notes on the same encounter</td></tr>
+            <tr><td><strong>Pharmacy &amp; MAR</strong></td><td>Digital dispense, inventory, inpatient medication administration, and send Rx to pharmacy fulfilment</td></tr>
+            <tr><td><strong>IPD · ICU · Nursing</strong></td><td>Beds, ward / ICU operations, nursing workflows, and critical-care monitoring hooks</td></tr>
+            <tr><td><strong>Billing</strong></td><td>Encounter-linked invoices and payment foundation for OPD and inpatient journeys</td></tr>
+            <tr><td><strong>Analytics &amp; Health Score</strong></td><td>Lab trends, vitals history, calculated metrics, role dashboards, and patient health insights</td></tr>
+            <tr><td><strong>Hospital Asset Management</strong></td><td>Biomedical, bed / facility, and IT asset registry with lifecycle, warranty, and location visibility</td></tr>
+            <tr><td><strong>Notifications</strong></td><td>In-app alerts for queue, consult package, lab report ready, and follow-up reminders</td></tr>
+            <tr><td><strong>Multi-portal access</strong></td><td>Patient, Doctor, Reception, Hospital Admin, Lab, Pharmacy, Nursing / IPD, Platform Admin</td></tr>
+          </tbody>
+        </table>
+        <div class="footer-bar">
+          <span>techearnest.com · Empowering Possibilities</span>
+          <span>Page 03</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLINICAL / OPD -->
+    <section class="page">
+      <div class="body">
+        <div class="kicker">Clinical spine</div>
+        <h2>OPD that feels real — desk, doctor, and patient stay connected</h2>
+        <div class="grid-2">
+          <div>
+            <div class="grid-4">
+              <div class="card"><div class="mod-ico"><img src="./assets/icon-patient.png" alt="" /></div><strong>Reception desk</strong><p>UHID search, walk-in, appointment ID arrive, duplicate prevention.</p></div>
+              <div class="card"><div class="mod-ico"><img src="./assets/icon-queue.png" alt="" /></div><strong>Live OPD queue</strong><p>Tokens, call/skip/recall, doctor reassignment, visit status sync.</p></div>
+              <div class="card"><div class="mod-ico"><img src="./assets/icon-consult.png" alt="" /></div><strong>Doctor workspace</strong><p>Patient summary strip, structured consult, ICD catalog, e-Rx.</p></div>
+              <div class="card"><div class="mod-ico"><img src="./assets/icon-rx.png" alt="" /></div><strong>Patient package</strong><p>Today’s Dx, medicines, wellness, labs &amp; follow-up in one view.</p></div>
+            </div>
+          </div>
+          <div>
+            <img class="feature-img" src="./assets/health360-journey-icon.png" alt="Connected care journey" />
+            <div class="highlight">
+              <h3>One clinical truth</h3>
+              <p style="margin:0;opacity:.95">Appointment ≠ Queue. Encounter is the visit hub. Desk, doctor, and patient always see the same care package — diagnosis, medicines, wellness, labs, and follow-up.</p>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bar"><span>Health360 · Clinical operations</span><span>Page 04</span></div>
+      </div>
+    </section>
+
+    <!-- LAB / PHARMACY -->
+    <section class="page">
+      <div class="body">
+        <div class="kicker">Diagnostics &amp; medicines</div>
+        <h2>Lab and pharmacy journeys without paper handoffs</h2>
+        <div class="grid-3">
+          <div class="card">
+            <div class="mod-ico"><img src="./assets/icon-lab.png" alt="" /></div>
+            <span class="pill">Laboratory</span>
+            <strong>Hospital lab journey end-to-end</strong>
+            <p>Doctor orders → patient books hospital lab → unique specimen ID → process → verify → publish. Structured values feed health metrics. Patient gets “report ready” notify.</p>
+          </div>
+          <div class="card">
+            <div class="mod-ico"><img src="./assets/icon-pharmacy.png" alt="" /></div>
+            <span class="pill">Pharmacy</span>
+            <strong>E-Rx to dispense &amp; MAR</strong>
+            <p>Signed digital prescriptions, send Rx to hospital or retail pharmacy, inventory-aware dispense, and inpatient MAR so medicines stay digital from doctor to bedside.</p>
+          </div>
+          <div class="card">
+            <div class="mod-ico"><img src="./assets/icon-ipd.png" alt="" /></div>
+            <span class="pill">Radiology / OT</span>
+            <strong>Imaging &amp; theatre</strong>
+            <p>Clinical orders into radiology worklists; OT scheduling and procedure notes tied to the same encounter as the OPD or IPD visit.</p>
+          </div>
+        </div>
+        <div class="grid-3" style="margin-top:14px">
+          <div class="card">
+            <span class="pill">Patient</span>
+            <strong>Consultation package</strong>
+            <p>After the visit, patients see today’s diagnosis, medicines, wellness plan, lab orders, and follow-up in one clear package.</p>
+          </div>
+          <div class="card">
+            <span class="pill">Catalogs</span>
+            <strong>Hospital clinical catalogs</strong>
+            <p>Symptoms, diagnoses, and dosage templates — hospital-ready catalogs that speed structured documentation.</p>
+          </div>
+          <div class="card">
+            <span class="pill">Continuity</span>
+            <strong>Follow-up that sticks</strong>
+            <p>Follow-up dates become part of the clinical record and patient journey — ready for the next consult with full history.</p>
+          </div>
+        </div>
+        <div class="footer-bar"><span>Health360 · Care delivery network</span><span>Page 05</span></div>
+      </div>
+    </section>
+
+    <!-- ASSET MANAGEMENT HIGHLIGHT -->
+    <section class="page">
+      <div class="body">
+        <div class="kicker">Hospital operations</div>
+        <h2>Hospital Asset Management — clinical + enterprise in one product</h2>
+        <div class="grid-2">
+          <div>
+            <p style="color:var(--muted)">Health360 is more than clinical screens. Hospitals get visibility of beds, biomedical devices, facility assets, and IT endpoints — with the same discipline TechEarnest brings to <strong>ServiceNow ITAM</strong> programs.</p>
+            <ul class="clean">
+              <li>Biomedical equipment registry &amp; maintenance cycles</li>
+              <li>Bed / ward / ICU asset linkage to IPD operations</li>
+              <li>Facility &amp; consumable stock visibility</li>
+              <li>IT assets (workstations, printers, network) for hospital IT</li>
+              <li>Audit-ready ownership, location, and warranty tracking</li>
+              <li>Optional ServiceNow ITAM bridge for enterprise hospital groups</li>
+            </ul>
+            <div class="highlight" style="margin-top:18px">
+              <h3>Why it matters</h3>
+              <p style="margin:0">One product story: clinical HMS + asset intelligence — so CIOs, biomedical teams, and clinicians share the same operational picture.</p>
+            </div>
+          </div>
+          <div>
+            <img class="feature-img" src="./assets/health360-assets-module.png" alt="Hospital asset management" style="max-height:340px" />
+          </div>
+        </div>
+        <div class="footer-bar"><span>Health360 · Asset Management</span><span>Page 06</span></div>
+      </div>
+    </section>
+
+    <!-- SECURITY / TECH -->
+    <section class="page">
+      <div class="body">
+        <div class="kicker">Trust &amp; technology</div>
+        <h2>Enterprise-ready foundation</h2>
+        <div class="grid-3">
+          <div class="card"><strong>Security &amp; RBAC</strong><p>JWT auth, fine-grained permissions, hospital scope isolation, audit logging on sensitive clinical actions.</p></div>
+          <div class="card"><strong>Modern stack</strong><p>Java 21 / Spring Boot modular monolith · React web · React Native mobile · PostgreSQL + Flyway.</p></div>
+          <div class="card"><strong>Multi-hospital SaaS</strong><p>Hospital-centric subscriptions, plan limits, branch-aware operations for clinic to enterprise.</p></div>
+        </div>
+        <div class="grid-2" style="margin-top:18px">
+          <div class="card">
+            <strong>Portals</strong>
+            <ul class="clean">
+              <li>Patient · Doctor · Reception · Hospital Admin</li>
+              <li>Laboratory · Pharmacy · Nursing / IPD · Platform Admin</li>
+            </ul>
+          </div>
+          <div class="card">
+            <strong>Why TechEarnest</strong>
+            <ul class="clean">
+              <li>42+ enterprise transformations across industries</li>
+              <li>ServiceNow ITSM / ITOM / ITAM / HRSD / CSM expertise</li>
+              <li>Healthcare ITSM delivery experience (10K+ users supported)</li>
+              <li>Global delivery centers · advisory → implement → manage</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bar"><span>Health360 · Architecture &amp; trust</span><span>Page 07</span></div>
+      </div>
+    </section>
+
+    <!-- MORE FEATURES (was roadmap) -->
+    <section class="page">
+      <div class="body">
+        <div class="kicker">Product depth</div>
+        <h2>More of what Health360 includes</h2>
+        <p style="color:var(--muted);margin:0 0 16px">Beyond the core modules — practical capabilities that make the digital care journey feel complete for patients, clinicians, and hospital operations.</p>
+        <div class="feature-grid">
+          <div class="card"><span class="pill">Patient journey</span><strong>Self check-in &amp; QR arrive</strong><p>Patients arrive via app or QR; desk and queue update together without duplicate registration.</p></div>
+          <div class="card"><span class="pill">Patient journey</span><strong>Live queue visibility</strong><p>Token status, approaching-turn awareness, and doctor-side queue control stay in sync.</p></div>
+          <div class="card"><span class="pill">Clinical</span><strong>Doctor patient summary</strong><p>Appointment- or encounter-aware summary strip so the doctor starts with context, not a blank chart.</p></div>
+          <div class="card"><span class="pill">Clinical</span><strong>Checkout completeness gate</strong><p>Guides clinicians to finish notes, Rx, and plans before closing the visit — cleaner records, safer handoffs.</p></div>
+          <div class="card"><span class="pill">Clinical</span><strong>Wellness plans</strong><p>Diet, rest, and exercise guidance attached to the encounter and visible in the patient package.</p></div>
+          <div class="card"><span class="pill">Lab</span><strong>Structured lab metrics</strong><p>Verified numeric results flow into patient lab history and health dashboards automatically.</p></div>
+          <div class="card"><span class="pill">Pharmacy</span><strong>Send Rx to pharmacy</strong><p>Patients share signed e-Rx to hospital or retail pharmacy and track fulfilment digitally.</p></div>
+          <div class="card"><span class="pill">Engagement</span><strong>In-app notifications</strong><p>Report ready, medicine ready, follow-up due, and visit updates — without chasing paper or phone calls.</p></div>
+          <div class="card"><span class="pill">Analytics</span><strong>Health dashboard</strong><p>Health score, vitals trends, lab history, and goal-style insights for patients and clinical roles.</p></div>
+          <div class="card"><span class="pill">Platform</span><strong>Multi-hospital SaaS</strong><p>Hospital-centric subscriptions, branch-aware operations, and plan controls from clinic to chain.</p></div>
+          <div class="card"><span class="pill">Platform</span><strong>Web + mobile</strong><p>React web portals and React Native mobile experience for patients and care teams on the go.</p></div>
+          <div class="card"><span class="pill">Trust</span><strong>RBAC &amp; audit</strong><p>Role permissions, hospital scope isolation, and audit logging on sensitive clinical actions.</p></div>
+        </div>
+        <div class="footer-bar"><span>Health360 · Feature set</span><span>Page 08</span></div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="page cta-page">
+      <div class="badge">Ready for hospitals · Product of TechEarnest</div>
+      <h2>Health360 — complete digital care, ready now</h2>
+      <p style="max-width:48ch;font-size:1.15rem;opacity:.95;position:relative;z-index:1">OPD queue, clinical encounter, e-prescription, wellness, lab, pharmacy, IPD, billing, analytics, notifications, and hospital asset management — one product for modern healthcare operations.</p>
+      <a href="https://techearnest.com/">Explore Health360 →</a>
+      <div class="cta-brand">
+        <div>
+          <div class="logo-lockup" style="margin-bottom:12px">
+            <img src="./assets/techearnest-logo-on-dark.png" alt="TechEarnest" style="height:52px" />
+          </div>
+          <div style="font-size:.9rem;opacity:.9"><strong>techearnest.com</strong> · Empowering Possibilities</div>
+          <div style="font-size:.78rem;opacity:.7;margin-top:10px;max-width:48ch">
+            © TechEarnest. Health360 product brochure. ServiceNow® is a trademark of ServiceNow, Inc. TechEarnest is an independent company.
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

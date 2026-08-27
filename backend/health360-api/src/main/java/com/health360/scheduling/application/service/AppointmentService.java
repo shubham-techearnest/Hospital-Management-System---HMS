@@ -18,11 +18,15 @@ import com.health360.patient.application.service.PatientProfileService;
 import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.scheduling.infrastructure.persistence.entity.AppointmentEntity;
+import com.health360.scheduling.infrastructure.persistence.entity.ScheduleBlockEntity;
 import com.health360.scheduling.infrastructure.persistence.entity.TimeSlotEntity;
 import com.health360.scheduling.infrastructure.persistence.repository.AppointmentRepository;
+import com.health360.scheduling.infrastructure.persistence.repository.DoctorScheduleRepository;
+import com.health360.scheduling.infrastructure.persistence.repository.ScheduleBlockRepository;
 import com.health360.scheduling.infrastructure.persistence.repository.TimeSlotRepository;
 import com.health360.scheduling.presentation.dto.request.BookAppointmentRequest;
 import com.health360.scheduling.presentation.dto.response.AppointmentBookingResponse;
+import com.health360.scheduling.presentation.dto.response.DeskAppointmentLookupResponse;
 import com.health360.scheduling.presentation.dto.response.DoctorBookingLocationResponse;
 import com.health360.scheduling.presentation.dto.response.DoctorAvailabilityResponse;
 import com.health360.iam.application.service.TransactionalNotificationService;
@@ -40,13 +44,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -66,6 +76,8 @@ public class AppointmentService {
     private final BranchRepository branchRepository;
     private final UserRepository userRepository;
     private final SpecializationRepository specializationRepository;
+    private final DoctorScheduleRepository doctorScheduleRepository;
+    private final ScheduleBlockRepository scheduleBlockRepository;
     private final AuditLogService auditLogService;
     private final TransactionalNotificationService notificationService;
     private final PlanLimitService planLimitService;
@@ -85,20 +97,129 @@ public class AppointmentService {
         return hospitalAssociationRepository.findByDoctorIdAndDeletedAtIsNullOrderByCreatedAtDesc(doctor.getId())
                 .stream()
                 .filter(a -> "ACTIVE".equals(a.getStatus()) && a.getBranchId() != null)
-                .map(this::toBookingLocation)
+                .map(a -> toBookingLocation(doctor, a))
                 .toList();
     }
 
-    private DoctorBookingLocationResponse toBookingLocation(HospitalAssociationEntity association) {
+    @Transactional(readOnly = true)
+    public DeskAppointmentLookupResponse lookupAppointmentForDesk(UserPrincipal principal, UUID appointmentId) {
+        if (!principal.hasPermission("scheduling:appointment:arrive")
+                && !principal.hasPermission("opd:registration:write")) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN, "Access denied");
+        }
+
+        AppointmentEntity appointment = appointmentRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(appointmentId, principal.getTenantId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Appointment not found"));
+
+        hospitalScopeService.assertHospitalScope(
+                principal, appointment.getHospitalId(), appointment.getBranchId());
+
+        PatientProfileEntity patient = patientProfileRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(appointment.getPatientId(), principal.getTenantId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Patient not found"));
+
+        DoctorProfileEntity doctor = doctorProfileRepository.findById(appointment.getDoctorId()).orElse(null);
+        UserEntity doctorUser = doctor != null ? userRepository.findById(doctor.getUserId()).orElse(null) : null;
+        HospitalEntity hospital = hospitalRepository.findById(appointment.getHospitalId()).orElse(null);
+        BranchEntity branch = branchRepository.findById(appointment.getBranchId()).orElse(null);
+
+        String patientName = ((patient.getLegalFirstName() == null ? "" : patient.getLegalFirstName()) + " "
+                + (patient.getLegalLastName() == null ? "" : patient.getLegalLastName())).trim();
+        if (patientName.isBlank()) {
+            patientName = "Patient";
+        }
+
+        String doctorName = doctorUser != null
+                ? ((doctorUser.getFirstName() == null ? "" : doctorUser.getFirstName()) + " "
+                + (doctorUser.getLastName() == null ? "" : doctorUser.getLastName())).trim()
+                : "Doctor";
+
+        Set<String> arrivAble = Set.of("PENDING", "CONFIRMED", "POSTPONED");
+        return DeskAppointmentLookupResponse.builder()
+                .appointmentId(appointment.getId())
+                .appointmentStatus(appointment.getStatus())
+                .scheduledAt(appointment.getScheduledAt())
+                .patientId(patient.getId())
+                .patientName(patientName)
+                .uhid(patient.getUhid())
+                .primaryPhone(patient.getPrimaryPhone())
+                .doctorId(appointment.getDoctorId())
+                .doctorName(doctorName.isBlank() ? "Doctor" : doctorName)
+                .hospitalName(hospital != null ? hospital.getName() : null)
+                .branchName(branch != null ? branch.getName() : null)
+                .canArrive(arrivAble.contains(appointment.getStatus()))
+                .build();
+    }
+
+    private DoctorBookingLocationResponse toBookingLocation(
+            DoctorProfileEntity doctor, HospitalAssociationEntity association) {
         HospitalEntity hospital = hospitalRepository.findById(association.getHospitalId()).orElseThrow();
         BranchEntity branch = branchRepository.findById(association.getBranchId()).orElseThrow();
+        UserEntity doctorUser = userRepository.findById(doctor.getUserId()).orElse(null);
+        String doctorName = doctorUser != null
+                ? ((doctorUser.getFirstName() == null ? "" : doctorUser.getFirstName()) + " "
+                + (doctorUser.getLastName() == null ? "" : doctorUser.getLastName())).trim()
+                : "Doctor";
+        if (doctorName.isBlank()) {
+            doctorName = "Doctor";
+        }
+        String specialization = null;
+        if (doctor.getPrimarySpecializationId() != null) {
+            specialization = specializationRepository.findById(doctor.getPrimarySpecializationId())
+                    .map(s -> s.getName())
+                    .orElse(null);
+        }
         return DoctorBookingLocationResponse.builder()
                 .hospitalId(hospital.getId())
                 .hospitalName(hospital.getName())
                 .branchId(branch.getId())
                 .branchName(branch.getName())
                 .city(branch.getCity())
+                .doctorName(doctorName)
+                .specialization(specialization)
+                .opdHours(resolveOpdHours(doctor.getId(), hospital.getId(), branch.getId()))
                 .build();
+    }
+
+    private List<String> resolveOpdHours(UUID doctorId, UUID hospitalId, UUID branchId) {
+        return doctorScheduleRepository
+                .findByDoctorIdAndHospitalIdAndBranchIdAndActiveTrueAndDeletedAtIsNull(doctorId, hospitalId, branchId)
+                .map(schedule -> scheduleBlockRepository
+                        .findByScheduleIdAndDeletedAtIsNullOrderByDayOfWeekAscStartTimeAsc(schedule.getId())
+                        .stream()
+                        .filter(ScheduleBlockEntity::isActive)
+                        .sorted(Comparator
+                                .comparingInt((ScheduleBlockEntity b) -> dayOrder(b.getDayOfWeek()))
+                                .thenComparing(ScheduleBlockEntity::getStartTime))
+                        .map(this::formatOpdHour)
+                        .toList())
+                .orElse(List.of());
+    }
+
+    private int dayOrder(String dayOfWeek) {
+        try {
+            return DayOfWeek.valueOf(dayOfWeek.trim().toUpperCase(Locale.ROOT)).getValue();
+        } catch (Exception ex) {
+            return 8;
+        }
+    }
+
+    private String formatOpdHour(ScheduleBlockEntity block) {
+        String day;
+        try {
+            day = DayOfWeek.valueOf(block.getDayOfWeek().trim().toUpperCase(Locale.ROOT))
+                    .getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+        } catch (Exception ex) {
+            day = block.getDayOfWeek();
+        }
+        return day + " " + formatClock(block.getStartTime()) + "–" + formatClock(block.getEndTime());
+    }
+
+    private String formatClock(LocalTime time) {
+        return String.format("%02d:%02d", time.getHour(), time.getMinute());
     }
 
     @Transactional(readOnly = true)

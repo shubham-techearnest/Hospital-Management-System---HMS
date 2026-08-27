@@ -36,6 +36,24 @@ export interface DoctorBookingLocation {
   branchId: string;
   branchName: string;
   city: string;
+  doctorName?: string;
+  specialization?: string;
+  opdHours?: string[];
+}
+
+export interface DeskAppointmentLookup {
+  appointmentId: string;
+  appointmentStatus: string;
+  scheduledAt: string;
+  patientId: string;
+  patientName: string;
+  uhid?: string;
+  primaryPhone?: string;
+  doctorId: string;
+  doctorName: string;
+  hospitalName?: string;
+  branchName?: string;
+  canArrive: boolean;
 }
 
 export interface SlotAvailability {
@@ -149,6 +167,13 @@ export async function getDoctorBookingLocations(doctorId: string) {
   return data.data ?? [];
 }
 
+export async function lookupDeskAppointment(appointmentId: string) {
+  const { data } = await apiClient.get<ApiEnvelope<DeskAppointmentLookup>>(
+    `/scheduling/appointments/${appointmentId}/desk-lookup`,
+  );
+  return data.data;
+}
+
 export async function getDoctorAvailability(
   doctorId: string,
   params: { hospitalId: string; branchId: string; fromDate?: string; toDate?: string },
@@ -211,6 +236,19 @@ export async function rescheduleMyAppointment(appointmentId: string, newSlotId: 
   const { data } = await apiClient.post<ApiEnvelope<AppointmentDetail>>(
     `/scheduling/appointments/${appointmentId}/reschedule`,
     { newSlotId },
+  );
+  return data.data;
+}
+
+export interface AppointmentSelfCheckInResult {
+  appointmentId: string;
+  appointmentStatus: string;
+  queueEntry?: { tokenDisplay?: string; status?: string } | null;
+}
+
+export async function selfCheckInMyAppointment(appointmentId: string) {
+  const { data } = await apiClient.post<ApiEnvelope<AppointmentSelfCheckInResult>>(
+    `/scheduling/appointments/${appointmentId}/self-check-in`,
   );
   return data.data;
 }

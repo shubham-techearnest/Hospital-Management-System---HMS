@@ -172,24 +172,46 @@ class LabIntegrationTest {
                         .param("branchId", BRANCH_ID.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", hasSize(1)))
-                .andExpect(jsonPath("$.data[0].clinicalOrderItemId").value(clinicalOrderItemId));
+                .andExpect(jsonPath("$.data[0].clinicalOrderItemId").value(clinicalOrderItemId))
+                .andExpect(jsonPath("$.data[0].patientName").isNotEmpty())
+                .andExpect(jsonPath("$.data[0].uhid").isNotEmpty());
 
-        CreateLabOrderRequest labOrderRequest = new CreateLabOrderRequest();
-        labOrderRequest.setClinicalOrderItemId(UUID.fromString(clinicalOrderItemId));
+        String patientToken = IntegrationTestAuth.loginAndGetAccessToken(
+                mockMvc, objectMapper, PATIENT_EMAIL, "Kadam@123");
 
-        MvcResult labOrderResult = mockMvc.perform(post("/api/v1/lab/orders")
-                        .header("Authorization", IntegrationTestAuth.bearer(adminToken))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(labOrderRequest)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.data.status").value("RECEIVED"))
+        mockMvc.perform(get("/api/v1/lab/me/orders")
+                        .header("Authorization", IntegrationTestAuth.bearer(patientToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[?(@.clinicalOrderItemId=='" + clinicalOrderItemId + "')].canBookHospital")
+                        .value(org.hamcrest.Matchers.hasItem(true)));
+
+        mockMvc.perform(post("/api/v1/lab/me/orders/" + clinicalOrderItemId + "/book-hospital")
+                        .header("Authorization", IntegrationTestAuth.bearer(patientToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.labOrderStatus").value("RECEIVED"))
+                .andExpect(jsonPath("$.data.canBookHospital").value(false));
+
+        MvcResult labOrderLookup = mockMvc.perform(get("/api/v1/lab/me/orders")
+                        .header("Authorization", IntegrationTestAuth.bearer(patientToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[?(@.clinicalOrderItemId=='" + clinicalOrderItemId + "')].labOrderId")
+                        .isNotEmpty())
                 .andReturn();
 
-        String labOrderId = objectMapper.readTree(labOrderResult.getResponse().getContentAsString())
-                .path("data").path("labOrderId").asText();
+        String labOrderId = null;
+        JsonNode myOrders = objectMapper.readTree(labOrderLookup.getResponse().getContentAsString()).path("data");
+        for (JsonNode node : myOrders) {
+            if (clinicalOrderItemId.equals(node.path("clinicalOrderItemId").asText())) {
+                labOrderId = node.path("labOrderId").asText();
+                break;
+            }
+        }
+        if (labOrderId == null || labOrderId.isBlank() || "null".equals(labOrderId)) {
+            throw new AssertionError("Expected booked labOrderId for clinical order item");
+        }
 
         CollectLabSampleRequest sampleRequest = new CollectLabSampleRequest();
-        sampleRequest.setSpecimenId("SPC-001");
+        sampleRequest.setSpecimenId("SPC-ECO-P3-001");
         sampleRequest.setNotes("Morning draw");
 
         mockMvc.perform(post("/api/v1/lab/orders/" + labOrderId + "/collect-sample")
@@ -235,12 +257,22 @@ class LabIntegrationTest {
                 .andExpect(jsonPath("$.data", hasSize(1)))
                 .andExpect(jsonPath("$.data[0].testName").value("Complete Blood Count"));
 
-        String patientToken = IntegrationTestAuth.loginAndGetAccessToken(
-                mockMvc, objectMapper, PATIENT_EMAIL, "Kadam@123");
-
         mockMvc.perform(get("/api/v1/lab/encounters/" + encounterId + "/reports")
                         .header("Authorization", IntegrationTestAuth.bearer(patientToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", hasSize(1)));
+
+        mockMvc.perform(get("/api/v1/lab/me/orders")
+                        .header("Authorization", IntegrationTestAuth.bearer(patientToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[?(@.clinicalOrderItemId=='" + clinicalOrderItemId + "')].labOrderStatus")
+                        .value(org.hamcrest.Matchers.hasItem("RELEASED")))
+                .andExpect(jsonPath("$.data[?(@.clinicalOrderItemId=='" + clinicalOrderItemId + "')].report").exists());
+
+        mockMvc.perform(get("/api/v1/patients/me/profile/lab-values")
+                        .header("Authorization", IntegrationTestAuth.bearer(patientToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)));
     }
 }

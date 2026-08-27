@@ -10,6 +10,7 @@ import com.health360.hospital.infrastructure.persistence.entity.BranchEntity;
 import com.health360.hospital.infrastructure.persistence.entity.DepartmentEntity;
 import com.health360.hospital.infrastructure.persistence.repository.BranchRepository;
 import com.health360.hospital.infrastructure.persistence.repository.DepartmentRepository;
+import com.health360.opd.application.service.OpdVisitStatusSyncService;
 import com.health360.opd.infrastructure.persistence.entity.OpdQueueEntryEntity;
 import com.health360.opd.infrastructure.persistence.repository.OpdQueueEntryRepository;
 import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
@@ -52,6 +53,7 @@ public class EncounterService {
     private final AuditLogService auditLogService;
     private final PatientProfileRepository patientProfileRepository;
     private final OpdQueueEntryRepository opdQueueEntryRepository;
+    private final OpdVisitStatusSyncService opdVisitStatusSyncService;
 
     @Transactional
     public EncounterResponse createEncounter(
@@ -308,7 +310,9 @@ public class EncounterService {
                 "ENCOUNTER_STATUS_UPDATED", "Encounter", encounter.getId(),
                 Map.of("status", target.name()));
 
-        return mapper.toEncounterResponse(encounter);
+        opdVisitStatusSyncService.syncFromEncounter(principal, encounter, target);
+
+        return toResponse(encounter, principal.getTenantId());
     }
 
     @Transactional
@@ -642,14 +646,14 @@ public class EncounterService {
                 .stream()
                 .collect(Collectors.toMap(PatientProfileEntity::getId, Function.identity()));
         List<UUID> encounterIds = content.stream().map(EncounterEntity::getId).toList();
-        Map<UUID, String> tokens = opdQueueEntryRepository
+        Map<UUID, OpdQueueEntryEntity> queues = opdQueueEntryRepository
                 .findByTenantIdAndEncounterIdInAndDeletedAtIsNull(tenantId, encounterIds)
                 .stream()
                 .collect(Collectors.toMap(
                         OpdQueueEntryEntity::getEncounterId,
-                        OpdQueueEntryEntity::getTokenDisplay,
+                        Function.identity(),
                         (left, right) -> left));
-        return page.map(entity -> enrich(mapper.toEncounterResponse(entity), entity, patients, tokens));
+        return page.map(entity -> enrich(mapper.toEncounterResponse(entity), entity, patients, queues));
     }
 
     private EncounterResponse toResponse(EncounterEntity entity, UUID tenantId) {
@@ -661,7 +665,7 @@ public class EncounterService {
             EncounterResponse base,
             EncounterEntity entity,
             Map<UUID, PatientProfileEntity> patients,
-            Map<UUID, String> tokens) {
+            Map<UUID, OpdQueueEntryEntity> queues) {
         PatientProfileEntity patient = patients.get(entity.getPatientId());
         String name = null;
         String uhid = null;
@@ -673,10 +677,12 @@ public class EncounterService {
             }
             uhid = patient.getUhid();
         }
+        OpdQueueEntryEntity queue = queues.get(entity.getId());
         return base.toBuilder()
                 .patientName(name)
                 .uhid(uhid)
-                .tokenDisplay(tokens.get(entity.getId()))
+                .tokenDisplay(queue != null ? queue.getTokenDisplay() : null)
+                .queueStatus(queue != null ? queue.getStatus() : null)
                 .build();
     }
 

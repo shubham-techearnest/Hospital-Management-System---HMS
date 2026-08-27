@@ -15,10 +15,10 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import EventIcon from '@mui/icons-material/Event';
 import type { RootState } from '@/app/store';
 import { AnimatedPage } from '../components/AnimatedPage';
-import { useProfileCompletion } from '../hooks/usePatientQueries';
+import { usePatientProfile, useProfileCompletion } from '../hooks/usePatientQueries';
 import { useHealthDashboard, useDownloadHealthReportPdf } from '@/features/analytics/hooks/useAnalyticsQueries';
 import { useMyAppointments } from '@/features/scheduling/hooks/useSchedulingQueries';
-import { formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
+import { appointmentLabel, formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
 import { ScoreGauge } from '@/features/analytics/components/ScoreGauge';
 import { GoalsProgressRow } from '@/features/analytics/components/GoalsProgressRow';
 import { VitalsTrendSection } from '@/features/analytics/components/VitalsTrendSection';
@@ -29,6 +29,7 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 
 export function DashboardPage() {
   const authUser = useSelector((state: RootState) => state.auth.user);
+  const { data: profile } = usePatientProfile();
   const { data: completion, isLoading: completionLoading } = useProfileCompletion();
   const { data: dashboard, isLoading: dashboardLoading, isError: dashboardError, refetch: refetchDashboard } = useHealthDashboard();
   const { data: upcomingAppointments = [], isLoading: appointmentsLoading } = useMyAppointments('upcoming');
@@ -38,6 +39,7 @@ export function DashboardPage() {
   const displayName = authUser?.firstName ?? 'there';
   const nextAppointment = upcomingAppointments[0];
   const loading = dashboardLoading || completionLoading;
+  const uhid = profile?.uhid;
 
   const handleExportPdf = async () => {
     setExportError(null);
@@ -58,7 +60,11 @@ export function DashboardPage() {
     <AnimatedPage>
       <DashboardPageHeader
         title={`Welcome back, ${displayName}`}
-        subtitle="Your daily health snapshot — scores, goals, trends, and upcoming care."
+        subtitle={
+          uhid
+            ? `UHID ${uhid} — your daily health snapshot, upcoming care, and records.`
+            : 'Your daily health snapshot — scores, goals, trends, and upcoming care.'
+        }
         actions={
           <>
             <Button
@@ -144,7 +150,7 @@ export function DashboardPage() {
                 <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
                   <EventIcon color="primary" fontSize="small" />
                   <Typography fontWeight={600}>{nextAppointment.doctor.name}</Typography>
-                  <Chip label={nextAppointment.status} size="small" color={statusColor(nextAppointment.status)} />
+                  <Chip label={appointmentLabel(nextAppointment.status)} size="small" color={statusColor(nextAppointment.status)} />
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
                   {formatAppointmentDate(nextAppointment.scheduledAt)}

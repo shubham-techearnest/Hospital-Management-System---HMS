@@ -44,4 +44,9 @@ public class AppointmentArrivalService {
 
         return opdRegistrationService.arriveAppointment(principal, checkIn);
     }
+
+    @Transactional
+    public AppointmentArrivalResponse selfCheckIn(UserPrincipal principal, UUID appointmentId) {
+        return opdRegistrationService.selfCheckIn(principal, appointmentId);
+    }
 }

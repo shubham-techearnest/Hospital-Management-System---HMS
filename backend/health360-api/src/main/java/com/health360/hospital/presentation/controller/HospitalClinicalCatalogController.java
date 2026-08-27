@@ -2,8 +2,10 @@ package com.health360.hospital.presentation.controller;
 
 import com.health360.config.security.UserPrincipal;
 import com.health360.hospital.application.service.HospitalClinicalCatalogService;
+import com.health360.hospital.presentation.dto.request.CreateDiagnosisCatalogRequest;
 import com.health360.hospital.presentation.dto.request.CreateDosageTemplateRequest;
 import com.health360.hospital.presentation.dto.request.CreateSymptomCatalogRequest;
+import com.health360.hospital.presentation.dto.response.DiagnosisCatalogResponse;
 import com.health360.hospital.presentation.dto.response.DosageTemplateResponse;
 import com.health360.hospital.presentation.dto.response.SymptomCatalogResponse;
 import com.health360.shared.dto.ApiResponse;
@@ -66,5 +68,25 @@ public class HospitalClinicalCatalogController {
             @Valid @RequestBody CreateDosageTemplateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
                 catalogService.createDosageTemplate(principal, request)));
+    }
+
+    @GetMapping("/diagnoses")
+    @PreAuthorize("hasAnyAuthority('hospital:catalog:read', 'hospital:catalog:write')")
+    public ResponseEntity<ApiResponse<List<DiagnosisCatalogResponse>>> listDiagnoses(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam UUID hospitalId,
+            @RequestParam(required = false) UUID branchId,
+            @RequestParam(required = false) String q) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                catalogService.listDiagnoses(principal, hospitalId, branchId, q)));
+    }
+
+    @PostMapping("/diagnoses")
+    @PreAuthorize("hasAuthority('hospital:catalog:write')")
+    public ResponseEntity<ApiResponse<DiagnosisCatalogResponse>> createDiagnosis(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody CreateDiagnosisCatalogRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
+                catalogService.createDiagnosis(principal, request)));
     }
 }

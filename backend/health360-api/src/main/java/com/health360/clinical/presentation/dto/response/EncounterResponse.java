@@ -15,6 +15,7 @@ public class EncounterResponse {
     String patientName;
     String uhid;
     String tokenDisplay;
+    String queueStatus;
     UUID hospitalId;
     UUID branchId;
     UUID departmentId;

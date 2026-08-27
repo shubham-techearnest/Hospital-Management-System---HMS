@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Alert,
+  Chip,
   Paper,
   Skeleton,
   Snackbar,
+  Stack,
   Typography,
 } from '@mui/material';
 import { AnimatedPage } from '../components/AnimatedPage';
@@ -25,7 +27,7 @@ const DEFAULT_EXPANDED: ProfileSectionId = 'basic-info';
 
 export function ProfileHubPage() {
   const location = useLocation();
-  const { isLoading: profileLoading } = usePatientProfile();
+  const { data: profile, isLoading: profileLoading } = usePatientProfile();
   const { data: completion, isLoading: completionLoading } = useProfileCompletion();
 
   const [expanded, setExpanded] = useState<Record<ProfileSectionId, boolean>>(() =>
@@ -76,9 +78,14 @@ export function ProfileHubPage() {
 
   return (
     <AnimatedPage>
-      <Typography variant="h4" fontWeight={700} gutterBottom>
-        My Health Profile
-      </Typography>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ mb: 1 }}>
+        <Typography variant="h4" fontWeight={700}>
+          My Health Profile
+        </Typography>
+        {profile?.uhid ? (
+          <Chip label={`UHID ${profile.uhid}`} color="primary" variant="outlined" size="small" />
+        ) : null}
+      </Stack>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
         Expand a section to view or update your information. Your completion score updates when you save.
       </Typography>

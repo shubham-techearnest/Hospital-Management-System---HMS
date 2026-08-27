@@ -23,6 +23,16 @@ export interface DosageTemplate {
   active: boolean;
 }
 
+export interface DiagnosisCatalogItem {
+  diagnosisCatalogId: string;
+  hospitalId: string;
+  branchId?: string;
+  icdCode: string;
+  name: string;
+  category?: string;
+  active: boolean;
+}
+
 function unwrap<T>(envelope: ApiEnvelope<T>): T {
   if (!envelope.success || envelope.data === undefined) {
     throw new Error(envelope.message ?? 'Request failed');
@@ -66,6 +76,27 @@ export async function createDosageTemplate(payload: {
 }) {
   const { data } = await apiClient.post<ApiEnvelope<DosageTemplate>>(
     '/hospital/catalogs/dosage-templates',
+    payload,
+  );
+  return unwrap(data);
+}
+
+export async function listDiagnoses(hospitalId: string, branchId?: string, q?: string) {
+  const { data } = await apiClient.get<ApiEnvelope<DiagnosisCatalogItem[]>>('/hospital/catalogs/diagnoses', {
+    params: { hospitalId, branchId: branchId || undefined, q: q || undefined },
+  });
+  return unwrap(data) ?? [];
+}
+
+export async function createDiagnosis(payload: {
+  hospitalId: string;
+  branchId?: string;
+  icdCode: string;
+  name: string;
+  category?: string;
+}) {
+  const { data } = await apiClient.post<ApiEnvelope<DiagnosisCatalogItem>>(
+    '/hospital/catalogs/diagnoses',
     payload,
   );
   return unwrap(data);

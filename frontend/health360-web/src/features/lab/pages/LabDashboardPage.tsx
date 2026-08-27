@@ -36,6 +36,7 @@ import {
   useLaboratories,
   usePendingLabWorklist,
 } from '@/features/lab/hooks/useLabQueries';
+import { labOrderStatusLabel } from '@/shared/status/visitStatus';
 
 const DEFAULT_HOSPITAL_ID = '00000000-0000-0000-0000-000000000030';
 const DEFAULT_BRANCH_ID = '00000000-0000-0000-0000-000000000031';
@@ -155,25 +156,30 @@ export function LabDashboardPage() {
         <TableContainer component={Paper} variant="outlined">
           <Table size="small">
             <TableHead>
-              <TableRow>
-                <TableCell>Test</TableCell>
-                <TableCell>Patient</TableCell>
-                <TableCell>Ordered</TableCell>
-                <TableCell align="right">Action</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {worklist.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4}>
-                    <Typography variant="body2" color="text.secondary">No pending lab orders.</Typography>
-                  </TableCell>
+                  <TableCell>Test</TableCell>
+                  <TableCell>Patient</TableCell>
+                  <TableCell>Ordered</TableCell>
+                  <TableCell align="right">Action</TableCell>
                 </TableRow>
-              ) : worklist.map((item) => (
-                <TableRow key={item.clinicalOrderItemId}>
-                  <TableCell>{item.itemName}{item.itemCode ? ` (${item.itemCode})` : ''}</TableCell>
-                  <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{item.patientId}</TableCell>
-                  <TableCell>{new Date(item.orderedAt).toLocaleString()}</TableCell>
+              </TableHead>
+              <TableBody>
+                {worklist.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4}>
+                      <Typography variant="body2" color="text.secondary">No pending lab orders.</Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : worklist.map((item) => (
+                  <TableRow key={item.clinicalOrderItemId}>
+                    <TableCell>{item.itemName}{item.itemCode ? ` (${item.itemCode})` : ''}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {item.patientName ?? 'Patient'}
+                        {item.uhid ? ` · ${item.uhid}` : ''}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>{new Date(item.orderedAt).toLocaleString()}</TableCell>
                   <TableCell align="right">
                     <Button size="small" variant="contained" disabled={!scopeReady}
                       onClick={async () => {
@@ -213,6 +219,7 @@ export function LabDashboardPage() {
               <TableHead>
                 <TableRow>
                   <TableCell>Test</TableCell>
+                  <TableCell>Patient</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Received</TableCell>
                   <TableCell align="right">Action</TableCell>
@@ -223,7 +230,15 @@ export function LabDashboardPage() {
                   <TableRow key={order.labOrderId}>
                     <TableCell>{order.testName}</TableCell>
                     <TableCell>
-                      <Chip label={order.status} size="small" color={STATUS_COLOR[order.status] ?? 'default'} />
+                      {order.patientName ?? 'Patient'}
+                      {order.uhid ? ` · ${order.uhid}` : ''}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={labOrderStatusLabel(order.status)}
+                        size="small"
+                        color={STATUS_COLOR[order.status] ?? 'default'}
+                      />
                     </TableCell>
                     <TableCell>{new Date(order.receivedAt).toLocaleString()}</TableCell>
                     <TableCell align="right">
@@ -259,16 +274,25 @@ export function LabDashboardPage() {
               <Paper variant="outlined" sx={{ p: 2 }}>
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
                   <Typography variant="h6">{selectedOrder.testName}</Typography>
-                  <Chip label={selectedOrder.status} size="small" color={STATUS_COLOR[selectedOrder.status] ?? 'default'} />
+                  <Chip
+                    label={labOrderStatusLabel(selectedOrder.status)}
+                    size="small"
+                    color={STATUS_COLOR[selectedOrder.status] ?? 'default'}
+                  />
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
-                  Order {selectedOrder.labOrderId} · Patient {selectedOrder.patientId}
+                  {selectedOrder.patientName ?? 'Patient'}
+                  {selectedOrder.uhid ? ` · ${selectedOrder.uhid}` : ''}
+                  {selectedOrder.sample?.specimenId ? ` · Specimen ${selectedOrder.sample.specimenId}` : ''}
                 </Typography>
               </Paper>
 
               {selectedOrder.status === 'RECEIVED' && (
                 <Paper variant="outlined" sx={{ p: 2 }}>
                   <Typography variant="subtitle2" gutterBottom>Collect sample</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Leave Specimen ID blank to auto-generate a unique sample ID.
+                  </Typography>
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 1 }}>
                     <TextField label="Specimen ID" size="small" value={sampleForm.specimenId}
                       onChange={(e) => setSampleForm({ ...sampleForm, specimenId: e.target.value })} />

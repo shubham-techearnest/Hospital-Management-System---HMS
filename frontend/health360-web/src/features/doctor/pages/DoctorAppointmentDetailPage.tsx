@@ -25,7 +25,7 @@ import {
   useResumeDoctorAppointment,
   useUpdateDoctorAppointmentStatus,
 } from '@/features/scheduling/hooks/useSchedulingQueries';
-import { formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
+import { appointmentLabel, formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
 
 type ActionDialog = 'cancel' | 'reschedule' | 'postpone' | null;
 
@@ -41,13 +41,12 @@ export function DoctorAppointmentDetailPage() {
 
   const { data: patientSummary, error: summaryError, isLoading: summaryLoading } = usePatientSummary(
     appointment?.patient.id ?? '',
-    appointmentId,
-    Boolean(appointment?.patient.id),
+    { appointmentId, enabled: Boolean(appointment?.patient.id) },
   );
   const summaryForbidden = (summaryError as { response?: { status?: number } })?.response?.status === 403;
   const summaryForbiddenMessage =
     (summaryError as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message
-    ?? 'Patient summary is only available within 24 hours before and after the appointment.';
+    ?? 'Patient summary is only available during the active appointment care window.';
 
   const [dialog, setDialog] = useState<ActionDialog>(null);
   const [message, setMessage] = useState('');
@@ -95,7 +94,7 @@ export function DoctorAppointmentDetailPage() {
       {actionError ? <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert> : null}
 
       <Stack spacing={2} sx={{ mb: 3 }}>
-        <Chip label={appointment.status} color={statusColor(appointment.status)} sx={{ alignSelf: 'flex-start' }} />
+        <Chip label={appointmentLabel(appointment.status)} color={statusColor(appointment.status)} sx={{ alignSelf: 'flex-start' }} />
         <Typography variant="h6">{appointment.patient.name}</Typography>
         <Typography><strong>When:</strong> {formatAppointmentDate(appointment.scheduledAt)}</Typography>
         <Typography><strong>Location:</strong> {appointment.hospital.name} — {appointment.hospital.branchName}</Typography>

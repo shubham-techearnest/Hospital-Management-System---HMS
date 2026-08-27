@@ -17,6 +17,7 @@ import com.health360.billing.presentation.dto.request.RecordPaymentRequest;
 import com.health360.billing.presentation.dto.response.InvoiceResponse;
 import com.health360.billing.presentation.dto.response.PaymentResponse;
 import com.health360.clinical.application.service.EncounterAccessService;
+import com.health360.clinical.application.service.EncounterCheckoutGateService;
 import com.health360.clinical.infrastructure.persistence.entity.EncounterEntity;
 import com.health360.clinical.infrastructure.persistence.repository.EncounterRepository;
 import com.health360.config.security.UserPrincipal;
@@ -50,6 +51,7 @@ public class BillingService {
     private final BillingAccessService accessService;
     private final HospitalScopeService hospitalScopeService;
     private final EncounterAccessService encounterAccessService;
+    private final EncounterCheckoutGateService checkoutGateService;
     private final BillingMapper mapper;
     private final AuditLogService auditLogService;
 
@@ -64,6 +66,7 @@ public class BillingService {
 
         hospitalScopeService.assertHospitalScope(
                 principal, encounter.getHospitalId(), encounter.getBranchId());
+        checkoutGateService.assertReadyForCheckout(encounter.getId());
 
         if (invoiceRepository.existsByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNot(
                 tenantId, encounter.getId(), InvoiceStatus.CANCELLED.name())) {

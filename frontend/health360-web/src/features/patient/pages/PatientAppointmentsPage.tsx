@@ -14,7 +14,7 @@ import {
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { useMyAppointments } from '@/features/scheduling/hooks/useSchedulingQueries';
 import type { AppointmentFilter } from '@/features/scheduling/api/schedulingApi';
-import { APPOINTMENT_FILTERS, formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
+import { APPOINTMENT_FILTERS, appointmentLabel, formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
 import { emptyStateMessage, parseApiError } from '@/shared/api/errorUtils';
 import { CompactFilterChips } from '@/shared/filters/CompactFilterChips';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
@@ -74,7 +74,7 @@ export function PatientAppointmentsPage() {
                   </Typography>
                 </Box>
                 <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.75}>
-                  <Chip label={appt.status} color={statusColor(appt.status)} size="small" />
+                  <Chip label={appointmentLabel(appt.status)} color={statusColor(appt.status)} size="small" />
                   <Button component={RouterLink} to={`/patient/appointments/${appt.appointmentId}`} size="small" variant="outlined">
                     Details
                   </Button>

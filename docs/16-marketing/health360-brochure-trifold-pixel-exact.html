@@ -1,0 +1,37 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Health360 Tri-Fold — Pixel-Exact Source Crop (A4)</title>
+  <style>
+    *{box-sizing:border-box} html,body{margin:0}
+    body{background:#0d0b1a;font-family:Segoe UI,system-ui,sans-serif;color:#fff}
+    .bar{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:rgba(26,22,53,.96);font-size:.78rem}
+    .bar button,.bar a{background:#5a429e;color:#fff;border:0;border-radius:999px;padding:7px 12px;font-weight:700;text-decoration:none;cursor:pointer;font-size:.72rem}
+    .stage{padding:20px 10px 48px;display:flex;flex-direction:column;align-items:center;gap:22px}
+    .label{width:297mm;color:rgba(255,255,255,.55);font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:-12px}
+    .sheet{width:297mm;height:210mm;position:relative;overflow:hidden;background:#fff;box-shadow:0 22px 55px rgba(0,0,0,.45)}
+    .sheet img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
+    @media print{
+      @page{size:A4 landscape;margin:0}
+      body{background:#fff}
+      .bar,.label{display:none!important}
+      .stage{padding:0;gap:0}
+      .sheet{box-shadow:none;page-break-after:always;break-after:page;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .sheet:last-child{page-break-after:auto;break-after:auto}
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span><strong>Pixel-exact crop</strong> from source mockup · A4 landscape 297×210 mm</span>
+    <button type="button" onclick="window.print()">Print / PDF</button>
+  </div>
+  <div class="stage">
+    <div class="label">Outside</div>
+    <article class="sheet"><img src="./assets/trifold-exact-outside.png" alt="Outside" /></article>
+    <div class="label">Inside</div>
+    <article class="sheet"><img src="./assets/trifold-exact-inside.png" alt="Inside" /></article>
+  </div>
+</body>
+</html>

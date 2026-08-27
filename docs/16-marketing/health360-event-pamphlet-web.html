@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Health360 Event Pamphlet — RGB / Web</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Outfit:wght@400;500;600;700;800&display=swap");
+    :root {
+      --purple: #5a429e; --lavender-soft: #d4c8ff; --lavender-bg: #f4f0ff;
+      --navy: #1a1635; --muted: #5c6478;
+      --serif: "Cormorant Garamond", Georgia, serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Outfit", system-ui, sans-serif; background: #0d0b1a; color: #16132a; }
+    .bar {
+      position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between;
+      align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 14px;
+      background: rgba(26,22,53,.96); color: #fff; font-size: .78rem;
+    }
+    .bar a, .bar button {
+      background: var(--purple); color: #fff; border: 0; border-radius: 999px;
+      padding: 7px 12px; font-weight: 700; text-decoration: none; cursor: pointer; font-size: .72rem;
+    }
+    .bar a.ghost { background: transparent; border: 1px solid rgba(255,255,255,.35); }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 24px 16px 56px; display: grid; gap: 18px; }
+    .intro { color: rgba(255,255,255,.75); font-size: .9rem; line-height: 1.5; }
+    .card { border-radius: 16px; padding: 26px 24px; box-shadow: 0 16px 40px rgba(0,0,0,.35); }
+    .k { font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 800; margin: 0 0 8px; color: var(--lavender-soft); }
+    h1, h2 { font-family: var(--serif); margin: 0 0 10px; line-height: 1.15; }
+    .front, .journey, .eco, .back { background: linear-gradient(165deg, #12101f, #5a429e); color: #fff; }
+    .why, .gets { background: #fff; }
+    .why .k, .gets .k { color: var(--purple); }
+    .why h2, .gets h2 { color: var(--navy); }
+    .item { padding: 10px 0; border-bottom: 1px solid rgba(90,66,158,.15); }
+    .item strong { display: block; color: var(--purple); margin-bottom: 3px; }
+    .item span { color: var(--muted); font-size: .9rem; line-height: 1.4; font-weight: 500; }
+    .qr {
+      display: flex; gap: 14px; align-items: center; background: #fff; color: var(--navy);
+      border-radius: 12px; padding: 12px; margin-top: 14px;
+    }
+    .qr img { width: 96px; height: 96px; }
+    .step { margin: 6px 0; font-weight: 700; }
+    .check { color: var(--purple); font-weight: 800; margin-right: 6px; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span><strong>Event pamphlet</strong> · User acquisition · RGB web</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <a class="ghost" href="./health360-event-pamphlet.html">Print layout</a>
+      <a class="ghost" href="./health360-brochure-trifold-v2.html">Hospital brochure</a>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="intro"><strong>Health360 Event Pamphlet</strong> asks “Why should a person join?” — separate from the hospital B2B brochure. QR → <code>hms.techearnest.com</code> (event UTM).</p>
+
+    <section class="card front">
+      <div class="k">Front</div>
+      <div style="font-size:1.1rem;font-weight:800">Health360</div>
+      <div style="font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;opacity:.85;margin-bottom:10px">Experience Digital Care</div>
+      <h1>Your healthcare journey. Connected.</h1>
+      <p style="opacity:.92;line-height:1.45">A digital healthcare platform connecting patients, doctors and hospitals.</p>
+      <div class="qr">
+        <img src="./assets/qr-join-health360-event.png" alt="Join QR" />
+        <div>
+          <strong style="color:var(--purple)">Scan to join Health360</strong>
+          <div style="font-size:.85rem;color:var(--muted);margin-top:4px;line-height:1.4">Create your account. Connect with your healthcare journey.<br /><strong>SCAN → REGISTER → GET STARTED</strong></div>
+        </div>
+      </div>
+      <p style="margin-top:12px;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;opacity:.8">A Healthcare Product by TechEarnest</p>
+    </section>
+
+    <section class="card why">
+      <div class="k">Outside flap</div>
+      <h2>Why Health360?</h2>
+      <div class="item"><strong>Simple</strong><span>Your healthcare journey in one connected experience.</span></div>
+      <div class="item"><strong>Connected</strong><span>Patients, doctors and hospitals connected.</span></div>
+      <div class="item"><strong>Digital</strong><span>Relevant healthcare information digitally organized.</span></div>
+      <div class="item"><strong>Patient-first</strong><span>Designed around the healthcare journey.</span></div>
+      <div class="item"><strong>How it works</strong><span>01 Join → 02 Connect → 03 Manage → 04 Access → 05 Continue</span></div>
+    </section>
+
+    <section class="card journey">
+      <div class="k">Inside · Journey</div>
+      <h2>One connected journey</h2>
+      <p style="opacity:.9;margin-bottom:10px;line-height:1.4">Before: fragmented hospital steps. With Health360: one connected healthcare journey.</p>
+      <div class="step">01 Register</div>
+      <div class="step">02 Appointment</div>
+      <div class="step">03 OPD / Consult</div>
+      <div class="step">04 Diagnosis</div>
+      <div class="step">05 Prescription</div>
+      <div class="step">06 Reports</div>
+      <div class="step">07 Follow-up</div>
+    </section>
+
+    <section class="card gets">
+      <div class="k">Inside · What you get</div>
+      <h2>What can you do with Health360?</h2>
+      <div class="item"><span class="check">✓</span><strong style="display:inline;color:var(--navy)">Appointments &amp; queues</strong></div>
+      <div class="item"><span class="check">✓</span><strong style="display:inline;color:var(--navy)">Digital prescriptions</strong></div>
+      <div class="item"><span class="check">✓</span><strong style="display:inline;color:var(--navy)">Laboratory information</strong></div>
+      <div class="item"><span class="check">✓</span><strong style="display:inline;color:var(--navy)">OPD &amp; IPD journey</strong></div>
+      <div class="item"><span class="check">✓</span><strong style="display:inline;color:var(--navy)">Healthcare profile</strong></div>
+      <div class="item"><span class="check">✓</span><strong style="display:inline;color:var(--navy)">Connected interactions</strong></div>
+      <div class="item"><span class="check">✓</span><strong style="display:inline;color:var(--navy)">Follow-up continuity</strong></div>
+    </section>
+
+    <section class="card eco">
+      <div class="k">Inside · For everyone</div>
+      <h2>One connected healthcare ecosystem</h2>
+      <div class="item" style="border-color:rgba(255,255,255,.2)"><strong style="color:var(--lavender-soft)">Patients</strong><span style="color:rgba(255,255,255,.85)">Manage your healthcare journey</span></div>
+      <div class="item" style="border-color:rgba(255,255,255,.2)"><strong style="color:var(--lavender-soft)">Doctors</strong><span style="color:rgba(255,255,255,.85)">Access relevant clinical information</span></div>
+      <div class="item" style="border-color:rgba(255,255,255,.2)"><strong style="color:var(--lavender-soft)">Hospitals</strong><span style="color:rgba(255,255,255,.85)">Connect departments and workflows</span></div>
+      <p style="margin-top:10px;opacity:.85;font-size:.85rem">OPD · IPD · ICU · OT · Lab · Pharmacy · Billing</p>
+    </section>
+
+    <section class="card back">
+      <div class="k">Back</div>
+      <h2>Health360 · Experience Digital Care</h2>
+      <p style="opacity:.9;line-height:1.45;margin-bottom:8px">A Healthcare Product by TechEarnest</p>
+      <p style="opacity:.85;line-height:1.45;font-size:.9rem;margin-bottom:10px"><strong>Your healthcare ID</strong> — One identity. One healthcare journey. Your profile can be associated with your UHID across relevant hospital interactions.</p>
+      <div class="qr">
+        <img src="./assets/qr-join-health360-event.png" alt="Join QR" />
+        <div>
+          <strong style="color:var(--purple)">SCAN → REGISTER → GET STARTED</strong>
+          <div style="font-size:.85rem;color:var(--muted);margin-top:4px;line-height:1.45">
+            hms.techearnest.com<br />
+            +91 20 6708 7147 · info@techearnest.com<br />
+            techearnest.com
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

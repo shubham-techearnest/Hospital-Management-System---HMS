@@ -5,12 +5,19 @@ import {
   completeMedicationOrderItem,
   createMedicationOrder,
   createMedicine,
+  dispensePharmacyRequest,
   getMedicationOrder,
   listEncounterAdministrations,
   listMedicationOrders,
   listMedicines,
+  listMyPharmacyRequests,
   listPendingMedicationWorklist,
+  listPharmacyRequests,
+  markPharmacyRequestReady,
   planMedicationOrderItem,
+  receivePharmacyRequest,
+  reviewPharmacyRequest,
+  sendPrescriptionToHospitalPharmacy,
   verifyMedicationOrder,
 } from '../api/pharmacyApi';
 
@@ -24,6 +31,9 @@ export const pharmacyKeys = {
   order: (medicationOrderId: string) => ['pharmacy', 'orders', medicationOrderId] as const,
   encounterAdministrations: (encounterId: string) =>
     ['pharmacy', 'encounters', encounterId, 'administrations'] as const,
+  myRequests: ['pharmacy', 'me', 'requests'] as const,
+  rxRequests: (hospitalId: string, branchId: string, status?: string) =>
+    ['pharmacy', 'requests', hospitalId, branchId, status ?? 'ALL'] as const,
 };
 
 function isRetryableError(error: unknown): boolean {
@@ -147,6 +157,57 @@ export function usePharmacyMutations(hospitalId: string, branchId: string) {
         qc.invalidateQueries({ queryKey: pharmacyKeys.order(order.medicationOrderId) });
         qc.invalidateQueries({ queryKey: pharmacyKeys.encounterAdministrations(order.encounterId) });
       },
+    }),
+  };
+}
+
+export function useMyPharmacyRequests() {
+  return useQuery({
+    queryKey: pharmacyKeys.myRequests,
+    queryFn: listMyPharmacyRequests,
+    retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function usePharmacyRequests(hospitalId?: string, branchId?: string, status?: string) {
+  return useQuery({
+    queryKey: pharmacyKeys.rxRequests(hospitalId ?? '', branchId ?? '', status),
+    queryFn: () => listPharmacyRequests(hospitalId!, branchId!, status),
+    enabled: Boolean(hospitalId && branchId),
+    retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function usePharmacyRequestMutations(hospitalId?: string, branchId?: string) {
+  const qc = useQueryClient();
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: pharmacyKeys.myRequests });
+    if (hospitalId && branchId) {
+      qc.invalidateQueries({ queryKey: ['pharmacy', 'requests', hospitalId, branchId] });
+    }
+  };
+  return {
+    sendHospital: useMutation({
+      mutationFn: sendPrescriptionToHospitalPharmacy,
+      onSuccess: invalidate,
+    }),
+    receive: useMutation({
+      mutationFn: receivePharmacyRequest,
+      onSuccess: invalidate,
+    }),
+    review: useMutation({
+      mutationFn: ({ requestId, notes }: { requestId: string; notes?: string }) =>
+        reviewPharmacyRequest(requestId, notes),
+      onSuccess: invalidate,
+    }),
+    markReady: useMutation({
+      mutationFn: ({ requestId, notes }: { requestId: string; notes?: string }) =>
+        markPharmacyRequestReady(requestId, notes),
+      onSuccess: invalidate,
+    }),
+    dispense: useMutation({
+      mutationFn: dispensePharmacyRequest,
+      onSuccess: invalidate,
     }),
   };
 }

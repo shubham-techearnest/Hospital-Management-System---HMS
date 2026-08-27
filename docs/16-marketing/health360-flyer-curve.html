@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Health360 Flyer — Curve Layout · TechEarnest Theme</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,600&display=swap");
+
+    :root {
+      --navy: #1a1635;
+      --purple: #5a429e;
+      --bright: #7c5cff;
+      --lavender: #b09eff;
+      --soft: #d4c8ff;
+      --paper: #ffffff;
+      --muted: #4a4560;
+      --w: 210mm;
+      --h: 297mm;
+      --bleed: 3mm;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: "Outfit", system-ui, sans-serif;
+      background: #0d0b1a;
+      color: var(--navy);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .bar {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; flex-wrap: wrap; padding: 10px 14px;
+      background: rgba(26,22,53,.97); color: #fff; font-size: .78rem;
+    }
+    .bar a, .bar button {
+      background: var(--purple); color: #fff; border: 0; border-radius: 999px;
+      padding: 7px 12px; font-weight: 700; text-decoration: none; cursor: pointer;
+      font-size: .72rem; font-family: inherit;
+    }
+    .bar a.ghost { background: transparent; border: 1px solid rgba(255,255,255,.35); }
+    .stage { padding: 24px; display: flex; justify-content: center; }
+
+    #flyer {
+      width: calc(var(--w) + var(--bleed) * 2);
+      height: calc(var(--h) + var(--bleed) * 2);
+      background: var(--paper);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,.45);
+    }
+
+    .page {
+      position: absolute;
+      inset: var(--bleed);
+      background: #fff;
+      overflow: hidden;
+    }
+
+    /* Top hero with wave cut */
+    .top-logo {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      z-index: 8;
+      height: 38px;
+      width: auto;
+      display: block;
+      background: var(--navy);
+      padding: 6px 11px;
+      border-radius: 10px;
+      border: 1px solid rgba(176,158,255,.4);
+      box-shadow: 0 6px 16px rgba(26,22,53,.28);
+    }
+
+    .hero {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 118mm;
+      z-index: 1;
+      background: var(--navy);
+    }
+    .hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 35%;
+      display: block;
+    }
+    .hero-tint {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(26,22,53,.35), rgba(90,66,158,.25));
+    }
+    .hero-wave {
+      position: absolute;
+      left: 0; right: 0; bottom: -1px;
+      height: 78px;
+      background: #fff;
+      border-radius: 55% 45% 0 0 / 100% 100% 0 0;
+      z-index: 2;
+    }
+    .hero-accent {
+      position: absolute;
+      left: 0; right: 18%;
+      bottom: 42px;
+      height: 22px;
+      background: linear-gradient(90deg, var(--purple), var(--bright));
+      border-radius: 0 40px 0 0;
+      opacity: .95;
+      z-index: 1;
+    }
+
+    /* Right circular photos */
+    .orb {
+      position: absolute;
+      z-index: 5;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 7px solid #fff;
+      box-shadow: 0 10px 28px rgba(26,22,53,.18);
+      background: var(--navy);
+    }
+    .orb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .orb.o1 {
+      width: 108px; height: 108px;
+      top: 58px; right: 22px;
+    }
+    .orb.o2 {
+      width: 96px; height: 96px;
+      top: 118px; right: 86px;
+    }
+
+    .content {
+      position: absolute;
+      z-index: 4;
+      left: 0; right: 0; bottom: 52px; top: 0;
+      padding: 108mm 22px 8px 26px;
+      display: grid;
+      grid-template-columns: 1.12fr .88fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .left { min-width: 0; }
+    .right {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: 4px;
+    }
+
+    .rail-photos {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .rail-photos .pic {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 4px solid #fff;
+      box-shadow: 0 6px 16px rgba(26,22,53,.16);
+      background: var(--navy);
+    }
+    .rail-photos .pic img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+
+    .card {
+      background: #f7f4ff;
+      border: 1px solid #e4dcff;
+      border-radius: 14px;
+      padding: 12px 12px 11px;
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .who {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .who div {
+      font-size: 11.5px;
+      line-height: 1.3;
+      color: var(--muted);
+      font-weight: 500;
+      padding-left: 12px;
+      position: relative;
+    }
+    .who div::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 6px;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--purple);
+    }
+    .who strong {
+      display: block;
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .chips span {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--navy);
+      background: #fff;
+      border: 1px solid #e4dcff;
+      border-radius: 999px;
+      padding: 4px 8px;
+    }
+
+    .qr-card {
+      background: linear-gradient(145deg, var(--navy), var(--purple));
+      color: #fff;
+      border-radius: 16px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 10px;
+      align-items: center;
+      box-shadow: 0 8px 20px rgba(90,66,158,.25);
+    }
+    .qr-card img {
+      width: 64px; height: 64px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 4px;
+      display: block;
+    }
+    .qr-card .lbl {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--soft);
+    }
+    .qr-card .big {
+      font-size: 14px;
+      font-weight: 800;
+      margin-top: 3px;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+    .qr-card .sub {
+      font-size: 10.5px;
+      margin-top: 3px;
+      opacity: .9;
+      font-weight: 500;
+    }
+
+    .brand {
+      display: block;
+      margin-bottom: 8px;
+    }
+    .brand .name {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.05;
+    }
+
+    .script {
+      margin: 0 0 8px;
+      font-family: "Fraunces", "Georgia", serif;
+      font-style: italic;
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--purple);
+      line-height: 1.2;
+      letter-spacing: .01em;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      line-height: 1.08;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      text-transform: uppercase;
+      color: var(--navy);
+      max-width: none;
+    }
+
+    .deck {
+      margin: 0 0 12px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: var(--muted);
+      font-weight: 500;
+      max-width: none;
+    }
+
+    .services-wrap {
+      display: block;
+      margin-bottom: 12px;
+      max-width: none;
+    }
+    .badge { display: none; }
+    .services h2 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+    .services ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .services li {
+      position: relative;
+      padding: 3px 0 3px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+    .services li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--purple);
+      font-weight: 800;
+    }
+
+    .badge {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--purple), var(--navy));
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-shadow: 6px 8px 0 rgba(176,158,255,.35);
+      flex: 0 0 auto;
+      margin-top: 6px;
+    }
+    .badge img {
+      width: 42px;
+      height: 42px;
+      background: #fff;
+      border-radius: 6px;
+      padding: 2px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .badge strong {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      line-height: 1.15;
+    }
+
+    .journey {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+      margin: 0 0 12px;
+    }
+    .journey span {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--navy);
+      background: #f4f0ff;
+      border: 1px solid #e4dcff;
+      border-radius: 999px;
+      padding: 3px 7px;
+    }
+    .journey i {
+      font-style: normal;
+      color: var(--lavender);
+      font-weight: 800;
+      font-size: 10px;
+    }
+
+    .values {
+      margin: 0 0 12px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--purple);
+      max-width: 340px;
+    }
+
+    .info h2 {
+      margin: 0 0 6px;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+    .info p {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .info strong { color: var(--navy); }
+
+    .own {
+      margin-top: 10px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    /* Bottom wave */
+    .foot-wave {
+      position: absolute;
+      left: 0; bottom: 0;
+      width: 62%;
+      height: 52px;
+      background: linear-gradient(90deg, var(--navy), var(--purple));
+      border-radius: 0 80px 0 0;
+      z-index: 3;
+    }
+    .foot-wave .inner {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 0 22px;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      gap: 10px;
+      white-space: nowrap;
+    }
+    .foot-wave .inner span { opacity: .95; }
+
+    @media print {
+      @page { size: 216mm 303mm; margin: 0; }
+      body { background: #fff; }
+      .bar { display: none !important; }
+      .stage { padding: 0; }
+      #flyer {
+        box-shadow: none;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span><strong>Health360</strong> · Curve layout · TechEarnest theme</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <a class="ghost" href="./HEALTH360-FLYER-DESIGN-BRIEF.md">Brief</a>
+      <a class="ghost" href="./health360-flyer-a4-final.html">A4 Final</a>
+      <button type="button" onclick="window.print()">Print / PDF</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <article id="flyer">
+      <div class="page">
+        <img class="top-logo" src="./assets/techearnest-logo-on-dark.png" alt="TechEarnest" />
+        <div class="hero">
+          <img src="./assets/health360-flyer-final-hero.png" alt="" />
+          <div class="hero-tint"></div>
+          <div class="hero-accent"></div>
+          <div class="hero-wave"></div>
+        </div>
+
+        <div class="orb o1"><img src="./assets/brochure-doctor-patient-hero.png" alt="" /></div>
+        <div class="orb o2"><img src="./assets/health360-flyer-hero-v2.png" alt="" /></div>
+
+        <div class="content">
+          <div class="left">
+            <div class="brand">
+              <div class="name">Health360</div>
+            </div>
+
+            <p class="script">Experience Digital Care</p>
+            <h1>Your hospital.<br />One connected<br />platform.</h1>
+            <p class="deck">
+              Health360 is a complete digital healthcare platform that connects patients,
+              clinicians, hospitals, diagnostics, and pharmacy on one unified system.
+            </p>
+
+            <div class="journey" aria-label="Connected journey">
+              <span>UHID</span><i>→</i><span>OPD</span><i>→</i><span>Clinical</span><i>→</i>
+              <span>Lab</span><i>→</i><span>Pharmacy</span><i>→</i><span>IPD</span><i>→</i><span>Billing</span>
+            </div>
+
+            <div class="services-wrap">
+              <div class="services">
+                <h2>Our capabilities</h2>
+                <ul>
+                  <li>Patient &amp; UHID</li>
+                  <li>Appointments &amp; OPD</li>
+                  <li>Clinical workflows &amp; e-Rx</li>
+                  <li>Laboratory &amp; Pharmacy</li>
+                  <li>IPD · ICU · OT · Radiology</li>
+                  <li>Billing · Portals · RBAC</li>
+                </ul>
+              </div>
+            </div>
+
+            <p class="values">Connected · Digital · Simple · Patient-First · Hospital-Ready</p>
+
+            <div class="info">
+              <h2>More info</h2>
+              <p>
+                <strong>+91 20 6708 7147</strong><br />
+                info@techearnest.com<br />
+                techearnest.com · hms.techearnest.com<br />
+                Office 221, VTP Trade Park, Undri, Pune 411060
+              </p>
+              <p class="own">A Healthcare Product by TechEarnest</p>
+            </div>
+          </div>
+
+          <aside class="right">
+            <div class="rail-photos">
+              <div class="pic"><img src="./assets/flyer-lab-pharmacy.png" alt="" /></div>
+              <div class="pic"><img src="./assets/brochure-hospital-modern.png" alt="" /></div>
+            </div>
+
+            <div class="card">
+              <h3>Built for</h3>
+              <div class="who">
+                <div><strong>Patients</strong>UHID, appointments, reports, timeline</div>
+                <div><strong>Doctors</strong>Encounter hub, notes, diagnosis, e-Rx</div>
+                <div><strong>Hospitals</strong>OPD, IPD, lab, pharmacy, billing</div>
+                <div><strong>Care teams</strong>Desk, nursing, lab &amp; pharmacy ops</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Also included</h3>
+              <div class="chips">
+                <span>Wellness</span>
+                <span>Notifications</span>
+                <span>Analytics</span>
+                <span>Asset Management</span>
+                <span>Self check-in</span>
+                <span>Mobile HMS</span>
+              </div>
+            </div>
+
+            <div class="qr-card">
+              <img src="./assets/qr-explore-health360.png" alt="QR — Explore Health360" />
+              <div>
+                <div class="lbl">Scan the QR code</div>
+                <div class="big">Explore Health360</div>
+                <div class="sub">hms.techearnest.com</div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="foot-wave">
+          <div class="inner">
+            <span>EXPLORE HEALTH360</span>
+            <span>·</span>
+            <span>hms.techearnest.com</span>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</body>
+</html>

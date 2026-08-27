@@ -28,7 +28,14 @@
 | **V51** | 8 | P2-F6 | RECEPTIONIST `hospital:doctors:read` (+ desk read) for walk-in doctor pick |
 | **V52** | 9 | P2-F7 | Staff book/close RBAC, patient `opd:status:own`, symptom/dosage catalogs |
 | **V53** | 9 | P2-F7 | Catalog JPA version columns |
-| **V54+** | — | TBD | SMS gateway, ICD catalog, etc. |
+| **V54** | 10 | P2-F8 | `hospital.diagnosis_catalog` ICD favorites + OPD seed codes |
+| **V55** | 10 | P2-F8 | Platform clinical catalog defaults (`hospital_id` NULL); hospitals do not maintain catalogs |
+| **V56** | ECO-P2 | Wellness | `clinical.encounter_wellness_plans` (diet/rest/exercise/lifestyle + follow-up date) |
+| **V57** | ECO-P3 | Lab | Unique `laboratory.lab_samples.specimen_id` per tenant |
+| **V58** | ECO-P4 | Pharmacy | `pharmacy.pharmacy_requests` + items (e-Rx share; distinct from MAR) |
+| **V59** | ECO-P5 | OPD / IAM | `opd:checkin:own` patient self check-in permission |
+| **V60** | ECO-P5 | Clinical | `clinical.followups.reminder_sent_at` for due reminders |
+| **V61+** | — | TBD | SMS gateway, QR check-in tokens, etc. |
 
 ---
 

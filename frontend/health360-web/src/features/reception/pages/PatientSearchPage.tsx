@@ -8,6 +8,10 @@ import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { usePatientSearch } from '@/features/reception/hooks/usePatientRegistryQueries';
 import type { HospitalPatientSummary } from '@/features/reception/api/patientRegistryApi';
+import { lookupDeskAppointment, type DeskAppointmentLookup } from '@/features/scheduling/api/schedulingApi';
+import { arriveAppointment } from '@/features/opd/api/opdApi';
+import { appointmentLabel } from '@/features/scheduling/utils/schedulingUtils';
+import { isValidUuid } from '@/shared/utils/uuid';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
@@ -19,24 +23,53 @@ export function PatientSearchPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [appointmentId, setAppointmentId] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [apptLookup, setApptLookup] = useState<DeskAppointmentLookup | null>(null);
+  const [apptError, setApptError] = useState<string | null>(null);
+  const [apptLoading, setApptLoading] = useState(false);
+  const [arrivePending, setArrivePending] = useState(false);
+  const [arriveMessage, setArriveMessage] = useState<string | null>(null);
 
   const searchParams = tab === 0
     ? { uhid: submitted ? uhid : undefined }
     : tab === 1
       ? { mobile: submitted ? mobile : undefined }
-      : {
-          firstName: submitted ? firstName : undefined,
-          lastName: submitted ? lastName : undefined,
-          dateOfBirth: submitted ? dateOfBirth : undefined,
-        };
+      : tab === 2
+        ? {
+            firstName: submitted ? firstName : undefined,
+            lastName: submitted ? lastName : undefined,
+            dateOfBirth: submitted ? dateOfBirth : undefined,
+          }
+        : {};
 
   const { data, isFetching, isError, error, refetch } = usePatientSearch({
     ...searchParams,
-    enabled: submitted,
+    enabled: submitted && tab !== 3,
   });
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
+    setArriveMessage(null);
+    if (tab === 3) {
+      setApptError(null);
+      setApptLookup(null);
+      const id = appointmentId.trim();
+      if (!isValidUuid(id)) {
+        setApptError('Enter a valid appointment ID (UUID).');
+        return;
+      }
+      setApptLoading(true);
+      try {
+        const result = await lookupDeskAppointment(id);
+        setApptLookup(result ?? null);
+        if (!result) setApptError('Appointment not found.');
+      } catch (e) {
+        setApptError(parseApiError(e).message);
+      } finally {
+        setApptLoading(false);
+      }
+      return;
+    }
     setSubmitted(true);
     void refetch();
   };
@@ -45,11 +78,28 @@ export function PatientSearchPage() {
     navigate(`/reception/patients/${patient.patientId}`);
   };
 
+  const handleArrive = async () => {
+    if (!apptLookup) return;
+    setArrivePending(true);
+    setArriveMessage(null);
+    try {
+      const result = await arriveAppointment({ appointmentId: apptLookup.appointmentId });
+      setArriveMessage(
+        `Arrived — token ${result.queueEntry.tokenDisplay}. Status ${result.appointmentStatus ?? 'ARRIVED'}.`,
+      );
+      setApptLookup({ ...apptLookup, canArrive: false, appointmentStatus: 'ARRIVED' });
+    } catch (e) {
+      setApptError(parseApiError(e).message);
+    } finally {
+      setArrivePending(false);
+    }
+  };
+
   return (
     <AnimatedPage>
       <DashboardPageHeader
         title="Patient Search"
-        subtitle="Find an existing patient by UHID, mobile, or name and date of birth."
+        subtitle="Find by UHID, mobile, name + DOB, or appointment ID. Always open an existing record when it matches."
         actions={(
           <Button
             variant="contained"
@@ -61,11 +111,22 @@ export function PatientSearchPage() {
         )}
       />
 
+      <Alert severity="info" sx={{ mb: 2 }}>
+        Search first. If a match exists, open that patient — do not register a second identity for the same person.
+      </Alert>
+
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Tabs value={tab} onChange={(_, value) => { setTab(value); setSubmitted(false); }}>
+        <Tabs value={tab} onChange={(_, value) => {
+          setTab(value);
+          setSubmitted(false);
+          setApptLookup(null);
+          setApptError(null);
+          setArriveMessage(null);
+        }}>
           <Tab label="UHID" />
           <Tab label="Mobile" />
           <Tab label="Name + DOB" />
+          <Tab label="Appointment ID" />
         </Tabs>
 
         <Stack spacing={2} sx={{ mt: 2 }}>
@@ -89,22 +150,78 @@ export function PatientSearchPage() {
               />
             </>
           )}
-          <Button variant="contained" startIcon={<SearchIcon />} onClick={handleSearch} disabled={isFetching}>
+          {tab === 3 && (
+            <TextField
+              label="Appointment ID"
+              value={appointmentId}
+              onChange={(e) => setAppointmentId(e.target.value)}
+              placeholder="UUID from booking confirmation"
+              fullWidth
+            />
+          )}
+          <Button
+            variant="contained"
+            startIcon={<SearchIcon />}
+            onClick={() => void handleSearch()}
+            disabled={isFetching || apptLoading}
+          >
             Search
           </Button>
         </Stack>
       </Paper>
 
-      {isError && <Alert severity="error">{parseApiError(error).message}</Alert>}
+      {isError && tab !== 3 && <Alert severity="error">{parseApiError(error).message}</Alert>}
+      {apptError && <Alert severity="error" sx={{ mb: 2 }}>{apptError}</Alert>}
+      {arriveMessage && <Alert severity="success" sx={{ mb: 2 }}>{arriveMessage}</Alert>}
 
-      {submitted && !isFetching && data && (
+      {tab === 3 && apptLookup && (
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Typography variant="h6" gutterBottom>{apptLookup.patientName}</Typography>
+          <Typography variant="body2">UHID: {apptLookup.uhid ?? '—'}</Typography>
+          <Typography variant="body2">Mobile: {apptLookup.primaryPhone ?? '—'}</Typography>
+          <Typography variant="body2">
+            Appointment: {appointmentLabel(apptLookup.appointmentStatus)}
+            {apptLookup.scheduledAt
+              ? ` · ${new Date(apptLookup.scheduledAt).toLocaleString()}`
+              : ''}
+          </Typography>
+          <Typography variant="body2">
+            Doctor: {apptLookup.doctorName}
+            {apptLookup.hospitalName ? ` · ${apptLookup.hospitalName}` : ''}
+            {apptLookup.branchName ? ` — ${apptLookup.branchName}` : ''}
+          </Typography>
+          <Stack direction="row" spacing={1} sx={{ mt: 2 }} flexWrap="wrap" useFlexGap>
+            <Button variant="outlined" onClick={() => navigate(`/reception/patients/${apptLookup.patientId}`)}>
+              Open patient
+            </Button>
+            {apptLookup.canArrive ? (
+              <Button variant="contained" disabled={arrivePending} onClick={() => void handleArrive()}>
+                {arrivePending ? 'Arriving…' : 'Mark arrived (issue token)'}
+              </Button>
+            ) : (
+              <Button variant="outlined" onClick={() => navigate('/reception/dashboard')}>
+                Open OPD queue
+              </Button>
+            )}
+          </Stack>
+        </Paper>
+      )}
+
+      {submitted && tab !== 3 && !isFetching && data && (
         <Paper sx={{ p: 3 }}>
           {data.content.length === 0 ? (
             <Box>
-              <Typography color="text.secondary" gutterBottom>No patient found.</Typography>
-              <Button variant="outlined" onClick={() => navigate('/reception/patients/new')}>
-                Register new patient
-              </Button>
+              <Typography color="text.secondary" gutterBottom>
+                No patient found. Try another identifier before registering — duplicates create broken records.
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Button variant="outlined" onClick={() => navigate('/reception/patients/new')}>
+                  Register new patient
+                </Button>
+                <Button variant="text" onClick={() => { setTab(1); setSubmitted(false); }}>
+                  Try mobile search
+                </Button>
+              </Stack>
             </Box>
           ) : (
             <Stack spacing={2}>
@@ -117,7 +234,7 @@ export function PatientSearchPage() {
                       <Typography variant="body2">Mobile: {patient.primaryPhone ?? '—'}</Typography>
                       <Typography variant="body2">DOB: {patient.dateOfBirth ?? '—'}</Typography>
                     </Box>
-                    <Button variant="contained" onClick={() => openPatient(patient)}>Open</Button>
+                    <Button variant="contained" onClick={() => openPatient(patient)}>Open existing</Button>
                   </Stack>
                 </Paper>
               ))}

@@ -9,6 +9,7 @@ export interface Encounter {
   patientName?: string;
   uhid?: string;
   tokenDisplay?: string;
+  queueStatus?: string;
   hospitalId: string;
   branchId: string;
   departmentId?: string;
@@ -378,4 +379,48 @@ export async function getMyClinicalTimeline(page = 0, size = 20): Promise<Spring
     { params: { page, size } },
   );
   return unwrap(data) ?? EMPTY_PAGE();
+}
+
+export interface WellnessPlan {
+  wellnessPlanId?: string;
+  encounterId: string;
+  patientId: string;
+  diet?: string;
+  restGuidance?: string;
+  exercise?: string;
+  lifestyle?: string;
+  notes?: string;
+  followUpDate?: string;
+  followUpReason?: string;
+  followUpStatus?: string;
+  followUpId?: string;
+  updatedAt?: string;
+}
+
+export type UpsertWellnessPlanPayload = {
+  diet?: string;
+  restGuidance?: string;
+  exercise?: string;
+  lifestyle?: string;
+  notes?: string;
+  followUpDate?: string | null;
+  followUpReason?: string;
+};
+
+export async function getEncounterWellnessPlan(encounterId: string): Promise<WellnessPlan> {
+  const { data } = await apiClient.get<ApiEnvelope<WellnessPlan>>(
+    `/clinical/encounters/${encounterId}/wellness-plan`,
+  );
+  return unwrap(data);
+}
+
+export async function upsertEncounterWellnessPlan(
+  encounterId: string,
+  payload: UpsertWellnessPlanPayload,
+): Promise<WellnessPlan> {
+  const { data } = await apiClient.put<ApiEnvelope<WellnessPlan>>(
+    `/clinical/encounters/${encounterId}/wellness-plan`,
+    payload,
+  );
+  return unwrap(data);
 }

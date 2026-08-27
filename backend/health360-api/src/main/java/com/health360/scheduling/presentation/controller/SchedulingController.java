@@ -18,6 +18,7 @@ import com.health360.scheduling.presentation.dto.response.AppointmentArrivalResp
 import com.health360.scheduling.presentation.dto.response.AppointmentBookingResponse;
 import com.health360.scheduling.presentation.dto.response.AppointmentDetailResponse;
 import com.health360.scheduling.presentation.dto.response.AppointmentSummaryResponse;
+import com.health360.scheduling.presentation.dto.response.DeskAppointmentLookupResponse;
 import com.health360.scheduling.presentation.dto.response.DoctorBookingLocationResponse;
 import com.health360.scheduling.presentation.dto.response.DoctorAvailabilityResponse;
 import com.health360.scheduling.presentation.dto.response.ScheduleResponse;
@@ -195,6 +196,15 @@ public class SchedulingController {
                         principal.getUserId(), principal.getTenantId(), appointmentId, request)));
     }
 
+    @GetMapping("/appointments/{appointmentId:[0-9a-fA-F\\-]{36}}/desk-lookup")
+    @PreAuthorize("hasAuthority('scheduling:appointment:arrive') or hasAuthority('opd:registration:write')")
+    public ResponseEntity<ApiResponse<DeskAppointmentLookupResponse>> deskLookupAppointment(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID appointmentId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                appointmentService.lookupAppointmentForDesk(principal, appointmentId)));
+    }
+
     @PostMapping("/appointments/{appointmentId:[0-9a-fA-F\\-]{36}}/arrive")
     @PreAuthorize("hasAuthority('scheduling:appointment:arrive') or hasAuthority('opd:registration:write')")
     public ResponseEntity<ApiResponse<AppointmentArrivalResponse>> arriveAppointment(
@@ -204,6 +214,15 @@ public class SchedulingController {
         ArriveAppointmentRequest body = request != null ? request : new ArriveAppointmentRequest();
         return ResponseEntity.ok(ApiResponse.ok(
                 appointmentArrivalService.arrive(principal, appointmentId, body)));
+    }
+
+    @PostMapping("/appointments/{appointmentId:[0-9a-fA-F\\-]{36}}/self-check-in")
+    @PreAuthorize("hasAuthority('opd:checkin:own')")
+    public ResponseEntity<ApiResponse<AppointmentArrivalResponse>> selfCheckInAppointment(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID appointmentId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                appointmentArrivalService.selfCheckIn(principal, appointmentId)));
     }
 
     @GetMapping("/doctors/me/appointments")

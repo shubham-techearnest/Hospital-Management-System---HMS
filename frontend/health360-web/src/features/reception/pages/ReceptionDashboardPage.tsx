@@ -19,6 +19,7 @@ import {
   useRegisterWalkIn,
 } from '@/features/opd/hooks/useOpdQueries';
 import { OpdQueueTable } from '@/features/opd/components/OpdQueueTable';
+import { OpdFloorStatusHelp } from '@/features/opd/components/OpdFloorStatusHelp';
 import { WalkInRegistrationPanel } from '@/features/reception/components/WalkInRegistrationPanel';
 import { ReceptionSlotBookingPanel } from '@/features/reception/components/ReceptionSlotBookingPanel';
 
@@ -86,7 +87,7 @@ export function ReceptionDashboardPage() {
     <AnimatedPage>
       <DashboardPageHeader
         title="Reception — OPD"
-        subtitle="Queue, walk-ins, slot booking, and appointment arrival"
+        subtitle="Queue, walk-ins, slot booking, and appointment arrival. Doctor actions update this board."
         actions={
           <Button variant="outlined" onClick={() => refetchQueue()}>Refresh queue</Button>
         }
@@ -124,6 +125,7 @@ export function ReceptionDashboardPage() {
 
       {tab === 0 && (
         <Stack spacing={2}>
+          <OpdFloorStatusHelp audience="desk" />
           <TextField select label="Filter by status" size="small" sx={{ maxWidth: 240 }}
             value={queueFilter} onChange={(e) => { setQueueFilter(e.target.value); setQueuePage(0); }}>
             <MenuItem value="">All active today</MenuItem>

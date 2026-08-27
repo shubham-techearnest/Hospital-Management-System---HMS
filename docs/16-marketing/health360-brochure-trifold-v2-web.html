@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Health360 Brochure V2 — RGB / Web</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Outfit:wght@400;500;600;700;800&display=swap");
+    :root {
+      --purple: #5a429e; --lavender: #b09eff; --lavender-soft: #d4c8ff;
+      --lavender-bg: #f4f0ff; --navy: #1a1635; --muted: #5c6478;
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "Outfit", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--sans); background: #0d0b1a; color: #16132a; }
+    .bar {
+      position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between;
+      align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 14px;
+      background: rgba(26,22,53,.96); color: #fff; font-size: .78rem;
+    }
+    .bar a, .bar button {
+      background: var(--purple); color: #fff; border: 0; border-radius: 999px;
+      padding: 7px 12px; font-weight: 700; text-decoration: none; cursor: pointer; font-size: .72rem;
+    }
+    .bar a.ghost { background: transparent; border: 1px solid rgba(255,255,255,.35); }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 24px 16px 56px; display: grid; gap: 18px; }
+    .intro { color: rgba(255,255,255,.75); font-size: .9rem; line-height: 1.5; }
+    .card { border-radius: 16px; overflow: hidden; padding: 26px 24px; box-shadow: 0 16px 40px rgba(0,0,0,.35); }
+    .k { font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 800; color: var(--lavender-soft); margin: 0 0 8px; }
+    h1, h2 { font-family: var(--serif); margin: 0 0 10px; line-height: 1.15; }
+    .front { background: linear-gradient(160deg, #1a1635, #5a429e); color: #fff; }
+    .front img.hero { width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; margin: 12px 0; }
+    .why, .caps { background: #fff; }
+    .why .k, .caps .k { color: var(--purple); }
+    .why h2, .caps h2 { color: var(--navy); }
+    .item { padding: 12px 0; border-bottom: 1px solid rgba(90,66,158,.15); }
+    .item strong { display: block; color: var(--purple); margin-bottom: 3px; }
+    .item span { color: var(--muted); font-size: .92rem; line-height: 1.4; font-weight: 500; }
+    .journey, .eco, .back { background: linear-gradient(165deg, #12101f, #5a429e); color: #fff; }
+    .step { display: grid; grid-template-columns: 36px 1fr; gap: 10px; margin: 8px 0; }
+    .n { width: 28px; height: 28px; border-radius: 50%; background: var(--purple); display: grid; place-items: center; font-size: .75rem; font-weight: 800; }
+    .depts { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+    .depts span { border: 1px solid rgba(176,158,255,.5); border-radius: 8px; padding: 6px 10px; font-size: .78rem; font-weight: 700; }
+    .qr { display: flex; gap: 14px; align-items: center; background: #fff; color: var(--navy); border-radius: 12px; padding: 12px; margin-top: 14px; }
+    .qr img { width: 88px; height: 88px; }
+    .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0; }
+    .fact { background: var(--lavender-bg); border-radius: 10px; padding: 12px; text-align: center; }
+    .fact b { display: block; font-size: 1.3rem; color: var(--navy); }
+    .fact span { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span><strong>Brochure V2</strong> · RGB web · reading order</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <a class="ghost" href="./health360-brochure-trifold-v2.html">Print layout</a>
+      <a class="ghost" href="./health360-brochure-trifold.html">V1</a>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="intro"><strong>Health360 by TechEarnest</strong> — reference-style tri-fold story in TechEarnest purple theme. Complete digital hospital management platform.</p>
+
+    <section class="card front">
+      <div class="k">Front cover</div>
+      <h1>Your hospital. Your journey. One platform.</h1>
+      <p style="opacity:.9;line-height:1.45">A complete digital hospital management platform that connects every step of care.</p>
+      <img class="hero" src="./assets/brochure-hospital-modern.png" alt="" />
+      <div class="qr">
+        <img src="./assets/qr-explore-health360.png" alt="QR" />
+        <div><strong style="color:var(--purple)">Scan to explore Health360</strong><div style="font-size:.85rem;color:var(--muted);margin-top:4px">techearnest.com · A Healthcare Product by TechEarnest</div></div>
+      </div>
+    </section>
+
+    <section class="card why">
+      <div class="k">Fold-in</div>
+      <h2>Why Health360?</h2>
+      <div class="item"><strong>Simple</strong><span>One platform from registration and OPD to discharge and follow-up.</span></div>
+      <div class="item"><strong>Connected</strong><span>Doctors, nurses, lab, pharmacy, billing, and operations on one encounter spine.</span></div>
+      <div class="item"><strong>Digital</strong><span>e-Prescriptions, digital records, queue tokens, and lab reports.</span></div>
+      <div class="item"><strong>Hospital-first</strong><span>Built for hospital owners, medical directors, clinicians, and operations teams.</span></div>
+      <div class="facts">
+        <div class="fact"><b>1</b><span>Unified platform</span></div>
+        <div class="fact"><b>1</b><span>Patient UHID</span></div>
+        <div class="fact"><b>Full</b><span>OPD → IPD journey</span></div>
+        <div class="fact"><b>RBAC</b><span>Secure role access</span></div>
+      </div>
+    </section>
+
+    <section class="card journey">
+      <div class="k">Inside · Journey</div>
+      <h2>Your healthcare journey, connected.</h2>
+      <div class="step"><div class="n">01</div><div><strong>Register</strong> — UHID &amp; patient record</div></div>
+      <div class="step"><div class="n">02</div><div><strong>Appointment</strong> — book hospital services</div></div>
+      <div class="step"><div class="n">03</div><div><strong>OPD &amp; consult</strong> — queue, vitals, notes</div></div>
+      <div class="step"><div class="n">04</div><div><strong>Diagnose</strong> — lab &amp; investigations</div></div>
+      <div class="step"><div class="n">05</div><div><strong>Prescribe</strong> — signed e-Rx</div></div>
+      <div class="step"><div class="n">06</div><div><strong>Report</strong> — results across the visit</div></div>
+      <div class="step"><div class="n">07</div><div><strong>Follow-up</strong> — continued care</div></div>
+    </section>
+
+    <section class="card caps">
+      <div class="k">Inside · Capabilities</div>
+      <h2>What can you do with Health360?</h2>
+      <div class="item"><strong>Appointments &amp; queues</strong><span>Scheduling, desk arrive, walk-ins, live tokens</span></div>
+      <div class="item"><strong>Clinical care</strong><span>Consultation, diagnosis, vitals, notes</span></div>
+      <div class="item"><strong>Digital prescriptions</strong><span>Signed e-Rx into pharmacy</span></div>
+      <div class="item"><strong>Laboratory</strong><span>Orders, samples, results, reports</span></div>
+      <div class="item"><strong>OPD &amp; IPD visits</strong><span>Beds, nursing, discharge</span></div>
+      <div class="item"><strong>Analytics</strong><span>Timelines, dashboards, insights</span></div>
+    </section>
+
+    <section class="card eco">
+      <div class="k">Inside · Ecosystem</div>
+      <h2>One connected healthcare ecosystem.</h2>
+      <p style="opacity:.88;line-height:1.45;margin-bottom:10px">Patients · Doctors · Hospitals · Laboratory · Pharmacy — on one platform.</p>
+      <div class="depts">
+        <span>OPD</span><span>IPD</span><span>ICU</span><span>OT</span>
+        <span>Laboratory</span><span>Pharmacy</span><span>Billing</span><span>Analytics</span>
+      </div>
+      <p style="opacity:.85;font-size:.9rem;line-height:1.45">Plus asset management and role-based administration. Health360 is not just an appointment app—it is a connected hospital platform.</p>
+    </section>
+
+    <section class="card back">
+      <div class="k">Back cover</div>
+      <img src="./assets/techearnest-logo-on-dark.png" alt="TechEarnest" style="height:28px;margin-bottom:10px" />
+      <h2>Building Digital Solutions for a Healthier Tomorrow</h2>
+      <p style="opacity:.88;line-height:1.45;margin-bottom:12px">Health360 by TechEarnest — complete digital hospital management for the full care journey.</p>
+      <div class="qr">
+        <img src="./assets/qr-explore-health360.png" alt="QR" />
+        <div>
+          <strong style="color:var(--purple)">Explore Health360</strong>
+          <div style="font-size:.85rem;color:var(--muted);margin-top:4px;line-height:1.45">
+            techearnest.com<br />info@techearnest.com<br />+91 20 6708 7147<br />
+            Office 221, VTP Trade Park, Undri, Pune 411060
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

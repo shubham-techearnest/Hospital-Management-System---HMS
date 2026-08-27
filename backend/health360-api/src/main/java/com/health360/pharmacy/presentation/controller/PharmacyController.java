@@ -3,6 +3,7 @@ package com.health360.pharmacy.presentation.controller;
 import com.health360.config.security.UserPrincipal;
 import com.health360.pharmacy.application.service.PharmacyCatalogService;
 import com.health360.pharmacy.application.service.PharmacyFulfillmentService;
+import com.health360.pharmacy.application.service.PharmacyRequestService;
 import com.health360.pharmacy.presentation.dto.request.*;
 import com.health360.pharmacy.presentation.dto.response.*;
 import com.health360.shared.dto.ApiResponse;
@@ -27,6 +28,7 @@ public class PharmacyController {
 
     private final PharmacyCatalogService catalogService;
     private final PharmacyFulfillmentService fulfillmentService;
+    private final PharmacyRequestService requestService;
 
     @PostMapping("/medicines")
     @PreAuthorize("hasAuthority('pharmacy:medicine:write')")
@@ -132,5 +134,68 @@ public class PharmacyController {
             @PathVariable UUID encounterId) {
         return ResponseEntity.ok(ApiResponse.ok(
                 fulfillmentService.listEncounterAdministrations(principal, encounterId)));
+    }
+
+    // ——— ECO-P4 e-Rx pharmacy share (hospital-first) ———
+
+    @GetMapping("/me/requests")
+    @PreAuthorize("hasAuthority('pharmacy:request:read')")
+    public ResponseEntity<ApiResponse<List<PharmacyRequestResponse>>> listMyPharmacyRequests(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.ok(requestService.listMyRequests(principal)));
+    }
+
+    @PostMapping("/me/prescriptions/{prescriptionId}/send-hospital")
+    @PreAuthorize("hasAuthority('pharmacy:request:write')")
+    public ResponseEntity<ApiResponse<PharmacyRequestResponse>> sendPrescriptionToHospitalPharmacy(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID prescriptionId) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
+                requestService.sendHospital(principal, prescriptionId)));
+    }
+
+    @GetMapping("/requests")
+    @PreAuthorize("hasAuthority('pharmacy:request:read')")
+    public ResponseEntity<ApiResponse<List<PharmacyRequestResponse>>> listPharmacyRequests(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam UUID hospitalId,
+            @RequestParam UUID branchId,
+            @RequestParam(required = false) String status) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                requestService.listWorklist(principal, hospitalId, branchId, status)));
+    }
+
+    @PostMapping("/requests/{requestId}/receive")
+    @PreAuthorize("hasAuthority('pharmacy:request:fulfill')")
+    public ResponseEntity<ApiResponse<PharmacyRequestResponse>> receivePharmacyRequest(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID requestId) {
+        return ResponseEntity.ok(ApiResponse.ok(requestService.receive(principal, requestId)));
+    }
+
+    @PostMapping("/requests/{requestId}/review")
+    @PreAuthorize("hasAuthority('pharmacy:request:fulfill')")
+    public ResponseEntity<ApiResponse<PharmacyRequestResponse>> reviewPharmacyRequest(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID requestId,
+            @RequestBody(required = false) PharmacyRequestNotesRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(requestService.startReview(principal, requestId, request)));
+    }
+
+    @PostMapping("/requests/{requestId}/ready")
+    @PreAuthorize("hasAuthority('pharmacy:request:fulfill')")
+    public ResponseEntity<ApiResponse<PharmacyRequestResponse>> markPharmacyRequestReady(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID requestId,
+            @RequestBody(required = false) PharmacyRequestNotesRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(requestService.markReady(principal, requestId, request)));
+    }
+
+    @PostMapping("/requests/{requestId}/dispense")
+    @PreAuthorize("hasAuthority('pharmacy:request:fulfill')")
+    public ResponseEntity<ApiResponse<PharmacyRequestResponse>> dispensePharmacyRequest(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID requestId) {
+        return ResponseEntity.ok(ApiResponse.ok(requestService.dispense(principal, requestId)));
     }
 }

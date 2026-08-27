@@ -25,7 +25,15 @@ export function parseApiError(error: unknown): ParsedApiError {
     }
 
     const status = error.response.status;
-    const serverMessage = error.response.data?.error?.message as string | undefined;
+    const errorBody = error.response.data?.error as
+      | { message?: string; details?: { field?: string; message?: string }[] }
+      | undefined;
+    const serverMessage = errorBody?.message;
+    const detailText = errorBody?.details
+      ?.map((d) => (d.field ? `${d.field}: ${d.message}` : d.message))
+      .filter(Boolean)
+      .join('; ');
+    const combinedMessage = [serverMessage, detailText].filter(Boolean).join(' — ');
 
     if (status === 401) {
       return { kind: 'session', message: 'Session expired. Please sign in again.' };
@@ -37,15 +45,15 @@ export function parseApiError(error: unknown): ParsedApiError {
       return { kind: 'not_found', message: serverMessage ?? 'The requested resource was not found.' };
     }
     if (status === 400) {
-      return { kind: 'validation', message: serverMessage ?? 'Invalid request. Please check your input.' };
+      return { kind: 'validation', message: combinedMessage || 'Invalid request. Please check your input.' };
     }
     if (status === 409) {
-      return { kind: 'validation', message: serverMessage ?? 'This action is not allowed with your current plan.' };
+      return { kind: 'validation', message: combinedMessage || 'This action is not allowed with your current plan.' };
     }
 
     return {
       kind: 'unknown',
-      message: serverMessage ?? 'Something went wrong. Please try again.',
+      message: combinedMessage || 'Something went wrong. Please try again.',
     };
   }
 

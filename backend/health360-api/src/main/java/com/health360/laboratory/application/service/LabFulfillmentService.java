@@ -9,12 +9,18 @@ import com.health360.clinical.infrastructure.persistence.repository.ClinicalOrde
 import com.health360.clinical.infrastructure.persistence.repository.ClinicalOrderRepository;
 import com.health360.clinical.infrastructure.persistence.repository.EncounterRepository;
 import com.health360.config.security.UserPrincipal;
+import com.health360.iam.application.service.TransactionalNotificationService;
+import com.health360.iam.domain.NotificationType;
 import com.health360.laboratory.domain.LabOrderStatus;
 import com.health360.laboratory.domain.LabResultStatus;
 import com.health360.laboratory.infrastructure.persistence.entity.*;
 import com.health360.laboratory.infrastructure.persistence.repository.*;
 import com.health360.laboratory.presentation.dto.request.*;
 import com.health360.laboratory.presentation.dto.response.*;
+import com.health360.patient.application.service.LabValueService;
+import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
+import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
+import com.health360.patient.presentation.dto.request.RecordLabValuesRequest;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -25,7 +31,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -33,6 +42,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class LabFulfillmentService {
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final DateTimeFormatter SPECIMEN_DATE = DateTimeFormatter.BASIC_ISO_DATE;
 
     private final LabOrderRepository labOrderRepository;
     private final LabSampleRepository sampleRepository;
@@ -43,11 +55,14 @@ public class LabFulfillmentService {
     private final ClinicalOrderRepository clinicalOrderRepository;
     private final ClinicalOrderItemRepository clinicalOrderItemRepository;
     private final EncounterRepository encounterRepository;
+    private final PatientProfileRepository patientProfileRepository;
     private final LabCatalogService catalogService;
     private final LabAccessService accessService;
     private final EncounterAccessService encounterAccessService;
     private final LabMapper mapper;
     private final AuditLogService auditLogService;
+    private final TransactionalNotificationService notificationService;
+    private final LabValueService labValueService;
 
     @Transactional(readOnly = true)
     public List<LabWorklistItemResponse> listPendingWorklist(
@@ -64,11 +79,16 @@ public class LabFulfillmentService {
                     EncounterEntity encounter = encounterRepository
                             .findByIdAndTenantIdAndDeletedAtIsNull(order.getEncounterId(), tenantId)
                             .orElseThrow();
+                    PatientProfileEntity patient = patientProfileRepository
+                            .findByIdAndTenantIdAndDeletedAtIsNull(encounter.getPatientId(), tenantId)
+                            .orElse(null);
                     return LabWorklistItemResponse.builder()
                             .clinicalOrderItemId(item.getId())
                             .clinicalOrderId(order.getId())
                             .encounterId(encounter.getId())
                             .patientId(encounter.getPatientId())
+                            .patientName(patientDisplayName(patient))
+                            .uhid(patient != null ? patient.getUhid() : null)
                             .orderNumber(order.getOrderNumber())
                             .itemName(item.getItemName())
                             .itemCode(item.getItemCode())
@@ -82,10 +102,23 @@ public class LabFulfillmentService {
     @Transactional
     public LabOrderResponse createLabOrder(UserPrincipal principal, CreateLabOrderRequest request) {
         accessService.assertCanManageOrders(principal);
+        return receiveClinicalItem(principal, request.getClinicalOrderItemId(), true);
+    }
+
+    /**
+     * Patient books the hospital lab for a doctor-ordered test (hospital-first journey).
+     */
+    @Transactional
+    public LabOrderResponse createLabOrderForPatient(UserPrincipal principal, UUID clinicalOrderItemId) {
+        return receiveClinicalItem(principal, clinicalOrderItemId, false);
+    }
+
+    private LabOrderResponse receiveClinicalItem(
+            UserPrincipal principal, UUID clinicalOrderItemId, boolean staffScoped) {
         UUID tenantId = principal.getTenantId();
 
         ClinicalOrderItemEntity item = clinicalOrderItemRepository
-                .findByIdAndTenantIdAndDeletedAtIsNull(request.getClinicalOrderItemId(), tenantId)
+                .findByIdAndTenantIdAndDeletedAtIsNull(clinicalOrderItemId, tenantId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
                         "Clinical order item not found"));
 
@@ -118,7 +151,9 @@ public class LabFulfillmentService {
                 .findByIdAndTenantIdAndDeletedAtIsNull(clinicalOrder.getEncounterId(), tenantId)
                 .orElseThrow();
 
-        accessService.assertHospitalScope(principal, encounter.getHospitalId());
+        if (staffScoped) {
+            accessService.assertHospitalScope(principal, encounter.getHospitalId());
+        }
 
         LabTestEntity test = catalogService.requireTest(tenantId, item.getItemReferenceId());
 
@@ -146,7 +181,8 @@ public class LabFulfillmentService {
         clinicalOrder.setUpdatedBy(principal.getUserId());
         clinicalOrderRepository.save(clinicalOrder);
 
-        auditLogService.record(tenantId, principal.getUserId(), "LAB_ORDER_CREATED",
+        auditLogService.record(tenantId, principal.getUserId(),
+                staffScoped ? "LAB_ORDER_CREATED" : "LAB_ORDER_BOOKED_BY_PATIENT",
                 "LabOrder", saved.getId(), Map.of("clinicalOrderItemId", item.getId().toString()));
 
         return buildOrderResponse(tenantId, saved);
@@ -194,10 +230,12 @@ public class LabFulfillmentService {
                     "Sample already collected");
         }
 
+        String specimenId = resolveSpecimenId(tenantId, request.getSpecimenId());
+
         LabSampleEntity sample = new LabSampleEntity();
         sample.setTenantId(tenantId);
         sample.setLabOrderId(labOrderId);
-        sample.setSpecimenId(trimToNull(request.getSpecimenId()));
+        sample.setSpecimenId(specimenId);
         sample.setCollectedAt(Instant.now());
         sample.setCollectedBy(principal.getUserId());
         sample.setNotes(trimToNull(request.getNotes()));
@@ -208,6 +246,9 @@ public class LabFulfillmentService {
         order.setStatus(LabOrderStatus.SAMPLE_COLLECTED.name());
         order.setUpdatedBy(principal.getUserId());
         labOrderRepository.save(order);
+
+        auditLogService.record(tenantId, principal.getUserId(), "LAB_SAMPLE_COLLECTED",
+                "LabSample", sample.getId(), Map.of("specimenId", specimenId));
 
         return buildOrderResponse(tenantId, order);
     }
@@ -359,6 +400,29 @@ public class LabFulfillmentService {
 
         updateClinicalOrderCompletion(tenantId, order.getClinicalOrderId(), principal.getUserId());
 
+        List<LabResultEntity> verifiedResults = resultRepository
+                .findByTenantIdAndLabOrderIdAndDeletedAtIsNullOrderByRecordedAtAsc(tenantId, labOrderId);
+        List<LabTestParameterEntity> parameters = parameterRepository
+                .findByTenantIdAndLabTestIdAndDeletedAtIsNullOrderByNameAsc(tenantId, order.getLabTestId());
+        RecordLabValuesRequest metrics = LabResultMetricsMapper.toRecordRequest(
+                savedReport.getReleasedAt(), verifiedResults, parameters);
+        labValueService.ingestFromLabReport(
+                tenantId, order.getPatientId(), principal.getUserId(), savedReport.getReleasedAt(), metrics);
+
+        PatientProfileEntity patient = patientProfileRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(order.getPatientId(), tenantId)
+                .orElse(null);
+        if (patient != null) {
+            notificationService.send(
+                    tenantId,
+                    patient.getUserId(),
+                    NotificationType.LAB_REPORT_READY,
+                    "Lab report ready",
+                    test.getName() + " results are available in your Labs section.",
+                    "LabReport",
+                    savedReport.getId());
+        }
+
         auditLogService.record(tenantId, principal.getUserId(), "LAB_REPORT_RELEASED",
                 "LabReport", savedReport.getId(), Map.of("labOrderId", labOrderId.toString()));
 
@@ -386,6 +450,16 @@ public class LabFulfillmentService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public LabReportResponse getReleasedReportForOrder(UUID tenantId, LabOrderEntity order) {
+        return reportRepository.findByLabOrderIdAndDeletedAtIsNull(order.getId())
+                .map(report -> {
+                    LabTestEntity test = catalogService.requireTest(tenantId, order.getLabTestId());
+                    return mapper.toReportResponse(report, test, loadResultResponses(tenantId, order.getId()));
+                })
+                .orElse(null);
+    }
+
     private void updateClinicalOrderCompletion(UUID tenantId, UUID clinicalOrderId, UUID userId) {
         ClinicalOrderEntity order = clinicalOrderRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(clinicalOrderId, tenantId)
@@ -408,7 +482,13 @@ public class LabFulfillmentService {
         LabReportResponse report = reportRepository.findByLabOrderIdAndDeletedAtIsNull(order.getId())
                 .map(r -> mapper.toReportResponse(r, test, results))
                 .orElse(null);
-        return mapper.toOrderResponse(order, test, sample, results, report);
+        PatientProfileEntity patient = patientProfileRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(order.getPatientId(), tenantId)
+                .orElse(null);
+        return mapper.toOrderResponse(
+                order, test, sample, results, report,
+                patientDisplayName(patient),
+                patient != null ? patient.getUhid() : null);
     }
 
     private List<LabResultResponse> loadResultResponses(UUID tenantId, UUID labOrderId) {
@@ -434,6 +514,40 @@ public class LabFulfillmentService {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
                     "Lab order must be in " + expected.name() + " status");
         }
+    }
+
+    private String resolveSpecimenId(UUID tenantId, String requested) {
+        String candidate = trimToNull(requested);
+        if (candidate != null) {
+            if (sampleRepository.existsByTenantIdAndSpecimenIdAndDeletedAtIsNull(tenantId, candidate)) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                        "Specimen ID already in use");
+            }
+            return candidate;
+        }
+        for (int i = 0; i < 8; i++) {
+            candidate = generateSpecimenId();
+            if (!sampleRepository.existsByTenantIdAndSpecimenIdAndDeletedAtIsNull(tenantId, candidate)) {
+                return candidate;
+            }
+        }
+        throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                "Unable to allocate a unique specimen ID");
+    }
+
+    private String generateSpecimenId() {
+        String date = LocalDate.now().format(SPECIMEN_DATE);
+        int suffix = 100000 + RANDOM.nextInt(900000);
+        return "SMP-" + date + "-" + suffix;
+    }
+
+    private String patientDisplayName(PatientProfileEntity patient) {
+        if (patient == null) {
+            return null;
+        }
+        String name = ((patient.getLegalFirstName() == null ? "" : patient.getLegalFirstName()) + " "
+                + (patient.getLegalLastName() == null ? "" : patient.getLegalLastName())).trim();
+        return name.isBlank() ? null : name;
     }
 
     private String trimToNull(String value) {

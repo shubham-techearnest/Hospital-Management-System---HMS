@@ -25,7 +25,7 @@ export function DoctorListCard({ doctor, travelTimeMinutes }: DoctorListCardProp
             <Typography variant="h6">{doctor.name}</Typography>
             <Typography color="text.secondary">{doctor.specialization ?? 'General consultation'}</Typography>
             <Typography sx={{ mt: 1 }}>
-              {doctor.hospitalName}
+              Practices at {doctor.hospitalName}
               {doctor.branchName ? ` — ${doctor.branchName}` : ''}
               {doctor.city ? ` (${doctor.city})` : ''}
             </Typography>

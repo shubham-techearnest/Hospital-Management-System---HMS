@@ -88,13 +88,17 @@ public class LabMapper {
             LabTestEntity test,
             LabSampleEntity sample,
             List<LabResultResponse> results,
-            LabReportResponse report) {
+            LabReportResponse report,
+            String patientName,
+            String uhid) {
         return LabOrderResponse.builder()
                 .labOrderId(order.getId())
                 .clinicalOrderItemId(order.getClinicalOrderItemId())
                 .clinicalOrderId(order.getClinicalOrderId())
                 .encounterId(order.getEncounterId())
                 .patientId(order.getPatientId())
+                .patientName(patientName)
+                .uhid(uhid)
                 .hospitalId(order.getHospitalId())
                 .branchId(order.getBranchId())
                 .labTestId(order.getLabTestId())

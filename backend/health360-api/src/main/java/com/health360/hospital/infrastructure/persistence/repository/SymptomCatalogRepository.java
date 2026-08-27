@@ -12,8 +12,8 @@ public interface SymptomCatalogRepository extends JpaRepository<SymptomCatalogEn
 
     @Query("""
             SELECT s FROM SymptomCatalogEntity s
-            WHERE s.tenantId = :tenantId
-              AND s.hospitalId = :hospitalId
+            WHERE (s.hospitalId IS NULL
+                OR (s.tenantId = :tenantId AND s.hospitalId = :hospitalId))
               AND (:branchId IS NULL OR s.branchId IS NULL OR s.branchId = :branchId)
             ORDER BY s.name ASC
             """)

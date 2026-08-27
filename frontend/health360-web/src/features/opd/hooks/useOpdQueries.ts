@@ -69,7 +69,7 @@ export function useOpdQueue(hospitalId?: string, branchId?: string, status?: str
     queryFn: () => listOpdQueue({ hospitalId: hospitalId!, branchId: branchId!, status, page, size }),
     enabled: Boolean(hospitalId && branchId),
     retry: (_, error) => isRetryableError(error),
-    refetchInterval: (query) => (query.state.error ? false : 15_000),
+    refetchInterval: (query) => (query.state.error ? false : 8_000),
   });
 }
 

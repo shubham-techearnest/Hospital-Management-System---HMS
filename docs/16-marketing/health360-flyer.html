@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Health360 — Experience Digital Care | TechEarnest</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap");
+
+    :root {
+      --purple: #5a429e;
+      --purple-bright: #7c5cff;
+      --lavender: #b09eff;
+      --lavender-glow: #d4c8ff;
+      --navy: #1a1635;
+      --ink: #101828;
+      --muted: #5b6478;
+      --mint: #5bffb0;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Outfit", "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse at 15% 0%, rgba(124,92,255,.5), transparent 45%),
+        radial-gradient(ellipse at 95% 10%, rgba(176,158,255,.35), transparent 38%),
+        radial-gradient(ellipse at 50% 100%, rgba(90,66,158,.35), transparent 45%),
+        #070612;
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    .bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 16px; color: #fff;
+      background: rgba(7,6,18,.88);
+      backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 40;
+      border-bottom: 1px solid rgba(176,158,255,.2);
+    }
+    .bar button, .bar a {
+      background: linear-gradient(135deg, var(--purple-bright), var(--purple));
+      color: #fff; border: 0; border-radius: 999px;
+      padding: 8px 14px; text-decoration: none; font-weight: 700; cursor: pointer;
+      box-shadow: 0 8px 24px rgba(90,66,158,.45);
+    }
+
+    .stage { padding: 28px 16px 64px; display: flex; justify-content: center; }
+
+    .flyer {
+      width: min(1000px, 100%);
+      background: #fff;
+      border-radius: 30px;
+      overflow: hidden;
+      position: relative;
+      box-shadow:
+        0 0 0 1px rgba(176,158,255,.28),
+        0 40px 100px rgba(0,0,0,.55),
+        0 0 100px rgba(124,92,255,.28);
+      animation: flyerIn .9s cubic-bezier(.2,.8,.2,1) both;
+    }
+    @keyframes flyerIn {
+      from { opacity: 0; transform: translateY(28px) scale(.97); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .orb {
+      position: absolute; border-radius: 50%; pointer-events: none; z-index: 0;
+      filter: blur(2px);
+      animation: float 7s ease-in-out infinite;
+    }
+    .orb-a { width: 200px; height: 200px; background: rgba(176,158,255,.32); top: 140px; right: -50px; }
+    .orb-b { width: 130px; height: 130px; background: rgba(124,92,255,.28); bottom: 260px; left: -40px; animation-delay: -2s; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-18px) scale(1.06); }
+    }
+
+    /* —— HERO (no company logo) —— */
+    .hero {
+      position: relative;
+      color: #fff;
+      overflow: hidden;
+      isolation: isolate;
+      min-height: 420px;
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%; object-fit: cover;
+      transform: scale(1.06);
+      animation: kenburns 16s ease-in-out infinite alternate;
+      z-index: -2;
+    }
+    @keyframes kenburns {
+      from { transform: scale(1.06) translate(0,0); }
+      to { transform: scale(1.16) translate(-2.5%, -1%); }
+    }
+    .hero-veil {
+      position: absolute; inset: 0; z-index: -1;
+      background:
+        linear-gradient(115deg, rgba(10,8,28,.96) 0%, rgba(90,66,158,.72) 48%, rgba(26,22,53,.42) 100%),
+        radial-gradient(circle at 78% 40%, rgba(124,92,255,.35), transparent 40%);
+    }
+    .hero-grid {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 20px;
+      padding: 32px 34px 28px;
+      align-items: center;
+    }
+    .hero-top {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 14px;
+      animation: slideUp .7s .1s both;
+    }
+    .product-mark {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-weight: 800; letter-spacing: -.02em; font-size: 1rem;
+    }
+    .product-mark .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--lavender-glow), var(--purple-bright));
+      box-shadow: 0 0 16px rgba(176,158,255,.8);
+    }
+    .live-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: 999px; padding: 6px 12px;
+      font-size: 10px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700;
+      animation: pulseGlow 2.4s ease-in-out infinite;
+    }
+    .live-pill i {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--mint);
+      animation: ping 1.6s infinite;
+    }
+    @keyframes ping {
+      0% { box-shadow: 0 0 0 0 rgba(91,255,176,.65); }
+      70% { box-shadow: 0 0 0 10px rgba(91,255,176,0); }
+      100% { box-shadow: 0 0 0 0 rgba(91,255,176,0); }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 rgba(176,158,255,0); }
+      50% { box-shadow: 0 0 22px rgba(176,158,255,.4); }
+    }
+
+    .hero h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2.8rem, 6.5vw, 4.2rem);
+      font-weight: 800;
+      letter-spacing: -0.045em;
+      line-height: .98;
+      animation: slideUp .8s .2s both;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(90deg, #fff, var(--lavender-glow), #fff 70%);
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: shimmer 3.2s linear infinite;
+    }
+    @keyframes shimmer { to { background-position: 220% center; } }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: none; }
+    }
+    .hero .sub {
+      margin: 0;
+      max-width: 34ch;
+      font-size: 1.12rem;
+      font-weight: 500;
+      line-height: 1.45;
+      opacity: .94;
+      animation: slideUp .8s .32s both;
+    }
+    .spark-row {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px;
+      animation: slideUp .8s .42s both;
+    }
+    .spark {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 999px; padding: 5px 12px 5px 5px;
+      font-size: .76rem; font-weight: 600;
+      backdrop-filter: blur(6px);
+      transition: background .2s, transform .2s;
+    }
+    .spark:hover { background: rgba(255,255,255,.2); transform: translateY(-2px); }
+    .spark img {
+      width: 26px; height: 26px; border-radius: 8px;
+      object-fit: cover; background: #fff;
+    }
+
+    .hero-collage {
+      position: relative;
+      height: 300px;
+      animation: slideUp .9s .25s both;
+    }
+    .hero-collage .card {
+      position: absolute;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,.35);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      background: #1a1635;
+    }
+    .hero-collage .card img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .hero-collage .c1 {
+      width: 68%; height: 72%;
+      right: 0; top: 8%;
+      animation: floatSoft 5.5s ease-in-out infinite;
+    }
+    .hero-collage .c2 {
+      width: 42%; height: 42%;
+      left: 0; bottom: 4%;
+      animation: floatSoft 6.5s ease-in-out infinite reverse;
+    }
+    .hero-collage .c3 {
+      width: 34%; height: 34%;
+      left: 38%; top: 0;
+      border-radius: 50%;
+      animation: floatSoft 4.8s ease-in-out infinite;
+      animation-delay: -1s;
+    }
+    .hero-collage .glow {
+      position: absolute; inset: 20% 10%;
+      background: radial-gradient(circle, rgba(124,92,255,.45), transparent 65%);
+      filter: blur(20px); z-index: -1;
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+    @keyframes floatSoft {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .marquee {
+      background: linear-gradient(90deg, #16132e, #5a429e, #7c5cff, #5a429e, #16132e);
+      background-size: 200% 100%;
+      animation: marqueeBg 8s linear infinite;
+      color: #fff;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 11px 0;
+      font-weight: 700;
+      letter-spacing: .05em;
+      font-size: .84rem;
+    }
+    @keyframes marqueeBg { to { background-position: 200% 0; } }
+    .marquee-track {
+      display: inline-block;
+      padding-left: 100%;
+      animation: marquee 22s linear infinite;
+    }
+    @keyframes marquee { to { transform: translateX(-100%); } }
+
+    .body {
+      position: relative; z-index: 1;
+      padding: 28px 32px 12px;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(176,158,255,.2), transparent 35%),
+        radial-gradient(circle at 100% 40%, rgba(124,92,255,.1), transparent 30%),
+        #fff;
+    }
+
+    .headline-row { margin-bottom: 16px; }
+    .headline-row h2 {
+      margin: 0 0 4px;
+      font-size: 1.55rem;
+      color: var(--navy);
+      font-weight: 800;
+      letter-spacing: -.02em;
+    }
+    .headline-row p { margin: 0; color: var(--muted); font-size: .94rem; max-width: 48ch; }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: 1.25fr .9fr .9fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .shot {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      min-height: 150px;
+      box-shadow: 0 14px 34px rgba(26,22,53,.12);
+      animation: rise .7s both;
+    }
+    .shot:nth-child(1) { animation-delay: .1s; min-height: 230px; grid-row: span 2; }
+    .shot:nth-child(2) { animation-delay: .2s; }
+    .shot:nth-child(3) { animation-delay: .3s; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: none; }
+    }
+    .shot img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform .65s ease;
+      display: block; min-height: 150px;
+    }
+    .shot:hover img { transform: scale(1.08); }
+    .shot figcaption {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      padding: 16px 14px 12px;
+      background: linear-gradient(transparent, rgba(16,12,40,.92));
+      color: #fff; font-weight: 700; font-size: .92rem;
+    }
+    .shot figcaption small {
+      display: block; font-weight: 500; opacity: .85; font-size: .74rem; margin-top: 2px;
+    }
+
+    .modules {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .mod {
+      border-radius: 18px;
+      padding: 16px 12px 14px;
+      background: linear-gradient(165deg, #f8f5ff 0%, #fff 60%);
+      border: 1px solid #ebe4ff;
+      text-align: center;
+      transition: transform .25s ease, box-shadow .25s ease, border-color .25s;
+      animation: rise .6s both;
+    }
+    .mod:nth-child(1) { animation-delay: .12s; }
+    .mod:nth-child(2) { animation-delay: .18s; }
+    .mod:nth-child(3) { animation-delay: .24s; }
+    .mod:nth-child(4) { animation-delay: .3s; }
+    .mod:nth-child(5) { animation-delay: .36s; }
+    .mod:nth-child(6) { animation-delay: .42s; }
+    .mod:nth-child(7) { animation-delay: .48s; }
+    .mod:nth-child(8) { animation-delay: .54s; }
+    .mod:hover {
+      transform: translateY(-7px);
+      box-shadow: 0 18px 36px rgba(90,66,158,.18);
+      border-color: var(--lavender);
+    }
+    .mod .ico {
+      width: 58px; height: 58px; margin: 0 auto 10px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+      border: 1px solid #ebe4ff;
+      box-shadow: 0 8px 18px rgba(90,66,158,.14);
+    }
+    .mod .ico img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .mod b { display: block; color: var(--navy); font-size: .88rem; margin-bottom: 2px; }
+    .mod span { color: var(--muted); font-size: .72rem; }
+
+    .banner-strip {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .feature-banner {
+      border-radius: 18px;
+      overflow: hidden;
+      position: relative;
+      min-height: 158px;
+      color: #fff;
+      box-shadow: 0 14px 34px rgba(26,22,53,.16);
+      animation: rise .7s .35s both;
+    }
+    .feature-banner img {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+      transition: transform .7s ease;
+    }
+    .feature-banner:hover img { transform: scale(1.06); }
+    .feature-banner .veil {
+      position: absolute; inset: 0;
+      background: linear-gradient(105deg, rgba(16,12,40,.9), rgba(90,66,158,.42));
+    }
+    .feature-banner .copy { position: relative; z-index: 1; padding: 18px; }
+    .feature-banner .copy .tag {
+      display: inline-block;
+      background: rgba(91,255,176,.18);
+      color: #9bffd0;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: .66rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .feature-banner h3 { margin: 0 0 6px; font-size: 1.12rem; }
+    .feature-banner p { margin: 0; font-size: .82rem; opacity: .92; max-width: 34ch; }
+
+    /* —— FOOTER with logo —— */
+    .footer {
+      margin-top: 16px;
+      padding: 20px 28px 22px;
+      background: linear-gradient(110deg, #100e24 0%, #5a429e 55%, #7c5cff 100%);
+      color: #fff;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .footer::before {
+      content: "";
+      position: absolute; right: -30px; top: -50px;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,.08);
+      border-radius: 40%;
+      animation: float 6s ease-in-out infinite;
+    }
+    .footer-logo {
+      position: relative; z-index: 1;
+      display: inline-flex; align-items: center;
+      background: transparent;
+      border: 0;
+      padding: 0;
+    }
+    .footer-logo img,
+    .footer-logo object,
+    .footer-logo svg {
+      height: 48px; width: auto; display: block;
+      background: transparent;
+    }
+    .footer .brand { position: relative; z-index: 1; }
+    .footer .brand strong { font-size: 1.15rem; display: block; letter-spacing: -.02em; }
+    .footer .brand span { opacity: .85; font-size: .8rem; }
+    .cta {
+      position: relative; z-index: 1;
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #fff; color: var(--purple);
+      text-decoration: none; font-weight: 800;
+      padding: 12px 18px; border-radius: 999px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.28);
+      animation: ctaPulse 2.2s ease-in-out infinite;
+      white-space: nowrap;
+    }
+    @keyframes ctaPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    @media (max-width: 860px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-collage { height: 220px; max-width: 420px; }
+      .gallery, .modules, .banner-strip { grid-template-columns: 1fr 1fr; }
+      .shot:nth-child(1) { grid-row: auto; min-height: 180px; }
+      .footer { grid-template-columns: 1fr; justify-items: start; }
+    }
+    @media (max-width: 560px) {
+      .gallery, .modules, .banner-strip { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .bar { display: none !important; }
+      .stage { padding: 0; }
+      .flyer { width: 210mm; border-radius: 0; box-shadow: none; animation: none !important; }
+      .orb, .marquee-track, .hero-bg, .mod, .shot, .feature-banner, .cta, .hero-collage .card { animation: none !important; }
+      .mod:hover, .shot:hover img, .feature-banner:hover img { transform: none !important; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span>Health360 flyer · TechEarnest</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="./health360-flyer-download.html">Download A4 PNG / PDF</a>
+      <a href="./health360-booklet.html">Open booklet</a>
+      <button onclick="window.print()">Print / Save PDF</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <article class="flyer">
+      <div class="orb orb-a"></div>
+      <div class="orb orb-b"></div>
+
+      <header class="hero">
+        <img class="hero-bg" src="./assets/flyer-banner-energy.png" alt="" />
+        <div class="hero-veil"></div>
+        <div class="hero-grid">
+          <div>
+            <div class="hero-top">
+              <div class="product-mark"><span class="dot"></span> Health360</div>
+              <div class="live-pill"><i></i> Digital care. Live today.</div>
+            </div>
+            <h1>Meet <em>Health360</em></h1>
+            <p class="sub">The hospital platform that turns waiting rooms, paper Rx slips, and lost reports into one smooth digital journey.</p>
+            <div class="spark-row">
+              <span class="spark"><img src="./assets/icon-queue.png" alt="" /> Instant OPD queue</span>
+              <span class="spark"><img src="./assets/icon-rx.png" alt="" /> Digital e-Rx</span>
+              <span class="spark"><img src="./assets/icon-lab.png" alt="" /> Lab in your pocket</span>
+              <span class="spark"><img src="./assets/icon-ipd.png" alt="" /> Full hospital stack</span>
+            </div>
+          </div>
+          <div class="hero-collage" aria-hidden="true">
+            <div class="glow"></div>
+            <div class="card c1"><img src="./assets/health360-hero.png" alt="" /></div>
+            <div class="card c2"><img src="./assets/flyer-patient-phone.png" alt="" /></div>
+            <div class="card c3"><img src="./assets/flyer-lab-pharmacy.png" alt="" /></div>
+          </div>
+        </div>
+      </header>
+
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee-track">
+          Book · Arrive · Consult · Prescribe · Lab · Pharmacy · IPD · ICU · OT · Billing · Assets · Analytics · Follow-up ·&nbsp;
+          Book · Arrive · Consult · Prescribe · Lab · Pharmacy · IPD · ICU · OT · Billing · Assets · Analytics · Follow-up ·&nbsp;
+        </div>
+      </div>
+
+      <div class="body">
+        <div class="headline-row">
+          <h2>Care that feels alive</h2>
+          <p>Built for real hospitals — patients, doctors, desks, labs, and pharmacies on one connected spine.</p>
+        </div>
+
+        <div class="gallery">
+          <figure class="shot">
+            <img src="./assets/health360-hero.png" alt="Connected hospital ecosystem" />
+            <figcaption>One ecosystem<small>Patient → Hospital → Lab → Pharmacy</small></figcaption>
+          </figure>
+          <figure class="shot">
+            <img src="./assets/flyer-patient-phone.png" alt="Patient booking on phone" />
+            <figcaption>Book on the go<small>Appointments &amp; live queue</small></figcaption>
+          </figure>
+          <figure class="shot">
+            <img src="./assets/flyer-lab-pharmacy.png" alt="Lab and pharmacy" />
+            <figcaption>Lab &amp; pharmacy ready<small>Orders without paper</small></figcaption>
+          </figure>
+        </div>
+
+        <div class="modules">
+          <div class="mod"><div class="ico"><img src="./assets/icon-patient.png" alt="" /></div><b>UHID Patient</b><span>Lifelong identity</span></div>
+          <div class="mod"><div class="ico"><img src="./assets/icon-queue.png" alt="" /></div><b>OPD Queue</b><span>Live tokens</span></div>
+          <div class="mod"><div class="ico"><img src="./assets/icon-consult.png" alt="" /></div><b>Consult Hub</b><span>Dx · notes · vitals</span></div>
+          <div class="mod"><div class="ico"><img src="./assets/icon-rx.png" alt="" /></div><b>E-Prescription</b><span>Signed digital Rx</span></div>
+          <div class="mod"><div class="ico"><img src="./assets/icon-lab.png" alt="" /></div><b>Laboratory</b><span>Book → report</span></div>
+          <div class="mod"><div class="ico"><img src="./assets/icon-pharmacy.png" alt="" /></div><b>Pharmacy</b><span>Dispense · MAR</span></div>
+          <div class="mod"><div class="ico"><img src="./assets/icon-ipd.png" alt="" /></div><b>IPD · ICU · OT</b><span>Beds to theatre</span></div>
+          <div class="mod"><div class="ico"><img src="./assets/icon-analytics.png" alt="" /></div><b>Analytics</b><span>Health insights</span></div>
+        </div>
+
+        <div class="banner-strip">
+          <div class="feature-banner">
+            <img src="./assets/health360-assets-module.png" alt="" />
+            <div class="veil"></div>
+            <div class="copy">
+              <div class="tag">Included</div>
+              <h3>Hospital Asset Management</h3>
+              <p>Track biomedical devices, beds, facility &amp; IT assets — complete the hospital beyond clinical screens.</p>
+            </div>
+          </div>
+          <div class="feature-banner">
+            <img src="./assets/health360-journey-icon.png" alt="" />
+            <div class="veil"></div>
+            <div class="copy">
+              <div class="tag">Built by TechEarnest</div>
+              <h3>Enterprise DNA. Healthcare heart.</h3>
+              <p>Modern web + mobile portals, RBAC security, and audit-ready workflows for clinics to multi-branch hospitals.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <div class="footer-logo">
+          <img src="./assets/techearnest-logo-on-dark.png" alt="TechEarnest — Empowering Possibilities" />
+        </div>
+        <div class="brand">
+          <strong>Health360 by TechEarnest</strong>
+          <span>Empowering Possibilities · techearnest.com</span>
+        </div>
+        <a class="cta" href="https://techearnest.com/">Discover Health360 →</a>
+      </footer>
+    </article>
+  </div>
+</body>
+</html>

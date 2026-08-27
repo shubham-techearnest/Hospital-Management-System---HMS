@@ -29,9 +29,10 @@ SPRINT PLAN → APPROVAL → IMPLEMENTATION → QA → UAT → RELEASE → CLOSU
 |----------|----------|
 | **Senior management** | [Executive Report](./13-project-management/executive-dashboard.md) |
 | **Next human action** | [NEXT-ACTION.md](./NEXT-ACTION.md) |
-| **Product / BA** | [Product Vision](./01-product/product-vision.md) · [Roadmap](./01-product/product-roadmap.md) |
-| **Architects** | [Target Architecture](./04-architecture/target-architecture.md) · [ADRs](./04-architecture/architecture-decision-records/README.md) |
-| **Delivery** | [Sprint Plan](./13-project-management/sprint-plan.md) · [Feature Board](./13-project-management/feature-status-board.md) |
+| **Complete digital healthcare ecosystem (2026-08)** | [15-ecosystem/README.md](./15-ecosystem/README.md) — **docs first; approve before code** |
+| **Product / BA** | [Product Vision](./01-product/product-vision.md) · [Roadmap](./01-product/product-roadmap.md) · [Ecosystem master story](./15-ecosystem/ECOSYSTEM-MASTER-STORY.md) |
+| **Architects** | [Target Architecture](./04-architecture/target-architecture.md) · [ADRs](./04-architecture/architecture-decision-records/README.md) · [Ecosystem gap analysis](./15-ecosystem/ECOSYSTEM-GAP-ANALYSIS.md) |
+| **Delivery** | [Sprint Plan](./13-project-management/sprint-plan.md) · [Feature Board](./13-project-management/feature-status-board.md) · [Ecosystem plan](./15-ecosystem/ECOSYSTEM-IMPLEMENTATION-PLAN.md) |
 | **First feature (pending approval)** | [P1-F1 Package](./09-features/P1-foundation/P1-F1/README.md) |
 | **Legacy HMS delivery (as-built)** | [hms/README.md](./hms/README.md) |
 
@@ -58,6 +59,7 @@ docs/
 ├── 12-reports/                    (placeholder — Phase 5+)
 ├── 13-project-management/
 ├── 14-release/
+├── 15-ecosystem/                  (complete digital healthcare journey — docs-first)
 ├── hms/                           (as-built HMS-0…11 — preserved)
 ├── post-hms/                      (bridge notes — preserved)
 └── phase-1|1.5|2/                 (historical — preserved)

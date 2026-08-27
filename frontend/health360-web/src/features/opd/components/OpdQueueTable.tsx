@@ -17,16 +17,12 @@ import {
 } from '@mui/material';
 import type { OpdQueueEntry } from '@/features/opd/api/opdApi';
 import { useOpdDoctors, useOpdQueueActions } from '@/features/opd/hooks/useOpdQueries';
-
-const STATUS_COLOR: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> = {
-  WAITING: 'warning',
-  CALLED: 'info',
-  IN_SERVICE: 'info',
-  COMPLETED: 'success',
-  CANCELLED: 'error',
-  NO_SHOW: 'default',
-  SKIPPED: 'warning',
-};
+import {
+  queueStatusColor,
+  queueStatusLabel,
+  visitEncounterStatusColor,
+  visitEncounterStatusLabel,
+} from '@/shared/status/visitStatus';
 
 type Props = {
   hospitalId: string;
@@ -90,7 +86,8 @@ export function OpdQueueTable({
           <TableRow>
             <TableCell>Token</TableCell>
             <TableCell>Type</TableCell>
-            <TableCell>Status</TableCell>
+            <TableCell>Queue</TableCell>
+            <TableCell>Consult</TableCell>
             <TableCell>Doctor</TableCell>
             <TableCell>Encounter</TableCell>
             <TableCell align="right">Actions</TableCell>
@@ -102,7 +99,19 @@ export function OpdQueueTable({
               <TableCell><Typography fontWeight={700}>{entry.tokenDisplay}</Typography></TableCell>
               <TableCell>{entry.registrationType}</TableCell>
               <TableCell>
-                <Chip size="small" label={entry.status} color={STATUS_COLOR[entry.status] ?? 'default'} />
+                <Chip
+                  size="small"
+                  label={queueStatusLabel(entry.status)}
+                  color={queueStatusColor(entry.status)}
+                />
+              </TableCell>
+              <TableCell>
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={entry.encounterStatus ? visitEncounterStatusLabel(entry.encounterStatus) : '—'}
+                  color={entry.encounterStatus ? visitEncounterStatusColor(entry.encounterStatus) : 'default'}
+                />
               </TableCell>
               <TableCell sx={{ minWidth: 180 }}>
                 <TextField
@@ -159,7 +168,7 @@ export function OpdQueueTable({
             </TableRow>
           ))}
           {queue.length === 0 && (
-            <TableRow><TableCell colSpan={6}>No patients in queue for today.</TableCell></TableRow>
+            <TableRow><TableCell colSpan={7}>No patients in queue for today.</TableCell></TableRow>
           )}
         </TableBody>
       </Table>

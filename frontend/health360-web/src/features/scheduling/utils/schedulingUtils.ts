@@ -1,4 +1,8 @@
 import type { AppointmentFilter } from '@/features/scheduling/api/schedulingApi';
+import {
+  appointmentStatusColor,
+  appointmentStatusLabel,
+} from '@/shared/status/visitStatus';
 
 export function formatAppointmentDate(iso: string) {
   return new Date(iso).toLocaleString(undefined, {
@@ -8,22 +12,11 @@ export function formatAppointmentDate(iso: string) {
 }
 
 export function statusColor(status: string): 'default' | 'success' | 'warning' | 'error' | 'info' {
-  switch (status) {
-    case 'CONFIRMED':
-      return 'success';
-    case 'PENDING':
-      return 'info';
-    case 'COMPLETED':
-      return 'default';
-    case 'CANCELLED':
-    case 'RESCHEDULED':
-      return 'error';
-    case 'POSTPONED':
-    case 'NO_SHOW':
-      return 'warning';
-    default:
-      return 'default';
-  }
+  return appointmentStatusColor(status);
+}
+
+export function appointmentLabel(status: string): string {
+  return appointmentStatusLabel(status);
 }
 
 export const CONSULTATION_TYPE_LABELS: Record<string, string> = {

@@ -19,9 +19,12 @@ import {
   useDoctorAvailability,
   useMyAppointment,
   useRescheduleMyAppointment,
+  useSelfCheckInMyAppointment,
 } from '@/features/scheduling/hooks/useSchedulingQueries';
-import { formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
+import { appointmentLabel, formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
 import { SubmitReviewDialog } from '@/features/review/components/SubmitReviewDialog';
+
+const SELF_CHECK_IN_STATUSES = new Set(['PENDING', 'CONFIRMED', 'POSTPONED']);
 
 export function PatientAppointmentDetailPage() {
   const { appointmentId = '' } = useParams<{ appointmentId: string }>();
@@ -29,6 +32,7 @@ export function PatientAppointmentDetailPage() {
   const { data: appointment, isLoading, error } = useMyAppointment(appointmentId);
   const cancelMutation = useCancelMyAppointment();
   const rescheduleMutation = useRescheduleMyAppointment();
+  const selfCheckInMutation = useSelfCheckInMyAppointment();
 
   const [cancelOpen, setCancelOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
@@ -54,6 +58,17 @@ export function PatientAppointmentDetailPage() {
       ) ?? [],
     [availability],
   );
+
+  const isTodayAppointment = useMemo(() => {
+    if (!appointment?.scheduledAt) return false;
+    const scheduled = new Date(appointment.scheduledAt);
+    const now = new Date();
+    return (
+      scheduled.getUTCFullYear() === now.getUTCFullYear()
+      && scheduled.getUTCMonth() === now.getUTCMonth()
+      && scheduled.getUTCDate() === now.getUTCDate()
+    );
+  }, [appointment?.scheduledAt]);
 
   if (isLoading) {
     return (
@@ -98,6 +113,22 @@ export function PatientAppointmentDetailPage() {
     }
   };
 
+  const canSelfCheckIn = SELF_CHECK_IN_STATUSES.has(appointment.status) && isTodayAppointment;
+
+  const handleSelfCheckIn = async () => {
+    setActionError(null);
+    try {
+      const result = await selfCheckInMutation.mutateAsync(appointmentId);
+      const token = result?.queueEntry?.tokenDisplay;
+      setSuccess(token
+        ? `Checked in. Your OPD token is ${token}.`
+        : 'Checked in successfully.');
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: { message?: string } } } };
+      setActionError(err.response?.data?.error?.message ?? 'Self check-in failed.');
+    }
+  };
+
   return (
     <AnimatedPage>
       <Button component={RouterLink} to="/patient/appointments" sx={{ mb: 2 }}>← Back to appointments</Button>
@@ -107,7 +138,7 @@ export function PatientAppointmentDetailPage() {
       {actionError ? <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert> : null}
 
       <Stack spacing={2} sx={{ mb: 3 }}>
-        <Chip label={appointment.status} color={statusColor(appointment.status)} sx={{ alignSelf: 'flex-start' }} />
+        <Chip label={appointmentLabel(appointment.status)} color={statusColor(appointment.status)} sx={{ alignSelf: 'flex-start' }} />
         <Typography variant="h6">{appointment.doctor.name}</Typography>
         <Typography color="text.secondary">{appointment.doctor.specialization}</Typography>
         <Typography><strong>When:</strong> {formatAppointmentDate(appointment.scheduledAt)}</Typography>
@@ -122,7 +153,22 @@ export function PatientAppointmentDetailPage() {
         ) : null}
       </Stack>
 
-      <Stack direction="row" spacing={2}>
+      <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+        {canSelfCheckIn ? (
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleSelfCheckIn}
+            disabled={selfCheckInMutation.isPending}
+          >
+            Check in now
+          </Button>
+        ) : null}
+        {appointment.status === 'ARRIVED' ? (
+          <Button component={RouterLink} to="/patient/opd" variant="outlined">
+            View OPD status
+          </Button>
+        ) : null}
         {appointment.canCancel ? (
           <Button variant="outlined" color="error" onClick={() => setCancelOpen(true)}>Cancel</Button>
         ) : null}

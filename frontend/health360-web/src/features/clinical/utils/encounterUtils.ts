@@ -1,3 +1,8 @@
+import {
+  visitEncounterStatusColor,
+  visitEncounterStatusLabel,
+} from '@/shared/status/visitStatus';
+
 export const ENCOUNTER_STATUS_LABELS: Record<string, string> = {
   REGISTERED: 'Registered',
   WAITING: 'Waiting',
@@ -7,26 +12,13 @@ export const ENCOUNTER_STATUS_LABELS: Record<string, string> = {
 };
 
 export function encounterStatusLabel(status: string): string {
-  return ENCOUNTER_STATUS_LABELS[status] ?? status.replace(/_/g, ' ');
+  return visitEncounterStatusLabel(status);
 }
 
 export function encounterStatusColor(
   status: string,
 ): 'default' | 'warning' | 'info' | 'success' | 'error' {
-  switch (status) {
-    case 'REGISTERED':
-      return 'default';
-    case 'WAITING':
-      return 'warning';
-    case 'IN_PROGRESS':
-      return 'info';
-    case 'COMPLETED':
-      return 'success';
-    case 'CANCELLED':
-      return 'error';
-    default:
-      return 'default';
-  }
+  return visitEncounterStatusColor(status);
 }
 
 export function formatEncounterDate(iso?: string): string {

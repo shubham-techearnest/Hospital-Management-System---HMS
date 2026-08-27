@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import {
+  bookHospitalLab,
   collectLabSample,
   createLabOrder,
   createLabTest,
@@ -13,6 +14,7 @@ import {
   listLabOrders,
   listLabTestParameters,
   listLaboratories,
+  listMyLabOrders,
   listPendingLabWorklist,
   releaseLabReport,
   verifyLabResults,
@@ -28,6 +30,7 @@ export const labKeys = {
     ['lab', 'orders', hospitalId, branchId, page, status ?? 'ALL'] as const,
   order: (labOrderId: string) => ['lab', 'orders', labOrderId] as const,
   encounterReports: (encounterId: string) => ['lab', 'encounters', encounterId, 'reports'] as const,
+  myOrders: ['lab', 'me', 'orders'] as const,
 };
 
 function isRetryableError(error: unknown): boolean {
@@ -102,6 +105,24 @@ export function useEncounterLabReports(encounterId: string) {
     queryFn: () => listEncounterLabReports(encounterId),
     enabled: Boolean(encounterId),
     retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function useMyLabOrders() {
+  return useQuery({
+    queryKey: labKeys.myOrders,
+    queryFn: listMyLabOrders,
+    retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function useBookHospitalLab() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: bookHospitalLab,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: labKeys.myOrders });
+    },
   });
 }
 

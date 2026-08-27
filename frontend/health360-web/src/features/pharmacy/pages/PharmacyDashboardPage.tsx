@@ -34,7 +34,10 @@ import {
   useMedicines,
   usePendingMedicationWorklist,
   usePharmacyMutations,
+  usePharmacyRequestMutations,
+  usePharmacyRequests,
 } from '@/features/pharmacy/hooks/usePharmacyQueries';
+import { pharmacyRequestStatusLabel } from '@/shared/status/visitStatus';
 
 const DEFAULT_HOSPITAL_ID = '00000000-0000-0000-0000-000000000030';
 const DEFAULT_BRANCH_ID = '00000000-0000-0000-0000-000000000031';
@@ -88,6 +91,11 @@ export function PharmacyDashboardPage() {
   );
 
   const mutations = usePharmacyMutations(hospitalId.trim(), branchId.trim());
+  const { data: rxRequests = [] } = usePharmacyRequests(
+    scopeReady ? hospitalId.trim() : undefined,
+    scopeReady ? branchId.trim() : undefined,
+  );
+  const rxMutations = usePharmacyRequestMutations(hospitalId.trim(), branchId.trim());
 
   const [medicineForm, setMedicineForm] = useState({
     code: '', name: '', form: 'TABLET', strength: '', defaultRoute: 'ORAL',
@@ -143,6 +151,7 @@ export function PharmacyDashboardPage() {
         <Tab label="Orders" />
         <Tab label="Process order" />
         <Tab label="Medicine catalog" />
+        <Tab label={`e-Rx share (${rxRequests.length})`} />
       </Tabs>
 
       {tab === 0 && (
@@ -461,6 +470,126 @@ export function PharmacyDashboardPage() {
             </TableContainer>
           ) : null}
         </Stack>
+      )}
+
+      {tab === 4 && (
+        <TableContainer component={Paper} variant="outlined">
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Request</TableCell>
+                <TableCell>Patient</TableCell>
+                <TableCell>Prescription</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Items</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rxRequests.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      No e-Rx pharmacy share requests yet.
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rxRequests.map((req) => (
+                  <TableRow key={req.pharmacyRequestId}>
+                    <TableCell>{req.requestNumber}</TableCell>
+                    <TableCell>
+                      {req.patientName ?? '—'}
+                      {req.uhid ? (
+                        <Typography variant="caption" display="block" color="text.secondary">
+                          {req.uhid}
+                        </Typography>
+                      ) : null}
+                    </TableCell>
+                    <TableCell>{req.prescriptionNumber ?? req.prescriptionId.slice(0, 8)}</TableCell>
+                    <TableCell>
+                      <Chip size="small" label={pharmacyRequestStatusLabel(req.status)} color="info" />
+                    </TableCell>
+                    <TableCell>{req.items.map((i) => i.medicineName).join(', ')}</TableCell>
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={0.5} justifyContent="flex-end" flexWrap="wrap">
+                        {req.status === 'REQUESTED' ? (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            disabled={rxMutations.receive.isPending}
+                            onClick={async () => {
+                              try {
+                                await rxMutations.receive.mutateAsync(req.pharmacyRequestId);
+                                showSuccess('Request received');
+                              } catch (e) {
+                                showError(e);
+                              }
+                            }}
+                          >
+                            Receive
+                          </Button>
+                        ) : null}
+                        {req.status === 'RECEIVED' ? (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            disabled={rxMutations.review.isPending}
+                            onClick={async () => {
+                              try {
+                                await rxMutations.review.mutateAsync({ requestId: req.pharmacyRequestId });
+                                showSuccess('Under review');
+                              } catch (e) {
+                                showError(e);
+                              }
+                            }}
+                          >
+                            Review
+                          </Button>
+                        ) : null}
+                        {req.status === 'UNDER_REVIEW' ? (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            disabled={rxMutations.markReady.isPending}
+                            onClick={async () => {
+                              try {
+                                await rxMutations.markReady.mutateAsync({ requestId: req.pharmacyRequestId });
+                                showSuccess('Marked ready — patient notified');
+                              } catch (e) {
+                                showError(e);
+                              }
+                            }}
+                          >
+                            Ready
+                          </Button>
+                        ) : null}
+                        {req.status === 'READY' ? (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            disabled={rxMutations.dispense.isPending}
+                            onClick={async () => {
+                              try {
+                                await rxMutations.dispense.mutateAsync(req.pharmacyRequestId);
+                                showSuccess('Dispensed');
+                              } catch (e) {
+                                showError(e);
+                              }
+                            }}
+                          >
+                            Dispense
+                          </Button>
+                        ) : null}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
       <Snackbar

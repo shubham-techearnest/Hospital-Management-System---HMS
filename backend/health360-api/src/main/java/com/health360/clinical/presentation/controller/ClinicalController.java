@@ -5,6 +5,7 @@ import com.health360.clinical.application.service.ClinicalTimelineService;
 import com.health360.clinical.application.service.ClinicalVitalsService;
 import com.health360.clinical.application.service.EncounterService;
 import com.health360.clinical.application.service.PrescriptionService;
+import com.health360.clinical.application.service.WellnessPlanService;
 import com.health360.clinical.presentation.dto.request.*;
 import com.health360.clinical.presentation.dto.response.*;
 import com.health360.config.security.UserPrincipal;
@@ -33,6 +34,7 @@ public class ClinicalController {
     private final ClinicalVitalsService clinicalVitalsService;
     private final ClinicalTimelineService clinicalTimelineService;
     private final PrescriptionService prescriptionService;
+    private final WellnessPlanService wellnessPlanService;
 
     @PostMapping("/encounters")
     @PreAuthorize("hasAuthority('clinical:encounter:write')")
@@ -292,6 +294,25 @@ public class ClinicalController {
             @PathVariable UUID encounterId) {
         return ResponseEntity.ok(ApiResponse.ok(
                 clinicalVitalsService.listVitals(principal, encounterId)));
+    }
+
+    @GetMapping("/encounters/{encounterId}/wellness-plan")
+    @PreAuthorize("hasAuthority('clinical:encounter:read')")
+    public ResponseEntity<ApiResponse<WellnessPlanResponse>> getWellnessPlan(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                wellnessPlanService.getWellnessPlan(principal, encounterId)));
+    }
+
+    @PutMapping("/encounters/{encounterId}/wellness-plan")
+    @PreAuthorize("hasAuthority('clinical:encounter:write')")
+    public ResponseEntity<ApiResponse<WellnessPlanResponse>> upsertWellnessPlan(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId,
+            @Valid @RequestBody UpsertWellnessPlanRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                wellnessPlanService.upsertWellnessPlan(principal, encounterId, request)));
     }
 
     @GetMapping("/patients/{patientId}/timeline")

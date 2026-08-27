@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface LabSampleRepository extends JpaRepository<LabSampleEntity, UUID> {
 
     Optional<LabSampleEntity> findByLabOrderIdAndDeletedAtIsNull(UUID labOrderId);
+
+    boolean existsByTenantIdAndSpecimenIdAndDeletedAtIsNull(UUID tenantId, String specimenId);
 }

@@ -12,13 +12,14 @@ class QueueEntryStatusTest {
         assertTrue(QueueEntryStatus.WAITING.canTransitionTo(QueueEntryStatus.CALLED));
         assertTrue(QueueEntryStatus.WAITING.canTransitionTo(QueueEntryStatus.CANCELLED));
         assertTrue(QueueEntryStatus.WAITING.canTransitionTo(QueueEntryStatus.NO_SHOW));
+        assertTrue(QueueEntryStatus.WAITING.canTransitionTo(QueueEntryStatus.IN_SERVICE));
         assertFalse(QueueEntryStatus.WAITING.canTransitionTo(QueueEntryStatus.COMPLETED));
     }
 
     @Test
     void calledCanTransitionToInService() {
         assertTrue(QueueEntryStatus.CALLED.canTransitionTo(QueueEntryStatus.IN_SERVICE));
-        assertFalse(QueueEntryStatus.CALLED.canTransitionTo(QueueEntryStatus.COMPLETED));
+        assertTrue(QueueEntryStatus.CALLED.canTransitionTo(QueueEntryStatus.COMPLETED));
     }
 
     @Test

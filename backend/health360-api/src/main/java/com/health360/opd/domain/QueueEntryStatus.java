@@ -13,8 +13,8 @@ public enum QueueEntryStatus {
     SKIPPED;
 
     private static final Map<QueueEntryStatus, Set<QueueEntryStatus>> ALLOWED = Map.of(
-            WAITING, Set.of(CALLED, SKIPPED, CANCELLED, NO_SHOW),
-            CALLED, Set.of(IN_SERVICE, WAITING, SKIPPED, CANCELLED),
+            WAITING, Set.of(CALLED, IN_SERVICE, SKIPPED, CANCELLED, NO_SHOW),
+            CALLED, Set.of(IN_SERVICE, WAITING, SKIPPED, CANCELLED, COMPLETED),
             IN_SERVICE, Set.of(COMPLETED, CANCELLED),
             SKIPPED, Set.of(CALLED, CANCELLED, NO_SHOW),
             COMPLETED, Set.of(),

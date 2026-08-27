@@ -13,6 +13,7 @@ import java.util.UUID;
 @Builder
 public class PatientProfileResponse {
     UUID id;
+    String uhid;
     boolean consentAccepted;
     Instant consentAcceptedAt;
     int completionScore;

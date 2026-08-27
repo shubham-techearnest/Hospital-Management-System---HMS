@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Health360 Flyer — Design D (Combined · TechEarnest Theme)</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&display=swap");
+
+    :root {
+      --purple: #5a429e;
+      --purple-bright: #7c5cff;
+      --lavender: #b09eff;
+      --lavender-soft: #d4c8ff;
+      --navy: #1a1635;
+      --ink: #101828;
+      --muted: #5b6478;
+      --grad: linear-gradient(135deg, #1a1635 0%, #5a429e 55%, #8b74e8 100%);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: "Outfit", "Segoe UI", system-ui, sans-serif;
+      background: #0d0b1a;
+      color: var(--ink);
+    }
+
+    .bar {
+      position: sticky; top: 0; z-index: 30;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; flex-wrap: wrap; padding: 10px 14px;
+      background: rgba(26,22,53,.95); color: #fff; font-size: .82rem;
+      border-bottom: 1px solid rgba(176,158,255,.3);
+    }
+    .bar a, .bar button {
+      background: var(--purple); color: #fff; border: 0; border-radius: 999px;
+      padding: 8px 12px; font-weight: 700; text-decoration: none; cursor: pointer; font-size: .75rem;
+    }
+    .bar a.ghost { background: transparent; border: 1px solid rgba(255,255,255,.35); }
+    .stage { padding: 18px 10px 40px; display: flex; justify-content: center; }
+
+    #flyer {
+      width: 210mm;
+      height: 297mm;
+      background: #fff;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0,0,0,.45);
+    }
+
+    /* Hero — photo fills exact hero bounds + brand overlay for text */
+    .hero {
+      position: relative;
+      color: #fff;
+      padding: 10px 14px 8px;
+      flex: 0 0 auto;
+      overflow: hidden;
+      background: var(--navy);
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      z-index: 0;
+      pointer-events: none;
+      display: block;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(135deg, rgba(26,22,53,.72) 0%, rgba(90,66,158,.62) 55%, rgba(139,116,232,.55) 100%),
+        linear-gradient(180deg, rgba(26,22,53,.25) 0%, transparent 45%, rgba(26,22,53,.4) 100%);
+    }
+    .hero > *:not(.hero-bg):not(.hero-overlay) {
+      position: relative;
+      z-index: 2;
+    }
+    .hero-top {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    }
+    .hero-top img {
+      height: 28px; width: auto;
+      background: rgba(255,255,255,.08);
+      padding: 3px 7px; border-radius: 8px;
+    }
+    .phone {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11.5px; font-weight: 700;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 999px; padding: 5px 10px;
+    }
+    .phone i {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #fff; color: var(--purple);
+      display: grid; place-items: center; font-style: normal; font-size: 10px; font-weight: 800;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 10px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    h1 {
+      margin: 0 0 5px;
+      font-size: 22px; line-height: 1.12; letter-spacing: -.03em; font-weight: 800;
+    }
+    .deck {
+      margin: 0 0 7px;
+      font-size: 11.5px; line-height: 1.35; opacity: .95; font-weight: 500;
+    }
+    .pillars {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;
+    }
+    .pillar {
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 8px; padding: 6px 7px;
+    }
+    .pillar b {
+      display: block; font-size: 9.5px; color: var(--lavender-soft);
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px;
+    }
+    .pillar span { font-size: 10px; line-height: 1.3; font-weight: 500; }
+
+    .circles {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+      justify-items: center;
+    }
+    .circles .c {
+      width: 72px; height: 72px; border-radius: 50%; overflow: hidden;
+      border: 3px solid #fff; box-shadow: 0 8px 18px rgba(0,0,0,.25);
+      background: var(--navy);
+    }
+    .circles .c.wide {
+      grid-column: 1 / -1;
+      width: 92px; height: 92px;
+    }
+    .circles .c img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .ready {
+      margin-top: 6px; text-align: center;
+      font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+      background: rgba(255,255,255,.15); border-radius: 999px; padding: 5px 10px;
+      display: inline-block; width: 100%;
+    }
+
+    /* Middle fills all space between hero and contact */
+    .body {
+      padding: 12px 14px 10px;
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      justify-content: stretch;
+      background: radial-gradient(circle at 100% 0%, rgba(176,158,255,.12), transparent 35%), #fff;
+    }
+
+    .services {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      flex: 1.15 1 0;
+      align-content: stretch;
+    }
+    .svc {
+      border-radius: 10px; overflow: hidden;
+      border: 1px solid #ebe4ff; background: #fff;
+      display: flex; flex-direction: column;
+      min-height: 0;
+    }
+    .svc .h {
+      padding: 9px 11px; color: #fff;
+      font-size: 13.5px; font-weight: 800;
+      display: flex; align-items: center; gap: 8px;
+      flex: 0 0 auto;
+    }
+    .svc .h.p { background: var(--purple); }
+    .svc .h.n { background: var(--navy); }
+    .svc .h img {
+      width: 22px; height: 22px; border-radius: 5px; object-fit: cover; background: #fff;
+    }
+    .svc .b {
+      padding: 10px 11px;
+      font-size: 13px; line-height: 1.45; color: var(--muted); font-weight: 500;
+      background: #faf8ff;
+      flex: 1 1 auto;
+      display: flex; align-items: center;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      flex: 1.25 1 0;
+      align-items: stretch;
+    }
+    .split > div {
+      display: flex; flex-direction: column; justify-content: space-evenly;
+    }
+    .split h2 {
+      margin: 0 0 8px;
+      font-size: 16px; font-weight: 800; color: var(--purple); line-height: 1.25;
+    }
+    .svc-item {
+      display: grid; grid-template-columns: 42px 1fr; gap: 10px;
+      align-items: center; margin-bottom: 0;
+    }
+    .svc-item .ico {
+      width: 42px; height: 42px; border-radius: 50%; overflow: hidden;
+      border: 2px solid var(--lavender); background: #fff;
+    }
+    .svc-item .ico.alt { border-color: var(--purple); }
+    .svc-item .ico img { width: 100%; height: 100%; object-fit: cover; }
+    .svc-item strong { display: block; font-size: 14.5px; color: var(--navy); margin-bottom: 2px; }
+    .svc-item span { font-size: 12.5px; color: var(--muted); line-height: 1.35; font-weight: 500; }
+
+    .copy ul {
+      margin: 0; padding: 0; list-style: none;
+      flex: 1; display: flex; flex-direction: column; justify-content: space-evenly;
+    }
+    .copy li {
+      position: relative;
+      padding: 2px 0 2px 16px;
+      font-size: 13px; line-height: 1.45; color: var(--muted); font-weight: 500;
+    }
+    .copy li::before {
+      content: ""; position: absolute; left: 0; top: 9px;
+      width: 8px; height: 8px; border-radius: 50%; background: var(--purple);
+    }
+    .copy li:nth-child(even)::before { background: var(--lavender); }
+    .copy li strong { color: var(--navy); }
+
+    .band {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 10px;
+      flex: 1.35 1 0;
+      min-height: 0;
+    }
+    .asset {
+      position: relative; border-radius: 10px; overflow: hidden; min-height: 100%; color: #fff;
+      height: 100%;
+    }
+    .asset img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .asset .v {
+      position: absolute; inset: 0;
+      background: linear-gradient(100deg, rgba(26,22,53,.9), rgba(90,66,158,.45));
+    }
+    .asset .c {
+      position: relative; z-index: 1; padding: 14px 14px;
+      height: 100%; display: flex; flex-direction: column; justify-content: center;
+    }
+    .asset .tag {
+      font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+      color: #9bffd0; font-weight: 800; margin-bottom: 5px;
+    }
+    .asset strong { display: block; font-size: 16px; margin-bottom: 4px; }
+    .asset p { margin: 0; font-size: 13px; line-height: 1.4; opacity: .95; font-weight: 500; }
+
+    .goals {
+      background: #f7f4ff; border: 1px solid #ebe4ff; border-radius: 10px;
+      padding: 12px 14px;
+      height: 100%;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .goals h3 { margin: 0 0 8px; font-size: 15px; color: var(--purple); }
+    .goals ul {
+      margin: 0; padding-left: 18px; color: var(--muted);
+      font-size: 13px; line-height: 1.5;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .goals li { margin: 0; }
+
+    .flow {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 5px;
+      padding: 10px 10px; background: #f3efff; border: 1px solid #ebe4ff; border-radius: 10px;
+      flex: 0 0 auto;
+    }
+    .flow span {
+      font-size: 12px; font-weight: 700; color: var(--purple);
+      background: #fff; border: 1px solid #e4dcff;
+      padding: 6px 10px; border-radius: 999px;
+    }
+    .flow i { font-style: normal; color: var(--lavender); font-weight: 800; font-size: 13px; }
+
+    .helpline {
+      background: var(--navy); color: #fff; border-radius: 10px;
+      padding: 11px 14px; display: flex; align-items: center; gap: 12px;
+      flex: 0 0 auto;
+    }
+    .helpline .ico {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--purple); display: grid; place-items: center;
+      font-size: 16px; font-weight: 800; flex: 0 0 auto;
+    }
+    .helpline .lbl {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+      font-weight: 700; color: var(--lavender-soft);
+    }
+    .helpline .num { font-size: 17px; font-weight: 800; }
+
+    .foot {
+      background: var(--grad); color: #fff;
+      padding: 9px 12px;
+      display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center;
+      flex: 0 0 auto;
+    }
+    .foot img { height: 30px; width: auto; }
+    .foot .info { font-size: 10px; line-height: 1.4; text-align: right; opacity: .95; }
+    .foot strong { display: block; font-size: 11.5px; margin-bottom: 1px; }
+
+    @media print {
+      @page { size: A4 portrait; margin: 0; }
+      body { background: #fff; }
+      .bar { display: none !important; }
+      .stage { padding: 0; }
+      #flyer { box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span><strong>Design D</strong> · Combined A+B+C · TechEarnest theme</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <a class="ghost" href="./health360-flyer-designs.html">All designs</a>
+      <a class="ghost" href="./health360-flyer-design-a.html">A</a>
+      <a class="ghost" href="./health360-flyer-design-b.html">B</a>
+      <a class="ghost" href="./health360-flyer-design-c.html">C</a>
+      <button type="button" onclick="window.print()">Print / PDF</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <article id="flyer">
+      <header class="hero">
+        <img class="hero-bg" src="./assets/flyer-banner-energy.png" alt="" aria-hidden="true" />
+        <div class="hero-overlay" aria-hidden="true"></div>
+        <div class="hero-top">
+          <img src="./assets/techearnest-logo-on-dark.png" alt="TechEarnest" />
+          <div class="phone"><i>☎</i> +91 20 6708 7147</div>
+        </div>
+        <div class="hero-grid">
+          <div>
+            <h1>Your hospital.<br />Our platform.</h1>
+            <p class="deck">Health360 by TechEarnest — complete hospital management with AI and modular services on one patient journey.</p>
+            <div class="pillars">
+              <div class="pillar"><b>Purpose</b><span>One-page product story for Health360.</span></div>
+              <div class="pillar"><b>Aim</b><span>End paper Rx &amp; fragmented tools.</span></div>
+              <div class="pillar"><b>How</b><span>AI + modules on one encounter spine.</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="circles">
+              <div class="c wide"><img src="./assets/health360-hero.png" alt="" /></div>
+              <div class="c"><img src="./assets/flyer-patient-phone.png" alt="" /></div>
+              <div class="c"><img src="./assets/flyer-lab-pharmacy.png" alt="" /></div>
+            </div>
+            <div class="ready">AI Ready · Complete Hospital OS</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="body">
+        <div class="services">
+          <div class="svc">
+            <div class="h p"><img src="./assets/icon-queue.png" alt="" /> OPD &amp; QUEUE</div>
+            <div class="b">Live tokens, desk arrive, walk-ins, visit status sync.</div>
+          </div>
+          <div class="svc">
+            <div class="h n"><img src="./assets/icon-consult.png" alt="" /> CLINICAL HUB</div>
+            <div class="b">Notes, Dx catalogs, vitals, wellness, checkout gate.</div>
+          </div>
+          <div class="svc">
+            <div class="h p"><img src="./assets/icon-lab.png" alt="" /> LAB &amp; PHARMACY</div>
+            <div class="b">Book→report, send e-Rx, dispense, inpatient MAR.</div>
+          </div>
+          <div class="svc">
+            <div class="h n"><img src="./assets/icon-analytics.png" alt="" /> AI INSIGHTS</div>
+            <div class="b">Health score, lab trends, dashboards, ops visibility.</div>
+          </div>
+        </div>
+
+        <div class="split">
+          <div>
+            <h2>Hospital services</h2>
+            <div class="svc-item">
+              <div class="ico"><img src="./assets/icon-patient.png" alt="" /></div>
+              <div><strong>UHID &amp; portals</strong><span>Lifelong identity · 8 portals · web + mobile</span></div>
+            </div>
+            <div class="svc-item">
+              <div class="ico alt"><img src="./assets/icon-rx.png" alt="" /></div>
+              <div><strong>E-Rx &amp; wellness</strong><span>Signed Rx · follow-up · patient care package</span></div>
+            </div>
+            <div class="svc-item">
+              <div class="ico"><img src="./assets/icon-ipd.png" alt="" /></div>
+              <div><strong>IPD · billing · assets</strong><span>Beds, invoices, biomedical &amp; facility assets</span></div>
+            </div>
+          </div>
+          <div class="copy">
+            <h2>Why this flyer · what we aim for</h2>
+            <ul>
+              <li><strong>Purpose:</strong> present Health360 as TechEarnest’s ready hospital OS.</li>
+              <li><strong>Aim:</strong> remove paper slips, lost reports, and tool sprawl.</li>
+              <li><strong>How:</strong> modular services + AI on one encounter spine.</li>
+              <li><strong>Who:</strong> hospital CIOs, clinicians, pharmacy/lab leaders, IT partners.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="flow">
+          <span>UHID</span><i>→</i><span>OPD</span><i>→</i><span>Consult</span><i>→</i><span>E-Rx</span><i>→</i><span>Lab</span><i>→</i><span>Pharmacy</span><i>→</i><span>IPD</span><i>→</i><span>Billing</span><i>→</i><span>AI</span><i>→</i><span>Assets</span>
+        </div>
+
+        <div class="band">
+          <div class="asset">
+            <img src="./assets/health360-assets-module.png" alt="" />
+            <div class="v"></div>
+            <div class="c">
+              <div class="tag">Included</div>
+              <strong>Hospital Asset Management</strong>
+              <p>Biomedical, beds, facility &amp; IT assets — clinical HMS plus enterprise visibility.</p>
+            </div>
+          </div>
+          <div class="goals">
+            <h3>Remember from this flyer</h3>
+            <ul>
+              <li>Complete hospital OS — not one module</li>
+              <li>AI for queues, context &amp; lab trends</li>
+              <li>Enterprise DNA: ServiceNow · Salesforce · Microsoft</li>
+              <li>RBAC, audit, multi-hospital SaaS</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="helpline">
+          <div class="ico">☎</div>
+          <div>
+            <div class="lbl">Contact TechEarnest · Explore Health360</div>
+            <div class="num">+91 20 6708 7147 · techearnest.com</div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="foot">
+        <img src="./assets/techearnest-logo-on-dark.png" alt="TechEarnest" />
+        <div class="info">
+          <strong>Health360 by TechEarnest · Empowering Possibilities</strong>
+          Office 221, VTP Trade Park, Undri, Pune 411060 · info@techearnest.com
+        </div>
+      </footer>
+    </article>
+  </div>
+</body>
+</html>

@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  createDiagnosis,
   createDosageTemplate,
   createSymptom,
+  listDiagnoses,
   listDosageTemplates,
   listSymptoms,
 } from '../api/clinicalCatalogApi';
@@ -11,6 +13,8 @@ export const catalogKeys = {
     ['hospital', 'catalog', 'symptoms', hospitalId, branchId ?? ''] as const,
   dosages: (hospitalId: string, branchId?: string) =>
     ['hospital', 'catalog', 'dosages', hospitalId, branchId ?? ''] as const,
+  diagnoses: (hospitalId: string, branchId?: string, q?: string) =>
+    ['hospital', 'catalog', 'diagnoses', hospitalId, branchId ?? '', q ?? ''] as const,
 };
 
 export function useSymptoms(hospitalId?: string, branchId?: string) {
@@ -29,6 +33,14 @@ export function useDosageTemplates(hospitalId?: string, branchId?: string) {
   });
 }
 
+export function useDiagnosisCatalog(hospitalId?: string, branchId?: string, q?: string) {
+  return useQuery({
+    queryKey: catalogKeys.diagnoses(hospitalId ?? '', branchId, q),
+    queryFn: () => listDiagnoses(hospitalId!, branchId, q),
+    enabled: Boolean(hospitalId),
+  });
+}
+
 export function useCreateSymptom(hospitalId: string, branchId?: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -42,5 +54,14 @@ export function useCreateDosageTemplate(hospitalId: string, branchId?: string) {
   return useMutation({
     mutationFn: createDosageTemplate,
     onSuccess: () => qc.invalidateQueries({ queryKey: catalogKeys.dosages(hospitalId, branchId) }),
+  });
+}
+
+export function useCreateDiagnosis(hospitalId: string, branchId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: createDiagnosis,
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ['hospital', 'catalog', 'diagnoses', hospitalId, branchId ?? ''] }),
   });
 }

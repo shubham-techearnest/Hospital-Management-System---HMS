@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -74,13 +75,61 @@ public class LabValueService {
                 .map(this::toResponse);
     }
 
-    private void validateAtLeastOneValue(RecordLabValuesRequest request) {
-        boolean hasValue = request.getHba1c() != null || request.getTotalCholesterol() != null
+    /**
+     * Ingests structured values from a released hospital lab report into patient analytics history.
+     * Does not require the patient user to be the actor (lab staff release).
+     */
+    @Transactional
+    public void ingestFromLabReport(
+            UUID tenantId,
+            UUID patientId,
+            UUID actorUserId,
+            Instant recordedAt,
+            RecordLabValuesRequest request) {
+        if (request == null || !hasAnyValue(request)) {
+            return;
+        }
+        LabValueRecordEntity record = new LabValueRecordEntity();
+        record.setTenantId(tenantId);
+        record.setPatientId(patientId);
+        record.setHba1c(request.getHba1c());
+        record.setTotalCholesterol(request.getTotalCholesterol());
+        record.setHdl(request.getHdl());
+        record.setLdl(request.getLdl());
+        record.setTriglycerides(request.getTriglycerides());
+        record.setHemoglobin(request.getHemoglobin());
+        record.setVitaminD(request.getVitaminD());
+        record.setTsh(request.getTsh());
+        record.setCreatinine(request.getCreatinine());
+        record.setRecordedAt(recordedAt != null ? recordedAt : Instant.now());
+        record.setCreatedBy(actorUserId);
+
+        record = labValueRecordRepository.saveAndFlush(record);
+
+        healthTimelineService.recordEvent(
+                tenantId,
+                patientId,
+                HealthTimelineEventType.LAB_VALUES_RECORDED,
+                "Lab values from hospital report",
+                "LabValueRecord",
+                record.getId(),
+                record.getRecordedAt(),
+                Map.of("source", "LAB_REPORT"));
+
+        auditLogService.record(tenantId, actorUserId, "LAB_VALUES_INGESTED_FROM_REPORT", "LabValueRecord",
+                record.getId(), Map.of("patientId", patientId.toString()));
+    }
+
+    private boolean hasAnyValue(RecordLabValuesRequest request) {
+        return request.getHba1c() != null || request.getTotalCholesterol() != null
                 || request.getHdl() != null || request.getLdl() != null
                 || request.getTriglycerides() != null || request.getHemoglobin() != null
                 || request.getVitaminD() != null || request.getTsh() != null
                 || request.getCreatinine() != null;
-        if (!hasValue) {
+    }
+
+    private void validateAtLeastOneValue(RecordLabValuesRequest request) {
+        if (!hasAnyValue(request)) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
                     "At least one lab value is required");
         }

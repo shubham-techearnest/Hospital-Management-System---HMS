@@ -12,8 +12,8 @@ public interface DosageTemplateRepository extends JpaRepository<DosageTemplateEn
 
     @Query("""
             SELECT d FROM DosageTemplateEntity d
-            WHERE d.tenantId = :tenantId
-              AND d.hospitalId = :hospitalId
+            WHERE (d.hospitalId IS NULL
+                OR (d.tenantId = :tenantId AND d.hospitalId = :hospitalId))
               AND (:branchId IS NULL OR d.branchId IS NULL OR d.branchId = :branchId)
             ORDER BY d.label ASC
             """)

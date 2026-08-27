@@ -1,11 +1,20 @@
 package com.health360.patient.application.service;
 
+import com.health360.clinical.application.service.EncounterAccessService;
+import com.health360.clinical.infrastructure.persistence.entity.EncounterEntity;
+import com.health360.clinical.infrastructure.persistence.repository.EncounterRepository;
+import com.health360.config.security.UserPrincipal;
 import com.health360.doctor.application.service.DoctorProfileProvisioningService;
 import com.health360.doctor.infrastructure.persistence.entity.DoctorProfileEntity;
 import com.health360.iam.infrastructure.persistence.entity.UserEntity;
 import com.health360.iam.infrastructure.persistence.repository.UserRepository;
-import com.health360.patient.infrastructure.persistence.entity.*;
-import com.health360.patient.infrastructure.persistence.repository.*;
+import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
+import com.health360.patient.infrastructure.persistence.repository.AllergyRepository;
+import com.health360.patient.infrastructure.persistence.repository.ChronicConditionRepository;
+import com.health360.patient.infrastructure.persistence.repository.LabValueRecordRepository;
+import com.health360.patient.infrastructure.persistence.repository.MedicationRepository;
+import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
+import com.health360.patient.infrastructure.persistence.repository.VitalSignRecordRepository;
 import com.health360.patient.presentation.dto.response.LabValueResponse;
 import com.health360.patient.presentation.dto.response.PatientSummaryResponse;
 import com.health360.patient.presentation.dto.response.VitalSignResponse;
@@ -32,10 +41,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PatientSummaryService {
 
-    private static final List<String> ACTIVE_APPOINTMENT_STATUSES = List.of("PENDING", "CONFIRMED", "IN_PROGRESS");
+    private static final List<String> ACTIVE_APPOINTMENT_STATUSES =
+            List.of("PENDING", "CONFIRMED", "ARRIVED", "POSTPONED", "IN_PROGRESS");
 
     private final DoctorProfileProvisioningService doctorProfileProvisioningService;
     private final AppointmentRepository appointmentRepository;
+    private final EncounterRepository encounterRepository;
+    private final EncounterAccessService encounterAccessService;
     private final PatientProfileRepository patientProfileRepository;
     private final UserRepository userRepository;
     private final AllergyRepository allergyRepository;
@@ -69,6 +81,35 @@ public class PatientSummaryService {
 
         validateAppointmentWindow(appointment);
 
+        PatientSummaryResponse response = buildSummary(tenantId, patientId);
+        auditLogService.record(tenantId, doctorUserId, "PATIENT_SUMMARY_ACCESSED", "PatientProfile",
+                patientId, Map.of("appointmentId", appointmentId.toString()));
+        return response;
+    }
+
+    @Transactional(readOnly = true)
+    public PatientSummaryResponse getSummaryForEncounter(
+            UserPrincipal principal, UUID patientId, UUID encounterId) {
+        EncounterEntity encounter = encounterRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(encounterId, principal.getTenantId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Encounter not found"));
+
+        if (!encounter.getPatientId().equals(patientId)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Encounter does not match the requested patient");
+        }
+
+        encounterAccessService.assertCanReadEncounter(principal, encounter);
+
+        PatientSummaryResponse response = buildSummary(principal.getTenantId(), patientId);
+        auditLogService.record(principal.getTenantId(), principal.getUserId(),
+                "PATIENT_SUMMARY_ACCESSED", "PatientProfile",
+                patientId, Map.of("encounterId", encounterId.toString()));
+        return response;
+    }
+
+    private PatientSummaryResponse buildSummary(UUID tenantId, UUID patientId) {
         PatientProfileEntity profile = patientProfileRepository.findById(patientId)
                 .filter(p -> p.getDeletedAt() == null && p.getTenantId().equals(tenantId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
@@ -119,11 +160,6 @@ public class PatientSummaryService {
                 .map(labValueService::toResponse)
                 .orElse(null);
 
-        List<PatientSummaryResponse.HealthGoalSummary> healthGoals = buildHealthGoals(profile);
-
-        auditLogService.record(tenantId, doctorUserId, "PATIENT_SUMMARY_ACCESSED", "PatientProfile",
-                patientId, Map.of("appointmentId", appointmentId.toString()));
-
         return PatientSummaryResponse.builder()
                 .name(name)
                 .age(age)
@@ -133,7 +169,7 @@ public class PatientSummaryService {
                 .chronicConditions(chronicConditions)
                 .latestVitals(latestVitals)
                 .latestLabValues(latestLabValues)
-                .healthGoals(healthGoals)
+                .healthGoals(buildHealthGoals(profile))
                 .build();
     }
 
@@ -143,13 +179,15 @@ public class PatientSummaryService {
                     "Patient summary is only available for active appointments");
         }
 
+        // ARRIVED patients may stay past the original ±24h window during a long OPD day.
+        long hours = "ARRIVED".equals(appointment.getStatus()) ? 72 : 24;
         Instant now = Instant.now();
-        Instant windowStart = appointment.getScheduledAt().minus(24, ChronoUnit.HOURS);
-        Instant windowEnd = appointment.getScheduledAt().plus(24, ChronoUnit.HOURS);
+        Instant windowStart = appointment.getScheduledAt().minus(hours, ChronoUnit.HOURS);
+        Instant windowEnd = appointment.getScheduledAt().plus(hours, ChronoUnit.HOURS);
 
         if (now.isBefore(windowStart) || now.isAfter(windowEnd)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN,
-                    "Patient summary is only available within 24 hours before and after the appointment");
+                    "Patient summary is only available within the appointment care window");
         }
     }
 

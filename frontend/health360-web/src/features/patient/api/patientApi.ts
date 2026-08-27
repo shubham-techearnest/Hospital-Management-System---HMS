@@ -12,6 +12,7 @@ export interface Address {
 
 export interface PatientProfile {
   id: string;
+  uhid?: string;
   consentAccepted: boolean;
   consentAcceptedAt?: string;
   completionScore: number;

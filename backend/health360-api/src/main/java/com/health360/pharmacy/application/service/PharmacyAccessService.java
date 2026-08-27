@@ -46,6 +46,24 @@ public class PharmacyAccessService {
         }
     }
 
+    public void assertCanReadPharmacyRequests(UserPrincipal principal) {
+        if (!principal.hasPermission("pharmacy:request:read")) {
+            throw forbidden();
+        }
+    }
+
+    public void assertCanWritePharmacyRequests(UserPrincipal principal) {
+        if (!principal.hasPermission("pharmacy:request:write")) {
+            throw forbidden();
+        }
+    }
+
+    public void assertCanFulfillPharmacyRequests(UserPrincipal principal) {
+        if (!principal.hasPermission("pharmacy:request:fulfill")) {
+            throw forbidden();
+        }
+    }
+
     public void assertHospitalScope(UserPrincipal principal, UUID hospitalId) {
         hospitalScopeService.assertHospitalScope(principal, hospitalId);
     }

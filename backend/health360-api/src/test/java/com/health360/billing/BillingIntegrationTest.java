@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.health360.billing.presentation.dto.request.CreateInvoiceLineItemRequest;
 import com.health360.billing.presentation.dto.request.CreateInvoiceRequest;
 import com.health360.billing.presentation.dto.request.RecordPaymentRequest;
+import com.health360.clinical.presentation.dto.request.CreateClinicalNoteRequest;
 import com.health360.clinical.presentation.dto.request.CreateEncounterRequest;
+import com.health360.clinical.presentation.dto.request.CreatePrescriptionRequest;
 import com.health360.support.IntegrationTestAuth;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -92,20 +94,60 @@ class BillingIntegrationTest {
         UUID encounterId = UUID.fromString(objectMapper.readTree(encounterResult.getResponse().getContentAsString())
                 .path("data").path("encounterId").asText());
 
-        CreateInvoiceLineItemRequest lineItem = new CreateInvoiceLineItemRequest();
-        lineItem.setDescription("OPD consultation");
-        lineItem.setQuantity(BigDecimal.ONE);
-        lineItem.setUnitPrice(new BigDecimal("500.00"));
-        lineItem.setSourceType("ENCOUNTER");
+        mockMvc.perform(post("/api/v1/billing/invoices")
+                        .header("Authorization", IntegrationTestAuth.bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invoicePayload(encounterId))))
+                .andExpect(status().isConflict());
 
-        CreateInvoiceRequest invoiceRequest = new CreateInvoiceRequest();
-        invoiceRequest.setEncounterId(encounterId);
-        invoiceRequest.setLineItems(List.of(lineItem));
+        CreateClinicalNoteRequest noteRequest = new CreateClinicalNoteRequest();
+        noteRequest.setChiefComplaint("Billing consult");
+        noteRequest.setAssessment("Ready for checkout");
+        noteRequest.setPlan("Discharge after payment");
+
+        MvcResult noteResult = mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId + "/notes")
+                        .header("Authorization", IntegrationTestAuth.bearer(doctorToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(noteRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String noteId = objectMapper.readTree(noteResult.getResponse().getContentAsString())
+                .path("data").path("noteId").asText();
+
+        mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId + "/notes/" + noteId + "/finalize")
+                        .header("Authorization", IntegrationTestAuth.bearer(doctorToken)))
+                .andExpect(status().isOk());
+
+        CreatePrescriptionRequest.PrescriptionItemRequest item = new CreatePrescriptionRequest.PrescriptionItemRequest();
+        item.setMedicineName("Paracetamol 500mg");
+        item.setDoseText("1 tablet");
+        item.setFrequency("TDS");
+        item.setDurationDays(3);
+        item.setQuantity(9);
+
+        CreatePrescriptionRequest rxRequest = new CreatePrescriptionRequest();
+        rxRequest.setItems(List.of(item));
+
+        MvcResult rxResult = mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId + "/prescriptions")
+                        .header("Authorization", IntegrationTestAuth.bearer(doctorToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(rxRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String prescriptionId = objectMapper.readTree(rxResult.getResponse().getContentAsString())
+                .path("data").path("prescriptionId").asText();
+
+        mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId
+                        + "/prescriptions/" + prescriptionId + "/sign")
+                        .header("Authorization", IntegrationTestAuth.bearer(doctorToken)))
+                .andExpect(status().isOk());
 
         MvcResult invoiceResult = mockMvc.perform(post("/api/v1/billing/invoices")
                         .header("Authorization", IntegrationTestAuth.bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invoiceRequest)))
+                        .content(objectMapper.writeValueAsString(invoicePayload(encounterId))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.status").value("ISSUED"))
                 .andExpect(jsonPath("$.data.totalAmount").value(500.00))
@@ -140,5 +182,18 @@ class BillingIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.invoiceId").value(invoiceId))
                 .andExpect(jsonPath("$.data.status").value("PAID"));
+    }
+
+    private CreateInvoiceRequest invoicePayload(UUID encounterId) {
+        CreateInvoiceLineItemRequest lineItem = new CreateInvoiceLineItemRequest();
+        lineItem.setDescription("OPD consultation");
+        lineItem.setQuantity(BigDecimal.ONE);
+        lineItem.setUnitPrice(new BigDecimal("500.00"));
+        lineItem.setSourceType("ENCOUNTER");
+
+        CreateInvoiceRequest invoiceRequest = new CreateInvoiceRequest();
+        invoiceRequest.setEncounterId(encounterId);
+        invoiceRequest.setLineItems(List.of(lineItem));
+        return invoiceRequest;
     }
 }

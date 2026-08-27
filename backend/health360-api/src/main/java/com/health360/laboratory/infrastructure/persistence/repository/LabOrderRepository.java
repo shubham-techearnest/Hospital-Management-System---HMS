@@ -47,4 +47,19 @@ public interface LabOrderRepository extends JpaRepository<LabOrderEntity, UUID> 
             @Param("tenantId") UUID tenantId,
             @Param("hospitalId") UUID hospitalId,
             @Param("branchId") UUID branchId);
+
+    @Query("""
+            SELECT i FROM ClinicalOrderItemEntity i
+            JOIN ClinicalOrderEntity o ON o.id = i.orderId
+            JOIN EncounterEntity e ON e.id = o.encounterId
+            WHERE i.tenantId = :tenantId
+              AND o.orderType = 'LAB'
+              AND i.deletedAt IS NULL
+              AND o.deletedAt IS NULL
+              AND e.patientId = :patientId
+            ORDER BY o.orderedAt DESC
+            """)
+    List<com.health360.clinical.infrastructure.persistence.entity.ClinicalOrderItemEntity> findLabItemsForPatient(
+            @Param("tenantId") UUID tenantId,
+            @Param("patientId") UUID patientId);
 }

@@ -9,6 +9,7 @@ import {
   createPrescription,
   finalizeClinicalNote,
   getEncounter,
+  getEncounterWellnessPlan,
   getMyClinicalTimeline,
   getPatientClinicalTimeline,
   listDoctorMyEncounters,
@@ -24,9 +25,11 @@ import {
   startEncounter,
   updateClinicalNote,
   updatePrescription,
+  upsertEncounterWellnessPlan,
   type CreatePrescriptionPayload,
   type RecordClinicalVitalsPayload,
   type StructuredConsultationPayload,
+  type UpsertWellnessPlanPayload,
 } from '../api/clinicalApi';
 
 export const clinicalKeys = {
@@ -40,6 +43,7 @@ export const clinicalKeys = {
   myPrescriptions: ['clinical', 'prescriptions', 'me'] as const,
   orders: (id: string) => ['clinical', 'encounters', id, 'orders'] as const,
   vitals: (id: string) => ['clinical', 'encounters', id, 'vitals'] as const,
+  wellnessPlan: (id: string) => ['clinical', 'encounters', id, 'wellness-plan'] as const,
   patientTimeline: (patientId: string, page: number) =>
     ['clinical', 'patients', patientId, 'timeline', page] as const,
   myClinicalTimeline: (page: number) => ['clinical', 'me', 'timeline', page] as const,
@@ -64,7 +68,7 @@ export function useDoctorEncounters(page = 0, size = 20, todayOnly = false, stat
     queryKey: clinicalKeys.doctorEncounters(page, todayOnly, status),
     queryFn: () => listDoctorMyEncounters(page, size, { todayOnly, status }),
     retry: (_, error) => !isAuthError(error),
-    refetchInterval: todayOnly ? 30_000 : false,
+    refetchInterval: todayOnly ? 10_000 : false,
   });
 }
 
@@ -127,6 +131,15 @@ export function useEncounterVitals(encounterId: string) {
   });
 }
 
+export function useEncounterWellnessPlan(encounterId: string) {
+  return useQuery({
+    queryKey: clinicalKeys.wellnessPlan(encounterId),
+    queryFn: () => getEncounterWellnessPlan(encounterId),
+    enabled: Boolean(encounterId),
+    retry: (_, error) => !isAuthError(error),
+  });
+}
+
 export function usePatientClinicalTimeline(patientId: string, page = 0, size = 20) {
   return useQuery({
     queryKey: clinicalKeys.patientTimeline(patientId, page),
@@ -149,6 +162,7 @@ export function useEncounterActions(encounterId: string) {
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: clinicalKeys.encounter(encounterId) });
     qc.invalidateQueries({ queryKey: ['clinical', 'encounters'] });
+    qc.invalidateQueries({ queryKey: ['opd'] });
   };
   const invalidateOrders = () => {
     invalidate();
@@ -167,6 +181,9 @@ export function useEncounterActions(encounterId: string) {
   const invalidatePrescriptions = () => {
     qc.invalidateQueries({ queryKey: clinicalKeys.prescriptions(encounterId) });
     qc.invalidateQueries({ queryKey: clinicalKeys.myPrescriptions });
+  };
+  const invalidateWellness = () => {
+    qc.invalidateQueries({ queryKey: clinicalKeys.wellnessPlan(encounterId) });
   };
 
   return {
@@ -218,6 +235,10 @@ export function useEncounterActions(encounterId: string) {
     signPrescription: useMutation({
       mutationFn: (prescriptionId: string) => signPrescription(encounterId, prescriptionId),
       onSuccess: invalidatePrescriptions,
+    }),
+    upsertWellnessPlan: useMutation({
+      mutationFn: (payload: UpsertWellnessPlanPayload) => upsertEncounterWellnessPlan(encounterId, payload),
+      onSuccess: invalidateWellness,
     }),
   };
 }

@@ -14,8 +14,10 @@ import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { useHospitalProfile, useBranches } from '@/features/hospital/hooks/useHospitalQueries';
 import {
+  useCreateDiagnosis,
   useCreateDosageTemplate,
   useCreateSymptom,
+  useDiagnosisCatalog,
   useDosageTemplates,
   useSymptoms,
 } from '@/features/hospital/hooks/useClinicalCatalogQueries';
@@ -33,8 +35,10 @@ export function HospitalClinicalCatalogsPage() {
 
   const { data: symptoms = [] } = useSymptoms(hospitalId, branchId);
   const { data: dosages = [] } = useDosageTemplates(hospitalId, branchId);
+  const { data: diagnoses = [] } = useDiagnosisCatalog(hospitalId, branchId);
   const createSymptom = useCreateSymptom(hospitalId, branchId);
   const createDosage = useCreateDosageTemplate(hospitalId, branchId);
+  const createDiagnosis = useCreateDiagnosis(hospitalId, branchId);
 
   const [symptomForm, setSymptomForm] = useState({ code: '', name: '', category: '' });
   const [dosageForm, setDosageForm] = useState({
@@ -44,6 +48,7 @@ export function HospitalClinicalCatalogsPage() {
     frequency: '',
     durationDays: '',
   });
+  const [diagnosisForm, setDiagnosisForm] = useState({ icdCode: '', name: '', category: '' });
 
   const addSymptom = async () => {
     setError(null);
@@ -83,6 +88,24 @@ export function HospitalClinicalCatalogsPage() {
     }
   };
 
+  const addDiagnosis = async () => {
+    setError(null);
+    setSuccess(null);
+    try {
+      await createDiagnosis.mutateAsync({
+        hospitalId,
+        branchId,
+        icdCode: diagnosisForm.icdCode,
+        name: diagnosisForm.name,
+        category: diagnosisForm.category || undefined,
+      });
+      setDiagnosisForm({ icdCode: '', name: '', category: '' });
+      setSuccess('ICD diagnosis favorite added.');
+    } catch (e) {
+      setError(parseApiError(e).message);
+    }
+  };
+
   if (!hospitalId) {
     return <Alert severity="warning">Complete hospital profile first.</Alert>;
   }
@@ -91,13 +114,14 @@ export function HospitalClinicalCatalogsPage() {
     <AnimatedPage>
       <DashboardPageHeader
         title="Clinical catalogs"
-        subtitle="Symptoms and dosage templates used as doctor dropdowns. Medicines and lab tests are managed under Pharmacy / Laboratory."
+        subtitle="Symptoms, ICD diagnosis favorites, and dosage templates used as doctor dropdowns. Medicines and lab tests are managed under Pharmacy / Laboratory."
       />
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
       {success ? <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert> : null}
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label="Symptoms" />
+        <Tab label="ICD diagnoses" />
         <Tab label="Dosage templates" />
       </Tabs>
 
@@ -123,6 +147,49 @@ export function HospitalClinicalCatalogsPage() {
       )}
 
       {tab === 1 && (
+        <Stack spacing={2} maxWidth={720}>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Stack spacing={1.5}>
+              <Typography variant="subtitle2">Add ICD diagnosis favorite</Typography>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                <TextField
+                  label="ICD-10 code"
+                  required
+                  sx={{ minWidth: 140 }}
+                  value={diagnosisForm.icdCode}
+                  onChange={(e) => setDiagnosisForm((f) => ({ ...f, icdCode: e.target.value }))}
+                />
+                <TextField
+                  label="Name"
+                  required
+                  fullWidth
+                  value={diagnosisForm.name}
+                  onChange={(e) => setDiagnosisForm((f) => ({ ...f, name: e.target.value }))}
+                />
+                <TextField
+                  label="Category"
+                  value={diagnosisForm.category}
+                  onChange={(e) => setDiagnosisForm((f) => ({ ...f, category: e.target.value }))}
+                />
+                <Button
+                  variant="contained"
+                  onClick={addDiagnosis}
+                  disabled={!diagnosisForm.icdCode.trim() || !diagnosisForm.name.trim()}
+                >
+                  Add
+                </Button>
+              </Stack>
+            </Stack>
+          </Paper>
+          {diagnoses.map((d) => (
+            <Typography key={d.diagnosisCatalogId} variant="body2">
+              {d.icdCode} — {d.name}{d.category ? ` · ${d.category}` : ''}
+            </Typography>
+          ))}
+        </Stack>
+      )}
+
+      {tab === 2 && (
         <Stack spacing={2} maxWidth={720}>
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Stack spacing={1.5}>

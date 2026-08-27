@@ -35,5 +35,14 @@
 | P6-F1 | EPIC-20 | Security/compliance hardening | 6 | 21 | R6 |
 | P6-F2 | EPIC-20 | Performance/reliability | 6 | 22 | R6 |
 | P6-F3 | EPIC-20 | Enterprise UAT readiness | 6 | 23 | R6 |
+| ECO-F0.* | ECO | Ecosystem stabilize / status map / dashboard audit | ECO-P0 | TBD | R-ECO |
+| ECO-F1.* | ECO | Patient & desk polish | ECO-P1 | TBD | R-ECO |
+| ECO-F2.* | ECO | Clinical completeness (wellness, summary, follow-up) | ECO-P2 | IN QA | R-ECO |
+| ECO-F3.* | ECO | Lab journey (hospital-first) | ECO-P3 | IN QA | R-ECO |
+| ECO-F4.* | ECO | Pharmacy e-Rx share / dispense | ECO-P4 | RELEASED | R-ECO |
+| ECO-F5.* | ECO | Self check-in + notification channels | ECO-P5 | IN QA | R-ECO |
+| ECO-F6.* | ECO | Unified timeline + health analytics | ECO-P6 | TBD | R-ECO |
+| ECO-F7.* | ECO | Independent lab/pharmacy orgs + HR | ECO-P7 | TBD | R-ECO |
 
+Ecosystem pack: [../15-ecosystem/README.md](../15-ecosystem/README.md)  
 Status tracking: [feature-status-board.md](./feature-status-board.md)

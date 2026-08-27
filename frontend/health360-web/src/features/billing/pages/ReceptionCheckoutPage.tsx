@@ -17,6 +17,19 @@ import {
   useBillingMutations,
   useInvoiceByEncounter,
 } from '@/features/billing/hooks/useBillingQueries';
+import {
+  useEncounterDiagnoses,
+  useEncounterNotes,
+  useEncounterOrders,
+  useEncounterPrescriptions,
+  useEncounterVitals,
+} from '@/features/clinical/hooks/useClinicalQueries';
+import { OpdVisitChecklist } from '@/features/clinical/components/OpdVisitChecklist';
+import {
+  buildOpdVisitChecklist,
+  canIssueCheckout,
+  checkoutBlockers,
+} from '@/features/clinical/utils/opdVisitChecklist';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { isAxiosError } from 'axios';
 
@@ -40,6 +53,11 @@ export function ReceptionCheckoutPage() {
     error: invoiceLookupError,
     refetch: refetchInvoice,
   } = useInvoiceByEncounter(encounterId);
+  const { data: vitals = [] } = useEncounterVitals(encounterId);
+  const { data: consultNotes = [] } = useEncounterNotes(encounterId);
+  const { data: diagnoses = [] } = useEncounterDiagnoses(encounterId);
+  const { data: prescriptions = [] } = useEncounterPrescriptions(encounterId);
+  const { data: orders = [] } = useEncounterOrders(encounterId);
   const mutations = useBillingMutations(encounterId);
 
   const [lines, setLines] = useState<LineForm[]>([DEFAULT_LINE]);
@@ -68,10 +86,30 @@ export function ReceptionCheckoutPage() {
       }, 0),
     [lines],
   );
+  const visitSteps = useMemo(
+    () =>
+      buildOpdVisitChecklist({
+        vitals,
+        notes: consultNotes,
+        diagnoses,
+        prescriptions,
+        orders,
+        invoice: invoice ?? null,
+      }),
+    [vitals, consultNotes, diagnoses, prescriptions, orders, invoice],
+  );
+  const checkoutReady = canIssueCheckout(consultNotes, prescriptions);
+  const checkoutMissing = checkoutBlockers(consultNotes, prescriptions);
 
   const createInvoice = async () => {
     setError(null);
     setSuccess(null);
+    if (!checkoutReady) {
+      setError(
+        `Checkout is blocked until the doctor has a ${checkoutMissing.join(' and a ')}.`,
+      );
+      return;
+    }
     const payloadLines = lines
       .filter((l) => l.description.trim())
       .map((l) => ({
@@ -147,6 +185,13 @@ export function ReceptionCheckoutPage() {
         title="OPD checkout"
         subtitle={`Encounter ${encounterId}`}
       />
+      <OpdVisitChecklist steps={visitSteps} scrollToSections={false} />
+      {!invoice && !checkoutReady ? (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Checkout is locked until the doctor finalizes the consultation report and signs an e-prescription
+          {checkoutMissing.length > 0 ? ` (missing: ${checkoutMissing.join(', ')})` : ''}.
+        </Alert>
+      ) : null}
 
       {success ? <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert> : null}
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
@@ -252,7 +297,7 @@ export function ReceptionCheckoutPage() {
             <Typography variant="body2">Estimated total: ₹{lineTotal.toFixed(2)}</Typography>
             <Button
               variant="contained"
-              disabled={mutations.createInvoice.isPending}
+              disabled={!checkoutReady || mutations.createInvoice.isPending}
               onClick={createInvoice}
             >
               Issue invoice

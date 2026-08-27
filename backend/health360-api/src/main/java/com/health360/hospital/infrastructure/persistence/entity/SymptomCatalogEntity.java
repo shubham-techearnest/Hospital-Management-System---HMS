@@ -15,7 +15,7 @@ import java.util.UUID;
 @Setter
 public class SymptomCatalogEntity extends BaseAuditableEntity {
 
-    @Column(name = "hospital_id", nullable = false)
+    @Column(name = "hospital_id")
     private UUID hospitalId;
 
     @Column(name = "branch_id")

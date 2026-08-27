@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Health360 Flyer — Design C (Triple Circle)</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&display=swap");
+    *{box-sizing:border-box} html,body{margin:0}
+    body{font-family:"Outfit",system-ui,sans-serif;background:#0d0b1a;color:#1a1635}
+    .bar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:#1a1635;color:#fff;font-size:.8rem}
+    .bar a,.bar button{background:#5a429e;color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:700;text-decoration:none;cursor:pointer;font-size:.75rem}
+    .stage{padding:18px 10px 40px;display:flex;justify-content:center}
+    #flyer{width:210mm;height:auto;background:#fff;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 40px rgba(0,0,0,.4)}
+
+    .hero{
+      position:relative;color:#fff;padding:22px 18px 82px;text-align:center;overflow:hidden;
+      background:#0b1f3a;
+    }
+    .hero-bg{
+      position:absolute;inset:0;width:100%;height:100%;
+      object-fit:cover;object-position:center 30%;display:block;z-index:0;
+    }
+    .hero-veil{
+      position:absolute;inset:0;z-index:1;pointer-events:none;
+      background:
+        linear-gradient(160deg, rgba(10,24,48,.9) 0%, rgba(26,22,53,.75) 50%, rgba(30,58,110,.82) 100%),
+        linear-gradient(180deg, rgba(10,24,48,.2) 0%, transparent 45%, rgba(10,24,48,.5) 100%);
+    }
+    .hero > *:not(.hero-bg):not(.hero-veil):not(.wave){position:relative;z-index:3}
+    .hero h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+    .hero p{margin:8px auto 0;max-width:46ch;font-size:12.5px;line-height:1.4;opacity:.95}
+    .circles{position:absolute;left:0;right:0;bottom:-58px;display:flex;justify-content:center;gap:14px;z-index:4}
+    .circles .c{width:118px;height:118px;border-radius:50%;overflow:hidden;border:5px solid #fff;box-shadow:0 10px 24px rgba(10,24,48,.3);background:#1a1635}
+    .circles .c img{width:100%;height:100%;object-fit:cover;display:block}
+    .wave{position:absolute;left:0;right:0;bottom:-1px;height:42px;z-index:2}
+
+    .mid{padding:72px 18px 10px;flex:0 0 auto;display:grid;grid-template-columns:1fr 1.2fr;gap:16px}
+    .mid h2{margin:0 0 12px;font-size:14px;font-weight:800;color:#5a429e;line-height:1.25}
+    .svc{display:flex;flex-direction:column;gap:12px}
+    .svc .row{display:grid;grid-template-columns:46px 1fr;gap:10px;align-items:center}
+    .svc .ico{width:46px;height:46px;border-radius:50%;overflow:hidden;border:3px solid #7c5cff;background:#fff}
+    .svc .ico.b{border-color:#5a429e}
+    .svc .ico img{width:100%;height:100%;object-fit:cover}
+    .svc strong{display:block;font-size:13px;color:#1a1635}
+    .svc span{font-size:11.5px;color:#5c5678;line-height:1.35}
+
+    .copy h2{color:#1a1635}
+    .copy ul{margin:0;padding:0;list-style:none}
+    .copy li{position:relative;padding:0 0 10px 16px;font-size:12px;line-height:1.45;color:#5c5678}
+    .copy li::before{content:"";position:absolute;left:0;top:7px;width:8px;height:8px;border-radius:50%;background:#5a429e}
+    .copy li:nth-child(2)::before{background:#7c5cff}
+    .copy li strong{color:#1a1635}
+
+    .helpline{margin:4px 18px 10px;background:#0a1830;color:#fff;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex:0 0 auto}
+    .helpline .ico{width:40px;height:40px;border-radius:50%;background:#1e3a6e;display:grid;place-items:center;font-size:18px}
+    .helpline .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:#c5d4ef}
+    .helpline .num{font-size:20px;font-weight:800}
+
+    .foot{margin-top:0;background:linear-gradient(90deg,#0a1830,#1e3a6e);color:#fff;padding:12px 16px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;flex:0 0 auto}
+    .foot img{height:36px;width:auto}
+    .foot .info{font-size:10.5px;line-height:1.45;text-align:right}
+    .foot strong{display:block;font-size:12px;margin-bottom:2px}
+
+    @media print{
+      @page{size:210mm auto;margin:0}
+      body{background:#fff}
+      .bar{display:none!important}
+      .stage{padding:0}
+      #flyer{box-shadow:none;height:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span><strong>Design C</strong> · Triple circle template · TechEarnest theme</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <a href="./health360-flyer-design-a.html">Design A</a>
+      <a href="./health360-flyer-design-b.html">Design B</a>
+      <button onclick="window.print()">Print / PDF</button>
+    </div>
+  </div>
+  <div class="stage">
+    <article id="flyer">
+      <div class="hero">
+        <img class="hero-bg" src="./assets/brochure-doctor-patient-hero.png" alt="" />
+        <div class="hero-veil" aria-hidden="true"></div>
+        <h1>THE COMPLETE HOSPITAL PLATFORM</h1>
+        <p>Health360 by TechEarnest — modular hospital services for OPD, clinical, lab, pharmacy, IPD, billing, analytics &amp; assets.</p>
+        <div class="circles">
+          <div class="c"><img src="./assets/flyer-patient-phone.png" alt="" /></div>
+          <div class="c"><img src="./assets/health360-hero.png" alt="" /></div>
+          <div class="c"><img src="./assets/flyer-lab-pharmacy.png" alt="" /></div>
+        </div>
+        <svg class="wave" viewBox="0 0 800 50" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0,25 C180,55 320,5 500,30 C650,50 740,10 800,25 L800,50 L0,50 Z" fill="#ffffff"/>
+        </svg>
+      </div>
+      <div class="mid">
+        <div>
+          <h2>WE PROVIDE THE BEST HOSPITAL SERVICES</h2>
+          <div class="svc">
+            <div class="row">
+              <div class="ico"><img src="./assets/icon-queue.png" alt="" /></div>
+              <div><strong>OPD &amp; Emergency desk flow</strong><span>Live queue, arrive, tokens — less waiting chaos.</span></div>
+            </div>
+            <div class="row">
+              <div class="ico b"><img src="./assets/icon-consult.png" alt="" /></div>
+              <div><strong>Clinical &amp; e-prescription</strong><span>Encounter hub, signed Rx, wellness, follow-up.</span></div>
+            </div>
+            <div class="row">
+              <div class="ico"><img src="./assets/icon-pharmacy.png" alt="" /></div>
+              <div><strong>Lab, pharmacy &amp; IPD</strong><span>Diagnostics to dispense, beds to billing &amp; assets.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="copy">
+          <h2>Improving hospital operations through better digital care</h2>
+          <ul>
+            <li><strong>Purpose of this flyer:</strong> introduce Health360 as TechEarnest’s ready hospital product in one page.</li>
+            <li><strong>What we aim for:</strong> one UHID, one encounter, connected modules — no paper handoffs.</li>
+            <li><strong>Who it’s for:</strong> hospital leaders, clinicians, pharmacy/lab teams, and IT decision-makers.</li>
+            <li><strong>Why TechEarnest:</strong> enterprise ServiceNow / Salesforce / Microsoft delivery DNA applied to healthcare.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="helpline">
+        <div class="ico">☎</div>
+        <div>
+          <div class="lbl">Contact TechEarnest</div>
+          <div class="num">+91 20 6708 7147</div>
+        </div>
+      </div>
+      <footer class="foot">
+        <img src="./assets/techearnest-logo-on-dark.png" alt="TechEarnest" />
+        <div class="info">
+          <strong>Health360 · techearnest.com</strong>
+          Office 221, VTP Trade Park, Undri, Pune 411060<br/>
+          info@techearnest.com · +91 20 6708 7147
+        </div>
+      </footer>
+    </article>
+  </div>
+  <script>
+    (function () {
+      function fitPrintPage() {
+        var el = document.getElementById("flyer");
+        if (!el) return;
+        var mm = Math.ceil((el.getBoundingClientRect().height * 25.4) / 96) + 2;
+        var s = document.getElementById("print-page-size");
+        if (!s) {
+          s = document.createElement("style");
+          s.id = "print-page-size";
+          document.head.appendChild(s);
+        }
+        s.textContent = "@media print { @page { size: 210mm " + mm + "mm; margin: 0; } }";
+      }
+      window.addEventListener("load", fitPrintPage);
+      document.fonts && document.fonts.ready && document.fonts.ready.then(fitPrintPage);
+    })();
+  </script>
+</body>
+</html>

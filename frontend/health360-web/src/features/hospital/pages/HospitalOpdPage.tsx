@@ -16,6 +16,7 @@ import {
   useRegisterWalkIn,
 } from '@/features/opd/hooks/useOpdQueries';
 import { OpdQueueTable } from '@/features/opd/components/OpdQueueTable';
+import { OpdFloorStatusHelp } from '@/features/opd/components/OpdFloorStatusHelp';
 import { WalkInRegistrationPanel } from '@/features/reception/components/WalkInRegistrationPanel';
 import { ReceptionSlotBookingPanel } from '@/features/reception/components/ReceptionSlotBookingPanel';
 
@@ -106,7 +107,7 @@ export function HospitalOpdPage() {
         <Box>
           <Typography variant="h4" fontWeight={700}>OPD</Typography>
           <Typography variant="body2" color="text.secondary">
-            Queue, walk-in registration, and appointment arrival
+            Same live floor as reception. Doctor start/complete updates Queue and Consult together
             {primaryBranch ? ` — ${primaryBranch.name}` : ''}
           </Typography>
         </Box>
@@ -125,6 +126,7 @@ export function HospitalOpdPage() {
 
       {tab === 0 && hospitalId && branchId && (
         <Stack spacing={2}>
+          <OpdFloorStatusHelp audience="desk" />
           <TextField
             select
             label="Filter by status"

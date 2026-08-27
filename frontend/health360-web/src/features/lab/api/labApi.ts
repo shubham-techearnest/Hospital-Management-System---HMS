@@ -34,6 +34,8 @@ export interface LabWorklistItem {
   clinicalOrderId: string;
   encounterId: string;
   patientId: string;
+  patientName?: string;
+  uhid?: string;
   orderNumber?: string;
   itemName: string;
   itemCode?: string;
@@ -81,6 +83,8 @@ export interface LabOrder {
   clinicalOrderId: string;
   encounterId: string;
   patientId: string;
+  patientName?: string;
+  uhid?: string;
   hospitalId: string;
   branchId: string;
   labTestId: string;
@@ -90,6 +94,26 @@ export interface LabOrder {
   receivedAt: string;
   sample?: LabSample;
   results: LabResult[];
+  report?: LabReport;
+}
+
+export interface PatientLabOrder {
+  clinicalOrderItemId: string;
+  clinicalOrderId: string;
+  encounterId: string;
+  encounterNumber?: string;
+  hospitalId: string;
+  hospitalName?: string;
+  branchId: string;
+  labTestId?: string;
+  testName: string;
+  testCode?: string;
+  itemStatus: string;
+  labOrderId?: string;
+  labOrderStatus?: string;
+  orderedAt: string;
+  canBookHospital: boolean;
+  specimenId?: string;
   report?: LabReport;
 }
 
@@ -214,4 +238,17 @@ export async function releaseLabReport(labOrderId: string, summaryText?: string)
 export async function listEncounterLabReports(encounterId: string): Promise<LabReport[]> {
   const { data } = await apiClient.get<ApiEnvelope<LabReport[]>>(`/lab/encounters/${encounterId}/reports`);
   return unwrap(data) ?? [];
+}
+
+export async function listMyLabOrders(): Promise<PatientLabOrder[]> {
+  const { data } = await apiClient.get<ApiEnvelope<PatientLabOrder[]>>('/lab/me/orders');
+  return unwrap(data) ?? [];
+}
+
+export async function bookHospitalLab(clinicalOrderItemId: string): Promise<PatientLabOrder> {
+  const { data } = await apiClient.post<ApiEnvelope<PatientLabOrder>>(
+    `/lab/me/orders/${clinicalOrderItemId}/book-hospital`,
+    {},
+  );
+  return unwrap(data);
 }

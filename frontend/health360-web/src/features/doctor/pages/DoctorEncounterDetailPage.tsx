@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Chip,
@@ -22,18 +23,28 @@ import { EncounterVitalsPanel } from '@/features/clinical/components/EncounterVi
 import { ClinicalTimelinePanel } from '@/features/clinical/components/ClinicalTimelinePanel';
 import { StructuredConsultationPanel } from '@/features/clinical/components/StructuredConsultationPanel';
 import { EPrescriptionPanel } from '@/features/clinical/components/EPrescriptionPanel';
+import { WellnessPlanPanel } from '@/features/clinical/components/WellnessPlanPanel';
 import {
   useEncounter,
   useEncounterActions,
   useEncounterDiagnoses,
   useEncounterNotes,
   useEncounterOrders,
+  useEncounterPrescriptions,
+  useEncounterVitals,
 } from '@/features/clinical/hooks/useClinicalQueries';
+import { useInvoiceByEncounter } from '@/features/billing/hooks/useBillingQueries';
+import { OpdVisitChecklist, opdStepSectionId } from '@/features/clinical/components/OpdVisitChecklist';
+import { buildOpdVisitChecklist } from '@/features/clinical/utils/opdVisitChecklist';
+import { isAxiosError } from 'axios';
 import { useBranchLabTests, useEncounterLabReports } from '@/features/lab/hooks/useLabQueries';
 import { useEncounterImagingReports, useModalities } from '@/features/radiology/hooks/useRadiologyQueries';
 import { useEncounterProcedures } from '@/features/ot/hooks/useOtQueries';
 import { useEncounterAdministrations, useMedicines } from '@/features/pharmacy/hooks/usePharmacyQueries';
+import { useDiagnosisCatalog } from '@/features/hospital/hooks/useClinicalCatalogQueries';
+import type { DiagnosisCatalogItem } from '@/features/hospital/api/clinicalCatalogApi';
 import { encounterStatusColor, encounterStatusLabel, formatEncounterDate } from '@/features/clinical/utils/encounterUtils';
+import { queueStatusLabel } from '@/shared/status/visitStatus';
 import { parseApiError } from '@/shared/api/errorUtils';
 
 export function DoctorEncounterDetailPage() {
@@ -42,6 +53,9 @@ export function DoctorEncounterDetailPage() {
   const { data: diagnoses = [] } = useEncounterDiagnoses(encounterId);
   const { data: notes = [] } = useEncounterNotes(encounterId);
   const { data: orders = [] } = useEncounterOrders(encounterId);
+  const { data: vitals = [] } = useEncounterVitals(encounterId);
+  const { data: prescriptions = [] } = useEncounterPrescriptions(encounterId);
+  const invoiceQuery = useInvoiceByEncounter(encounterId);
   const { data: labReports = [] } = useEncounterLabReports(encounterId);
   const { data: imagingReports = [] } = useEncounterImagingReports(encounterId);
   const { data: procedures = [] } = useEncounterProcedures(encounterId);
@@ -49,11 +63,15 @@ export function DoctorEncounterDetailPage() {
   const { data: labTests = [] } = useBranchLabTests(encounter?.hospitalId, encounter?.branchId);
   const { data: modalities = [] } = useModalities(encounter?.hospitalId, encounter?.branchId);
   const { data: medicines = [] } = useMedicines(encounter?.hospitalId, encounter?.branchId);
+  const { data: diagnosisCatalog = [] } = useDiagnosisCatalog(encounter?.hospitalId, encounter?.branchId);
   const actions = useEncounterActions(encounterId);
   const { data: patientSummary, isLoading: summaryLoading, error: summaryError } = usePatientSummary(
     encounter?.patientId ?? '',
-    encounter?.appointmentId ?? '',
-    Boolean(encounter?.patientId && encounter?.appointmentId),
+    {
+      appointmentId: encounter?.appointmentId,
+      encounterId: encounterId || undefined,
+      enabled: Boolean(encounter?.patientId),
+    },
   );
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -68,6 +86,20 @@ export function DoctorEncounterDetailPage() {
   const [diagnosisText, setDiagnosisText] = useState('');
   const [diagnosisCode, setDiagnosisCode] = useState('');
   const parsedError = error ? parseApiError(error) : null;
+  const invoiceForbidden = isAxiosError(invoiceQuery.error) && invoiceQuery.error.response?.status === 403;
+  const visitSteps = useMemo(
+    () =>
+      buildOpdVisitChecklist({
+        vitals,
+        notes,
+        diagnoses,
+        prescriptions,
+        orders,
+        invoice: invoiceQuery.data,
+        invoiceForbidden,
+      }),
+    [vitals, notes, diagnoses, prescriptions, orders, invoiceQuery.data, invoiceForbidden],
+  );
 
   const runAction = async (label: string, fn: () => Promise<unknown>) => {
     setActionError(null);
@@ -121,6 +153,9 @@ export function DoctorEncounterDetailPage() {
           color={encounterStatusColor(encounter.status)}
           size="small"
         />
+        {encounter.queueStatus ? (
+          <Chip label={`Queue ${queueStatusLabel(encounter.queueStatus)}`} size="small" variant="outlined" />
+        ) : null}
       </Stack>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         {encounter.patientName ? `${encounter.patientName} · ` : ''}
@@ -163,6 +198,8 @@ export function DoctorEncounterDetailPage() {
         ) : null}
       </Stack>
 
+      <OpdVisitChecklist steps={visitSteps} />
+
       {encounter.visitReason ? (
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle2" color="text.secondary">Reason for visit</Typography>
@@ -180,16 +217,18 @@ export function DoctorEncounterDetailPage() {
         {summaryLoading ? <Skeleton variant="rounded" height={120} /> : null}
         {patientSummary ? <PatientSummaryPanel summary={patientSummary} /> : null}
         {!summaryLoading && !patientSummary && summaryError ? (
-          <Alert severity="info">Patient summary unavailable for this encounter.</Alert>
+          <Alert severity="info">
+            Patient summary unavailable (check appointment window or access). Walk-in and arrived patients load via this encounter.
+          </Alert>
         ) : null}
       </Box>
 
       <Stack spacing={3}>
-        <Box>
+        <Box id={opdStepSectionId('vitals')}>
           <EncounterVitalsPanel encounterId={encounterId} />
         </Box>
 
-        <Box>
+        <Box id={opdStepSectionId('consult')}>
           <StructuredConsultationPanel
             encounterId={encounterId}
             hospitalId={encounter.hospitalId}
@@ -198,7 +237,7 @@ export function DoctorEncounterDetailPage() {
           />
         </Box>
 
-        <Box>
+        <Box id={opdStepSectionId('rx')}>
           <EPrescriptionPanel
             encounterId={encounterId}
             hospitalId={encounter.hospitalId}
@@ -208,41 +247,80 @@ export function DoctorEncounterDetailPage() {
         </Box>
 
         <Box>
+          <WellnessPlanPanel
+            encounterId={encounterId}
+            canEdit={encounter.status === 'IN_PROGRESS' || encounter.status === 'WAITING'}
+          />
+        </Box>
+
+        <Box>
           <ClinicalTimelinePanel patientId={encounter.patientId} title="Patient clinical timeline" />
         </Box>
 
-        <DetailSection title="Diagnoses" empty={diagnoses.length === 0 && encounter.status !== 'IN_PROGRESS'}>
+        <DetailSection
+          title="Diagnoses"
+          empty={diagnoses.length === 0 && encounter.status !== 'IN_PROGRESS'}
+          id={opdStepSectionId('diagnosis')}
+        >
           {encounter.status === 'IN_PROGRESS' || encounter.status === 'WAITING' ? (
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
-              <TextField
-                label="Diagnosis"
-                size="small"
-                fullWidth
-                value={diagnosisText}
-                onChange={(e) => setDiagnosisText(e.target.value)}
-              />
-              <TextField
-                label="Code (optional)"
-                size="small"
-                sx={{ minWidth: 140 }}
-                value={diagnosisCode}
-                onChange={(e) => setDiagnosisCode(e.target.value)}
-              />
-              <Button
-                variant="outlined"
-                disabled={!diagnosisText.trim() || actions.addDiagnosis.isPending}
-                onClick={() => runAction('Diagnosis', async () => {
-                  await actions.addDiagnosis.mutateAsync({
-                    diagnosisText: diagnosisText.trim(),
-                    diagnosisCode: diagnosisCode.trim() || undefined,
-                    diagnosisType: diagnoses.length === 0 ? 'PRIMARY' : 'SECONDARY',
-                  });
-                  setDiagnosisText('');
-                  setDiagnosisCode('');
-                })}
-              >
-                Add
-              </Button>
+            <Stack spacing={1.5} sx={{ mb: 2 }}>
+              {diagnosisCatalog.length > 0 ? (
+                <Autocomplete
+                  options={diagnosisCatalog}
+                  getOptionLabel={(option: DiagnosisCatalogItem) =>
+                    `${option.icdCode} — ${option.name}${option.category ? ` (${option.category})` : ''}`
+                  }
+                  filterOptions={(options, { inputValue }) => {
+                    const needle = inputValue.trim().toLowerCase();
+                    if (!needle) return options;
+                    return options.filter(
+                      (o) =>
+                        o.icdCode.toLowerCase().includes(needle) ||
+                        o.name.toLowerCase().includes(needle) ||
+                        (o.category?.toLowerCase().includes(needle) ?? false),
+                    );
+                  }}
+                  onChange={(_, item) => {
+                    if (!item) return;
+                    setDiagnosisCode(item.icdCode);
+                    setDiagnosisText(item.name);
+                  }}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Search hospital ICD catalog" size="small" />
+                  )}
+                />
+              ) : null}
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                <TextField
+                  label="Diagnosis"
+                  size="small"
+                  fullWidth
+                  value={diagnosisText}
+                  onChange={(e) => setDiagnosisText(e.target.value)}
+                />
+                <TextField
+                  label="ICD code"
+                  size="small"
+                  sx={{ minWidth: 140 }}
+                  value={diagnosisCode}
+                  onChange={(e) => setDiagnosisCode(e.target.value)}
+                />
+                <Button
+                  variant="outlined"
+                  disabled={!diagnosisText.trim() || actions.addDiagnosis.isPending}
+                  onClick={() => runAction('Diagnosis', async () => {
+                    await actions.addDiagnosis.mutateAsync({
+                      diagnosisText: diagnosisText.trim(),
+                      diagnosisCode: diagnosisCode.trim() || undefined,
+                      diagnosisType: diagnoses.length === 0 ? 'PRIMARY' : 'SECONDARY',
+                    });
+                    setDiagnosisText('');
+                    setDiagnosisCode('');
+                  })}
+                >
+                  Add
+                </Button>
+              </Stack>
             </Stack>
           ) : null}
           <List dense disablePadding>
@@ -270,7 +348,7 @@ export function DoctorEncounterDetailPage() {
           </List>
         </DetailSection>
 
-        <DetailSection title="Orders" empty={orders.length === 0}>
+        <DetailSection title="Orders" empty={orders.length === 0 && encounter.status !== 'IN_PROGRESS'} id={opdStepSectionId('labs')}>
           {canOrderLab ? (
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
               <TextField select label="Lab test" size="small" sx={{ minWidth: 220 }}
@@ -493,14 +571,29 @@ export function DoctorEncounterDetailPage() {
             ))}
           </List>
         </DetailSection>
+        <Box id={opdStepSectionId('billing')}>
+          <Typography variant="body2" color="text.secondary">
+            Billing opens at reception only after you finalize the consultation and sign the e-prescription.
+          </Typography>
+        </Box>
       </Stack>
     </AnimatedPage>
   );
 }
 
-function DetailSection({ title, empty, children }: { title: string; empty: boolean; children: React.ReactNode }) {
+function DetailSection({
+  title,
+  empty,
+  children,
+  id,
+}: {
+  title: string;
+  empty: boolean;
+  children: React.ReactNode;
+  id?: string;
+}) {
   return (
-    <Box>
+    <Box id={id}>
       <Typography variant="h6" sx={{ mb: 1 }}>{title}</Typography>
       <Divider sx={{ mb: 1.5 }} />
       {empty ? <Typography variant="body2" color="text.secondary">None recorded.</Typography> : children}

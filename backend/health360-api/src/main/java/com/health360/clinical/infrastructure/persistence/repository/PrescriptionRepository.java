@@ -16,5 +16,7 @@ public interface PrescriptionRepository extends JpaRepository<PrescriptionEntity
 
     Optional<PrescriptionEntity> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
 
+    boolean existsByEncounterIdAndStatusAndDeletedAtIsNull(UUID encounterId, String status);
+
     long countByTenantIdAndCreatedAtGreaterThanEqualAndDeletedAtIsNull(UUID tenantId, java.time.Instant from);
 }
