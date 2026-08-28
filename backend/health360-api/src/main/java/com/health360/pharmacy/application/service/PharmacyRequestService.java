@@ -19,6 +19,8 @@ import com.health360.pharmacy.infrastructure.persistence.repository.PharmacyRequ
 import com.health360.pharmacy.presentation.dto.request.PharmacyRequestNotesRequest;
 import com.health360.pharmacy.presentation.dto.response.PharmacyRequestItemResponse;
 import com.health360.pharmacy.presentation.dto.response.PharmacyRequestResponse;
+import com.health360.org.application.service.PartnerNearbySearchService;
+import com.health360.org.domain.PartnerOrgType;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -46,6 +48,7 @@ public class PharmacyRequestService {
     private final PharmacyAccessService accessService;
     private final AuditLogService auditLogService;
     private final TransactionalNotificationService notificationService;
+    private final PartnerNearbySearchService partnerNearbySearchService;
 
     @Transactional(readOnly = true)
     public List<PharmacyRequestResponse> listMyRequests(UserPrincipal principal) {
@@ -75,6 +78,22 @@ public class PharmacyRequestService {
 
     @Transactional
     public PharmacyRequestResponse sendHospital(UserPrincipal principal, UUID prescriptionId) {
+        return createRequest(principal, prescriptionId, null, null);
+    }
+
+    @Transactional
+    public PharmacyRequestResponse sendPartner(
+            UserPrincipal principal, UUID prescriptionId, UUID partnerOrgId, UUID locationId) {
+        partnerNearbySearchService.requireActiveLocation(
+                principal.getTenantId(), partnerOrgId, locationId, PartnerOrgType.PHARMACY);
+        return createRequest(principal, prescriptionId, partnerOrgId, locationId);
+    }
+
+    private PharmacyRequestResponse createRequest(
+            UserPrincipal principal,
+            UUID prescriptionId,
+            UUID fulfillPartnerOrgId,
+            UUID fulfillLocationId) {
         accessService.assertCanWritePharmacyRequests(principal);
         PatientProfileEntity profile = requirePatientProfile(principal);
         UUID tenantId = principal.getTenantId();
@@ -116,6 +135,8 @@ public class PharmacyRequestService {
         request.setStatus(PharmacyRequestStatus.REQUESTED.name());
         request.setRequestedAt(now);
         request.setRequestedBy(principal.getUserId());
+        request.setFulfillPartnerOrgId(fulfillPartnerOrgId);
+        request.setFulfillLocationId(fulfillLocationId);
         request.setCreatedBy(principal.getUserId());
         request.setUpdatedBy(principal.getUserId());
         PharmacyRequestEntity saved = requestRepository.save(request);
@@ -137,7 +158,10 @@ public class PharmacyRequestService {
 
         auditLogService.record(tenantId, principal.getUserId(), "PHARMACY_REQUEST_CREATED",
                 "PharmacyRequest", saved.getId(),
-                Map.of("prescriptionId", prescriptionId.toString(), "requestNumber", saved.getRequestNumber()));
+                Map.of(
+                        "prescriptionId", prescriptionId.toString(),
+                        "requestNumber", saved.getRequestNumber(),
+                        "fulfillPartnerOrgId", fulfillPartnerOrgId != null ? fulfillPartnerOrgId.toString() : "HOSPITAL"));
 
         return toResponse(saved);
     }
@@ -299,6 +323,8 @@ public class PharmacyRequestService {
                 .dispensedBy(request.getDispensedBy())
                 .pharmacistNotes(request.getPharmacistNotes())
                 .canSendHospital(false)
+                .fulfillPartnerOrgId(request.getFulfillPartnerOrgId())
+                .fulfillLocationId(request.getFulfillLocationId())
                 .items(items)
                 .build();
     }

@@ -35,6 +35,12 @@ export function hasSignedPrescription(prescriptions: Prescription[]): boolean {
   return prescriptions.some((p) => p.status === 'SIGNED');
 }
 
+export function hasNoMedicationDeclaration(prescriptions: Prescription[]): boolean {
+  return prescriptions.some(
+    (p) => p.status === 'SIGNED' && p.notes?.includes('No medication required'),
+  );
+}
+
 export function checkoutBlockers(notes: ClinicalNote[], prescriptions: Prescription[]): string[] {
   const missing: string[] = [];
   if (!hasFinalConsultation(notes)) {
@@ -59,9 +65,13 @@ function consultHint(notes: ClinicalNote[]): string {
 }
 
 function rxHint(prescriptions: Prescription[]): string {
-  if (hasSignedPrescription(prescriptions)) return 'Signed prescription on file';
-  if (prescriptions.some((p) => p.status === 'DRAFT')) return 'Draft only — sign to unlock checkout';
-  return 'Doctor must sign e-prescription';
+  if (hasSignedPrescription(prescriptions)) {
+    return hasNoMedicationDeclaration(prescriptions)
+      ? 'No medication required (signed)'
+      : 'Signed prescription on file';
+  }
+  if (prescriptions.some((p) => p.status === 'DRAFT')) return 'Draft only — sign or declare no medication';
+  return 'Sign e-prescription or declare no medication';
 }
 
 function billingHint(invoice: Invoice | null | undefined, forbidden?: boolean): string {

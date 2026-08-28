@@ -69,4 +69,10 @@ public class PharmacyRequestEntity extends BaseAuditableEntity {
 
     @Column(name = "pharmacist_notes", columnDefinition = "TEXT")
     private String pharmacistNotes;
+
+    @Column(name = "fulfill_partner_org_id")
+    private UUID fulfillPartnerOrgId;
+
+    @Column(name = "fulfill_location_id")
+    private UUID fulfillLocationId;
 }

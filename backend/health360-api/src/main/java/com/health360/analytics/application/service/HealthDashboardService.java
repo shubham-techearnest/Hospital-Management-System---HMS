@@ -14,8 +14,10 @@ import com.health360.analytics.presentation.dto.response.MetricResponse;
 import com.health360.analytics.presentation.dto.response.SnapshotResponse;
 import com.health360.analytics.presentation.dto.response.TimelineEventResponse;
 import com.health360.analytics.presentation.dto.response.VitalsTrendSeriesResponse;
+import com.health360.patient.infrastructure.persistence.entity.LabValueRecordEntity;
 import com.health360.patient.infrastructure.persistence.entity.PhysicalMeasurementHistoryEntity;
 import com.health360.patient.infrastructure.persistence.entity.VitalSignRecordEntity;
+import com.health360.patient.infrastructure.persistence.repository.LabValueRecordRepository;
 import com.health360.patient.infrastructure.persistence.repository.PhysicalMeasurementHistoryRepository;
 import com.health360.patient.infrastructure.persistence.repository.VitalSignRecordRepository;
 import com.health360.shared.domain.ErrorCode;
@@ -48,6 +50,7 @@ public class HealthDashboardService {
     private final CalculatedMetricRepository calculatedMetricRepository;
     private final VitalSignRecordRepository vitalSignRecordRepository;
     private final PhysicalMeasurementHistoryRepository measurementHistoryRepository;
+    private final LabValueRecordRepository labValueRecordRepository;
 
     @Transactional
     public SnapshotResponse calculateAndPersist(UUID userId, UUID tenantId) {
@@ -219,6 +222,7 @@ public class HealthDashboardService {
                 .metrics(metrics)
                 .goalsProgress(buildGoalsProgress(ctx, metrics))
                 .recentVitalsTrend(buildVitalsTrend(ctx.patientId()))
+                .recentLabTrend(buildLabTrend(ctx.patientId()))
                 .recentTimeline(buildRecentTimeline(ctx.patientId()))
                 .disclaimer(snapshot.getDisclaimer())
                 .calculatedAt(snapshot.getCalculatedAt())
@@ -242,6 +246,7 @@ public class HealthDashboardService {
                 .metrics(metricResponses)
                 .goalsProgress(buildGoalsProgress(ctx, metricResponses))
                 .recentVitalsTrend(buildVitalsTrend(ctx.patientId()))
+                .recentLabTrend(buildLabTrend(ctx.patientId()))
                 .recentTimeline(buildRecentTimeline(ctx.patientId()))
                 .disclaimer(FormulaEngineService.DISCLAIMER)
                 .calculatedAt(snapshot.getCalculatedAt())
@@ -402,6 +407,61 @@ public class HealthDashboardService {
                     .seriesType("WEIGHT")
                     .unit("kg")
                     .points(weight)
+                    .build());
+        }
+        return series;
+    }
+
+    private List<VitalsTrendSeriesResponse> buildLabTrend(UUID patientId) {
+        List<LabValueRecordEntity> labs = labValueRecordRepository
+                .findByPatientIdOrderByRecordedAtDesc(patientId, PageRequest.of(0, 12))
+                .getContent();
+
+        List<VitalsTrendSeriesResponse.TrendPoint> hemoglobin = new ArrayList<>();
+        List<VitalsTrendSeriesResponse.TrendPoint> hba1c = new ArrayList<>();
+        List<VitalsTrendSeriesResponse.TrendPoint> ldl = new ArrayList<>();
+
+        for (LabValueRecordEntity lab : labs) {
+            if (lab.getHemoglobin() != null) {
+                hemoglobin.add(VitalsTrendSeriesResponse.TrendPoint.builder()
+                        .recordedAt(lab.getRecordedAt())
+                        .value(lab.getHemoglobin())
+                        .build());
+            }
+            if (lab.getHba1c() != null) {
+                hba1c.add(VitalsTrendSeriesResponse.TrendPoint.builder()
+                        .recordedAt(lab.getRecordedAt())
+                        .value(lab.getHba1c())
+                        .build());
+            }
+            if (lab.getLdl() != null) {
+                ldl.add(VitalsTrendSeriesResponse.TrendPoint.builder()
+                        .recordedAt(lab.getRecordedAt())
+                        .value(lab.getLdl())
+                        .build());
+            }
+        }
+
+        List<VitalsTrendSeriesResponse> series = new ArrayList<>();
+        if (!hemoglobin.isEmpty()) {
+            series.add(VitalsTrendSeriesResponse.builder()
+                    .seriesType("HEMOGLOBIN")
+                    .unit("g/dL")
+                    .points(hemoglobin)
+                    .build());
+        }
+        if (!hba1c.isEmpty()) {
+            series.add(VitalsTrendSeriesResponse.builder()
+                    .seriesType("HBA1C")
+                    .unit("%")
+                    .points(hba1c)
+                    .build());
+        }
+        if (!ldl.isEmpty()) {
+            series.add(VitalsTrendSeriesResponse.builder()
+                    .seriesType("LDL")
+                    .unit("mg/dL")
+                    .points(ldl)
                     .build());
         }
         return series;

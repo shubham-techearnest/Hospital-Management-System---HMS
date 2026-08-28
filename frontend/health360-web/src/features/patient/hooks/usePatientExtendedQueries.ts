@@ -5,7 +5,9 @@ import {
   deleteHealthDocument,
   downloadHealthDocument,
   getHealthTimeline,
+  getJourneyTimeline,
   getLabValuesHistory,
+  listDocumentCenter,
   listFamilyMembers,
   listHealthDocuments,
   recordLabValues,
@@ -24,6 +26,8 @@ export const extendedKeys = {
   labs: (page: number) => ['patient', 'lab-values', page] as const,
   documents: (page: number, category?: string) => ['patient', 'documents', page, category] as const,
   timeline: (page: number) => ['patient', 'timeline', page] as const,
+  journey: (page: number) => ['patient', 'journey-timeline', page] as const,
+  documentCenter: (category?: string) => ['patient', 'document-center', category] as const,
 };
 
 export function useFamilyMembers(enabled = true) {
@@ -101,6 +105,7 @@ export function useUploadHealthDocument() {
       uploadHealthDocument(file, category, title, description),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['patient', 'documents'] });
+      void qc.invalidateQueries({ queryKey: ['patient', 'document-center'] });
       void qc.invalidateQueries({ queryKey: extendedKeys.timeline(0) });
     },
   });
@@ -122,6 +127,20 @@ export function useDownloadHealthDocument() {
 
 export function useHealthTimeline(page = 0) {
   return useQuery({ queryKey: extendedKeys.timeline(page), queryFn: () => getHealthTimeline(page) });
+}
+
+export function useJourneyTimeline(page = 0) {
+  return useQuery({
+    queryKey: extendedKeys.journey(page),
+    queryFn: () => getJourneyTimeline(page),
+  });
+}
+
+export function useDocumentCenter(category?: string) {
+  return useQuery({
+    queryKey: extendedKeys.documentCenter(category),
+    queryFn: () => listDocumentCenter(category),
+  });
 }
 
 export function useSubmitDoctorReview() {

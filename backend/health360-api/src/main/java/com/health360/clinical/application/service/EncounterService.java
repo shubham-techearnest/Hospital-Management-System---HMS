@@ -54,6 +54,7 @@ public class EncounterService {
     private final PatientProfileRepository patientProfileRepository;
     private final OpdQueueEntryRepository opdQueueEntryRepository;
     private final OpdVisitStatusSyncService opdVisitStatusSyncService;
+    private final EncounterCheckoutGateService checkoutGateService;
 
     @Transactional
     public EncounterResponse createEncounter(
@@ -299,6 +300,10 @@ public class EncounterService {
         if (!current.canTransitionTo(target)) {
             throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, HttpStatus.BAD_REQUEST,
                     "Cannot transition encounter from " + current + " to " + target);
+        }
+
+        if (target == EncounterStatus.COMPLETED) {
+            checkoutGateService.assertReadyForCheckout(encounterId);
         }
 
         encounter.setStatus(target.name());

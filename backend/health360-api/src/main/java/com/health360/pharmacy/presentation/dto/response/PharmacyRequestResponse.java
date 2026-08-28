@@ -29,5 +29,7 @@ public class PharmacyRequestResponse {
     UUID dispensedBy;
     String pharmacistNotes;
     boolean canSendHospital;
+    UUID fulfillPartnerOrgId;
+    UUID fulfillLocationId;
     List<PharmacyRequestItemResponse> items;
 }

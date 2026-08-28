@@ -110,11 +110,31 @@ public class LabFulfillmentService {
      */
     @Transactional
     public LabOrderResponse createLabOrderForPatient(UserPrincipal principal, UUID clinicalOrderItemId) {
-        return receiveClinicalItem(principal, clinicalOrderItemId, false);
+        return receiveClinicalItem(principal, clinicalOrderItemId, false, null, null);
+    }
+
+    /**
+     * Patient books an independent partner laboratory (ECO-P7).
+     */
+    @Transactional
+    public LabOrderResponse createLabOrderForPatientAtPartner(
+            UserPrincipal principal, UUID clinicalOrderItemId, UUID partnerOrgId, UUID locationId) {
+        return receiveClinicalItem(principal, clinicalOrderItemId, false, partnerOrgId, locationId);
     }
 
     private LabOrderResponse receiveClinicalItem(
-            UserPrincipal principal, UUID clinicalOrderItemId, boolean staffScoped) {
+            UserPrincipal principal,
+            UUID clinicalOrderItemId,
+            boolean staffScoped) {
+        return receiveClinicalItem(principal, clinicalOrderItemId, staffScoped, null, null);
+    }
+
+    private LabOrderResponse receiveClinicalItem(
+            UserPrincipal principal,
+            UUID clinicalOrderItemId,
+            boolean staffScoped,
+            UUID fulfillPartnerOrgId,
+            UUID fulfillLocationId) {
         UUID tenantId = principal.getTenantId();
 
         ClinicalOrderItemEntity item = clinicalOrderItemRepository
@@ -168,6 +188,8 @@ public class LabFulfillmentService {
         labOrder.setLabTestId(test.getId());
         labOrder.setStatus(LabOrderStatus.RECEIVED.name());
         labOrder.setReceivedAt(Instant.now());
+        labOrder.setFulfillPartnerOrgId(fulfillPartnerOrgId);
+        labOrder.setFulfillLocationId(fulfillLocationId);
         labOrder.setCreatedBy(principal.getUserId());
         labOrder.setUpdatedBy(principal.getUserId());
 

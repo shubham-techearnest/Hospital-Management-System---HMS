@@ -32,6 +32,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PrescriptionService {
 
+    public static final String NO_MEDICATION_NOTES = "No medication required for this visit";
+
     private static final int MAX_ITEMS = 20;
 
     private final PrescriptionRepository prescriptionRepository;
@@ -117,9 +119,10 @@ public class PrescriptionService {
 
         List<PrescriptionItemEntity> items =
                 itemRepository.findByPrescriptionIdAndDeletedAtIsNullOrderBySortOrderAsc(rx.getId());
-        if (items.isEmpty()) {
+        boolean noMedicationDeclared = NO_MEDICATION_NOTES.equals(rx.getNotes());
+        if (items.isEmpty() && !noMedicationDeclared) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
-                    "Prescription must have at least one item");
+                    "Prescription must have at least one item, or declare no medication required");
         }
 
         applySafetyStubs(items, principal.getUserId());
@@ -137,6 +140,48 @@ public class PrescriptionService {
                         "prescriptionNumber", saved.getPrescriptionNumber()));
 
         return mapper.toPrescriptionResponse(saved, items);
+    }
+
+    @Transactional
+    public PrescriptionResponse declareNoMedication(UserPrincipal principal, UUID encounterId) {
+        requireWrite(principal);
+        if (!principal.hasPermission("clinical:prescription:sign")) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN, "Access denied");
+        }
+        EncounterEntity encounter = encounterService.requireEncounter(principal.getTenantId(), encounterId);
+        accessService.assertCanWriteEncounter(principal, encounter);
+
+        boolean alreadySigned = prescriptionRepository.existsByEncounterIdAndStatusAndDeletedAtIsNull(
+                encounterId, PrescriptionStatus.SIGNED.name());
+        if (alreadySigned) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                    "A signed prescription already exists for this visit");
+        }
+
+        prescriptionRepository.findByEncounterIdAndDeletedAtIsNullOrderByCreatedAtDesc(encounterId).stream()
+                .filter(rx -> PrescriptionStatus.DRAFT.name().equals(rx.getStatus()))
+                .forEach(rx -> {
+                    softDeleteItems(rx.getId(), principal.getUserId());
+                    rx.setDeletedAt(Instant.now());
+                    rx.setUpdatedBy(principal.getUserId());
+                    prescriptionRepository.save(rx);
+                });
+
+        PrescriptionEntity rx = new PrescriptionEntity();
+        rx.setTenantId(principal.getTenantId());
+        rx.setEncounterId(encounterId);
+        rx.setPatientId(encounter.getPatientId());
+        rx.setHospitalId(encounter.getHospitalId());
+        rx.setBranchId(encounter.getBranchId());
+        rx.setPrescriptionNumber(generateNumber(principal.getTenantId()));
+        rx.setStatus(PrescriptionStatus.DRAFT.name());
+        rx.setNotes(NO_MEDICATION_NOTES);
+        rx.setPrescribedBy(principal.getUserId());
+        rx.setCreatedBy(principal.getUserId());
+        rx.setUpdatedBy(principal.getUserId());
+        PrescriptionEntity saved = prescriptionRepository.save(rx);
+
+        return sign(principal, encounterId, saved.getId());
     }
 
     @Transactional(readOnly = true)

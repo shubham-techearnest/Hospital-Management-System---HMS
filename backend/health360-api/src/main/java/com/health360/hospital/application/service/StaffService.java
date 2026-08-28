@@ -84,7 +84,7 @@ public class StaffService {
         staff.setTenantId(tenantId);
         staff.setUserId(user.getId());
         staff.setHospitalId(request.getHospitalId());
-        staff.setBranchId(request.getBranchId());
+        staff.setBranchId("RECEPTIONIST".equals(roleName) ? null : request.getBranchId());
         staff.setDepartmentId(request.getDepartmentId());
         staff.setJobTitle(request.getJobTitle());
         staff.setEmploymentStatus(StaffEmploymentStatus.ACTIVE.name());

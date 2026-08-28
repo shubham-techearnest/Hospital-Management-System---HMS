@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
-  Alert, Box, Button, Card, CardContent, FormControl, InputLabel, MenuItem, Select,
-  Stack, TextField, Typography, CircularProgress, IconButton,
+  Alert, Box, Button, Card, CardContent, Chip, FormControl, InputLabel, MenuItem, Select,
+  Stack, TextField, Typography, CircularProgress, IconButton, Divider,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -9,12 +10,13 @@ import DownloadIcon from '@mui/icons-material/Download';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import {
   useDeleteHealthDocument,
+  useDocumentCenter,
   useDownloadHealthDocument,
   useHealthDocuments,
   useUploadHealthDocument,
 } from '@/features/patient/hooks/usePatientExtendedQueries';
 
-const CATEGORIES = ['LAB_REPORT', 'PRESCRIPTION', 'SCAN', 'OTHER'] as const;
+const CATEGORIES = ['LAB_REPORT', 'PRESCRIPTION', 'SCAN', 'INVOICE', 'CERTIFICATE', 'OTHER'] as const;
 
 export function HealthDocumentsPage() {
   const [page, setPage] = useState(0);
@@ -26,6 +28,7 @@ export function HealthDocumentsPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data, isLoading, error } = useHealthDocuments(page, category || undefined);
+  const { data: centerItems = [], isLoading: centerLoading, error: centerError } = useDocumentCenter(category || undefined);
   const uploadMutation = useUploadHealthDocument();
   const deleteMutation = useDeleteHealthDocument();
   const downloadMutation = useDownloadHealthDocument();
@@ -50,8 +53,10 @@ export function HealthDocumentsPage() {
 
   return (
     <AnimatedPage>
-      <Typography variant="h4" fontWeight={700} gutterBottom>Health Documents</Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>Upload lab reports, prescriptions, and scans.</Typography>
+      <Typography variant="h4" fontWeight={700} gutterBottom>Document center</Typography>
+      <Typography color="text.secondary" sx={{ mb: 3 }}>
+        Uploads plus linked prescriptions, lab reports, invoices, and certificates.
+      </Typography>
 
       <Card variant="outlined" sx={{ mb: 3 }}>
         <CardContent>
@@ -82,8 +87,51 @@ export function HealthDocumentsPage() {
         </FormControl>
       </Stack>
 
+      <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>All records</Typography>
+      {centerLoading ? <CircularProgress size={24} /> : null}
+      {centerError ? <Alert severity="error">Unable to load document center.</Alert> : null}
+      <Stack spacing={1} sx={{ mb: 4 }}>
+        {centerItems.map((item) => (
+          <Card key={item.itemId} variant="outlined">
+            <CardContent>
+              <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+                <Box>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                    <Chip size="small" label={item.category.replace(/_/g, ' ')} />
+                    <Chip size="small" variant="outlined" label={item.source} />
+                  </Stack>
+                  <Typography fontWeight={600}>{item.title}</Typography>
+                  {item.description ? (
+                    <Typography variant="body2" color="text.secondary">{item.description}</Typography>
+                  ) : null}
+                  <Typography variant="caption">{new Date(item.occurredAt).toLocaleString()}</Typography>
+                </Box>
+                <Stack direction="row" spacing={1}>
+                  {item.downloadable && item.referenceId ? (
+                    <IconButton
+                      aria-label="download"
+                      onClick={() => downloadMutation.mutate({ id: item.referenceId!, fileName: item.title })}
+                    >
+                      <DownloadIcon />
+                    </IconButton>
+                  ) : null}
+                  {item.deepLink ? (
+                    <Button component={RouterLink} to={item.deepLink} size="small">Open</Button>
+                  ) : null}
+                </Stack>
+              </Stack>
+            </CardContent>
+          </Card>
+        ))}
+        {centerItems.length === 0 && !centerLoading ? (
+          <Alert severity="info">No documents yet. Upload a file or complete a visit to see linked records.</Alert>
+        ) : null}
+      </Stack>
+
+      <Divider sx={{ mb: 3 }} />
+      <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>My uploads</Typography>
       {isLoading ? <CircularProgress /> : null}
-      {error ? <Alert severity="error">Unable to load documents.</Alert> : null}
+      {error ? <Alert severity="error">Unable to load uploads.</Alert> : null}
       <Stack spacing={1}>
         {(data?.content ?? []).map((doc) => (
           <Card key={doc.id} variant="outlined">

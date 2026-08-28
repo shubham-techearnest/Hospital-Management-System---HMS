@@ -35,7 +35,9 @@
 | **V58** | ECO-P4 | Pharmacy | `pharmacy.pharmacy_requests` + items (e-Rx share; distinct from MAR) |
 | **V59** | ECO-P5 | OPD / IAM | `opd:checkin:own` patient self check-in permission |
 | **V60** | ECO-P5 | Clinical | `clinical.followups.reminder_sent_at` for due reminders |
-| **V61+** | — | TBD | SMS gateway, QR check-in tokens, etc. |
+| **V61** | ECO-P6 | Patient | Document center categories `INVOICE`, `CERTIFICATE` |
+| **V62** | ECO-P7 | Org | Partner LABORATORY/PHARMACY orgs, locations, membership, fulfill_* columns |
+| **V63+** | — | TBD | Partner worklists, HR transfer, SMS gateway, etc. |
 
 ---
 

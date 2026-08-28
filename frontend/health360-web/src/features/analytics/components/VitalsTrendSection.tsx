@@ -6,6 +6,9 @@ const SERIES_LABELS: Record<string, string> = {
   SYSTOLIC_BP: 'Blood Pressure (Systolic)',
   BLOOD_GLUCOSE: 'Blood Glucose',
   WEIGHT: 'Weight',
+  HEMOGLOBIN: 'Hemoglobin',
+  HBA1C: 'HbA1c',
+  LDL: 'LDL Cholesterol',
 };
 
 interface VitalsTrendSectionProps {

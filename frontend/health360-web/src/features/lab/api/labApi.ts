@@ -113,6 +113,9 @@ export interface PatientLabOrder {
   labOrderStatus?: string;
   orderedAt: string;
   canBookHospital: boolean;
+  canBookPartner?: boolean;
+  fulfillPartnerOrgId?: string | null;
+  fulfillLocationId?: string | null;
   specimenId?: string;
   report?: LabReport;
 }
@@ -249,6 +252,18 @@ export async function bookHospitalLab(clinicalOrderItemId: string): Promise<Pati
   const { data } = await apiClient.post<ApiEnvelope<PatientLabOrder>>(
     `/lab/me/orders/${clinicalOrderItemId}/book-hospital`,
     {},
+  );
+  return unwrap(data);
+}
+
+export async function bookPartnerLab(
+  clinicalOrderItemId: string,
+  partnerOrgId: string,
+  locationId: string,
+): Promise<PatientLabOrder> {
+  const { data } = await apiClient.post<ApiEnvelope<PatientLabOrder>>(
+    `/lab/me/orders/${clinicalOrderItemId}/book`,
+    { partnerOrgId, locationId },
   );
   return unwrap(data);
 }

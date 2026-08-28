@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import {
   bookHospitalLab,
+  bookPartnerLab,
   collectLabSample,
   createLabOrder,
   createLabTest,
@@ -120,6 +121,24 @@ export function useBookHospitalLab() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: bookHospitalLab,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: labKeys.myOrders });
+    },
+  });
+}
+
+export function useBookPartnerLab() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      clinicalOrderItemId,
+      partnerOrgId,
+      locationId,
+    }: {
+      clinicalOrderItemId: string;
+      partnerOrgId: string;
+      locationId: string;
+    }) => bookPartnerLab(clinicalOrderItemId, partnerOrgId, locationId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: labKeys.myOrders });
     },

@@ -39,15 +39,25 @@ Do **not** mix messaging on one piece of paper.
 
 **Campaign tracking:** replace or clone the event QR per event so you can report scans → visits → registrations.
 
-## V2 — Hospital brochure (Reference layout)
+## Final brochure pack (use this for print)
 
-Exhibition-style structure matching the supplied mockups, recolored to **purple / navy / lavender**, with confirmed Health360 hospital-platform messaging (no invented stats or “free patient app” CTAs).
+Canonical hospital brochure for press and sales kits:
+
+| Path | Purpose |
+|------|---------|
+| [final-brochure/](./final-brochure/) | **Final pack** — HTML, assets, PDFs, print rules |
+| [final-brochure/PRINT-TYPES.md](./final-brochure/PRINT-TYPES.md) | How many ways / types to print |
+| [final-brochure/pdf/01-Health360-Brochure-Final-Full-A4.pdf](./final-brochure/pdf/01-Health360-Brochure-Final-Full-A4.pdf) | **Send this to the printing machine** (double-sided) |
+
+## V2 — Hospital brochure (working / reference layout)
+
+Earlier editable source (kept for history). Prefer **final-brochure/** for production.
 
 | File | Purpose |
 |------|---------|
-| [health360-brochure-trifold-v2.html](./health360-brochure-trifold-v2.html) | Editable print source |
+| [health360-brochure-trifold-v2.html](./health360-brochure-trifold-v2.html) | Editable print source (pre-final) |
 | [health360-brochure-trifold-v2-web.html](./health360-brochure-trifold-v2-web.html) | RGB digital reading order |
-| [Health360-Brochure-Trifold-V2-A4.pdf](./Health360-Brochure-Trifold-V2-A4.pdf) | Print PDF |
+| [Health360-Brochure-Trifold-V2-A4.pdf](./Health360-Brochure-Trifold-V2-A4.pdf) | Older print PDF |
 | [Health360-Brochure-Trifold-V2-Preview.png](./Health360-Brochure-Trifold-V2-Preview.png) | Outside preview |
 | [Health360-Brochure-Trifold-V2-Inside-Preview.png](./Health360-Brochure-Trifold-V2-Inside-Preview.png) | Inside preview |
 

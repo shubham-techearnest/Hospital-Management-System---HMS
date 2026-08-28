@@ -186,8 +186,8 @@ Parallel existing roadmap (IPD P4, gateway P5, security P6) continues unless res
 | ECO-F3.1–F3.4 | P3 | Lab journey | IN QA |
 | ECO-F4.1–F4.4 | P4 | Pharmacy Rx share | DRAFT |
 | ECO-F5.1–F5.4 | P5 | Check-in & notifications | DRAFT |
-| ECO-F6.1–F6.3 | P6 | Timeline & analytics | DRAFT |
-| ECO-F7.1–F7.5 | P7 | Multi-org & HR | DRAFT |
+| ECO-F6.1–F6.3 | P6 | Timeline & analytics | IN QA |
+| ECO-F7.1–F7.5 | P7 | Multi-org & HR | IN QA (F7.1–F7.3 first slice) |
 
 Detailed stories: [ECOSYSTEM-USER-STORIES.md](./ECOSYSTEM-USER-STORIES.md).
 
@@ -214,4 +214,4 @@ When a feature is approved for build, create a full package under `docs/09-featu
 4. For that slice: write feature README + stories + FR + DB/API (V56+ if needed) → implement → QA.  
 5. Do not start P3–P7 until prior phase exit criteria met.
 
-**Current engineering stance:** Package **approved**. ECO-P3–P4 **RELEASED**. ECO-P5 self check-in + follow-up remind **IN QA**. Next after P5: **ECO-P6**.
+**Current engineering stance:** Package **approved**. ECO-P3–P4 **RELEASED**. ECO-P5–P7 **IN QA** (partner orgs per ADR-016).

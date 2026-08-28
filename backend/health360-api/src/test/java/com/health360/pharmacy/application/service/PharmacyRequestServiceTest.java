@@ -15,6 +15,7 @@ import com.health360.pharmacy.infrastructure.persistence.entity.PharmacyRequestI
 import com.health360.pharmacy.infrastructure.persistence.repository.PharmacyRequestItemRepository;
 import com.health360.pharmacy.infrastructure.persistence.repository.PharmacyRequestRepository;
 import com.health360.pharmacy.presentation.dto.response.PharmacyRequestResponse;
+import com.health360.org.application.service.PartnerNearbySearchService;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -48,6 +49,7 @@ class PharmacyRequestServiceTest {
     @Mock private PharmacyAccessService accessService;
     @Mock private AuditLogService auditLogService;
     @Mock private TransactionalNotificationService notificationService;
+    @Mock private PartnerNearbySearchService partnerNearbySearchService;
 
     @InjectMocks
     private PharmacyRequestService pharmacyRequestService;

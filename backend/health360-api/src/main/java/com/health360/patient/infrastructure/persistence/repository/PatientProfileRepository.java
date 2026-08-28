@@ -30,21 +30,60 @@ public interface PatientProfileRepository extends JpaRepository<PatientProfileEn
             @Param("tenantId") UUID tenantId,
             @Param("phone") String phone);
 
-    @Query("""
-            SELECT p FROM PatientProfileEntity p
-            WHERE p.tenantId = :tenantId
-              AND p.deletedAt IS NULL
-              AND p.dateOfBirth = :dateOfBirth
+    @Query(value = """
+            SELECT p.* FROM patient.patient_profiles p
+            LEFT JOIN iam.users u ON u.id = p.user_id AND u.deleted_at IS NULL
+            WHERE p.tenant_id = :tenantId
+              AND p.deleted_at IS NULL
+              AND p.date_of_birth = :dateOfBirth
               AND (
-                lower(coalesce(p.legalFirstName, '')) LIKE lower(concat('%', :nameToken, '%'))
-                OR lower(coalesce(p.legalLastName, '')) LIKE lower(concat('%', :nameToken, '%'))
+                (
+                  lower(trim(coalesce(p.legal_first_name, ''))) = lower(trim(:firstName))
+                  AND lower(trim(coalesce(p.legal_last_name, ''))) = lower(trim(:lastName))
+                )
+                OR (
+                  p.user_id IS NOT NULL
+                  AND lower(trim(u.first_name)) = lower(trim(:firstName))
+                  AND lower(trim(u.last_name)) = lower(trim(:lastName))
+                )
+              )
+            """, nativeQuery = true, countQuery = """
+            SELECT count(*) FROM patient.patient_profiles p
+            LEFT JOIN iam.users u ON u.id = p.user_id AND u.deleted_at IS NULL
+            WHERE p.tenant_id = :tenantId
+              AND p.deleted_at IS NULL
+              AND p.date_of_birth = :dateOfBirth
+              AND (
+                (
+                  lower(trim(coalesce(p.legal_first_name, ''))) = lower(trim(:firstName))
+                  AND lower(trim(coalesce(p.legal_last_name, ''))) = lower(trim(:lastName))
+                )
+                OR (
+                  p.user_id IS NOT NULL
+                  AND lower(trim(u.first_name)) = lower(trim(:firstName))
+                  AND lower(trim(u.last_name)) = lower(trim(:lastName))
+                )
               )
             """)
     Page<PatientProfileEntity> searchByNameAndDob(
             @Param("tenantId") UUID tenantId,
-            @Param("nameToken") String nameToken,
+            @Param("firstName") String firstName,
+            @Param("lastName") String lastName,
             @Param("dateOfBirth") LocalDate dateOfBirth,
             Pageable pageable);
+
+    @Query(value = """
+            SELECT p.* FROM patient.patient_profiles p
+            WHERE p.tenant_id = :tenantId
+              AND p.deleted_at IS NULL
+              AND (
+                right(regexp_replace(coalesce(p.primary_phone, ''), '[^0-9]', '', 'g'), 10) = :phoneLast10
+                OR right(regexp_replace(coalesce(p.secondary_phone, ''), '[^0-9]', '', 'g'), 10) = :phoneLast10
+              )
+            """, nativeQuery = true)
+    List<PatientProfileEntity> findByTenantIdAndPhoneLast10(
+            @Param("tenantId") UUID tenantId,
+            @Param("phoneLast10") String phoneLast10);
 
     @Query("""
             SELECT p FROM PatientProfileEntity p

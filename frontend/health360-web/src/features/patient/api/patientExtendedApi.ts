@@ -164,3 +164,43 @@ export async function getHealthTimeline(page = 0, size = 20): Promise<SpringPage
   });
   return data.data ?? { content: [], totalElements: 0, totalPages: 0, number: 0, size };
 }
+
+export interface JourneyTimelineItem {
+  eventId: string;
+  domain: string;
+  eventType: string;
+  summary: string;
+  occurredAt: string;
+  encounterId: string | null;
+  referenceType: string | null;
+  referenceId: string | null;
+  deepLink: string | null;
+  metadata: Record<string, unknown> | null;
+}
+
+export async function getJourneyTimeline(page = 0, size = 30): Promise<SpringPage<JourneyTimelineItem>> {
+  const { data } = await apiClient.get<ApiEnvelope<SpringPage<JourneyTimelineItem>>>(
+    '/patients/me/journey-timeline',
+    { params: { page, size } },
+  );
+  return data.data ?? { content: [], totalElements: 0, totalPages: 0, number: 0, size };
+}
+
+export interface DocumentCenterItem {
+  itemId: string;
+  source: string;
+  category: string;
+  title: string;
+  description: string | null;
+  occurredAt: string;
+  referenceId: string | null;
+  deepLink: string | null;
+  downloadable: boolean;
+}
+
+export async function listDocumentCenter(category?: string): Promise<DocumentCenterItem[]> {
+  const { data } = await apiClient.get<ApiEnvelope<DocumentCenterItem[]>>('/patients/me/document-center', {
+    params: category ? { category } : undefined,
+  });
+  return data.data ?? [];
+}

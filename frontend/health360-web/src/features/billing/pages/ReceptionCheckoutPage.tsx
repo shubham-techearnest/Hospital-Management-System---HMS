@@ -53,11 +53,18 @@ export function ReceptionCheckoutPage() {
     error: invoiceLookupError,
     refetch: refetchInvoice,
   } = useInvoiceByEncounter(encounterId);
-  const { data: vitals = [] } = useEncounterVitals(encounterId);
-  const { data: consultNotes = [] } = useEncounterNotes(encounterId);
-  const { data: diagnoses = [] } = useEncounterDiagnoses(encounterId);
-  const { data: prescriptions = [] } = useEncounterPrescriptions(encounterId);
-  const { data: orders = [] } = useEncounterOrders(encounterId);
+  const { data: vitals = [], isError: vitalsError, error: vitalsQueryError, refetch: refetchVitals } =
+    useEncounterVitals(encounterId);
+  const { data: consultNotes = [], isError: notesError, error: notesQueryError, refetch: refetchNotes } =
+    useEncounterNotes(encounterId);
+  const { data: diagnoses = [], refetch: refetchDiagnoses } = useEncounterDiagnoses(encounterId);
+  const {
+    data: prescriptions = [],
+    isError: prescriptionsError,
+    error: prescriptionsQueryError,
+    refetch: refetchPrescriptions,
+  } = useEncounterPrescriptions(encounterId);
+  const { data: orders = [], refetch: refetchOrders } = useEncounterOrders(encounterId);
   const mutations = useBillingMutations(encounterId);
 
   const [lines, setLines] = useState<LineForm[]>([DEFAULT_LINE]);
@@ -100,6 +107,28 @@ export function ReceptionCheckoutPage() {
   );
   const checkoutReady = canIssueCheckout(consultNotes, prescriptions);
   const checkoutMissing = checkoutBlockers(consultNotes, prescriptions);
+  const clinicalLoadError =
+  notesError || prescriptionsError || vitalsError
+    ? parseApiError(notesQueryError ?? prescriptionsQueryError ?? vitalsQueryError).message
+    : null;
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      void refetchVitals();
+      void refetchNotes();
+      void refetchDiagnoses();
+      void refetchPrescriptions();
+      void refetchOrders();
+    }, 10_000);
+    return () => window.clearInterval(timer);
+  }, [
+    encounterId,
+    refetchVitals,
+    refetchNotes,
+    refetchDiagnoses,
+    refetchPrescriptions,
+    refetchOrders,
+  ]);
 
   const createInvoice = async () => {
     setError(null);
@@ -131,7 +160,16 @@ export function ReceptionCheckoutPage() {
       setSuccess('Invoice issued.');
       await refetchInvoice();
     } catch (e) {
-      setError(parseApiError(e).message);
+      const parsed = parseApiError(e);
+      if (isAxiosError(e) && e.response?.status === 409) {
+        const refreshed = await refetchInvoice();
+        if (refreshed.data) {
+          setSuccess('Invoice already on file — loaded below.');
+          setError(null);
+          return;
+        }
+      }
+      setError(parsed.message);
     }
   };
 
@@ -186,6 +224,12 @@ export function ReceptionCheckoutPage() {
         subtitle={`Encounter ${encounterId}`}
       />
       <OpdVisitChecklist steps={visitSteps} scrollToSections={false} />
+      {clinicalLoadError ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Unable to load clinical data for this visit: {clinicalLoadError}. Refresh the page or ask an administrator
+          to verify your hospital assignment.
+        </Alert>
+      ) : null}
       {!invoice && !checkoutReady ? (
         <Alert severity="warning" sx={{ mb: 2 }}>
           Checkout is locked until the doctor finalizes the consultation report and signs an e-prescription

@@ -204,6 +204,8 @@ export interface PharmacyRequest {
   dispensedBy?: string;
   pharmacistNotes?: string;
   canSendHospital: boolean;
+  fulfillPartnerOrgId?: string | null;
+  fulfillLocationId?: string | null;
   items: PharmacyRequestItem[];
 }
 
@@ -216,6 +218,18 @@ export async function sendPrescriptionToHospitalPharmacy(prescriptionId: string)
   const { data } = await apiClient.post<ApiEnvelope<PharmacyRequest>>(
     `/pharmacy/me/prescriptions/${prescriptionId}/send-hospital`,
     {},
+  );
+  return unwrap(data);
+}
+
+export async function sendPrescriptionToPartnerPharmacy(
+  prescriptionId: string,
+  partnerOrgId: string,
+  locationId: string,
+): Promise<PharmacyRequest> {
+  const { data } = await apiClient.post<ApiEnvelope<PharmacyRequest>>(
+    `/pharmacy/me/prescriptions/${prescriptionId}/send`,
+    { partnerOrgId, locationId },
   );
   return unwrap(data);
 }

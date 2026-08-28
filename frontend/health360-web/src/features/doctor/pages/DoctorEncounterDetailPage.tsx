@@ -35,7 +35,7 @@ import {
 } from '@/features/clinical/hooks/useClinicalQueries';
 import { useInvoiceByEncounter } from '@/features/billing/hooks/useBillingQueries';
 import { OpdVisitChecklist, opdStepSectionId } from '@/features/clinical/components/OpdVisitChecklist';
-import { buildOpdVisitChecklist } from '@/features/clinical/utils/opdVisitChecklist';
+import { buildOpdVisitChecklist, canIssueCheckout, checkoutBlockers } from '@/features/clinical/utils/opdVisitChecklist';
 import { isAxiosError } from 'axios';
 import { useBranchLabTests, useEncounterLabReports } from '@/features/lab/hooks/useLabQueries';
 import { useEncounterImagingReports, useModalities } from '@/features/radiology/hooks/useRadiologyQueries';
@@ -133,11 +133,17 @@ export function DoctorEncounterDetailPage() {
 
   const canCheckIn = encounter.status === 'REGISTERED';
   const canStart = encounter.status === 'WAITING' || encounter.status === 'REGISTERED';
-  const canComplete = encounter.status === 'IN_PROGRESS';
-  const canOrderLab = encounter.status === 'IN_PROGRESS' && labTests.length > 0;
-  const canOrderImaging = encounter.status === 'IN_PROGRESS' && modalities.length > 0;
-  const canOrderProcedure = encounter.status === 'IN_PROGRESS';
-  const canOrderMedication = encounter.status === 'IN_PROGRESS' && medicines.length > 0;
+  const checkoutReady = canIssueCheckout(notes, prescriptions);
+  const blockers = checkoutBlockers(notes, prescriptions);
+  const canEditClinical =
+    encounter.status === 'IN_PROGRESS'
+    || encounter.status === 'WAITING'
+    || (encounter.status === 'COMPLETED' && !checkoutReady);
+  const canComplete = encounter.status === 'IN_PROGRESS' && checkoutReady;
+  const canOrderLab = canEditClinical && encounter.status === 'IN_PROGRESS' && labTests.length > 0;
+  const canOrderImaging = canEditClinical && encounter.status === 'IN_PROGRESS' && modalities.length > 0;
+  const canOrderProcedure = canEditClinical && encounter.status === 'IN_PROGRESS';
+  const canOrderMedication = canEditClinical && encounter.status === 'IN_PROGRESS' && medicines.length > 0;
   const selectedLabTest = labTests.find((t) => t.labTestId === selectedLabTestId);
   const selectedModality = modalities.find((m) => m.modalityId === selectedModalityId);
   const selectedMedicine = medicines.find((m) => m.medicineId === selectedMedicineId);
@@ -191,12 +197,36 @@ export function DoctorEncounterDetailPage() {
             variant="contained"
             color="success"
             disabled={actions.complete.isPending}
-            onClick={() => runAction('Complete encounter', () => actions.complete.mutateAsync())}
+            onClick={() => runAction('Complete consultation', () => actions.complete.mutateAsync())}
           >
-            Complete encounter
+            Finish consultation & hand to desk
+          </Button>
+        ) : null}
+        {encounter.status === 'IN_PROGRESS' && !checkoutReady ? (
+          <Button variant="contained" color="success" disabled>
+            Finish consultation & hand to desk
           </Button>
         ) : null}
       </Stack>
+
+      {encounter.status === 'IN_PROGRESS' && !checkoutReady ? (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Complete these before finishing the visit: {blockers.join(' · ')}.
+          Finalize the consultation report and sign the e-prescription (or use &quot;No medication required&quot;).
+        </Alert>
+      ) : null}
+
+      {encounter.status === 'COMPLETED' && checkoutReady ? (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Consultation complete. Reception can issue the bill and collect payment. The patient will see results in their app.
+        </Alert>
+      ) : null}
+
+      {encounter.status === 'COMPLETED' && !checkoutReady ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Visit was marked complete before clinical checkout was ready. Still needed: {blockers.join(' · ')}.
+        </Alert>
+      ) : null}
 
       <OpdVisitChecklist steps={visitSteps} />
 
@@ -233,7 +263,7 @@ export function DoctorEncounterDetailPage() {
             encounterId={encounterId}
             hospitalId={encounter.hospitalId}
             branchId={encounter.branchId}
-            canEdit={encounter.status === 'IN_PROGRESS' || encounter.status === 'WAITING'}
+            canEdit={canEditClinical}
           />
         </Box>
 
@@ -242,14 +272,14 @@ export function DoctorEncounterDetailPage() {
             encounterId={encounterId}
             hospitalId={encounter.hospitalId}
             branchId={encounter.branchId}
-            canEdit={encounter.status === 'IN_PROGRESS'}
+            canEdit={canEditClinical}
           />
         </Box>
 
         <Box>
           <WellnessPlanPanel
             encounterId={encounterId}
-            canEdit={encounter.status === 'IN_PROGRESS' || encounter.status === 'WAITING'}
+            canEdit={canEditClinical}
           />
         </Box>
 
@@ -259,10 +289,10 @@ export function DoctorEncounterDetailPage() {
 
         <DetailSection
           title="Diagnoses"
-          empty={diagnoses.length === 0 && encounter.status !== 'IN_PROGRESS'}
+          empty={diagnoses.length === 0 && !canEditClinical}
           id={opdStepSectionId('diagnosis')}
         >
-          {encounter.status === 'IN_PROGRESS' || encounter.status === 'WAITING' ? (
+          {canEditClinical ? (
             <Stack spacing={1.5} sx={{ mb: 2 }}>
               {diagnosisCatalog.length > 0 ? (
                 <Autocomplete
@@ -573,7 +603,8 @@ export function DoctorEncounterDetailPage() {
         </DetailSection>
         <Box id={opdStepSectionId('billing')}>
           <Typography variant="body2" color="text.secondary">
-            Billing opens at reception only after you finalize the consultation and sign the e-prescription.
+            After you finish consultation, reception issues the bill at checkout and records payment.
+            The patient sees visit summary, prescriptions, and invoices in their app.
           </Typography>
         </Box>
       </Stack>

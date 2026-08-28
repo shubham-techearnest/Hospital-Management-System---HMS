@@ -56,12 +56,15 @@ public class HospitalPatientRegistryService {
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
     private final PatientPortalInviteService portalInviteService;
+    private final PlatformPatientLookupService platformPatientLookupService;
+    private final PatientUhidAssignmentService patientUhidAssignmentService;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<HospitalPatientSummaryResponse> searchPatients(
             UserPrincipal principal,
             String uhid,
             String mobile,
+            UUID patientId,
             String firstName,
             String lastName,
             LocalDate dateOfBirth,
@@ -71,6 +74,15 @@ public class HospitalPatientRegistryService {
         UUID tenantId = principal.getTenantId();
         scopeService.resolveScope(principal);
 
+        if (patientId != null) {
+            PatientProfileEntity profile = patientUhidAssignmentService.ensureAssigned(
+                    platformPatientLookupService.resolveProfileByPatientOrUserId(
+                            tenantId, patientId, principal.getUserId()),
+                    principal.getUserId());
+            auditSearch(principal, "PATIENT_ID", 1);
+            return new PageImpl<>(List.of(toSummary(profile)), pageable, 1);
+        }
+
         if (uhid != null && !uhid.isBlank()) {
             String normalized = uhid.trim().toUpperCase();
             return patientProfileRepository.findByTenantIdAndUhidAndDeletedAtIsNull(tenantId, normalized)
@@ -79,9 +91,8 @@ public class HospitalPatientRegistryService {
         }
 
         if (mobile != null && !mobile.isBlank()) {
-            String storedPhone = PhoneNormalizer.toStorageFormat(mobile);
-            List<HospitalPatientSummaryResponse> results = patientProfileRepository
-                    .findByTenantIdAndPrimaryPhone(tenantId, storedPhone)
+            List<HospitalPatientSummaryResponse> results = platformPatientLookupService
+                    .resolveProfilesByMobile(tenantId, mobile, principal.getUserId())
                     .stream()
                     .map(this::toSummary)
                     .toList();
@@ -90,16 +101,16 @@ public class HospitalPatientRegistryService {
         }
 
         if (firstName != null && lastName != null && dateOfBirth != null) {
-            String nameToken = firstName.trim();
             Page<PatientProfileEntity> page = patientProfileRepository.searchByNameAndDob(
-                    tenantId, nameToken, dateOfBirth, pageable);
-            Page<HospitalPatientSummaryResponse> mapped = page.map(this::toSummary);
+                    tenantId, firstName.trim(), lastName.trim(), dateOfBirth, pageable);
+            Page<HospitalPatientSummaryResponse> mapped = page.map(profile ->
+                    toSummary(patientUhidAssignmentService.ensureAssigned(profile, principal.getUserId())));
             auditSearch(principal, "NAME_DOB", (int) mapped.getTotalElements());
             return mapped;
         }
 
         throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
-                "Provide uhid, mobile, or firstName+lastName+dateOfBirth");
+                "Provide patientId, uhid, mobile, or firstName+lastName+dateOfBirth");
     }
 
     @Transactional
@@ -121,7 +132,7 @@ public class HospitalPatientRegistryService {
 
         if (duplicateDetectionService.shouldBlockRegistration(candidates) && !request.isDuplicateOverride()) {
             auditLogService.record(tenantId, principal.getUserId(), "DUPLICATE_CANDIDATES_SHOWN",
-                    "PatientProfile", null,
+                    "PatientRegistry", principal.getUserId(),
                     Map.of("candidateCount", candidates.size()));
             throw new DuplicatePatientCandidatesException(candidates);
         }
@@ -134,7 +145,7 @@ public class HospitalPatientRegistryService {
                         "Duplicate override reason must be at least 10 characters");
             }
             auditLogService.record(tenantId, principal.getUserId(), "DUPLICATE_OVERRIDE",
-                    "PatientProfile", null,
+                    "PatientRegistry", principal.getUserId(),
                     Map.of("reason", request.getDuplicateOverrideReason().trim(),
                             "candidateCount", candidates.size()));
         }
@@ -243,7 +254,8 @@ public class HospitalPatientRegistryService {
 
         assertCanWrite(principal);
         HospitalRegistrationScopeService.RegistrationScope scope = scopeService.resolveScope(principal);
-        PatientProfileEntity profile = requireProfile(principal.getTenantId(), patientId);
+        PatientProfileEntity profile = patientUhidAssignmentService.ensureAssigned(
+                requireProfile(principal.getTenantId(), patientId), principal.getUserId());
 
         if (findRegistration(profile.getId(), scope).isPresent()) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
@@ -391,12 +403,23 @@ public class HospitalPatientRegistryService {
     private String buildDisplayName(PatientProfileEntity profile) {
         String first = profile.getLegalFirstName() != null ? profile.getLegalFirstName() : "";
         String last = profile.getLegalLastName() != null ? profile.getLegalLastName() : "";
-        return (first + " " + last).trim();
+        String combined = (first + " " + last).trim();
+        if (!combined.isBlank()) {
+            return combined;
+        }
+        if (profile.getUserId() != null) {
+            return userRepository.findById(profile.getUserId())
+                    .map(u -> ((u.getFirstName() != null ? u.getFirstName() : "")
+                            + " " + (u.getLastName() != null ? u.getLastName() : "")).trim())
+                    .filter(name -> !name.isBlank())
+                    .orElse("Platform member");
+        }
+        return "Platform member";
     }
 
     private void auditSearch(UserPrincipal principal, String searchType, int resultCount) {
         auditLogService.record(principal.getTenantId(), principal.getUserId(), "PATIENT_SEARCH",
-                "PatientProfile", null,
+                "PatientRegistry", principal.getUserId(),
                 Map.of("searchType", searchType, "resultCount", resultCount));
     }
 

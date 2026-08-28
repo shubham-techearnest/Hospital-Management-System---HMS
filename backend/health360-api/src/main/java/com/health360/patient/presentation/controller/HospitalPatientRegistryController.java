@@ -38,12 +38,13 @@ public class HospitalPatientRegistryController {
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) String uhid,
             @RequestParam(required = false) String mobile,
+            @RequestParam(required = false) UUID patientId,
             @RequestParam(required = false) String firstName,
             @RequestParam(required = false) String lastName,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateOfBirth,
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(
-                registryService.searchPatients(principal, uhid, mobile, firstName, lastName, dateOfBirth, pageable)));
+                registryService.searchPatients(principal, uhid, mobile, patientId, firstName, lastName, dateOfBirth, pageable)));
     }
 
     @PostMapping("/register")

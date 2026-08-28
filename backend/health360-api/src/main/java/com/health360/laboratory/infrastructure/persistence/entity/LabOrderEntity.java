@@ -42,4 +42,10 @@ public class LabOrderEntity extends BaseAuditableEntity {
 
     @Column(name = "received_at", nullable = false)
     private Instant receivedAt = Instant.now();
+
+    @Column(name = "fulfill_partner_org_id")
+    private UUID fulfillPartnerOrgId;
+
+    @Column(name = "fulfill_location_id")
+    private UUID fulfillLocationId;
 }

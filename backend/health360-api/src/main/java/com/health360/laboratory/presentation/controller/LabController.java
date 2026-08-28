@@ -199,4 +199,15 @@ public class LabController {
         return ResponseEntity.ok(ApiResponse.ok(
                 patientJourneyService.bookHospitalLab(principal, clinicalOrderItemId)));
     }
+
+    @PostMapping("/me/orders/{clinicalOrderItemId}/book")
+    @PreAuthorize("hasAuthority('clinical:encounter:read')")
+    public ResponseEntity<ApiResponse<PatientLabOrderResponse>> bookPartnerLab(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID clinicalOrderItemId,
+            @Valid @RequestBody com.health360.org.presentation.dto.request.BookPartnerLabRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                patientJourneyService.bookPartnerLab(
+                        principal, clinicalOrderItemId, request.getPartnerOrgId(), request.getLocationId())));
+    }
 }

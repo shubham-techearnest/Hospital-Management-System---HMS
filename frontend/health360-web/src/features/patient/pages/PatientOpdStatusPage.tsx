@@ -66,9 +66,25 @@ export function PatientOpdStatusPage() {
               {v.status === 'WAITING' && 'Please wait — you will be called soon.'}
               {v.status === 'CALLED' && 'Please proceed to the consultation desk now.'}
               {v.status === 'IN_SERVICE' && 'Consultation in progress.'}
-              {v.status === 'COMPLETED' && 'Visit completed. Check prescriptions and payments.'}
+              {v.status === 'COMPLETED' && 'Visit completed. View your consultation summary, prescriptions, and payment below.'}
               {v.status === 'SKIPPED' && 'Skipped in queue — hospital may recall you shortly.'}
             </Typography>
+            {v.status === 'COMPLETED' || v.encounterStatus === 'COMPLETED' ? (
+              <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1.5 }}>
+                <Button component={RouterLink} to={`/patient/encounters/${v.encounterId}`} size="small" variant="outlined">
+                  Visit summary
+                </Button>
+                <Button component={RouterLink} to="/patient/prescriptions" size="small" variant="outlined">
+                  Prescriptions
+                </Button>
+                <Button component={RouterLink} to="/patient/payments" size="small" variant="outlined">
+                  Payments
+                </Button>
+                <Button component={RouterLink} to="/patient/timeline" size="small" variant="outlined">
+                  Care journey
+                </Button>
+              </Stack>
+            ) : null}
           </Paper>
         ))}
       </Stack>

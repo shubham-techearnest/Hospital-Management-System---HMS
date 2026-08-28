@@ -3,7 +3,7 @@
 | Attribute | Value |
 |-----------|-------|
 | **Document ID** | ECO-INDEX-001 |
-| **Status** | **APPROVED — ECO-P3–P4 RELEASED; ECO-P5 IN QA** |
+| **Status** | **APPROVED — ECO-P3–P4 RELEASED; ECO-P5–P7 IN QA** |
 | **Created** | 2026-08-25 |
 | **Approved** | 2026-08-25 (proceed) |
 | **Mode** | Inspect → Gap analysis → Plan → Stories → Approve → **Step-by-step build** |
@@ -42,7 +42,7 @@
 2. **Encounter hub** — `clinical.encounters` is the visit hub.
 3. **Appointment ≠ Queue** — keep both.
 4. **E-Rx ≠ Pharmacy MAR**.
-5. **Flyway** — never edit V1–V60; next is **V61+**.
+5. **Flyway** — never edit V1–V62; next is **V63+**.
 6. **Do not rebuild working OPD** — extend P2-F1…F10.
 
 ---
@@ -60,4 +60,6 @@
 | ECO-P3 delivery | Engineering | **RELEASED** |
 | ECO-P4 delivery | Engineering | **RELEASED** |
 | ECO-P5 delivery | Engineering | **IN QA** |
-| Next slice | ECO-P6 | **READY** |
+| ECO-P6 delivery | Engineering | **IN QA** |
+| ECO-P7 delivery | Engineering | **IN QA** (partner orgs first slice) |
+| Next slice | Partner worklists / HR (F7.4) polish | **READY** |

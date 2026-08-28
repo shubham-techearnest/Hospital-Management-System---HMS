@@ -15,6 +15,7 @@ public class DashboardResponse {
     List<MetricResponse> metrics;
     List<GoalProgressResponse> goalsProgress;
     List<VitalsTrendSeriesResponse> recentVitalsTrend;
+    List<VitalsTrendSeriesResponse> recentLabTrend;
     List<TimelineEventResponse> recentTimeline;
     String disclaimer;
     Instant calculatedAt;

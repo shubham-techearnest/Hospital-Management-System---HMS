@@ -21,6 +21,17 @@ import { useMedicines } from '@/features/pharmacy/hooks/usePharmacyQueries';
 import { useDosageTemplates } from '@/features/hospital/hooks/useClinicalCatalogQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
 
+const ROUTE_OPTIONS = ['ORAL', 'TOPICAL', 'IV', 'IM', 'SC', 'INHALATION', 'NASAL', 'OPHTHALMIC', 'OTIC'];
+const FREQUENCY_OPTIONS = [
+  'OD (once daily)',
+  'BD (twice daily)',
+  'TDS (three times daily)',
+  'QID (four times daily)',
+  'HS (at bedtime)',
+  'SOS (as needed)',
+  'STAT (immediately)',
+];
+
 type LineForm = PrescriptionItemPayload & { key: string };
 
 const emptyLine = (): LineForm => ({
@@ -81,7 +92,19 @@ export function EPrescriptionPanel({ encounterId, hospitalId, branchId, canEdit 
   const pending =
     actions.createPrescription.isPending
     || actions.updatePrescription.isPending
-    || actions.signPrescription.isPending;
+    || actions.signPrescription.isPending
+    || actions.declareNoMedication.isPending;
+
+  const declareNoMed = async () => {
+    setError(null);
+    setSuccess(null);
+    try {
+      await actions.declareNoMedication.mutateAsync();
+      setSuccess('No medication declared and signed for this visit.');
+    } catch (e) {
+      setError(parseApiError(e).message);
+    }
+  };
 
   const updateLine = (key: string, patch: Partial<LineForm>) => {
     setLines((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
@@ -251,10 +274,21 @@ export function EPrescriptionPanel({ encounterId, hospitalId, branchId, canEdit 
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                   <TextField label="Dose" size="small" value={line.doseText ?? ''}
                     onChange={(e) => updateLine(line.key, { doseText: e.target.value })} disabled={pending} />
-                  <TextField label="Route" size="small" value={line.route ?? ''}
-                    onChange={(e) => updateLine(line.key, { route: e.target.value })} disabled={pending} />
-                  <TextField label="Frequency" size="small" value={line.frequency ?? ''}
-                    onChange={(e) => updateLine(line.key, { frequency: e.target.value })} disabled={pending} />
+                  <TextField select label="Route" size="small" sx={{ minWidth: 120 }}
+                    value={line.route ?? 'ORAL'}
+                    onChange={(e) => updateLine(line.key, { route: e.target.value })} disabled={pending}>
+                    {ROUTE_OPTIONS.map((route) => (
+                      <MenuItem key={route} value={route}>{route}</MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField select label="Frequency" size="small" sx={{ minWidth: 180 }}
+                    value={line.frequency ?? ''}
+                    onChange={(e) => updateLine(line.key, { frequency: e.target.value })} disabled={pending}>
+                    <MenuItem value="">Custom / other</MenuItem>
+                    {FREQUENCY_OPTIONS.map((freq) => (
+                      <MenuItem key={freq} value={freq}>{freq}</MenuItem>
+                    ))}
+                  </TextField>
                   <TextField label="Days" size="small" type="number" sx={{ width: 100 }}
                     value={line.durationDays ?? ''}
                     onChange={(e) => updateLine(line.key, {
@@ -272,13 +306,16 @@ export function EPrescriptionPanel({ encounterId, hospitalId, branchId, canEdit 
               </Stack>
             </Box>
           ))}
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} flexWrap="wrap">
             <Button variant="text" disabled={pending || lines.length >= 20}
               onClick={() => setLines((prev) => [...prev, emptyLine()])}>
               Add line
             </Button>
             <Button variant="outlined" disabled={pending} onClick={saveDraft}>Save draft</Button>
-            <Button variant="contained" disabled={pending} onClick={sign}>Sign prescription</Button>
+            <Button variant="outlined" disabled={pending || signed.length > 0} onClick={declareNoMed}>
+              No medication required
+            </Button>
+            <Button variant="contained" disabled={pending || signed.length > 0} onClick={sign}>Sign prescription</Button>
           </Stack>
         </Stack>
       ) : null}
@@ -299,22 +336,26 @@ export function EPrescriptionPanel({ encounterId, hospitalId, branchId, canEdit 
 }
 
 function SignedRxCard({ rx }: { rx: Prescription }) {
+  const noMed = rx.notes?.includes('No medication required');
   return (
     <Box sx={{ p: 1.5, border: 1, borderColor: 'success.light', borderRadius: 1 }}>
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
         <Typography fontWeight={600}>{rx.prescriptionNumber}</Typography>
         <Chip size="small" color="success" label="SIGNED" />
       </Stack>
-      {rx.items.map((item) => (
-        <Typography key={item.itemId} variant="body2">
-          {item.medicineName}
-          {' — '}
-          {[item.doseText, item.frequency, item.durationDays != null ? `${item.durationDays}d` : null]
-            .filter(Boolean)
-            .join(' · ')}
-          {item.safetyWarning ? ` (${item.safetyWarning})` : ''}
-        </Typography>
-      ))}
+      {noMed ? (
+        <Typography variant="body2" color="text.secondary">{rx.notes}</Typography>
+      ) : (
+        rx.items.map((item) => (
+          <Typography key={item.itemId} variant="body2">
+            {item.medicineName}
+            {' — '}
+            {[item.doseText, item.frequency, item.durationDays != null ? `${item.durationDays}d` : null]
+              .filter(Boolean)
+              .join(' · ')}
+          </Typography>
+        ))
+      )}
     </Box>
   );
 }

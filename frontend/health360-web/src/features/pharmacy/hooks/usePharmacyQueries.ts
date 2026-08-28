@@ -18,6 +18,7 @@ import {
   receivePharmacyRequest,
   reviewPharmacyRequest,
   sendPrescriptionToHospitalPharmacy,
+  sendPrescriptionToPartnerPharmacy,
   verifyMedicationOrder,
 } from '../api/pharmacyApi';
 
@@ -189,6 +190,18 @@ export function usePharmacyRequestMutations(hospitalId?: string, branchId?: stri
   return {
     sendHospital: useMutation({
       mutationFn: sendPrescriptionToHospitalPharmacy,
+      onSuccess: invalidate,
+    }),
+    sendPartner: useMutation({
+      mutationFn: ({
+        prescriptionId,
+        partnerOrgId,
+        locationId,
+      }: {
+        prescriptionId: string;
+        partnerOrgId: string;
+        locationId: string;
+      }) => sendPrescriptionToPartnerPharmacy(prescriptionId, partnerOrgId, locationId),
       onSuccess: invalidate,
     }),
     receive: useMutation({

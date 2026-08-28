@@ -41,8 +41,8 @@
 | ECO-F3.* | ECO | Lab journey (hospital-first) | ECO-P3 | IN QA | R-ECO |
 | ECO-F4.* | ECO | Pharmacy e-Rx share / dispense | ECO-P4 | RELEASED | R-ECO |
 | ECO-F5.* | ECO | Self check-in + notification channels | ECO-P5 | IN QA | R-ECO |
-| ECO-F6.* | ECO | Unified timeline + health analytics | ECO-P6 | TBD | R-ECO |
-| ECO-F7.* | ECO | Independent lab/pharmacy orgs + HR | ECO-P7 | TBD | R-ECO |
+| ECO-F6.* | ECO | Timeline + trends + document center | ECO-P6 | IN QA | R-ECO |
+| ECO-F7.* | ECO | Partner lab/pharmacy multi-org | ECO-P7 | IN QA | R-ECO |
 
 Ecosystem pack: [../15-ecosystem/README.md](../15-ecosystem/README.md)  
 Status tracking: [feature-status-board.md](./feature-status-board.md)

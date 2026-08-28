@@ -25,6 +25,8 @@
 | ECO-P3 | ECO | Lab journey (hospital-first) | — | [ECO-P3](../09-features/ECO-P3/README.md) | APPROVED | DONE | PASSED | **RELEASED** |
 | ECO-P4 | ECO | Pharmacy e-Rx share | — | [ECO-P4](../09-features/ECO-P4/README.md) | APPROVED | DONE | PASSED | **RELEASED** |
 | ECO-P5 | ECO | Check-in & notifications | — | [ECO-P5](../09-features/ECO-P5/README.md) | APPROVED | DONE | IN QA | **IN QA** |
+| ECO-P6 | ECO | Timeline & health dashboard | — | [ECO-P6](../09-features/ECO-P6/README.md) | APPROVED | DONE | IN QA | **IN QA** |
+| ECO-P7 | ECO | Multi-org partner lab/pharmacy | — | [ECO-P7](../09-features/ECO-P7/README.md) | APPROVED | DONE | IN QA | **IN QA** |
 | ECO-P5 | ECO | Self check-in + notifications | — | [plan](../15-ecosystem/ECOSYSTEM-IMPLEMENTATION-PLAN.md) | APPROVED | — | — | **PLANNED** |
 | ECO-P6 | ECO | Unified timeline + analytics | — | [plan](../15-ecosystem/ECOSYSTEM-IMPLEMENTATION-PLAN.md) | APPROVED | — | — | **PLANNED** |
 | ECO-P7 | ECO | Independent lab/pharmacy orgs + HR depth | — | [plan](../15-ecosystem/ECOSYSTEM-IMPLEMENTATION-PLAN.md) | APPROVED | — | — | **PLANNED** |

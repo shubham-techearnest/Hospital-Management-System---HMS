@@ -241,6 +241,15 @@ public class ClinicalController {
                 prescriptionService.update(principal, encounterId, prescriptionId, request)));
     }
 
+    @PostMapping("/encounters/{encounterId}/prescriptions/declare-no-medication")
+    @PreAuthorize("hasAuthority('clinical:prescription:sign')")
+    public ResponseEntity<ApiResponse<PrescriptionResponse>> declareNoMedication(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID encounterId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                prescriptionService.declareNoMedication(principal, encounterId)));
+    }
+
     @PostMapping("/encounters/{encounterId}/prescriptions/{prescriptionId}/sign")
     @PreAuthorize("hasAuthority('clinical:prescription:sign')")
     public ResponseEntity<ApiResponse<PrescriptionResponse>> signPrescription(

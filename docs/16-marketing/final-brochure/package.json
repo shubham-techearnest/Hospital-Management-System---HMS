@@ -1,0 +1,12 @@
+{
+  "name": "health360-final-brochure",
+  "private": true,
+  "description": "High-quality PDF export for Health360 final A4 tri-fold brochure",
+  "scripts": {
+    "export-pdfs": "node export-pdfs-hq.mjs",
+    "postinstall": "npx playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright": "^1.54.2"
+  }
+}

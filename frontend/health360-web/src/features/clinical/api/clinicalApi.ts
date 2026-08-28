@@ -304,6 +304,14 @@ export async function updatePrescription(
   return unwrap(data);
 }
 
+export async function declareNoMedication(encounterId: string): Promise<Prescription> {
+  const { data } = await apiClient.post<ApiEnvelope<Prescription>>(
+    `/clinical/encounters/${encounterId}/prescriptions/declare-no-medication`,
+    {},
+  );
+  return unwrap(data);
+}
+
 export async function signPrescription(encounterId: string, prescriptionId: string): Promise<Prescription> {
   const { data } = await apiClient.post<ApiEnvelope<Prescription>>(
     `/clinical/encounters/${encounterId}/prescriptions/${prescriptionId}/sign`,

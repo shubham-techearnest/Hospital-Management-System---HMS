@@ -75,7 +75,7 @@ export function HospitalStaffPage() {
         phone: form.phone || undefined,
         temporaryPassword: form.temporaryPassword,
         roleName: form.roleName as (typeof STAFF_ROLES)[number],
-        branchId: form.branchId || primaryBranch?.id,
+        branchId: form.roleName === 'RECEPTIONIST' ? undefined : (form.branchId || primaryBranch?.id),
         departmentId: form.departmentId || undefined,
         jobTitle: form.jobTitle || undefined,
       });

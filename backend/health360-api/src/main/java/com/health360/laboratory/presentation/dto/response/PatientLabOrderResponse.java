@@ -24,6 +24,9 @@ public class PatientLabOrderResponse {
     String labOrderStatus;
     Instant orderedAt;
     boolean canBookHospital;
+    boolean canBookPartner;
+    UUID fulfillPartnerOrgId;
+    UUID fulfillLocationId;
     String specimenId;
     LabReportResponse report;
 }

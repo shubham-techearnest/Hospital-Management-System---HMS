@@ -76,6 +76,7 @@ export interface HealthDashboard {
   metrics: MetricDto[];
   goalsProgress: GoalProgress[];
   recentVitalsTrend: VitalsTrendSeries[];
+  recentLabTrend: VitalsTrendSeries[];
   recentTimeline: TimelineEvent[];
   disclaimer: string;
   calculatedAt: string;

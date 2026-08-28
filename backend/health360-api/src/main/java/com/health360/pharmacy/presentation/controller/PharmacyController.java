@@ -154,6 +154,17 @@ public class PharmacyController {
                 requestService.sendHospital(principal, prescriptionId)));
     }
 
+    @PostMapping("/me/prescriptions/{prescriptionId}/send")
+    @PreAuthorize("hasAuthority('pharmacy:request:write')")
+    public ResponseEntity<ApiResponse<PharmacyRequestResponse>> sendPrescriptionToPartnerPharmacy(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID prescriptionId,
+            @Valid @RequestBody com.health360.org.presentation.dto.request.SendPartnerPharmacyRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
+                requestService.sendPartner(
+                        principal, prescriptionId, request.getPartnerOrgId(), request.getLocationId())));
+    }
+
     @GetMapping("/requests")
     @PreAuthorize("hasAuthority('pharmacy:request:read')")
     public ResponseEntity<ApiResponse<List<PharmacyRequestResponse>>> listPharmacyRequests(

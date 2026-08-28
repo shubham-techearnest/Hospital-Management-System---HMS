@@ -235,7 +235,24 @@ export function DashboardPage() {
           </Grid>
         ) : null}
 
-        <Grid item xs={12} lg={(dashboard?.recentVitalsTrend?.length ?? 0) > 0 ? 6 : 12}>
+        {(dashboard?.recentLabTrend?.length ?? 0) > 0 ? (
+          <Grid item xs={12} lg={6}>
+            <DashboardSection
+              title="Lab trends"
+              action={
+                <Button component={RouterLink} to="/patient/lab-values" size="small">
+                  Lab history
+                </Button>
+              }
+            >
+              <Box sx={{ overflowX: 'auto' }}>
+                <VitalsTrendSection series={dashboard?.recentLabTrend ?? []} />
+              </Box>
+            </DashboardSection>
+          </Grid>
+        ) : null}
+
+        <Grid item xs={12} lg={(dashboard?.recentVitalsTrend?.length ?? 0) > 0 || (dashboard?.recentLabTrend?.length ?? 0) > 0 ? 6 : 12}>
           <DashboardSection
             title="Recent activity"
             action={

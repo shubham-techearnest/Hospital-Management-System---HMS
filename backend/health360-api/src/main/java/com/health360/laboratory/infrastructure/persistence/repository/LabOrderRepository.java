@@ -17,6 +17,9 @@ public interface LabOrderRepository extends JpaRepository<LabOrderEntity, UUID> 
 
     Optional<LabOrderEntity> findByClinicalOrderItemIdAndDeletedAtIsNull(UUID clinicalOrderItemId);
 
+    List<LabOrderEntity> findByTenantIdAndPatientIdAndDeletedAtIsNullOrderByReceivedAtDesc(
+            UUID tenantId, UUID patientId);
+
     Page<LabOrderEntity> findByTenantIdAndHospitalIdAndBranchIdAndDeletedAtIsNullOrderByReceivedAtDesc(
             UUID tenantId, UUID hospitalId, UUID branchId, Pageable pageable);
 

@@ -18,6 +18,8 @@ import com.health360.laboratory.infrastructure.persistence.repository.LabOrderRe
 import com.health360.laboratory.infrastructure.persistence.repository.LabSampleRepository;
 import com.health360.laboratory.presentation.dto.response.LabReportResponse;
 import com.health360.laboratory.presentation.dto.response.PatientLabOrderResponse;
+import com.health360.org.application.service.PartnerNearbySearchService;
+import com.health360.org.domain.PartnerOrgType;
 import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.shared.domain.ErrorCode;
@@ -47,6 +49,7 @@ public class LabPatientJourneyService {
     private final LabCatalogService catalogService;
     private final LabFulfillmentService fulfillmentService;
     private final EncounterAccessService encounterAccessService;
+    private final PartnerNearbySearchService partnerNearbySearchService;
 
     @Transactional(readOnly = true)
     public List<PatientLabOrderResponse> listMyLabOrders(UserPrincipal principal) {
@@ -117,6 +120,9 @@ public class LabPatientJourneyService {
                     .labOrderStatus(labOrder != null ? labOrder.getStatus() : null)
                     .orderedAt(clinicalOrder.getOrderedAt())
                     .canBookHospital(canBook)
+                    .canBookPartner(canBook)
+                    .fulfillPartnerOrgId(labOrder != null ? labOrder.getFulfillPartnerOrgId() : null)
+                    .fulfillLocationId(labOrder != null ? labOrder.getFulfillLocationId() : null)
                     .specimenId(specimenId)
                     .report(report)
                     .build());
@@ -151,6 +157,45 @@ public class LabPatientJourneyService {
         encounterAccessService.assertCanReadEncounter(principal, encounter);
 
         fulfillmentService.createLabOrderForPatient(principal, clinicalOrderItemId);
+
+        return listMyLabOrders(principal).stream()
+                .filter(r -> r.getClinicalOrderItemId().equals(clinicalOrderItemId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Booked lab order not found"));
+    }
+
+    @Transactional
+    public PatientLabOrderResponse bookPartnerLab(
+            UserPrincipal principal, UUID clinicalOrderItemId, UUID partnerOrgId, UUID locationId) {
+        PatientProfileEntity profile = requirePatientProfile(principal);
+        UUID tenantId = principal.getTenantId();
+
+        ClinicalOrderItemEntity item = clinicalOrderItemRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(clinicalOrderItemId, tenantId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Clinical order item not found"));
+
+        ClinicalOrderEntity clinicalOrder = clinicalOrderRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(item.getOrderId(), tenantId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Clinical order not found"));
+
+        EncounterEntity encounter = encounterRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(clinicalOrder.getEncounterId(), tenantId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Encounter not found"));
+
+        if (!encounter.getPatientId().equals(profile.getId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN, "Access denied");
+        }
+        encounterAccessService.assertCanReadEncounter(principal, encounter);
+
+        partnerNearbySearchService.requireActiveLocation(
+                tenantId, partnerOrgId, locationId, PartnerOrgType.LABORATORY);
+
+        fulfillmentService.createLabOrderForPatientAtPartner(
+                principal, clinicalOrderItemId, partnerOrgId, locationId);
 
         return listMyLabOrders(principal).stream()
                 .filter(r -> r.getClinicalOrderItemId().equals(clinicalOrderItemId))

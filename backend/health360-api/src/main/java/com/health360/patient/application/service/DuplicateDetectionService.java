@@ -1,5 +1,6 @@
 package com.health360.patient.application.service;
 
+import com.health360.patient.application.util.PhoneNormalizer;
 import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.patient.presentation.dto.response.DuplicateCandidateResponse;
@@ -21,6 +22,7 @@ public class DuplicateDetectionService {
     private static final double NAME_DOB_BLOCK_THRESHOLD = 0.85;
 
     private final PatientProfileRepository patientProfileRepository;
+    private final PlatformPatientLookupService platformPatientLookupService;
 
     public List<DuplicateCandidateResponse> findCandidates(
             UUID tenantId,
@@ -32,8 +34,16 @@ public class DuplicateDetectionService {
         Map<UUID, DuplicateCandidateResponse> candidates = new LinkedHashMap<>();
 
         if (primaryPhone != null && !primaryPhone.isBlank()) {
-            patientProfileRepository.findByTenantIdAndPrimaryPhone(tenantId, primaryPhone)
-                    .forEach(profile -> candidates.put(profile.getId(), toCandidate(profile, 1.0, "MOBILE_EXACT")));
+            String last10 = PhoneNormalizer.normalize(primaryPhone);
+            if (last10.length() == 10) {
+                platformPatientLookupService.findProfilesByPhoneLast10(tenantId, last10)
+                        .forEach(profile -> candidates.put(profile.getId(), toCandidate(profile, 1.0, "MOBILE_EXACT")));
+                platformPatientLookupService.findAppPatientUsersByPhoneLast10(tenantId, last10)
+                        .forEach(user -> {
+                            PatientProfileEntity profile = platformPatientLookupService.ensureProfileForAppUser(user, null);
+                            candidates.putIfAbsent(profile.getId(), toCandidate(profile, 1.0, "MOBILE_EXACT"));
+                        });
+            }
         }
 
         if (dateOfBirth != null && legalFirstName != null && legalLastName != null) {

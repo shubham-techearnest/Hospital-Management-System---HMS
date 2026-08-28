@@ -29,4 +29,10 @@ public final class GeoUtils {
                 && latitude.compareTo(BigDecimal.ZERO) != 0
                 && longitude.compareTo(BigDecimal.ZERO) != 0;
     }
+
+    public static boolean hasCoordinates(Double latitude, Double longitude) {
+        return latitude != null && longitude != null
+                && latitude != 0.0
+                && longitude != 0.0;
+    }
 }

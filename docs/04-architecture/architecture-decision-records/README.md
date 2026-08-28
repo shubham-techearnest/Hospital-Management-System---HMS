@@ -18,3 +18,5 @@
 | [ADR-012](./ADR-012-payment-architecture.md) | Payment architecture | PROPOSED |
 | [ADR-013](./ADR-013-insurance-tpa-architecture.md) | Insurance/TPA architecture | PROPOSED |
 | [ADR-014](./ADR-014-mobile-hms-expansion.md) | Mobile HMS expansion | PROPOSED |
+| [ADR-015](./ADR-015-appointment-arrival-status-alignment.md) | Appointment arrival status alignment | ACCEPTED |
+| [ADR-016](./ADR-016-independent-partner-orgs.md) | Independent lab/pharmacy partner orgs | ACCEPTED |

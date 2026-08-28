@@ -79,11 +79,13 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
     setSearching(true);
     try {
       if (q && looksLikeUuid(q)) {
-        setSelected({
-          patientId: q,
-          legalName: 'Selected by UUID',
-          uhid: undefined,
-        });
+        const page = await searchHospitalPatients({ patientId: q });
+        if (page.content.length === 0) {
+          setError('No platform patient found for that UUID.');
+          return;
+        }
+        setMatches(page.content);
+        setSelected(page.content[0]);
         return;
       }
 
@@ -217,8 +219,8 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
       <Stack spacing={2}>
         <Typography variant="subtitle1">Walk-in registration</Typography>
         <Typography variant="body2" color="text.secondary">
-          Find by UHID, mobile, UUID, or name + DOB. If the patient is new, register here —
-          UHID and portal login are created automatically (credentials appear in the API terminal log and below).
+          Find existing Health360 members by mobile or name + DOB (UHID/UUID optional).
+          If not on the platform yet, register with basic details — they can complete their profile later.
         </Typography>
         {error ? <Alert severity="error">{error}</Alert> : null}
         {credentialsNotice ? (
@@ -273,7 +275,10 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
                   onClick={() => setSelected(p)}
                   sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
                 >
-                  {p.legalName} · {p.uhid ?? 'no UHID'} · DOB {p.dateOfBirth ?? '—'} · {p.primaryPhone ?? ''}
+                  {p.legalName}
+                  {p.uhid ? ` · ${p.uhid}` : ' · Platform member'}
+                  {p.dateOfBirth ? ` · DOB ${p.dateOfBirth}` : ''}
+                  {p.primaryPhone ? ` · ${p.primaryPhone}` : ''}
                 </Button>
               ))}
             </Stack>
@@ -283,16 +288,17 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
         {selected ? (
           <Alert severity="success">
             Selected: {selected.legalName}
-            {selected.uhid ? ` · ${selected.uhid}` : ''}
+            {selected.uhid ? ` · ${selected.uhid}` : ' · existing platform member'}
           </Alert>
         ) : null}
 
         {showNewPatient ? (
           <>
             <Divider />
-            <Typography variant="subtitle2">New patient — not found in system</Typography>
+            <Typography variant="subtitle2">New patient — not found on Health360</Typography>
             <Typography variant="body2" color="text.secondary">
-              Creates UHID, ACTIVE portal login (username + temp password logged), and optional secure-account invite.
+              Creates a platform account with UHID and portal login (credentials in server log and below).
+              Patient can complete profile details after login.
             </Typography>
             <TextField
               label="Mobile (required)"

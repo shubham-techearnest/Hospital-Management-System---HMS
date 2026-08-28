@@ -7,6 +7,7 @@ import {
   createClinicalNote,
   createClinicalOrder,
   createPrescription,
+  declareNoMedication,
   finalizeClinicalNote,
   getEncounter,
   getEncounterWellnessPlan,
@@ -234,6 +235,10 @@ export function useEncounterActions(encounterId: string) {
     }),
     signPrescription: useMutation({
       mutationFn: (prescriptionId: string) => signPrescription(encounterId, prescriptionId),
+      onSuccess: invalidatePrescriptions,
+    }),
+    declareNoMedication: useMutation({
+      mutationFn: () => declareNoMedication(encounterId),
       onSuccess: invalidatePrescriptions,
     }),
     upsertWellnessPlan: useMutation({

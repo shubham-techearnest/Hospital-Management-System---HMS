@@ -40,6 +40,8 @@ public class PatientProfileController {
     private final HealthDocumentService healthDocumentService;
     private final HealthTimelineService healthTimelineService;
     private final ClinicalTimelineService clinicalTimelineService;
+    private final JourneyTimelineService journeyTimelineService;
+    private final DocumentCenterService documentCenterService;
 
     @GetMapping("/me/profile")
     @PreAuthorize("hasAuthority('patient:profile:read')")
@@ -465,5 +467,23 @@ public class PatientProfileController {
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(
                 clinicalTimelineService.getMyClinicalTimeline(principal, pageable)));
+    }
+
+    @GetMapping("/me/journey-timeline")
+    @PreAuthorize("hasAuthority('patient:profile:read')")
+    public ResponseEntity<ApiResponse<Page<JourneyTimelineItemResponse>>> getMyJourneyTimeline(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PageableDefault(size = 30) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                journeyTimelineService.getMyJourneyTimeline(principal, pageable)));
+    }
+
+    @GetMapping("/me/document-center")
+    @PreAuthorize("hasAuthority('patient:profile:read')")
+    public ResponseEntity<ApiResponse<List<DocumentCenterItemResponse>>> getMyDocumentCenter(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) String category) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                documentCenterService.listMyDocuments(principal, category)));
     }
 }

@@ -61,6 +61,12 @@ public class ClinicalTimelineService {
         return pageItems(buildItems(principal.getTenantId(), profile.getId()), pageable);
     }
 
+    /** ECO-P6: shared clinical slice for unified journey timeline. */
+    @Transactional(readOnly = true)
+    public List<ClinicalTimelineItemResponse> listItemsForPatient(UUID tenantId, UUID patientId) {
+        return buildItems(tenantId, patientId);
+    }
+
     private List<ClinicalTimelineItemResponse> buildItems(UUID tenantId, UUID patientId) {
         Page<EncounterEntity> encounters = encounterRepository
                 .findByTenantIdAndPatientIdAndDeletedAtIsNullOrderByCreatedAtDesc(

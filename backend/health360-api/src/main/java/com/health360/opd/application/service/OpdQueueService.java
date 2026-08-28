@@ -262,11 +262,17 @@ public class OpdQueueService {
                 request != null ? request.getPrimaryDoctorId() : null);
 
         if (encounterTarget != null) {
-            UpdateEncounterStatusRequest statusRequest = new UpdateEncounterStatusRequest();
-            statusRequest.setStatus(encounterTarget.name());
-            EncounterResponse updated = encounterService.updateEncounterStatus(
-                    principal, encounter.getId(), statusRequest);
-            encounter = requireEncounter(principal.getTenantId(), entry.getEncounterId());
+            EncounterStatus currentEncounter = EncounterStatus.valueOf(encounter.getStatus());
+            EncounterResponse updated;
+            if (currentEncounter.canTransitionTo(encounterTarget)) {
+                UpdateEncounterStatusRequest statusRequest = new UpdateEncounterStatusRequest();
+                statusRequest.setStatus(encounterTarget.name());
+                updated = encounterService.updateEncounterStatus(
+                        principal, encounter.getId(), statusRequest);
+                encounter = requireEncounter(principal.getTenantId(), entry.getEncounterId());
+            } else {
+                updated = encounterService.getEncounter(principal, encounter.getId());
+            }
             auditLogService.record(principal.getTenantId(), principal.getUserId(),
                     "OPD_QUEUE_" + targetStatus.name(), "OpdQueueEntry", entry.getId(),
                     Map.of("encounterStatus", updated.getStatus()));

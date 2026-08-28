@@ -17,15 +17,27 @@ import {
   useMyPharmacyRequests,
   usePharmacyRequestMutations,
 } from '@/features/pharmacy/hooks/usePharmacyQueries';
+import { useNearbyPartners } from '@/features/org/hooks/usePartnerQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { pharmacyRequestStatusLabel } from '@/shared/status/visitStatus';
+
+const DEFAULT_NEARBY = { lat: 18.4562, lng: 73.9095 };
 
 export function PatientPrescriptionsPage() {
   const { data: prescriptions = [], isLoading, error } = useMyPrescriptions();
   const { data: requests = [] } = useMyPharmacyRequests();
-  const { sendHospital } = usePharmacyRequestMutations();
+  const { sendHospital, sendPartner } = usePharmacyRequestMutations();
+  const hospitalId = prescriptions[0]?.hospitalId;
+  const { data: nearbyPharmacies = [] } = useNearbyPartners(
+    'PHARMACY',
+    DEFAULT_NEARBY.lat,
+    DEFAULT_NEARBY.lng,
+    hospitalId,
+  );
   const parsedError = error ? parseApiError(error) : null;
-  const sendError = sendHospital.error ? parseApiError(sendHospital.error) : null;
+  const sendError = sendHospital.error || sendPartner.error
+    ? parseApiError(sendHospital.error ?? sendPartner.error)
+    : null;
 
   const requestByPrescription = new Map(requests.map((r) => [r.prescriptionId, r]));
 
@@ -33,7 +45,7 @@ export function PatientPrescriptionsPage() {
     <AnimatedPage>
       <DashboardPageHeader
         title="Prescriptions"
-        subtitle="Signed e-prescriptions — send to hospital pharmacy when ready to collect."
+        subtitle="Signed e-prescriptions — send to hospital pharmacy or a nearby partner store."
       />
 
       {parsedError ? <Alert severity="error" sx={{ mb: 2 }}>{parsedError.message}</Alert> : null}
@@ -61,6 +73,9 @@ export function PatientPrescriptionsPage() {
                     label={pharmacyRequestStatusLabel(request.status)}
                   />
                 ) : null}
+                {request?.fulfillPartnerOrgId ? (
+                  <Chip size="small" variant="outlined" label="Partner pharmacy" />
+                ) : null}
               </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 Signed {rx.signedAt ? new Date(rx.signedAt).toLocaleString() : '—'}
@@ -79,15 +94,32 @@ export function PatientPrescriptionsPage() {
                 ))}
               </List>
               {!request ? (
-                <Button
-                  sx={{ mt: 1.5 }}
-                  variant="contained"
-                  size="small"
-                  disabled={sendHospital.isPending}
-                  onClick={() => sendHospital.mutate(rx.prescriptionId)}
-                >
-                  Send to hospital pharmacy
-                </Button>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    disabled={sendHospital.isPending || sendPartner.isPending}
+                    onClick={() => sendHospital.mutate(rx.prescriptionId)}
+                  >
+                    Send to hospital pharmacy
+                  </Button>
+                  {nearbyPharmacies.slice(0, 2).map((partner) => (
+                    <Button
+                      key={`${partner.partnerOrgId}-${partner.locationId}`}
+                      variant="outlined"
+                      size="small"
+                      disabled={sendHospital.isPending || sendPartner.isPending}
+                      onClick={() => sendPartner.mutate({
+                        prescriptionId: rx.prescriptionId,
+                        partnerOrgId: partner.partnerOrgId,
+                        locationId: partner.locationId,
+                      })}
+                    >
+                      {partner.inNetwork ? 'In-network: ' : ''}{partner.name}
+                      {partner.distanceKm != null ? ` (${partner.distanceKm} km)` : ''}
+                    </Button>
+                  ))}
+                </Stack>
               ) : (
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
                   Pharmacy request {request.requestNumber} · {pharmacyRequestStatusLabel(request.status)}

@@ -14,9 +14,12 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { useLabValuesHistory, useRecordLabValues } from '@/features/patient/hooks/usePatientExtendedQueries';
-import { useBookHospitalLab, useMyLabOrders } from '@/features/lab/hooks/useLabQueries';
+import { useBookHospitalLab, useBookPartnerLab, useMyLabOrders } from '@/features/lab/hooks/useLabQueries';
+import { useNearbyPartners } from '@/features/org/hooks/usePartnerQueries';
 import { labOrderStatusColor, labOrderStatusLabel } from '@/shared/status/visitStatus';
 import { parseApiError } from '@/shared/api/errorUtils';
+
+const DEFAULT_NEARBY = { lat: 18.4562, lng: 73.9095 };
 
 export function LabValuesPage() {
   const [page, setPage] = useState(0);
@@ -24,6 +27,7 @@ export function LabValuesPage() {
   const recordMutation = useRecordLabValues();
   const { data: labOrders = [], isLoading: ordersLoading, error: ordersError } = useMyLabOrders();
   const bookMutation = useBookHospitalLab();
+  const bookPartnerMutation = useBookPartnerLab();
   const [form, setForm] = useState({
     hba1c: '', ldl: '', hdl: '', totalCholesterol: '', hemoglobin: '', recordedAt: new Date().toISOString().slice(0, 16),
   });
@@ -31,7 +35,14 @@ export function LabValuesPage() {
   const [bookError, setBookError] = useState<string | null>(null);
   const [bookSuccess, setBookSuccess] = useState<string | null>(null);
 
-  const pendingBook = useMemo(() => labOrders.filter((o) => o.canBookHospital), [labOrders]);
+  const pendingBook = useMemo(() => labOrders.filter((o) => o.canBookHospital || o.canBookPartner), [labOrders]);
+  const hospitalIdForNearby = pendingBook[0]?.hospitalId;
+  const { data: nearbyLabs = [] } = useNearbyPartners(
+    'LABORATORY',
+    DEFAULT_NEARBY.lat,
+    DEFAULT_NEARBY.lng,
+    hospitalIdForNearby,
+  );
   const inProgress = useMemo(
     () => labOrders.filter((o) => o.labOrderId && o.labOrderStatus && o.labOrderStatus !== 'RELEASED'),
     [labOrders],
@@ -70,11 +81,28 @@ export function LabValuesPage() {
     }
   };
 
+  const bookPartner = async (
+    clinicalOrderItemId: string,
+    testName: string,
+    partnerOrgId: string,
+    locationId: string,
+    partnerName: string,
+  ) => {
+    setBookError(null);
+    setBookSuccess(null);
+    try {
+      await bookPartnerMutation.mutateAsync({ clinicalOrderItemId, partnerOrgId, locationId });
+      setBookSuccess(`${testName} booked at ${partnerName}.`);
+    } catch (e) {
+      setBookError(parseApiError(e).message);
+    }
+  };
+
   return (
     <AnimatedPage>
       <Typography variant="h4" fontWeight={700} gutterBottom>Labs</Typography>
       <Typography color="text.secondary" sx={{ mb: 3 }}>
-        Book doctor-ordered tests at the hospital lab, track progress, and view structured values over time.
+        Book doctor-ordered tests at the hospital lab or a nearby partner laboratory.
       </Typography>
 
       {bookError ? <Alert severity="error" sx={{ mb: 2 }}>{bookError}</Alert> : null}
@@ -102,13 +130,36 @@ export function LabValuesPage() {
                       Ordered {new Date(order.orderedAt).toLocaleString()}
                     </Typography>
                   </Stack>
-                  <Button
-                    variant="contained"
-                    disabled={bookMutation.isPending}
-                    onClick={() => book(order.clinicalOrderItemId, order.testName)}
-                  >
-                    Book hospital lab
-                  </Button>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    {order.canBookHospital ? (
+                      <Button
+                        variant="contained"
+                        disabled={bookMutation.isPending || bookPartnerMutation.isPending}
+                        onClick={() => book(order.clinicalOrderItemId, order.testName)}
+                      >
+                        Book hospital lab
+                      </Button>
+                    ) : null}
+                    {order.canBookPartner
+                      ? nearbyLabs.slice(0, 2).map((partner) => (
+                          <Button
+                            key={`${partner.partnerOrgId}-${partner.locationId}`}
+                            variant="outlined"
+                            disabled={bookMutation.isPending || bookPartnerMutation.isPending}
+                            onClick={() => bookPartner(
+                              order.clinicalOrderItemId,
+                              order.testName,
+                              partner.partnerOrgId,
+                              partner.locationId,
+                              partner.name,
+                            )}
+                          >
+                            {partner.inNetwork ? 'In-network: ' : ''}{partner.name}
+                            {partner.distanceKm != null ? ` (${partner.distanceKm} km)` : ''}
+                          </Button>
+                        ))
+                      : null}
+                  </Stack>
                 </Stack>
               </CardContent>
             </Card>

@@ -33,7 +33,7 @@ import java.util.UUID;
 public class HealthDocumentService {
 
     private static final Set<String> ALLOWED_CATEGORIES = Set.of(
-            "LAB_REPORT", "PRESCRIPTION", "SCAN", "OTHER");
+            "LAB_REPORT", "PRESCRIPTION", "SCAN", "INVOICE", "CERTIFICATE", "OTHER");
 
     private final HealthDocumentRepository healthDocumentRepository;
     private final DocumentStorageService documentStorageService;
