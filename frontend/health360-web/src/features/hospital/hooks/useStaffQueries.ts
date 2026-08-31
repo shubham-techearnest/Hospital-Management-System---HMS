@@ -1,9 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { deactivateStaff, inviteStaff, listStaff, type InviteStaffPayload } from '../api/staffApi';
+import { deactivateStaff, getMyStaffScope, inviteStaff, listStaff, type InviteStaffPayload } from '../api/staffApi';
 
 export const staffKeys = {
   list: (hospitalId: string) => ['hospital', 'staff', hospitalId] as const,
+  myScope: ['hospital', 'staff', 'me', 'scope'] as const,
 };
+
+export function useMyStaffScope(enabled = true) {
+  return useQuery({
+    queryKey: staffKeys.myScope,
+    queryFn: getMyStaffScope,
+    enabled,
+    staleTime: 5 * 60_000,
+  });
+}
 
 export function useStaffList(hospitalId?: string) {
   return useQuery({

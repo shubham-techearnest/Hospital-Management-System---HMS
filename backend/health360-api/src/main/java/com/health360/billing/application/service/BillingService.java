@@ -98,7 +98,7 @@ public class BillingService {
         invoice.setNotes(request.getNotes());
         invoice.setCreatedBy(principal.getUserId());
         invoice.setUpdatedBy(principal.getUserId());
-        invoiceRepository.save(invoice);
+        invoice = invoiceRepository.saveAndFlush(invoice);
 
         for (CreateInvoiceLineItemRequest lineRequest : request.getLineItems()) {
             InvoiceLineItemEntity lineItem = new InvoiceLineItemEntity();
@@ -110,8 +110,13 @@ public class BillingService {
             lineItem.setLineTotal(lineRequest.getQuantity()
                     .multiply(lineRequest.getUnitPrice())
                     .setScale(2, RoundingMode.HALF_UP));
-            lineItem.setSourceType(resolveSourceType(lineRequest.getSourceType()));
-            lineItem.setSourceId(lineRequest.getSourceId());
+            String sourceType = resolveSourceType(lineRequest.getSourceType());
+            lineItem.setSourceType(sourceType);
+            lineItem.setSourceId(lineRequest.getSourceId() != null
+                    ? lineRequest.getSourceId()
+                    : InvoiceLineSourceType.ENCOUNTER.name().equals(sourceType)
+                            ? encounter.getId()
+                            : null);
             lineItem.setCreatedBy(principal.getUserId());
             lineItem.setUpdatedBy(principal.getUserId());
             lineItemRepository.save(lineItem);

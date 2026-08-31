@@ -94,8 +94,8 @@ export function buildOpdVisitChecklist(input: OpdVisitChecklistInput): OpdCheckl
       id: 'vitals',
       label: 'Vitals',
       done: vitalsDone,
-      required: true,
-      hint: vitalsDone ? 'Recorded' : 'Record BP, pulse, temp',
+      required: false,
+      hint: vitalsDone ? 'Recorded' : 'Record BP, pulse, temp (optional)',
     },
     {
       id: 'consult',
@@ -108,8 +108,8 @@ export function buildOpdVisitChecklist(input: OpdVisitChecklistInput): OpdCheckl
       id: 'diagnosis',
       label: 'Diagnosis',
       done: diagnosisDone,
-      required: true,
-      hint: diagnosisDone ? `${input.diagnoses.length} recorded` : 'Add ICD or free-text',
+      required: false,
+      hint: diagnosisDone ? `${input.diagnoses.length} recorded` : 'Add ICD or free-text (optional)',
     },
     {
       id: 'rx',

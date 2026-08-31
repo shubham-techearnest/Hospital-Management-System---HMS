@@ -82,28 +82,32 @@ export function useEncounter(encounterId: string) {
   });
 }
 
-export function useEncounterDiagnoses(encounterId: string) {
+export function useEncounterDiagnoses(encounterId: string, options?: { refetchInterval?: number | false }) {
   return useQuery({
     queryKey: clinicalKeys.diagnoses(encounterId),
     queryFn: () => listEncounterDiagnoses(encounterId),
     enabled: Boolean(encounterId),
+    refetchInterval: options?.refetchInterval,
   });
 }
 
-export function useEncounterNotes(encounterId: string) {
+export function useEncounterNotes(encounterId: string, options?: { refetchInterval?: number | false }) {
   return useQuery({
     queryKey: clinicalKeys.notes(encounterId),
     queryFn: () => listEncounterNotes(encounterId),
     enabled: Boolean(encounterId),
+    refetchInterval: options?.refetchInterval,
+    retry: (_, error) => !isAuthError(error),
   });
 }
 
-export function useEncounterPrescriptions(encounterId: string) {
+export function useEncounterPrescriptions(encounterId: string, options?: { refetchInterval?: number | false }) {
   return useQuery({
     queryKey: clinicalKeys.prescriptions(encounterId),
     queryFn: () => listEncounterPrescriptions(encounterId),
     enabled: Boolean(encounterId),
     retry: (_, error) => !isAuthError(error),
+    refetchInterval: options?.refetchInterval,
   });
 }
 
@@ -115,20 +119,22 @@ export function useMyPrescriptions() {
   });
 }
 
-export function useEncounterOrders(encounterId: string) {
+export function useEncounterOrders(encounterId: string, options?: { refetchInterval?: number | false }) {
   return useQuery({
     queryKey: clinicalKeys.orders(encounterId),
     queryFn: () => listEncounterOrders(encounterId),
     enabled: Boolean(encounterId),
+    refetchInterval: options?.refetchInterval,
   });
 }
 
-export function useEncounterVitals(encounterId: string) {
+export function useEncounterVitals(encounterId: string, options?: { refetchInterval?: number | false }) {
   return useQuery({
     queryKey: clinicalKeys.vitals(encounterId),
     queryFn: () => listEncounterVitals(encounterId),
     enabled: Boolean(encounterId),
     retry: (_, error) => !isAuthError(error),
+    refetchInterval: options?.refetchInterval,
   });
 }
 

@@ -3,6 +3,7 @@ package com.health360.opd;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.health360.opd.presentation.dto.request.CreateOpdDeskRequest;
+import com.health360.clinical.presentation.dto.request.CreateClinicalNoteRequest;
 import com.health360.opd.presentation.dto.request.WalkInRegistrationRequest;
 import com.health360.support.IntegrationTestAuth;
 import org.junit.jupiter.api.Test;
@@ -126,12 +127,6 @@ class OpdIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("IN_SERVICE"))
                 .andExpect(jsonPath("$.data.encounterStatus").value("IN_PROGRESS"));
-
-        mockMvc.perform(post("/api/v1/opd/queue/" + queueEntryId + "/complete")
-                        .header("Authorization", IntegrationTestAuth.bearer(token)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status").value("COMPLETED"))
-                .andExpect(jsonPath("$.data.encounterStatus").value("COMPLETED"));
     }
 
     @Test
@@ -175,6 +170,29 @@ class OpdIntegrationTest {
                         hasItem("IN_SERVICE")))
                 .andExpect(jsonPath("$.data.content[?(@.queueEntryId == '" + queueEntryId + "')].encounterStatus",
                         hasItem("IN_PROGRESS")));
+
+        CreateClinicalNoteRequest noteRequest = new CreateClinicalNoteRequest();
+        noteRequest.setChiefComplaint("Sync test");
+        noteRequest.setAssessment("OK");
+        noteRequest.setPlan("Discharge");
+
+        MvcResult noteResult = mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId + "/notes")
+                        .header("Authorization", IntegrationTestAuth.bearer(doctorToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(noteRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String noteId = objectMapper.readTree(noteResult.getResponse().getContentAsString())
+                .path("data").path("noteId").asText();
+
+        mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId + "/notes/" + noteId + "/finalize")
+                        .header("Authorization", IntegrationTestAuth.bearer(doctorToken)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId + "/prescriptions/declare-no-medication")
+                        .header("Authorization", IntegrationTestAuth.bearer(doctorToken)))
+                .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/v1/clinical/encounters/" + encounterId + "/complete")
                         .header("Authorization", IntegrationTestAuth.bearer(doctorToken)))

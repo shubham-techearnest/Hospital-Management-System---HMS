@@ -90,6 +90,11 @@ class StaffIntegrationTest {
                         .param("queueDate", "2030-01-01"))
                 .andExpect(status().isOk());
 
+        mockMvc.perform(get("/api/v1/hospital/staff/me/scope")
+                        .header("Authorization", IntegrationTestAuth.bearer(receptionistToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].hospitalId").value(HOSPITAL_ID.toString()));
+
         mockMvc.perform(get("/api/v1/opd/queue")
                         .header("Authorization", IntegrationTestAuth.bearer(receptionistToken))
                         .param("hospitalId", OTHER_HOSPITAL_ID.toString())

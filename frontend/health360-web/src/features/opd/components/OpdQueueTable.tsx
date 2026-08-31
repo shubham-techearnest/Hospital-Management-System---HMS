@@ -151,12 +151,12 @@ export function OpdQueueTable({
                     <Button size="small" variant="contained" onClick={() => run('recall', entry)}>Recall</Button>
                   )}
                   {entry.status === 'IN_SERVICE' && (
-                    <Button size="small" color="success" variant="contained" onClick={() => run('complete', entry)}>
-                      Complete
-                    </Button>
+                    <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center', px: 0.5 }}>
+                      With doctor
+                    </Typography>
                   )}
-                  {(entry.status === 'COMPLETED' || entry.status === 'IN_SERVICE') && entry.encounterId ? (
-                    <Button size="small" component={RouterLink} to={`${checkoutBasePath}/${entry.encounterId}`}>
+                  {entry.status === 'COMPLETED' && entry.encounterId ? (
+                    <Button size="small" variant="contained" component={RouterLink} to={`${checkoutBasePath}/${entry.encounterId}`}>
                       Checkout
                     </Button>
                   ) : null}

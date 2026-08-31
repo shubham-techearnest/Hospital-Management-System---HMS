@@ -4,18 +4,19 @@ import com.health360.clinical.infrastructure.persistence.entity.EncounterEntity;
 import com.health360.config.security.UserPrincipal;
 import com.health360.doctor.infrastructure.persistence.entity.DoctorProfileEntity;
 import com.health360.doctor.infrastructure.persistence.repository.DoctorProfileRepository;
-import com.health360.hospital.application.service.HospitalScopeService;
 import com.health360.hospital.infrastructure.persistence.entity.HospitalEntity;
+import com.health360.hospital.infrastructure.persistence.entity.StaffEntity;
 import com.health360.hospital.infrastructure.persistence.repository.HospitalRepository;
+import com.health360.hospital.infrastructure.persistence.repository.StaffRepository;
 import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -36,7 +37,7 @@ public class EncounterAccessService {
     private final PatientProfileRepository patientProfileRepository;
     private final DoctorProfileRepository doctorProfileRepository;
     private final HospitalRepository hospitalRepository;
-    private final @Lazy HospitalScopeService hospitalScopeService;
+    private final StaffRepository staffRepository;
 
     public void assertCanReadEncounter(UserPrincipal principal, EncounterEntity encounter) {
         if (principal.hasPermission("clinical:encounter:write")) {
@@ -57,8 +58,7 @@ public class EncounterAccessService {
                 return;
             }
             if (isStaffScopedRole(principal)) {
-                hospitalScopeService.assertHospitalScope(
-                        principal, encounter.getHospitalId(), encounter.getBranchId());
+                assertStaffHospitalScope(principal, encounter.getHospitalId(), encounter.getBranchId());
                 return;
             }
             throw forbidden();
@@ -140,6 +140,21 @@ public class EncounterAccessService {
 
     private boolean isStaffScopedRole(UserPrincipal principal) {
         return principal.getRoles().stream().anyMatch(STAFF_SCOPED_ROLES::contains);
+    }
+
+    private void assertStaffHospitalScope(UserPrincipal principal, UUID hospitalId, UUID branchId) {
+        List<StaffEntity> assignments = staffRepository.findActiveAssignmentsForUser(
+                principal.getTenantId(), principal.getUserId());
+
+        boolean allowed = assignments.stream()
+                .filter(s -> s.getHospitalId().equals(hospitalId))
+                .anyMatch(s -> branchId == null
+                        || s.getBranchId() == null
+                        || s.getBranchId().equals(branchId));
+
+        if (!allowed) {
+            throw forbidden();
+        }
     }
 
     public void assertHospitalAdminScope(UserPrincipal principal, UUID hospitalId) {

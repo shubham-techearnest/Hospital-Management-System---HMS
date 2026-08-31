@@ -3,12 +3,17 @@ package com.health360.hospital.application.service;
 import com.health360.clinical.application.service.EncounterAccessService;
 import com.health360.config.security.UserPrincipal;
 import com.health360.hospital.domain.StaffEmploymentStatus;
+import com.health360.hospital.infrastructure.persistence.entity.HospitalEntity;
 import com.health360.hospital.infrastructure.persistence.entity.StaffEntity;
 import com.health360.hospital.infrastructure.persistence.entity.StaffRoleAssignmentEntity;
+import com.health360.hospital.infrastructure.persistence.entity.BranchEntity;
+import com.health360.hospital.infrastructure.persistence.repository.BranchRepository;
+import com.health360.hospital.infrastructure.persistence.repository.HospitalRepository;
 import com.health360.hospital.infrastructure.persistence.repository.StaffRepository;
 import com.health360.hospital.infrastructure.persistence.repository.StaffRoleAssignmentRepository;
 import com.health360.hospital.presentation.dto.request.InviteStaffRequest;
 import com.health360.hospital.presentation.dto.response.StaffResponse;
+import com.health360.hospital.presentation.dto.response.StaffScopeResponse;
 import com.health360.iam.domain.UserStatus;
 import com.health360.iam.infrastructure.persistence.entity.RoleEntity;
 import com.health360.iam.infrastructure.persistence.entity.UserEntity;
@@ -47,6 +52,8 @@ public class StaffService {
 
     private final StaffRepository staffRepository;
     private final StaffRoleAssignmentRepository staffRoleAssignmentRepository;
+    private final HospitalRepository hospitalRepository;
+    private final BranchRepository branchRepository;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
@@ -108,6 +115,90 @@ public class StaffService {
                 Map.of("userId", user.getId().toString(), "role", roleName));
 
         return toResponse(savedStaff, user, List.of(roleName));
+    }
+
+    @Transactional
+    public List<StaffScopeResponse> listMyScopes(UserPrincipal principal) {
+        UUID tenantId = principal.getTenantId();
+
+        if (principal.getRoles().contains("HOSPITAL_ADMIN")) {
+            HospitalEntity hospital = hospitalRepository.findByTenantIdAndAdminUserIdAndDeletedAtIsNull(
+                            tenantId, principal.getUserId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                            "Hospital profile not found"));
+            UUID branchId = resolvePrimaryBranchId(hospital.getId());
+            BranchEntity branch = branchRepository.findByIdAndHospitalIdAndDeletedAtIsNull(branchId, hospital.getId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                            "Branch not found"));
+            return List.of(StaffScopeResponse.builder()
+                    .hospitalId(hospital.getId())
+                    .branchId(branchId)
+                    .hospitalName(hospital.getName())
+                    .branchName(branch.getName())
+                    .roles(List.copyOf(principal.getRoles()))
+                    .hospitalWide(true)
+                    .build());
+        }
+
+        List<StaffEntity> assignments = staffRepository.findActiveAssignmentsForUser(tenantId, principal.getUserId());
+        if (assignments.isEmpty()) {
+            ensureStaffBackfillForIamRoles(principal);
+            assignments = staffRepository.findActiveAssignmentsForUser(tenantId, principal.getUserId());
+        }
+        if (assignments.isEmpty()) {
+            return List.of();
+        }
+
+        return assignments.stream().map(staff -> toScopeResponse(tenantId, staff)).toList();
+    }
+
+    /**
+     * Mirrors V63 migration: IAM staff roles in a single-hospital tenant get an ACTIVE staff row on first scope read.
+     */
+    private void ensureStaffBackfillForIamRoles(UserPrincipal principal) {
+        List<String> staffRoles = principal.getRoles().stream()
+                .filter(INVITABLE_ROLES::contains)
+                .distinct()
+                .toList();
+        if (staffRoles.isEmpty()) {
+            return;
+        }
+
+        UUID tenantId = principal.getTenantId();
+        List<HospitalEntity> hospitals = hospitalRepository.findByTenantIdAndDeletedAtIsNullOrderByNameAsc(tenantId);
+        if (hospitals.size() != 1) {
+            return;
+        }
+
+        HospitalEntity hospital = hospitals.getFirst();
+        if (staffRepository.existsByUserIdAndHospitalIdAndEmploymentStatusAndDeletedAtIsNull(
+                principal.getUserId(), hospital.getId(), StaffEmploymentStatus.ACTIVE.name())) {
+            return;
+        }
+
+        String primaryRole = staffRoles.contains("RECEPTIONIST") ? "RECEPTIONIST" : staffRoles.getFirst();
+        StaffEntity staff = new StaffEntity();
+        staff.setTenantId(tenantId);
+        staff.setUserId(principal.getUserId());
+        staff.setHospitalId(hospital.getId());
+        staff.setBranchId("RECEPTIONIST".equals(primaryRole) ? null : resolvePrimaryBranchId(hospital.getId()));
+        staff.setEmploymentStatus(StaffEmploymentStatus.ACTIVE.name());
+        staff.setHiredAt(Instant.now());
+        staff.setCreatedBy(principal.getUserId());
+        staff.setUpdatedBy(principal.getUserId());
+        StaffEntity savedStaff = staffRepository.save(staff);
+
+        for (String roleName : staffRoles) {
+            StaffRoleAssignmentEntity roleAssignment = new StaffRoleAssignmentEntity();
+            roleAssignment.setTenantId(tenantId);
+            roleAssignment.setStaffId(savedStaff.getId());
+            roleAssignment.setRoleName(roleName);
+            roleAssignment.setAssignedAt(Instant.now());
+            roleAssignment.setAssignedBy(principal.getUserId());
+            roleAssignment.setCreatedBy(principal.getUserId());
+            roleAssignment.setUpdatedBy(principal.getUserId());
+            staffRoleAssignmentRepository.save(roleAssignment);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -225,6 +316,46 @@ public class StaffService {
                 .hiredAt(staff.getHiredAt())
                 .roles(roles)
                 .build();
+    }
+
+    private StaffScopeResponse toScopeResponse(UUID tenantId, StaffEntity staff) {
+        HospitalEntity hospital = hospitalRepository.findByIdAndTenantIdAndDeletedAtIsNull(
+                        staff.getHospitalId(), tenantId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Hospital not found"));
+
+        boolean hospitalWide = staff.getBranchId() == null;
+        UUID branchId = staff.getBranchId() != null ? staff.getBranchId() : resolvePrimaryBranchId(hospital.getId());
+        BranchEntity branch = branchRepository.findByIdAndHospitalIdAndDeletedAtIsNull(branchId, hospital.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Branch not found"));
+
+        List<String> roles = staffRoleAssignmentRepository.findByStaffIdAndDeletedAtIsNull(staff.getId())
+                .stream()
+                .map(StaffRoleAssignmentEntity::getRoleName)
+                .toList();
+
+        return StaffScopeResponse.builder()
+                .hospitalId(hospital.getId())
+                .branchId(branchId)
+                .hospitalName(hospital.getName())
+                .branchName(branch.getName())
+                .roles(roles)
+                .hospitalWide(hospitalWide)
+                .build();
+    }
+
+    private UUID resolvePrimaryBranchId(UUID hospitalId) {
+        List<BranchEntity> branches = branchRepository.findByHospitalIdAndDeletedAtIsNullOrderByNameAsc(hospitalId);
+        if (branches.isEmpty()) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                    "No branches configured for hospital");
+        }
+        return branches.stream()
+                .filter(BranchEntity::isPrimary)
+                .map(BranchEntity::getId)
+                .findFirst()
+                .orElse(branches.getFirst().getId());
     }
 
     private BusinessException forbidden() {

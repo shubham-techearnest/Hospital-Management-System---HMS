@@ -4,22 +4,26 @@
 |-----------|-------|
 | **Document ID** | HMS-NEXT-001 |
 | **Status** | **ACTIVE** |
-| **Last Updated** | 2026-08-27 |
+| **Last Updated** | 2026-08-31 |
 
 ---
 
 ## CURRENT STATUS
 
-**ECO-P3–P4 RELEASED · ECO-P5–P7 IN QA**
+**ECO-P3–P4 RELEASED · ECO-P0–P2, P5–P6 AUTOMATED QA PASSED · ECO-P7 PARTNER E2E MANUAL**
+
+**OPD walk-in flow optimized:** staff scope API, reception auto-location, checkout gate aligned, golden-path integration test.
 
 ---
 
 ## IMMEDIATE NEXT ACTION
 
-1. Run Flyway through **V62** (`org.partner_organizations` + fulfill columns)
-2. Manual E2E: Labs → Book partner PathCare; Prescriptions → Send partner MedPlus
-3. Confirm hospital book/send still default when fulfill_* is null
-4. After ECO-P7 QA: partner staff worklists + HR (F7.4) or close ecosystem package
+1. **Restart API** (Flyway V63 applied; circular dependency fixed)
+2. **Manual UI golden path:** Reception walk-in → doctor finish consult → reception checkout → invoice
+3. **ECO-P7 manual:** Partner lab book (PathCare) + pharmacy send (MedPlus) from patient app
+4. Optional: Partner staff worklists (F7.4 deferred)
+
+See [ECO-QA-SIGNOFF.md](../09-features/ECO-QA-SIGNOFF.md) for automated test matrix.
 
 ---
 
@@ -27,8 +31,9 @@
 
 | Item | Status | Date |
 |------|--------|------|
-| ECO-P7 Partner lab/pharmacy orgs (ADR-016) | IN QA | 2026-08-27 |
-| ECO-P6 Timeline & document center | IN QA | 2026-08-27 |
-| ECO-P5 Check-in & notifications | IN QA | 2026-08-27 |
-| ECO-P4 Pharmacy e-Rx share | RELEASED | 2026-08-27 |
-| ECO-P3 Lab journey | RELEASED | 2026-08-27 |
+| OPD walk-in golden path test + flow UX | DONE | 2026-08-31 |
+| Staff `/me/scope` + reception auto hospital | DONE | 2026-08-31 |
+| V63 staff backfill + reception clinical access | DONE | 2026-08-28 |
+| ECO-P7 Partner lab/pharmacy orgs (ADR-016) | IN QA (automated passed) | 2026-08-27 |
+| ECO-P6 Timeline & document center | PASSED (automated) | 2026-08-31 |
+| ECO-P5 Check-in & notifications | PASSED (automated) | 2026-08-31 |

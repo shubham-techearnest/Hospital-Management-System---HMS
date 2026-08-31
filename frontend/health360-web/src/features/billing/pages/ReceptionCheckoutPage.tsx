@@ -53,18 +53,18 @@ export function ReceptionCheckoutPage() {
     error: invoiceLookupError,
     refetch: refetchInvoice,
   } = useInvoiceByEncounter(encounterId);
-  const { data: vitals = [], isError: vitalsError, error: vitalsQueryError, refetch: refetchVitals } =
-    useEncounterVitals(encounterId);
-  const { data: consultNotes = [], isError: notesError, error: notesQueryError, refetch: refetchNotes } =
-    useEncounterNotes(encounterId);
-  const { data: diagnoses = [], refetch: refetchDiagnoses } = useEncounterDiagnoses(encounterId);
+  const pollOpts = { refetchInterval: 10_000 as const };
+  const { data: vitals = [], isError: vitalsError, error: vitalsQueryError } =
+    useEncounterVitals(encounterId, pollOpts);
+  const { data: consultNotes = [], isError: notesError, error: notesQueryError } =
+    useEncounterNotes(encounterId, pollOpts);
+  const { data: diagnoses = [] } = useEncounterDiagnoses(encounterId, pollOpts);
   const {
     data: prescriptions = [],
     isError: prescriptionsError,
     error: prescriptionsQueryError,
-    refetch: refetchPrescriptions,
-  } = useEncounterPrescriptions(encounterId);
-  const { data: orders = [], refetch: refetchOrders } = useEncounterOrders(encounterId);
+  } = useEncounterPrescriptions(encounterId, pollOpts);
+  const { data: orders = [] } = useEncounterOrders(encounterId, pollOpts);
   const mutations = useBillingMutations(encounterId);
 
   const [lines, setLines] = useState<LineForm[]>([DEFAULT_LINE]);
@@ -111,24 +111,6 @@ export function ReceptionCheckoutPage() {
   notesError || prescriptionsError || vitalsError
     ? parseApiError(notesQueryError ?? prescriptionsQueryError ?? vitalsQueryError).message
     : null;
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      void refetchVitals();
-      void refetchNotes();
-      void refetchDiagnoses();
-      void refetchPrescriptions();
-      void refetchOrders();
-    }, 10_000);
-    return () => window.clearInterval(timer);
-  }, [
-    encounterId,
-    refetchVitals,
-    refetchNotes,
-    refetchDiagnoses,
-    refetchPrescriptions,
-    refetchOrders,
-  ]);
 
   const createInvoice = async () => {
     setError(null);

@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { apiClient } from '@/shared/api/client';
 import type { ApiEnvelope } from '@/features/auth/api/authApi';
 
@@ -28,6 +29,15 @@ export interface StaffMember {
   roles: string[];
 }
 
+export interface StaffScope {
+  hospitalId: string;
+  branchId: string;
+  hospitalName: string;
+  branchName: string;
+  roles: string[];
+  hospitalWide: boolean;
+}
+
 export interface InviteStaffPayload {
   email: string;
   firstName: string;
@@ -46,6 +56,18 @@ export async function listStaff(hospitalId: string) {
     params: { hospitalId },
   });
   return data.data ?? [];
+}
+
+export async function getMyStaffScope() {
+  try {
+    const { data } = await apiClient.get<ApiEnvelope<StaffScope[]>>('/hospital/staff/me/scope');
+    return data.data ?? [];
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 404) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 export async function inviteStaff(payload: InviteStaffPayload) {

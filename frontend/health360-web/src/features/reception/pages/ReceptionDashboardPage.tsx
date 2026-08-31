@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert, Button, MenuItem, Paper, Snackbar, Stack, Tab, Tabs,
   TextField, Typography,
@@ -7,6 +7,7 @@ import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { DashboardStatsGrid } from '@/features/dashboard/components/DashboardStatsGrid';
 import { useOpdDashboard } from '@/features/dashboard/hooks/useDashboardQueries';
+import { useMyStaffScope } from '@/features/hospital/hooks/useStaffQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
 import QueueIcon from '@mui/icons-material/Queue';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
@@ -26,9 +27,27 @@ import { ReceptionSlotBookingPanel } from '@/features/reception/components/Recep
 const DEFAULT_HOSPITAL_ID = '00000000-0000-0000-0000-000000000030';
 const DEFAULT_BRANCH_ID = '00000000-0000-0000-0000-000000000031';
 
+type SnackbarState = {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error';
+};
+
 export function ReceptionDashboardPage() {
+  const { data: scopes = [], isLoading: scopeLoading, isError: scopeError } = useMyStaffScope();
+  const primaryScope = scopes[0];
+
   const [manualHospitalId, setManualHospitalId] = useState(DEFAULT_HOSPITAL_ID);
   const [manualBranchId, setManualBranchId] = useState(DEFAULT_BRANCH_ID);
+  const [showManualScope, setShowManualScope] = useState(false);
+
+  useEffect(() => {
+    if (primaryScope && !showManualScope) {
+      setManualHospitalId(primaryScope.hospitalId);
+      setManualBranchId(primaryScope.branchId);
+    }
+  }, [primaryScope, showManualScope]);
+
   const hospitalId = manualHospitalId.trim();
   const branchId = manualBranchId.trim();
   const scopeReady = Boolean(hospitalId && branchId);
@@ -40,7 +59,11 @@ export function ReceptionDashboardPage() {
   const [tab, setTab] = useState(0);
   const [queueFilter, setQueueFilter] = useState('');
   const [queuePage, setQueuePage] = useState(0);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [snackbar, setSnackbar] = useState<SnackbarState>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
   const { data: desks = [] } = useOpdDesks(hospitalId, branchId);
   const { data: queuePageData, isError: queueError, error: queueLoadError, refetch: refetchQueue } = useOpdQueue(
@@ -93,16 +116,39 @@ export function ReceptionDashboardPage() {
         }
       />
 
-      <Alert severity="info" sx={{ mb: 2 }}>
-        Enter your assigned hospital and branch IDs. Ask your hospital admin if you are unsure.
-      </Alert>
+      {scopeLoading ? (
+        <Alert severity="info" sx={{ mb: 2 }}>Loading your hospital assignment…</Alert>
+      ) : primaryScope && !showManualScope ? (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} flexWrap="wrap">
+            <Typography variant="body2">
+              Assigned to <strong>{primaryScope.hospitalName}</strong>
+              {primaryScope.hospitalWide ? ' (all branches)' : ` · ${primaryScope.branchName}`}
+            </Typography>
+            <Button size="small" onClick={() => setShowManualScope(true)}>Change location</Button>
+          </Stack>
+        </Alert>
+      ) : (
+        <Alert severity={scopeError ? 'warning' : 'info'} sx={{ mb: 2 }}>
+          {scopeError
+            ? 'Could not load your staff assignment — using the default hospital location below. Ask your admin to add you under Staff for automatic assignment.'
+            : 'No staff assignment on file — using the default hospital location. You can change IDs below or ask your admin to add you under Staff.'}
+        </Alert>
+      )}
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <TextField label="Hospital ID" size="small" fullWidth
-          value={manualHospitalId} onChange={(e) => setManualHospitalId(e.target.value)} />
-        <TextField label="Branch ID" size="small" fullWidth
-          value={manualBranchId} onChange={(e) => setManualBranchId(e.target.value)} />
-      </Stack>
+      {(showManualScope || scopeError || !primaryScope) && (
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
+          <TextField label="Hospital ID" size="small" fullWidth
+            value={manualHospitalId} onChange={(e) => setManualHospitalId(e.target.value)} />
+          <TextField label="Branch ID" size="small" fullWidth
+            value={manualBranchId} onChange={(e) => setManualBranchId(e.target.value)} />
+          {primaryScope ? (
+            <Button size="small" sx={{ alignSelf: 'center' }} onClick={() => setShowManualScope(false)}>
+              Use assigned location
+            </Button>
+          ) : null}
+        </Stack>
+      )}
 
       {scopeReady && (
         <DashboardStatsGrid
@@ -179,7 +225,7 @@ export function ReceptionDashboardPage() {
             });
             setSnackbar({
               open: true,
-              message: `Walk-in registered — token ${result.queueEntry.tokenDisplay}`,
+              message: `Walk-in registered — token ${result.queueEntry.tokenDisplay}. Send patient to vitals, then doctor completes the visit before checkout.`,
               severity: 'success',
             });
             setTab(0);
@@ -210,7 +256,7 @@ export function ReceptionDashboardPage() {
         </Paper>
       )}
 
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>
         <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
     </AnimatedPage>

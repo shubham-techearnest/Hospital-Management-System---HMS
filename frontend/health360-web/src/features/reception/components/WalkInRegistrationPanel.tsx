@@ -42,7 +42,12 @@ function looksLikeUhid(value: string): boolean {
 }
 
 export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit, pending }: Props) {
-  const { data: doctors = [] } = useOpdDoctors(hospitalId, branchId);
+  const {
+    data: doctors = [],
+    isLoading: doctorsLoading,
+    isError: doctorsError,
+    error: doctorsLoadError,
+  } = useOpdDoctors(hospitalId, branchId);
 
   const [query, setQuery] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -324,13 +329,30 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
         ) : null}
 
         <Divider />
+        {doctorsError && (
+          <Alert severity="warning">
+            {parseApiError(doctorsLoadError).kind === 'forbidden'
+              ? 'Cannot load doctors for this location. Confirm your staff assignment or hospital permissions.'
+              : parseApiError(doctorsLoadError).message}
+          </Alert>
+        )}
+        {!doctorsError && !doctorsLoading && doctors.length === 0 && hospitalId && (
+          <Alert severity="info">
+            No doctors are linked to this hospital/branch yet. You can still queue the visit as unassigned.
+          </Alert>
+        )}
         <TextField
           select
           label="Doctor for this OPD visit"
           fullWidth
           value={primaryDoctorId}
           onChange={(e) => setPrimaryDoctorId(e.target.value)}
-          helperText="Patient or staff choice — assign before queueing"
+          disabled={doctorsLoading}
+          helperText={
+            doctorsLoading
+              ? 'Loading doctors…'
+              : 'Patient or staff choice — assign before queueing'
+          }
         >
           <MenuItem value="">Unassigned (assign later)</MenuItem>
           {doctors.map((d) => (

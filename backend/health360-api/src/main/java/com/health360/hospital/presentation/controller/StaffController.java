@@ -4,6 +4,7 @@ import com.health360.config.security.UserPrincipal;
 import com.health360.hospital.application.service.StaffService;
 import com.health360.hospital.presentation.dto.request.InviteStaffRequest;
 import com.health360.hospital.presentation.dto.response.StaffResponse;
+import com.health360.hospital.presentation.dto.response.StaffScopeResponse;
 import com.health360.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,12 @@ public class StaffController {
             @Valid @RequestBody InviteStaffRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
                 staffService.inviteStaff(principal, request)));
+    }
+
+    @GetMapping("/me/scope")
+    public ResponseEntity<ApiResponse<List<StaffScopeResponse>>> myScope(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.ok(staffService.listMyScopes(principal)));
     }
 
     @GetMapping

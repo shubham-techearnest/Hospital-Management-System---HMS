@@ -2,9 +2,10 @@ package com.health360.clinical.application.service;
 
 import com.health360.clinical.infrastructure.persistence.entity.EncounterEntity;
 import com.health360.config.security.UserPrincipal;
-import com.health360.hospital.application.service.HospitalScopeService;
 import com.health360.hospital.infrastructure.persistence.entity.HospitalEntity;
+import com.health360.hospital.infrastructure.persistence.entity.StaffEntity;
 import com.health360.hospital.infrastructure.persistence.repository.HospitalRepository;
+import com.health360.hospital.infrastructure.persistence.repository.StaffRepository;
 import com.health360.shared.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,8 +20,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,7 +35,7 @@ class EncounterAccessServiceTest {
     private HospitalRepository hospitalRepository;
 
     @Mock
-    private HospitalScopeService hospitalScopeService;
+    private StaffRepository staffRepository;
 
     @InjectMocks
     private EncounterAccessService accessService;
@@ -59,20 +58,21 @@ class EncounterAccessServiceTest {
     @Test
     void allowsReceptionistWithHospitalAssignmentToReadEncounter() {
         UserPrincipal principal = receptionPrincipal();
-        doNothing().when(hospitalScopeService).assertHospitalScope(principal, hospitalId, branchId);
+
+        StaffEntity assignment = new StaffEntity();
+        assignment.setHospitalId(hospitalId);
+        assignment.setBranchId(null);
+        when(staffRepository.findActiveAssignmentsForUser(tenantId, receptionUserId))
+                .thenReturn(List.of(assignment));
 
         assertDoesNotThrow(() -> accessService.assertCanReadEncounter(principal, encounter));
-        verify(hospitalScopeService).assertHospitalScope(principal, hospitalId, branchId);
     }
 
     @Test
     void deniesReceptionistWithoutHospitalAssignment() {
         UserPrincipal principal = receptionPrincipal();
-        org.mockito.Mockito.doThrow(new BusinessException(
-                com.health360.shared.domain.ErrorCode.FORBIDDEN,
-                org.springframework.http.HttpStatus.FORBIDDEN,
-                "Access denied"))
-                .when(hospitalScopeService).assertHospitalScope(principal, hospitalId, branchId);
+        when(staffRepository.findActiveAssignmentsForUser(tenantId, receptionUserId))
+                .thenReturn(List.of());
 
         assertThrows(BusinessException.class,
                 () -> accessService.assertCanReadEncounter(principal, encounter));
