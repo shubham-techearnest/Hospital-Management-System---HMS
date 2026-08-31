@@ -58,6 +58,7 @@ public class HospitalPatientRegistryService {
     private final PatientPortalInviteService portalInviteService;
     private final PlatformPatientLookupService platformPatientLookupService;
     private final PatientUhidAssignmentService patientUhidAssignmentService;
+    private final HospitalRegistrationLinker hospitalRegistrationLinker;
 
     @Transactional
     public Page<HospitalPatientSummaryResponse> searchPatients(
@@ -275,17 +276,12 @@ public class HospitalPatientRegistryService {
                     "Patient already registered at this hospital");
         }
 
-        HospitalRegistrationEntity registration = new HospitalRegistrationEntity();
-        registration.setTenantId(principal.getTenantId());
-        registration.setPatientId(profile.getId());
-        registration.setHospitalId(scope.hospitalId());
-        registration.setBranchId(scope.branchId());
-        registration.setRegisteredAt(Instant.now());
-        registration.setRegisteredBy(principal.getUserId());
-        registration.setRegistrationNumber(profile.getUhid());
-        registration.setCreatedBy(principal.getUserId());
-        registration.setUpdatedBy(principal.getUserId());
-        HospitalRegistrationEntity saved = hospitalRegistrationRepository.save(registration);
+        hospitalRegistrationLinker.ensureLinked(
+                principal.getTenantId(), profile.getId(), scope.hospitalId(), scope.branchId(), principal.getUserId());
+
+        HospitalRegistrationEntity registration = hospitalRegistrationLinker
+                .findRegistration(profile.getId(), scope.hospitalId(), scope.branchId())
+                .orElseThrow();
 
         auditLogService.record(principal.getTenantId(), principal.getUserId(), "HOSPITAL_REGISTRATION_LINKED",
                 "PatientProfile", profile.getId(),
@@ -294,7 +290,7 @@ public class HospitalPatientRegistryService {
         return RegisterHospitalPatientResponse.builder()
                 .patientId(profile.getId())
                 .uhid(profile.getUhid())
-                .hospitalRegistrationId(saved.getId())
+                .hospitalRegistrationId(registration.getId())
                 .receiptPath("/api/v1/hospital/patients/" + profile.getId() + "/registration-receipt")
                 .build();
     }

@@ -21,7 +21,7 @@ import { usePatientProfile } from '../hooks/usePatientQueries';
 
 const navItems: PortalNavItem[] = [
   { section: 'Navigation', label: 'Overview', path: '/patient/dashboard', icon: <DashboardOutlinedIcon /> },
-  { section: 'Care', label: 'Book OPD', path: '/patient/book', icon: <EventAvailableOutlinedIcon /> },
+  { section: 'Care', label: 'Book appointment', path: '/patient/book', icon: <EventAvailableOutlinedIcon /> },
   { section: 'Care', label: 'OPD today', path: '/patient/opd', icon: <QueueOutlinedIcon /> },
   { section: 'Care', label: 'Appointments', path: '/patient/appointments', icon: <EventNoteOutlinedIcon /> },
   { section: 'Care', label: 'Visits', path: '/patient/encounters', icon: <MedicalServicesOutlinedIcon /> },

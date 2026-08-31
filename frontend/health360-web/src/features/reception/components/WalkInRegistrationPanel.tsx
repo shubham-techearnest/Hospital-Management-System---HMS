@@ -17,6 +17,8 @@ import {
   type HospitalPatientSummary,
   type RegisterHospitalPatientResult,
 } from '@/features/reception/api/patientRegistryApi';
+import { useLinkExistingPatient, useRegistrationReceipt } from '@/features/reception/hooks/usePatientRegistryQueries';
+import { buildPatientSearchParams } from '@/features/reception/utils/patientSearchParams';
 import { useOpdDoctors } from '@/features/opd/hooks/useOpdQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
 
@@ -33,19 +35,8 @@ type Props = {
   pending?: boolean;
 };
 
-function looksLikeUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim());
-}
-
-function looksLikeUhid(value: string): boolean {
-  return /^H360-\d{4}-\d+$/i.test(value.trim());
-}
-
-function looksLikeEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
-}
-
 export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit, pending }: Props) {
+  const linkPatient = useLinkExistingPatient();
   const {
     data: doctors = [],
     isLoading: doctorsLoading,
@@ -69,6 +60,9 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
   const [registering, setRegistering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [credentialsNotice, setCredentialsNotice] = useState<RegisterHospitalPatientResult | null>(null);
+  const [linkedNotice, setLinkedNotice] = useState<string | null>(null);
+
+  const { isError: notLinkedAtHospital } = useRegistrationReceipt(selected?.patientId);
 
   const runSearch = async () => {
     setError(null);
@@ -87,47 +81,14 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
 
     setSearching(true);
     try {
-      if (q && looksLikeUuid(q)) {
-        const page = await searchHospitalPatients({ patientId: q });
-        if (page.content.length === 0) {
-          setError('No platform patient found for that UUID.');
-          return;
-        }
-        setMatches(page.content);
-        setSelected(page.content[0]);
+      const params = buildPatientSearchParams(q, {
+        firstName,
+        lastName,
+        dateOfBirth,
+      });
+      if (!params) {
+        setError('Enter UHID, mobile, email, patient UUID, or name + DOB.');
         return;
-      }
-
-      let params: {
-        uhid?: string;
-        mobile?: string;
-        email?: string;
-        firstName?: string;
-        lastName?: string;
-        dateOfBirth?: string;
-      };
-
-      if (q && looksLikeEmail(q)) {
-        params = { email: q.trim() };
-      } else if (q && looksLikeUhid(q)) {
-        params = { uhid: q.toUpperCase() };
-      } else if (q && !hasNameDob) {
-        params = { mobile: q };
-      } else {
-        params = {
-          firstName: firstName.trim() || undefined,
-          lastName: lastName.trim() || undefined,
-          dateOfBirth: dateOfBirth || undefined,
-          ...(q && !looksLikeUhid(q) ? { mobile: q } : {}),
-        };
-        // Prefer name+DOB when provided (API requires first+last+dob together)
-        if (hasNameDob) {
-          params = {
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            dateOfBirth,
-          };
-        }
       }
 
       const page = await searchHospitalPatients(params);
@@ -136,7 +97,7 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
         setSelected(page.content[0]);
       } else if (page.content.length === 0) {
         setShowNewPatient(true);
-        if (q && !looksLikeUhid(q) && !looksLikeUuid(q)) {
+        if (q) {
           setNewPhone(q);
         }
         setError(null);
@@ -196,6 +157,26 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
     }
   };
 
+  const linkToHospital = async () => {
+    if (!selected?.patientId) return;
+    setError(null);
+    setLinkedNotice(null);
+    try {
+      const result = await linkPatient.mutateAsync(selected.patientId);
+      setLinkedNotice(`Linked to hospital — UHID ${result.uhid}`);
+      if (!selected.uhid) {
+        setSelected({ ...selected, uhid: result.uhid });
+      }
+    } catch (e) {
+      const parsed = parseApiError(e);
+      if (parsed.message.toLowerCase().includes('already registered')) {
+        setLinkedNotice('Patient is already registered at this hospital.');
+      } else {
+        setError(parsed.message);
+      }
+    }
+  };
+
   const submit = async () => {
     setError(null);
     if (!selected?.patientId) {
@@ -229,10 +210,11 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
   return (
     <Paper variant="outlined" sx={{ p: 2, maxWidth: 640 }}>
       <Stack spacing={2}>
-        <Typography variant="subtitle1">Walk-in registration</Typography>
+        <Typography variant="subtitle1">Walk-in today (queue now)</Typography>
         <Typography variant="body2" color="text.secondary">
-          Find existing Health360 members by mobile or name + DOB (UHID/UUID optional).
+          Find existing Health360 members by mobile, email, or UHID (name + DOB optional).
           If not on the platform yet, register with basic details — they can complete their profile later.
+          Walk-in automatically links them to this hospital.
         </Typography>
         {error ? <Alert severity="error">{error}</Alert> : null}
         {credentialsNotice ? (
@@ -304,6 +286,18 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
             {selected.uhid ? ` · ${selected.uhid}` : ' · existing platform member'}
           </Alert>
         ) : null}
+
+        {selected && notLinkedAtHospital ? (
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+              Platform member not yet on this hospital&apos;s register. Link now, or proceed — walk-in links automatically.
+            </Typography>
+            <Button variant="outlined" size="small" onClick={() => void linkToHospital()} disabled={linkPatient.isPending}>
+              {linkPatient.isPending ? 'Linking…' : 'Link to this hospital'}
+            </Button>
+          </Stack>
+        ) : null}
+        {linkedNotice ? <Alert severity="info">{linkedNotice}</Alert> : null}
 
         {showNewPatient ? (
           <>

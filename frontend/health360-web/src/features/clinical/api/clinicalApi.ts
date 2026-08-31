@@ -169,6 +169,17 @@ export async function startEncounter(encounterId: string): Promise<Encounter> {
   return unwrap(data);
 }
 
+/** Check in (if needed) then start — one action for the doctor desk. */
+export async function beginEncounter(encounterId: string, currentStatus: string): Promise<Encounter> {
+  if (currentStatus === 'REGISTERED') {
+    await checkInEncounter(encounterId);
+  }
+  if (currentStatus === 'REGISTERED' || currentStatus === 'WAITING') {
+    return startEncounter(encounterId);
+  }
+  return getEncounter(encounterId);
+}
+
 export async function completeEncounter(encounterId: string): Promise<Encounter> {
   const { data } = await apiClient.post<ApiEnvelope<Encounter>>(`/clinical/encounters/${encounterId}/complete`, {});
   return unwrap(data);

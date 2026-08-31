@@ -34,7 +34,7 @@ export function PatientOpdStatusPage() {
         subtitle="Live token status and hospital reminders for today's visits"
         actions={
           <Stack direction="row" spacing={1}>
-            <Button component={RouterLink} to="/patient/book" variant="contained">Book OPD</Button>
+            <Button component={RouterLink} to="/patient/book" variant="contained">Book appointment</Button>
             <Button variant="outlined" onClick={() => refetch()}>Refresh</Button>
           </Stack>
         }

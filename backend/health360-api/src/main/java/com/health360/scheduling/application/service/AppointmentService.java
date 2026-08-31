@@ -126,6 +126,63 @@ public class AppointmentService {
         HospitalEntity hospital = hospitalRepository.findById(appointment.getHospitalId()).orElse(null);
         BranchEntity branch = branchRepository.findById(appointment.getBranchId()).orElse(null);
 
+        Set<String> arrivAble = Set.of("PENDING", "CONFIRMED", "POSTPONED");
+        return toDeskLookup(appointment, patient, doctor, doctorUser, hospital, branch, arrivAble);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DeskAppointmentLookupResponse> listDeskArrivalsForPatient(
+            UserPrincipal principal,
+            UUID hospitalId,
+            UUID branchId,
+            UUID patientId,
+            LocalDate date) {
+        if (!principal.hasPermission("scheduling:appointment:arrive")
+                && !principal.hasPermission("opd:registration:write")) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN, "Access denied");
+        }
+        hospitalScopeService.assertHospitalScope(principal, hospitalId, branchId);
+
+        patientProfileRepository.findByIdAndTenantIdAndDeletedAtIsNull(patientId, principal.getTenantId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Patient not found"));
+
+        LocalDate effectiveDate = date != null ? date : LocalDate.now(ZoneOffset.UTC);
+        Instant from = effectiveDate.atStartOfDay().toInstant(ZoneOffset.UTC);
+        Instant to = effectiveDate.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        Set<String> arrivAble = Set.of("PENDING", "CONFIRMED", "POSTPONED", "ARRIVED");
+
+        return appointmentRepository
+                .findByHospitalIdAndTenantIdAndOptionalBranchAndScheduledAtBetween(
+                        hospitalId, principal.getTenantId(), branchId, from, to)
+                .stream()
+                .filter(a -> a.getPatientId().equals(patientId))
+                .filter(a -> arrivAble.contains(a.getStatus()))
+                .map(this::toDeskLookup)
+                .toList();
+    }
+
+    private DeskAppointmentLookupResponse toDeskLookup(AppointmentEntity appointment) {
+        PatientProfileEntity patient = patientProfileRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(appointment.getPatientId(), appointment.getTenantId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Patient not found"));
+        DoctorProfileEntity doctor = doctorProfileRepository.findById(appointment.getDoctorId()).orElse(null);
+        UserEntity doctorUser = doctor != null ? userRepository.findById(doctor.getUserId()).orElse(null) : null;
+        HospitalEntity hospital = hospitalRepository.findById(appointment.getHospitalId()).orElse(null);
+        BranchEntity branch = branchRepository.findById(appointment.getBranchId()).orElse(null);
+        Set<String> arrivAble = Set.of("PENDING", "CONFIRMED", "POSTPONED");
+        return toDeskLookup(appointment, patient, doctor, doctorUser, hospital, branch, arrivAble);
+    }
+
+    private DeskAppointmentLookupResponse toDeskLookup(
+            AppointmentEntity appointment,
+            PatientProfileEntity patient,
+            DoctorProfileEntity doctor,
+            UserEntity doctorUser,
+            HospitalEntity hospital,
+            BranchEntity branch,
+            Set<String> arrivAbleStatuses) {
         String patientName = ((patient.getLegalFirstName() == null ? "" : patient.getLegalFirstName()) + " "
                 + (patient.getLegalLastName() == null ? "" : patient.getLegalLastName())).trim();
         if (patientName.isBlank()) {
@@ -137,7 +194,6 @@ public class AppointmentService {
                 + (doctorUser.getLastName() == null ? "" : doctorUser.getLastName())).trim()
                 : "Doctor";
 
-        Set<String> arrivAble = Set.of("PENDING", "CONFIRMED", "POSTPONED");
         return DeskAppointmentLookupResponse.builder()
                 .appointmentId(appointment.getId())
                 .appointmentStatus(appointment.getStatus())
@@ -150,7 +206,7 @@ public class AppointmentService {
                 .doctorName(doctorName.isBlank() ? "Doctor" : doctorName)
                 .hospitalName(hospital != null ? hospital.getName() : null)
                 .branchName(branch != null ? branch.getName() : null)
-                .canArrive(arrivAble.contains(appointment.getStatus()))
+                .canArrive(arrivAbleStatuses.contains(appointment.getStatus()))
                 .build();
     }
 

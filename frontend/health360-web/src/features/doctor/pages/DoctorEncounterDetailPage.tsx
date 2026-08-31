@@ -1,30 +1,40 @@
 import { useMemo, useState } from 'react';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   Autocomplete,
   Box,
   Button,
   Chip,
-  Divider,
   List,
   ListItem,
   ListItemText,
-  MenuItem,
+  Paper,
   Skeleton,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { PatientSummaryPanel } from '@/features/doctor/components/PatientSummaryPanel';
+import {
+  DoctorEncounterFingerTabs,
+  checklistStepToTab,
+  type DoctorEncounterTabId,
+} from '@/features/doctor/components/DoctorEncounterFingerTabs';
 import { usePatientSummary } from '@/features/doctor/hooks/usePatientSummaryQueries';
 import { EncounterVitalsPanel } from '@/features/clinical/components/EncounterVitalsPanel';
 import { ClinicalTimelinePanel } from '@/features/clinical/components/ClinicalTimelinePanel';
 import { StructuredConsultationPanel } from '@/features/clinical/components/StructuredConsultationPanel';
 import { EPrescriptionPanel } from '@/features/clinical/components/EPrescriptionPanel';
-import { WellnessPlanPanel } from '@/features/clinical/components/WellnessPlanPanel';
+import { ClinicalOrdersQuickPanel } from '@/features/clinical/components/ClinicalOrdersQuickPanel';
+import { OpdVisitChecklist } from '@/features/clinical/components/OpdVisitChecklist';
 import {
+  useDoctorEncounters,
   useEncounter,
   useEncounterActions,
   useEncounterDiagnoses,
@@ -33,28 +43,32 @@ import {
   useEncounterPrescriptions,
   useEncounterVitals,
 } from '@/features/clinical/hooks/useClinicalQueries';
+import { beginEncounter } from '@/features/clinical/api/clinicalApi';
 import { useInvoiceByEncounter } from '@/features/billing/hooks/useBillingQueries';
-import { OpdVisitChecklist, opdStepSectionId } from '@/features/clinical/components/OpdVisitChecklist';
 import { buildOpdVisitChecklist, canIssueCheckout, checkoutBlockers } from '@/features/clinical/utils/opdVisitChecklist';
 import { isAxiosError } from 'axios';
 import { useBranchLabTests, useEncounterLabReports } from '@/features/lab/hooks/useLabQueries';
 import { useEncounterImagingReports, useModalities } from '@/features/radiology/hooks/useRadiologyQueries';
 import { useEncounterProcedures } from '@/features/ot/hooks/useOtQueries';
-import { useEncounterAdministrations, useMedicines } from '@/features/pharmacy/hooks/usePharmacyQueries';
+import { useEncounterAdministrations } from '@/features/pharmacy/hooks/usePharmacyQueries';
 import { useDiagnosisCatalog } from '@/features/hospital/hooks/useClinicalCatalogQueries';
 import type { DiagnosisCatalogItem } from '@/features/hospital/api/clinicalCatalogApi';
-import { encounterStatusColor, encounterStatusLabel, formatEncounterDate } from '@/features/clinical/utils/encounterUtils';
+import { encounterStatusColor, encounterStatusLabel } from '@/features/clinical/utils/encounterUtils';
 import { queueStatusLabel } from '@/shared/status/visitStatus';
 import { parseApiError } from '@/shared/api/errorUtils';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function DoctorEncounterDetailPage() {
   const { encounterId = '' } = useParams<{ encounterId: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: encounter, isLoading, error, refetch } = useEncounter(encounterId);
-  const { data: diagnoses = [] } = useEncounterDiagnoses(encounterId);
-  const { data: notes = [] } = useEncounterNotes(encounterId);
-  const { data: orders = [] } = useEncounterOrders(encounterId);
-  const { data: vitals = [] } = useEncounterVitals(encounterId);
-  const { data: prescriptions = [] } = useEncounterPrescriptions(encounterId);
+  const { data: queueData } = useDoctorEncounters(0, 50, true);
+  const { data: diagnoses = [], refetch: refetchDiagnoses } = useEncounterDiagnoses(encounterId);
+  const { data: notes = [], refetch: refetchNotes } = useEncounterNotes(encounterId);
+  const { data: orders = [], refetch: refetchOrders } = useEncounterOrders(encounterId);
+  const { data: vitals = [], refetch: refetchVitals } = useEncounterVitals(encounterId);
+  const { data: prescriptions = [], refetch: refetchPrescriptions } = useEncounterPrescriptions(encounterId);
   const invoiceQuery = useInvoiceByEncounter(encounterId);
   const { data: labReports = [] } = useEncounterLabReports(encounterId);
   const { data: imagingReports = [] } = useEncounterImagingReports(encounterId);
@@ -62,7 +76,6 @@ export function DoctorEncounterDetailPage() {
   const { data: administrations = [] } = useEncounterAdministrations(encounterId);
   const { data: labTests = [] } = useBranchLabTests(encounter?.hospitalId, encounter?.branchId);
   const { data: modalities = [] } = useModalities(encounter?.hospitalId, encounter?.branchId);
-  const { data: medicines = [] } = useMedicines(encounter?.hospitalId, encounter?.branchId);
   const { data: diagnosisCatalog = [] } = useDiagnosisCatalog(encounter?.hospitalId, encounter?.branchId);
   const actions = useEncounterActions(encounterId);
   const { data: patientSummary, isLoading: summaryLoading, error: summaryError } = usePatientSummary(
@@ -73,18 +86,14 @@ export function DoctorEncounterDetailPage() {
       enabled: Boolean(encounter?.patientId),
     },
   );
+
+  const [tab, setTab] = useState<DoctorEncounterTabId>('patient');
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [selectedLabTestId, setSelectedLabTestId] = useState('');
-  const [labInstructions, setLabInstructions] = useState('');
-  const [selectedModalityId, setSelectedModalityId] = useState('');
-  const [imagingInstructions, setImagingInstructions] = useState('');
-  const [procedureName, setProcedureName] = useState('');
-  const [procedureInstructions, setProcedureInstructions] = useState('');
-  const [selectedMedicineId, setSelectedMedicineId] = useState('');
-  const [medicationInstructions, setMedicationInstructions] = useState('');
+  const [beginning, setBeginning] = useState(false);
   const [diagnosisText, setDiagnosisText] = useState('');
   const [diagnosisCode, setDiagnosisCode] = useState('');
+
   const parsedError = error ? parseApiError(error) : null;
   const invoiceForbidden = isAxiosError(invoiceQuery.error) && invoiceQuery.error.response?.status === 403;
   const visitSteps = useMemo(
@@ -101,16 +110,44 @@ export function DoctorEncounterDetailPage() {
     [vitals, notes, diagnoses, prescriptions, orders, invoiceQuery.data, invoiceForbidden],
   );
 
-  const runAction = async (label: string, fn: () => Promise<unknown>) => {
+  const refreshClinical = () => {
+    void refetch();
+    void refetchDiagnoses();
+    void refetchNotes();
+    void refetchOrders();
+    void refetchVitals();
+    void refetchPrescriptions();
+  };
+
+  const runAction = async (label: string, fn: () => Promise<unknown>, after?: () => void) => {
     setActionError(null);
     setSuccess(null);
     try {
       await fn();
       setSuccess(`${label} successful.`);
-      refetch();
+      refreshClinical();
+      after?.();
     } catch (e) {
       setActionError(parseApiError(e).message);
     }
+  };
+
+  const nextWaitingEncounter = useMemo(() => {
+    const list = queueData?.content ?? [];
+    return list.find(
+      (e) =>
+        e.encounterId !== encounterId
+        && (e.status === 'WAITING' || e.status === 'REGISTERED'),
+    );
+  }, [queueData, encounterId]);
+
+  const goToNextPatient = () => {
+    if (nextWaitingEncounter) {
+      navigate(`/doctor/encounters/${nextWaitingEncounter.encounterId}`);
+      setTab('vitals');
+      return;
+    }
+    navigate('/doctor/opd');
   };
 
   if (isLoading) {
@@ -131,8 +168,7 @@ export function DoctorEncounterDetailPage() {
     );
   }
 
-  const canCheckIn = encounter.status === 'REGISTERED';
-  const canStart = encounter.status === 'WAITING' || encounter.status === 'REGISTERED';
+  const canBegin = encounter.status === 'WAITING' || encounter.status === 'REGISTERED';
   const checkoutReady = canIssueCheckout(notes, prescriptions);
   const blockers = checkoutBlockers(notes, prescriptions);
   const canEditClinical =
@@ -140,494 +176,274 @@ export function DoctorEncounterDetailPage() {
     || encounter.status === 'WAITING'
     || (encounter.status === 'COMPLETED' && !checkoutReady);
   const canComplete = encounter.status === 'IN_PROGRESS' && checkoutReady;
-  const canOrderLab = canEditClinical && encounter.status === 'IN_PROGRESS' && labTests.length > 0;
-  const canOrderImaging = canEditClinical && encounter.status === 'IN_PROGRESS' && modalities.length > 0;
-  const canOrderProcedure = canEditClinical && encounter.status === 'IN_PROGRESS';
-  const canOrderMedication = canEditClinical && encounter.status === 'IN_PROGRESS' && medicines.length > 0;
-  const selectedLabTest = labTests.find((t) => t.labTestId === selectedLabTestId);
-  const selectedModality = modalities.find((m) => m.modalityId === selectedModalityId);
-  const selectedMedicine = medicines.find((m) => m.medicineId === selectedMedicineId);
+  const canOrder = canEditClinical && encounter.status === 'IN_PROGRESS';
+
+  const beginVisit = async () => {
+    setBeginning(true);
+    setActionError(null);
+    try {
+      await beginEncounter(encounterId, encounter.status);
+      await queryClient.invalidateQueries({ queryKey: ['clinical'] });
+      await refetch();
+      setSuccess('Visit started — document in the tabs below.');
+      setTab('vitals');
+    } catch (e) {
+      setActionError(parseApiError(e).message);
+    } finally {
+      setBeginning(false);
+    }
+  };
+
+  const finishVisit = async () => {
+    await runAction('Complete consultation', () => actions.complete.mutateAsync(), () => {
+      if (nextWaitingEncounter) {
+        setSuccess('Visit complete. Opening next patient…');
+        setTimeout(goToNextPatient, 600);
+      }
+    });
+  };
 
   return (
     <AnimatedPage>
-      <Button component={RouterLink} to="/doctor/opd" sx={{ mb: 2 }}>← Back to OPD</Button>
+      <Paper
+        variant="outlined"
+        sx={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 11,
+          p: 1.5,
+          mb: 2,
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+          <Button component={RouterLink} to="/doctor/opd" size="small">← OPD</Button>
+          <Typography variant="subtitle1" fontWeight={700}>
+            {encounter.tokenDisplay || encounter.encounterNumber}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {encounter.patientName}
+            {encounter.uhid ? ` · ${encounter.uhid}` : ''}
+          </Typography>
+          <Chip label={encounterStatusLabel(encounter.status)} color={encounterStatusColor(encounter.status)} size="small" />
+          {encounter.queueStatus ? (
+            <Chip label={queueStatusLabel(encounter.queueStatus)} size="small" variant="outlined" />
+          ) : null}
+          <Box sx={{ flex: 1 }} />
+          {canBegin ? (
+            <Button variant="contained" size="small" disabled={beginning} onClick={() => void beginVisit()}>
+              {beginning ? 'Starting…' : 'Begin visit'}
+            </Button>
+          ) : null}
+          {canComplete ? (
+            <Button variant="contained" color="success" size="small" disabled={actions.complete.isPending}
+              onClick={() => void finishVisit()}>
+              {nextWaitingEncounter ? 'Finish & next' : 'Finish visit'}
+            </Button>
+          ) : null}
+        </Stack>
+        {encounter.visitReason ? (
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+            {encounter.visitReason}
+          </Typography>
+        ) : null}
+      </Paper>
 
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h4">{encounter.encounterNumber}</Typography>
-        <Chip
-          label={encounterStatusLabel(encounter.status)}
-          color={encounterStatusColor(encounter.status)}
-          size="small"
-        />
-        {encounter.queueStatus ? (
-          <Chip label={`Queue ${queueStatusLabel(encounter.queueStatus)}`} size="small" variant="outlined" />
-        ) : null}
-      </Stack>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        {encounter.patientName ? `${encounter.patientName} · ` : ''}
-        {encounter.uhid ? `${encounter.uhid} · ` : ''}
-        {encounter.tokenDisplay ? `Token ${encounter.tokenDisplay} · ` : ''}
-        {encounter.encounterType} · {formatEncounterDate(encounter.startedAt ?? encounter.createdAt)}
-      </Typography>
-
-      {success ? <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert> : null}
-      {actionError ? <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert> : null}
-
-      <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 3 }}>
-        {canCheckIn ? (
-          <Button
-            variant="outlined"
-            disabled={actions.checkIn.isPending}
-            onClick={() => runAction('Check-in', () => actions.checkIn.mutateAsync())}
-          >
-            Check in
-          </Button>
-        ) : null}
-        {canStart ? (
-          <Button
-            variant="contained"
-            disabled={actions.start.isPending}
-            onClick={() => runAction('Start consultation', () => actions.start.mutateAsync())}
-          >
-            Start consultation
-          </Button>
-        ) : null}
-        {canComplete ? (
-          <Button
-            variant="contained"
-            color="success"
-            disabled={actions.complete.isPending}
-            onClick={() => runAction('Complete consultation', () => actions.complete.mutateAsync())}
-          >
-            Finish consultation & hand to desk
-          </Button>
-        ) : null}
-        {encounter.status === 'IN_PROGRESS' && !checkoutReady ? (
-          <Button variant="contained" color="success" disabled>
-            Finish consultation & hand to desk
-          </Button>
-        ) : null}
-      </Stack>
+      {success ? <Alert severity="success" sx={{ mb: 1 }} onClose={() => setSuccess(null)}>{success}</Alert> : null}
+      {actionError ? <Alert severity="error" sx={{ mb: 1 }} onClose={() => setActionError(null)}>{actionError}</Alert> : null}
 
       {encounter.status === 'IN_PROGRESS' && !checkoutReady ? (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          Complete these before finishing the visit: {blockers.join(' · ')}.
-          Finalize the consultation report and sign the e-prescription (or use &quot;No medication required&quot;).
+        <Alert severity="warning" sx={{ mb: 1 }}>
+          Before finish: {blockers.join(' · ')}.
         </Alert>
       ) : null}
 
-      {encounter.status === 'COMPLETED' && checkoutReady ? (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Consultation complete. Reception can issue the bill and collect payment. The patient will see results in their app.
-        </Alert>
-      ) : null}
-
-      {encounter.status === 'COMPLETED' && !checkoutReady ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Visit was marked complete before clinical checkout was ready. Still needed: {blockers.join(' · ')}.
-        </Alert>
-      ) : null}
-
-      <OpdVisitChecklist steps={visitSteps} />
-
-      {encounter.visitReason ? (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary">Reason for visit</Typography>
-          <Typography>{encounter.visitReason}</Typography>
-          {encounter.patientName ? (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              {encounter.patientName}{encounter.uhid ? ` · ${encounter.uhid}` : ''}
-              {encounter.tokenDisplay ? ` · Token ${encounter.tokenDisplay}` : ''}
-            </Typography>
-          ) : null}
-        </Box>
-      ) : null}
-
-      <Box sx={{ mb: 3 }}>
-        {summaryLoading ? <Skeleton variant="rounded" height={120} /> : null}
-        {patientSummary ? <PatientSummaryPanel summary={patientSummary} /> : null}
-        {!summaryLoading && !patientSummary && summaryError ? (
-          <Alert severity="info">
-            Patient summary unavailable (check appointment window or access). Walk-in and arrived patients load via this encounter.
-          </Alert>
+      <DoctorEncounterFingerTabs
+        value={tab}
+        onChange={setTab}
+        steps={visitSteps}
+      >
+        {tab === 'patient' ? (
+          <Stack spacing={2}>
+            <OpdVisitChecklist
+              steps={visitSteps}
+              scrollToSections={false}
+              onStepClick={(stepId) => setTab(checklistStepToTab(stepId))}
+            />
+            {summaryLoading ? <Skeleton variant="rounded" height={100} /> : null}
+            {patientSummary ? <PatientSummaryPanel summary={patientSummary} /> : null}
+            {!summaryLoading && !patientSummary && summaryError ? (
+              <Alert severity="info">Patient summary unavailable for this visit.</Alert>
+            ) : null}
+            {encounter.visitReason ? (
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">Reason for visit</Typography>
+                <Typography>{encounter.visitReason}</Typography>
+              </Box>
+            ) : null}
+          </Stack>
         ) : null}
-      </Box>
 
-      <Stack spacing={3}>
-        <Box id={opdStepSectionId('vitals')}>
-          <EncounterVitalsPanel encounterId={encounterId} />
-        </Box>
-
-        <Box id={opdStepSectionId('consult')}>
-          <StructuredConsultationPanel
+        {tab === 'vitals' ? (
+          <EncounterVitalsPanel
             encounterId={encounterId}
-            hospitalId={encounter.hospitalId}
-            branchId={encounter.branchId}
-            canEdit={canEditClinical}
+            canWrite={canEditClinical}
+            compact
+            onRecorded={() => setTab('consult')}
           />
-        </Box>
+        ) : null}
 
-        <Box id={opdStepSectionId('rx')}>
+        {tab === 'consult' ? (
+          <Stack spacing={2}>
+            <StructuredConsultationPanel
+              encounterId={encounterId}
+              hospitalId={encounter.hospitalId}
+              branchId={encounter.branchId}
+              canEdit={canEditClinical}
+              compact
+              onFinalized={() => setTab('rx')}
+            />
+            {canEditClinical ? (
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>Diagnosis (optional)</Typography>
+                {diagnosisCatalog.length > 0 ? (
+                  <Autocomplete
+                    options={diagnosisCatalog}
+                    getOptionLabel={(option: DiagnosisCatalogItem) =>
+                      `${option.icdCode} — ${option.name}`
+                    }
+                    onChange={(_, item) => {
+                      if (!item) return;
+                      setDiagnosisCode(item.icdCode);
+                      setDiagnosisText(item.name);
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="ICD search" size="small" sx={{ mb: 1 }} />
+                    )}
+                  />
+                ) : null}
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                  <TextField label="Diagnosis" size="small" fullWidth value={diagnosisText}
+                    onChange={(e) => setDiagnosisText(e.target.value)} />
+                  <TextField label="ICD" size="small" sx={{ minWidth: 120 }} value={diagnosisCode}
+                    onChange={(e) => setDiagnosisCode(e.target.value)} />
+                  <Button variant="outlined" size="small" disabled={!diagnosisText.trim() || actions.addDiagnosis.isPending}
+                    onClick={() => void runAction('Diagnosis', () => actions.addDiagnosis.mutateAsync({
+                      diagnosisText: diagnosisText.trim(),
+                      diagnosisCode: diagnosisCode.trim() || undefined,
+                      diagnosisType: diagnoses.length === 0 ? 'PRIMARY' : 'SECONDARY',
+                    }), () => {
+                      setDiagnosisText('');
+                      setDiagnosisCode('');
+                    })}>
+                    Add
+                  </Button>
+                </Stack>
+              </Box>
+            ) : null}
+            {diagnoses.length > 0 ? (
+              <List dense disablePadding>
+                {diagnoses.map((dx) => (
+                  <ListItem key={dx.diagnosisId} disableGutters>
+                    <ListItemText primary={dx.diagnosisText} secondary={dx.diagnosisCode} />
+                  </ListItem>
+                ))}
+              </List>
+            ) : null}
+          </Stack>
+        ) : null}
+
+        {tab === 'rx' ? (
           <EPrescriptionPanel
             encounterId={encounterId}
             hospitalId={encounter.hospitalId}
             branchId={encounter.branchId}
             canEdit={canEditClinical}
+            compact
+            onSigned={() => setTab('done')}
           />
-        </Box>
+        ) : null}
 
-        <Box>
-          <WellnessPlanPanel
+        {tab === 'labs' ? (
+          <ClinicalOrdersQuickPanel
             encounterId={encounterId}
-            canEdit={canEditClinical}
+            orders={orders}
+            labTests={labTests}
+            modalities={modalities}
+            canOrder={canOrder}
+            onOrdered={refetchOrders}
           />
-        </Box>
+        ) : null}
 
-        <Box>
-          <ClinicalTimelinePanel patientId={encounter.patientId} title="Patient clinical timeline" />
-        </Box>
-
-        <DetailSection
-          title="Diagnoses"
-          empty={diagnoses.length === 0 && !canEditClinical}
-          id={opdStepSectionId('diagnosis')}
-        >
-          {canEditClinical ? (
-            <Stack spacing={1.5} sx={{ mb: 2 }}>
-              {diagnosisCatalog.length > 0 ? (
-                <Autocomplete
-                  options={diagnosisCatalog}
-                  getOptionLabel={(option: DiagnosisCatalogItem) =>
-                    `${option.icdCode} — ${option.name}${option.category ? ` (${option.category})` : ''}`
-                  }
-                  filterOptions={(options, { inputValue }) => {
-                    const needle = inputValue.trim().toLowerCase();
-                    if (!needle) return options;
-                    return options.filter(
-                      (o) =>
-                        o.icdCode.toLowerCase().includes(needle) ||
-                        o.name.toLowerCase().includes(needle) ||
-                        (o.category?.toLowerCase().includes(needle) ?? false),
-                    );
-                  }}
-                  onChange={(_, item) => {
-                    if (!item) return;
-                    setDiagnosisCode(item.icdCode);
-                    setDiagnosisText(item.name);
-                  }}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Search hospital ICD catalog" size="small" />
-                  )}
-                />
-              ) : null}
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                <TextField
-                  label="Diagnosis"
-                  size="small"
-                  fullWidth
-                  value={diagnosisText}
-                  onChange={(e) => setDiagnosisText(e.target.value)}
-                />
-                <TextField
-                  label="ICD code"
-                  size="small"
-                  sx={{ minWidth: 140 }}
-                  value={diagnosisCode}
-                  onChange={(e) => setDiagnosisCode(e.target.value)}
-                />
-                <Button
-                  variant="outlined"
-                  disabled={!diagnosisText.trim() || actions.addDiagnosis.isPending}
-                  onClick={() => runAction('Diagnosis', async () => {
-                    await actions.addDiagnosis.mutateAsync({
-                      diagnosisText: diagnosisText.trim(),
-                      diagnosisCode: diagnosisCode.trim() || undefined,
-                      diagnosisType: diagnoses.length === 0 ? 'PRIMARY' : 'SECONDARY',
-                    });
-                    setDiagnosisText('');
-                    setDiagnosisCode('');
-                  })}
-                >
-                  Add
-                </Button>
+        {tab === 'done' ? (
+          <Stack spacing={2}>
+            <OpdVisitChecklist
+              steps={visitSteps}
+              scrollToSections={false}
+              onStepClick={(stepId) => setTab(checklistStepToTab(stepId))}
+            />
+            {encounter.status === 'COMPLETED' ? (
+              <Alert severity="success">
+                Handed to reception for billing. Patient sees results in their app.
+              </Alert>
+            ) : (
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {canComplete ? (
+                  <Button variant="contained" color="success" disabled={actions.complete.isPending}
+                    onClick={() => void finishVisit()}>
+                    {nextWaitingEncounter ? 'Finish & next patient' : 'Finish & hand to desk'}
+                  </Button>
+                ) : (
+                  <Button variant="contained" disabled>Finish visit (complete blockers above)</Button>
+                )}
+                {nextWaitingEncounter ? (
+                  <Button variant="outlined" onClick={goToNextPatient}>
+                    Skip to next: {nextWaitingEncounter.patientName}
+                  </Button>
+                ) : null}
               </Stack>
-            </Stack>
-          ) : null}
-          <List dense disablePadding>
-            {diagnoses.map((dx) => (
-              <ListItem key={dx.diagnosisId} disableGutters>
-                <ListItemText
-                  primary={dx.diagnosisText}
-                  secondary={[dx.diagnosisType, dx.diagnosisCode].filter(Boolean).join(' · ')}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </DetailSection>
+            )}
 
-        <DetailSection title="Clinical notes" empty={notes.length === 0}>
-          <List dense disablePadding>
-            {notes.map((note) => (
-              <ListItem key={note.noteId} disableGutters alignItems="flex-start">
-                <ListItemText
-                  primary={`${note.noteType}${note.status ? ` · ${note.status}` : ''}`}
-                  secondary={note.content}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </DetailSection>
-
-        <DetailSection title="Orders" empty={orders.length === 0 && encounter.status !== 'IN_PROGRESS'} id={opdStepSectionId('labs')}>
-          {canOrderLab ? (
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
-              <TextField select label="Lab test" size="small" sx={{ minWidth: 220 }}
-                value={selectedLabTestId}
-                onChange={(e) => setSelectedLabTestId(e.target.value)}>
-                {labTests.map((test) => (
-                  <MenuItem key={test.labTestId} value={test.labTestId}>
-                    {test.name} ({test.code})
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField label="Instructions" size="small" fullWidth value={labInstructions}
-                onChange={(e) => setLabInstructions(e.target.value)} />
-              <Button variant="outlined" disabled={!selectedLabTestId || actions.createOrder.isPending}
-                onClick={() => runAction('Lab order', () => actions.createOrder.mutateAsync({
-                  orderType: 'LAB',
-                  instructions: labInstructions || undefined,
-                  items: [{
-                    itemCode: selectedLabTest?.code,
-                    itemName: selectedLabTest?.name ?? 'Lab test',
-                    itemReferenceId: selectedLabTestId,
-                  }],
-                }))}>
-                Order lab test
-              </Button>
-            </Stack>
-          ) : null}
-          {canOrderImaging ? (
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
-              <TextField select label="Imaging modality" size="small" sx={{ minWidth: 220 }}
-                value={selectedModalityId}
-                onChange={(e) => setSelectedModalityId(e.target.value)}>
-                {modalities.map((modality) => (
-                  <MenuItem key={modality.modalityId} value={modality.modalityId}>
-                    {modality.name} ({modality.code})
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField label="Instructions" size="small" fullWidth value={imagingInstructions}
-                onChange={(e) => setImagingInstructions(e.target.value)} />
-              <Button variant="outlined" disabled={!selectedModalityId || actions.createOrder.isPending}
-                onClick={() => runAction('Imaging order', () => actions.createOrder.mutateAsync({
-                  orderType: 'IMAGING',
-                  instructions: imagingInstructions || undefined,
-                  items: [{
-                    itemCode: selectedModality?.code,
-                    itemName: selectedModality?.name ?? 'Imaging study',
-                    itemReferenceId: selectedModalityId,
-                  }],
-                }))}>
-                Order imaging
-              </Button>
-            </Stack>
-          ) : null}
-          {canOrderMedication ? (
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
-              <TextField select label="Medicine" size="small" sx={{ minWidth: 220 }}
-                value={selectedMedicineId}
-                onChange={(e) => setSelectedMedicineId(e.target.value)}>
-                {medicines.map((medicine) => (
-                  <MenuItem key={medicine.medicineId} value={medicine.medicineId}>
-                    {medicine.name} ({medicine.code})
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField label="Instructions" size="small" fullWidth value={medicationInstructions}
-                onChange={(e) => setMedicationInstructions(e.target.value)} />
-              <Button variant="outlined" disabled={!selectedMedicineId || actions.createOrder.isPending}
-                onClick={() => runAction('Medication order', () => actions.createOrder.mutateAsync({
-                  orderType: 'MEDICATION',
-                  instructions: medicationInstructions || undefined,
-                  items: [{
-                    itemCode: selectedMedicine?.code,
-                    itemName: selectedMedicine?.name ?? 'Medication',
-                    itemReferenceId: selectedMedicineId,
-                  }],
-                }))}>
-                Order medication
-              </Button>
-            </Stack>
-          ) : null}
-          {canOrderProcedure ? (
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
-              <TextField label="Procedure name" size="small" sx={{ minWidth: 220 }}
-                value={procedureName}
-                onChange={(e) => setProcedureName(e.target.value)} />
-              <TextField label="Instructions" size="small" fullWidth value={procedureInstructions}
-                onChange={(e) => setProcedureInstructions(e.target.value)} />
-              <Button variant="outlined" disabled={!procedureName.trim() || actions.createOrder.isPending}
-                onClick={() => runAction('Procedure order', () => actions.createOrder.mutateAsync({
-                  orderType: 'PROCEDURE',
-                  instructions: procedureInstructions || undefined,
-                  items: [{
-                    itemName: procedureName.trim(),
-                  }],
-                }))}>
-                Order procedure
-              </Button>
-            </Stack>
-          ) : null}
-          <List dense disablePadding>
-            {orders.map((order) => (
-              <ListItem key={order.orderId} disableGutters alignItems="flex-start">
-                <ListItemText
-                  primary={`${order.orderType} — ${order.status}`}
-                  secondary={order.items.map((item) => item.itemName).join(', ') || order.instructions}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </DetailSection>
-
-        <DetailSection title="Lab results" empty={labReports.length === 0}>
-          <List dense disablePadding>
-            {labReports.map((report) => (
-              <ListItem key={report.reportId} disableGutters alignItems="flex-start">
-                <ListItemText
-                  primary={`${report.testName} (${report.testCode})`}
-                  secondary={
-                    <>
-                      {report.summaryText ? <Typography variant="body2">{report.summaryText}</Typography> : null}
-                      {report.results.map((result) => (
-                        <Typography key={result.resultId} variant="body2" color="text.secondary">
-                          {result.parameterName}: {result.valueText} {result.unit ?? ''}
-                          {result.referenceRange ? ` · ref ${result.referenceRange}` : ''}
-                        </Typography>
-                      ))}
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Released {formatEncounterDate(report.releasedAt)}
-                      </Typography>
-                    </>
-                  }
-                />
-              </ListItem>
-            ))}
-          </List>
-        </DetailSection>
-
-        <DetailSection title="Imaging results" empty={imagingReports.length === 0}>
-          <List dense disablePadding>
-            {imagingReports.map((report) => (
-              <ListItem key={report.reportId} disableGutters alignItems="flex-start">
-                <ListItemText
-                  primary={`${report.modalityName} (${report.modalityCode})`}
-                  secondary={
-                    <>
-                      {report.findingsText ? (
-                        <Typography variant="body2">{report.findingsText}</Typography>
-                      ) : null}
-                      {report.impressionText ? (
-                        <Typography variant="body2" color="text.secondary">
-                          Impression: {report.impressionText}
-                        </Typography>
-                      ) : null}
-                      {report.releasedAt ? (
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Released {formatEncounterDate(report.releasedAt)}
-                        </Typography>
-                      ) : null}
-                    </>
-                  }
-                />
-              </ListItem>
-            ))}
-          </List>
-        </DetailSection>
-
-        <DetailSection title="Completed procedures" empty={procedures.length === 0}>
-          <List dense disablePadding>
-            {procedures.map((procedure) => (
-              <ListItem key={procedure.procedureId} disableGutters alignItems="flex-start">
-                <ListItemText
-                  primary={procedure.procedureName}
-                  secondary={
-                    <>
-                      {procedure.theatreName ? (
-                        <Typography variant="body2" color="text.secondary">
-                          Theatre: {procedure.theatreName}
-                        </Typography>
-                      ) : null}
-                      {procedure.notes.map((note) => (
-                        <Typography key={note.noteId} variant="body2" color="text.secondary">
-                          {note.noteType}: {note.content}
-                        </Typography>
-                      ))}
-                      {procedure.completedAt ? (
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Completed {formatEncounterDate(procedure.completedAt)}
-                        </Typography>
-                      ) : null}
-                    </>
-                  }
-                />
-              </ListItem>
-            ))}
-          </List>
-        </DetailSection>
-
-        <DetailSection title="Medication administration (MAR)" empty={administrations.length === 0}>
-          <List dense disablePadding>
-            {administrations.map((admin) => (
-              <ListItem key={admin.administrationId} disableGutters alignItems="flex-start">
-                <ListItemText
-                  primary={`${admin.medicineName} — ${admin.doseGiven}`}
-                  secondary={
-                    <>
-                      {admin.route ? (
-                        <Typography variant="body2" color="text.secondary">Route: {admin.route}</Typography>
-                      ) : null}
-                      {admin.notes ? (
-                        <Typography variant="body2" color="text.secondary">{admin.notes}</Typography>
-                      ) : null}
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Administered {formatEncounterDate(admin.administeredAt)}
-                      </Typography>
-                    </>
-                  }
-                />
-              </ListItem>
-            ))}
-          </List>
-        </DetailSection>
-        <Box id={opdStepSectionId('billing')}>
-          <Typography variant="body2" color="text.secondary">
-            After you finish consultation, reception issues the bill at checkout and records payment.
-            The patient sees visit summary, prescriptions, and invoices in their app.
-          </Typography>
-        </Box>
-      </Stack>
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="subtitle2">Patient history & results</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Stack spacing={2}>
+                  <ClinicalTimelinePanel patientId={encounter.patientId} title="Timeline" />
+                  {labReports.length > 0 ? (
+                    <HistoryList title="Lab results" items={labReports.map((r) => `${r.testName}: ${r.summaryText ?? '—'}`)} />
+                  ) : null}
+                  {imagingReports.length > 0 ? (
+                    <HistoryList title="Imaging" items={imagingReports.map((r) => r.modalityName)} />
+                  ) : null}
+                  {procedures.length > 0 ? (
+                    <HistoryList title="Procedures" items={procedures.map((p) => p.procedureName)} />
+                  ) : null}
+                  {administrations.length > 0 ? (
+                    <HistoryList title="MAR" items={administrations.map((a) => `${a.medicineName} ${a.doseGiven}`)} />
+                  ) : null}
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
+          </Stack>
+        ) : null}
+      </DoctorEncounterFingerTabs>
     </AnimatedPage>
   );
 }
 
-function DetailSection({
-  title,
-  empty,
-  children,
-  id,
-}: {
-  title: string;
-  empty: boolean;
-  children: React.ReactNode;
-  id?: string;
-}) {
+function HistoryList({ title, items }: { title: string; items: string[] }) {
   return (
-    <Box id={id}>
-      <Typography variant="h6" sx={{ mb: 1 }}>{title}</Typography>
-      <Divider sx={{ mb: 1.5 }} />
-      {empty ? <Typography variant="body2" color="text.secondary">None recorded.</Typography> : children}
+    <Box>
+      <Typography variant="subtitle2">{title}</Typography>
+      <List dense disablePadding>
+        {items.map((item) => (
+          <ListItem key={item} disableGutters>
+            <ListItemText primary={item} />
+          </ListItem>
+        ))}
+      </List>
     </Box>
   );
 }

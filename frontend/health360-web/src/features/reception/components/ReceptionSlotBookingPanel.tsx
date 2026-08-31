@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { searchHospitalPatients, type HospitalPatientSummary } from '@/features/reception/api/patientRegistryApi';
+import { buildPatientSearchParams } from '@/features/reception/utils/patientSearchParams';
 import { useOpdDoctors } from '@/features/opd/hooks/useOpdQueries';
 import {
   useBookAppointment,
@@ -61,11 +62,11 @@ export function ReceptionSlotBookingPanel({ hospitalId, branchId }: Props) {
       return;
     }
     try {
-      const params = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q)
-        ? { email: q }
-        : /^H360-/i.test(q)
-          ? { uhid: q.toUpperCase() }
-          : { mobile: q };
+      const params = buildPatientSearchParams(q);
+      if (!params) {
+        setError('Enter UHID, mobile, or email to find the patient.');
+        return;
+      }
       const page = await searchHospitalPatients(params);
       if (page.content.length === 0) {
         setError('Patient not found — register them first.');
@@ -94,7 +95,9 @@ export function ReceptionSlotBookingPanel({ hospitalId, branchId }: Props) {
         consultationType,
         reasonForVisit: reason.trim() || undefined,
       });
-      setSuccess(`Booked ${result.appointmentId} — status ${result.status}`);
+      setSuccess(
+        `Booked ${result.appointmentId} — status ${result.status}. Patient is not on today's queue until arrival day — use the Check-in tab.`,
+      );
       setSlotId('');
       refetch();
     } catch (e) {
@@ -116,15 +119,15 @@ export function ReceptionSlotBookingPanel({ hospitalId, branchId }: Props) {
     <Stack spacing={3}>
       <Paper variant="outlined" sx={{ p: 2, maxWidth: 640 }}>
         <Stack spacing={2}>
-          <Typography variant="subtitle1">Book appointment (desk)</Typography>
+          <Typography variant="subtitle1">Book future appointment (desk)</Typography>
           <Typography variant="body2" color="text.secondary">
-            Find patient → pick doctor → choose available slot → book. Patient receives confirmation notification.
+            Reserves a slot only — patient is not added to today&apos;s OPD queue. On visit day, use Check-in booked appointment.
           </Typography>
           {error ? <Alert severity="error">{error}</Alert> : null}
           {success ? <Alert severity="success">{success}</Alert> : null}
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
             <TextField
-              label="Patient UHID or mobile"
+              label="Patient UHID / mobile / email"
               fullWidth
               value={patientQuery}
               onChange={(e) => setPatientQuery(e.target.value)}

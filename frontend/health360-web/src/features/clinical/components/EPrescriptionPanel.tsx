@@ -51,9 +51,18 @@ type Props = {
   hospitalId?: string;
   branchId?: string;
   canEdit: boolean;
+  compact?: boolean;
+  onSigned?: () => void;
 };
 
-export function EPrescriptionPanel({ encounterId, hospitalId, branchId, canEdit }: Props) {
+export function EPrescriptionPanel({
+  encounterId,
+  hospitalId,
+  branchId,
+  canEdit,
+  compact = false,
+  onSigned,
+}: Props) {
   const { data: prescriptions = [], isLoading } = useEncounterPrescriptions(encounterId);
   const { data: medicines = [] } = useMedicines(hospitalId, branchId);
   const { data: dosageTemplates = [] } = useDosageTemplates(hospitalId, branchId);
@@ -101,6 +110,7 @@ export function EPrescriptionPanel({ encounterId, hospitalId, branchId, canEdit 
     try {
       await actions.declareNoMedication.mutateAsync();
       setSuccess('No medication declared and signed for this visit.');
+      onSigned?.();
     } catch (e) {
       setError(parseApiError(e).message);
     }
@@ -178,6 +188,7 @@ export function EPrescriptionPanel({ encounterId, hospitalId, branchId, canEdit 
       }
       await actions.signPrescription.mutateAsync(prescriptionId);
       setSuccess('Prescription signed.');
+      onSigned?.();
     } catch (e) {
       setError(parseApiError(e).message);
     }
@@ -186,12 +197,27 @@ export function EPrescriptionPanel({ encounterId, hospitalId, branchId, canEdit 
   return (
     <Box>
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6">E-prescription</Typography>
+        {!compact ? <Typography variant="h6">E-prescription</Typography> : null}
         {draft ? <Chip size="small" label="DRAFT" color="warning" /> : null}
       </Stack>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Clinical prescription (signed Rx). Separate from ward medication orders / pharmacy MAR.
-      </Typography>
+      {!compact ? (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Clinical prescription (signed Rx). Separate from ward medication orders / pharmacy MAR.
+        </Typography>
+      ) : null}
+
+      {canEdit && compact && signed.length === 0 ? (
+        <Button
+          variant="outlined"
+          color="secondary"
+          fullWidth
+          disabled={pending}
+          onClick={declareNoMed}
+          sx={{ mb: 2 }}
+        >
+          No medication required
+        </Button>
+      ) : null}
 
       {isLoading ? <Typography color="text.secondary">Loading…</Typography> : null}
       {success ? <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert> : null}
@@ -311,11 +337,17 @@ export function EPrescriptionPanel({ encounterId, hospitalId, branchId, canEdit 
               onClick={() => setLines((prev) => [...prev, emptyLine()])}>
               Add line
             </Button>
-            <Button variant="outlined" disabled={pending} onClick={saveDraft}>Save draft</Button>
-            <Button variant="outlined" disabled={pending || signed.length > 0} onClick={declareNoMed}>
-              No medication required
+            {!compact ? (
+              <Button variant="outlined" disabled={pending} onClick={saveDraft}>Save draft</Button>
+            ) : null}
+            {!compact ? (
+              <Button variant="outlined" disabled={pending || signed.length > 0} onClick={declareNoMed}>
+                No medication required
+              </Button>
+            ) : null}
+            <Button variant="contained" disabled={pending || signed.length > 0} onClick={sign}>
+              {compact ? 'Sign Rx' : 'Sign prescription'}
             </Button>
-            <Button variant="contained" disabled={pending || signed.length > 0} onClick={sign}>Sign prescription</Button>
           </Stack>
         </Stack>
       ) : null}

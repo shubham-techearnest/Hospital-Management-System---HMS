@@ -48,9 +48,18 @@ type Props = {
   hospitalId?: string;
   branchId?: string;
   canEdit: boolean;
+  compact?: boolean;
+  onFinalized?: () => void;
 };
 
-export function StructuredConsultationPanel({ encounterId, hospitalId, branchId, canEdit }: Props) {
+export function StructuredConsultationPanel({
+  encounterId,
+  hospitalId,
+  branchId,
+  canEdit,
+  compact = false,
+  onFinalized,
+}: Props) {
   const { data: notes = [], isLoading } = useEncounterNotes(encounterId);
   const { data: symptoms = [] } = useSymptoms(hospitalId, branchId);
   const actions = useEncounterActions(encounterId);
@@ -117,6 +126,7 @@ export function StructuredConsultationPanel({ encounterId, hospitalId, branchId,
       }
       await actions.finalizeNote.mutateAsync(noteId);
       setSuccess('Consultation finalized.');
+      onFinalized?.();
     } catch (e) {
       setError(parseApiError(e).message);
     }
@@ -128,7 +138,7 @@ export function StructuredConsultationPanel({ encounterId, hospitalId, branchId,
   return (
     <Box>
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="h6">Structured consultation</Typography>
+        {!compact ? <Typography variant="h6">Structured consultation</Typography> : null}
         {active ? (
           <Chip
             size="small"
@@ -137,9 +147,11 @@ export function StructuredConsultationPanel({ encounterId, hospitalId, branchId,
           />
         ) : null}
       </Stack>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Capture chief complaint, HPI, examination, assessment, and plan. Drafts can be edited; finalized notes are locked.
-      </Typography>
+      {!compact ? (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Capture chief complaint, HPI, examination, assessment, and plan. Drafts can be edited; finalized notes are locked.
+        </Typography>
+      ) : null}
 
       {isLoading ? <Typography color="text.secondary">Loading…</Typography> : null}
       {success ? <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert> : null}
@@ -175,7 +187,7 @@ export function StructuredConsultationPanel({ encounterId, hospitalId, branchId,
         <TextField
           label="Chief complaint"
           multiline
-          minRows={2}
+          minRows={compact ? 1 : 2}
           fullWidth
           value={form.chiefComplaint}
           onChange={setField('chiefComplaint')}
@@ -184,25 +196,27 @@ export function StructuredConsultationPanel({ encounterId, hospitalId, branchId,
         <TextField
           label="History of present illness (HPI)"
           multiline
-          minRows={3}
+          minRows={compact ? 2 : 3}
           fullWidth
           value={form.hpi}
           onChange={setField('hpi')}
           disabled={readOnly || pending}
         />
-        <TextField
-          label="Examination"
-          multiline
-          minRows={3}
-          fullWidth
-          value={form.examination}
-          onChange={setField('examination')}
-          disabled={readOnly || pending}
-        />
+        {!compact ? (
+          <TextField
+            label="Examination"
+            multiline
+            minRows={3}
+            fullWidth
+            value={form.examination}
+            onChange={setField('examination')}
+            disabled={readOnly || pending}
+          />
+        ) : null}
         <TextField
           label="Assessment"
           multiline
-          minRows={2}
+          minRows={compact ? 1 : 2}
           fullWidth
           value={form.assessment}
           onChange={setField('assessment')}
@@ -211,7 +225,7 @@ export function StructuredConsultationPanel({ encounterId, hospitalId, branchId,
         <TextField
           label="Plan"
           multiline
-          minRows={2}
+          minRows={compact ? 1 : 2}
           fullWidth
           value={form.plan}
           onChange={setField('plan')}
@@ -221,11 +235,13 @@ export function StructuredConsultationPanel({ encounterId, hospitalId, branchId,
 
       {!readOnly ? (
         <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-          <Button variant="outlined" disabled={pending} onClick={saveDraft}>
-            Save draft
-          </Button>
+          {!compact ? (
+            <Button variant="outlined" disabled={pending} onClick={saveDraft}>
+              Save draft
+            </Button>
+          ) : null}
           <Button variant="contained" disabled={pending} onClick={finalize}>
-            Finalize
+            {compact ? 'Finalize consult' : 'Finalize'}
           </Button>
         </Stack>
       ) : active?.status === 'FINAL' ? (

@@ -14,6 +14,7 @@ import com.health360.opd.presentation.dto.request.CheckInAppointmentRequest;
 import com.health360.opd.presentation.dto.request.WalkInRegistrationRequest;
 import com.health360.opd.presentation.dto.response.OpdQueueEntryResponse;
 import com.health360.opd.presentation.dto.response.OpdRegistrationResponse;
+import com.health360.patient.application.service.HospitalRegistrationLinker;
 import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.scheduling.infrastructure.persistence.entity.AppointmentEntity;
@@ -51,6 +52,7 @@ public class OpdRegistrationService {
     private final OpdMapper opdMapper;
     private final AuditLogService auditLogService;
     private final PatientProfileRepository patientProfileRepository;
+    private final HospitalRegistrationLinker hospitalRegistrationLinker;
 
     @Transactional
     public OpdRegistrationResponse checkInAppointment(
@@ -230,6 +232,9 @@ public class OpdRegistrationService {
 
         UUID tenantId = principal.getTenantId();
         UUID patientId = resolvePatientId(tenantId, request);
+
+        hospitalRegistrationLinker.ensureLinked(
+                tenantId, patientId, request.getHospitalId(), request.getBranchId(), principal.getUserId());
 
         if (request.getDeskId() != null) {
             deskService.requireActiveDesk(tenantId, request.getDeskId(),

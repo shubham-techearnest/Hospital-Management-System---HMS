@@ -212,11 +212,11 @@ export function BookAppointmentPage() {
         <Typography color="text.secondary" sx={{ mb: 3 }}>
           {locations[0].doctorName}
           {locations[0].specialization ? ` · ${locations[0].specialization}` : ''}
-          {' — '}choose hospital, then pick a slot.
+          {' — '}choose hospital, then pick a slot. Your queue token is issued on arrival day at reception.
         </Typography>
       ) : (
         <Typography color="text.secondary" sx={{ mb: 3 }}>
-          Complete each step to schedule your consultation.
+          Complete each step to schedule your consultation. You will receive a queue token when you check in at the hospital.
         </Typography>
       )}
 
@@ -372,6 +372,9 @@ export function BookAppointmentPage() {
             </Typography>
             <Typography color="text.secondary">
               Appointment ID: {bookingResult.appointmentId}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              You are not on the OPD queue yet. On visit day, check in at reception (or use self check-in) to receive your token.
             </Typography>
             <Typography sx={{ mt: 1 }}>
               Fee: {bookingResult.consultationFee.currency} {bookingResult.consultationFee.amount}

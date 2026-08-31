@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert, Button, MenuItem, Paper, Snackbar, Stack, Tab, Tabs,
+  Alert, Button, MenuItem, Snackbar, Stack, Tab, Tabs,
   TextField, Typography,
 } from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
@@ -14,7 +14,6 @@ import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import {
-  useCheckInAppointment,
   useOpdDesks,
   useOpdQueue,
   useRegisterWalkIn,
@@ -23,6 +22,8 @@ import { OpdQueueTable } from '@/features/opd/components/OpdQueueTable';
 import { OpdFloorStatusHelp } from '@/features/opd/components/OpdFloorStatusHelp';
 import { WalkInRegistrationPanel } from '@/features/reception/components/WalkInRegistrationPanel';
 import { ReceptionSlotBookingPanel } from '@/features/reception/components/ReceptionSlotBookingPanel';
+import { ReceptionOpdFlowBanner } from '@/features/reception/components/ReceptionOpdFlowBanner';
+import { ReceptionArrivalPanel } from '@/features/reception/components/ReceptionArrivalPanel';
 
 const DEFAULT_HOSPITAL_ID = '00000000-0000-0000-0000-000000000030';
 const DEFAULT_BRANCH_ID = '00000000-0000-0000-0000-000000000031';
@@ -76,9 +77,6 @@ export function ReceptionDashboardPage() {
   const queueTotalPages = queuePageData?.totalPages ?? 0;
 
   const registerWalkIn = useRegisterWalkIn(hospitalId, branchId);
-  const checkIn = useCheckInAppointment(hospitalId, branchId);
-
-  const [checkInForm, setCheckInForm] = useState({ appointmentId: '', deskId: '' });
 
   const deskOptions = useMemo(
     () => desks.map((d) => ({ id: d.deskId, label: `${d.name} (${d.code})` })),
@@ -87,24 +85,6 @@ export function ReceptionDashboardPage() {
 
   const showError = (e: unknown) =>
     setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
-
-  const handleCheckIn = async () => {
-    try {
-      const result = await checkIn.mutateAsync({
-        appointmentId: checkInForm.appointmentId.trim(),
-        deskId: checkInForm.deskId || undefined,
-      });
-      setCheckInForm({ appointmentId: '', deskId: '' });
-      setSnackbar({
-        open: true,
-        message: `Arrived — token ${result.queueEntry.tokenDisplay}${result.appointmentStatus ? ` (${result.appointmentStatus})` : ''}`,
-        severity: 'success',
-      });
-      setTab(0);
-    } catch (e) {
-      showError(e);
-    }
-  };
 
   return (
     <AnimatedPage>
@@ -162,11 +142,13 @@ export function ReceptionDashboardPage() {
         />
       )}
 
+      <ReceptionOpdFlowBanner />
+
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label="Queue" />
-        <Tab label="Walk-in" />
-        <Tab label="Book / close" />
-        <Tab label="Arrive" />
+        <Tab label="Walk-in today (queue now)" />
+        <Tab label="Book future appointment" />
+        <Tab label="Check in booked appointment" />
       </Tabs>
 
       {tab === 0 && (
@@ -237,24 +219,17 @@ export function ReceptionDashboardPage() {
         <ReceptionSlotBookingPanel hospitalId={hospitalId} branchId={branchId} />
       ) : null}
 
-      {tab === 3 && (
-        <Paper variant="outlined" sx={{ p: 2, maxWidth: 480 }}>
-          <Stack spacing={2}>
-            <TextField label="Appointment ID" required fullWidth
-              value={checkInForm.appointmentId} onChange={(e) => setCheckInForm((f) => ({ ...f, appointmentId: e.target.value }))} />
-            <TextField select label="Desk (optional)" fullWidth
-              value={checkInForm.deskId} onChange={(e) => setCheckInForm((f) => ({ ...f, deskId: e.target.value }))}>
-              <MenuItem value="">None</MenuItem>
-              {deskOptions.map((d) => (
-                <MenuItem key={d.id} value={d.id}>{d.label}</MenuItem>
-              ))}
-            </TextField>
-            <Button variant="contained" onClick={handleCheckIn} disabled={!checkInForm.appointmentId.trim()}>
-              Mark arrived
-            </Button>
-          </Stack>
-        </Paper>
-      )}
+      {tab === 3 && scopeReady ? (
+        <ReceptionArrivalPanel
+          hospitalId={hospitalId}
+          branchId={branchId}
+          desks={deskOptions}
+          onArrived={(message) => {
+            setSnackbar({ open: true, message, severity: 'success' });
+            setTab(0);
+          }}
+        />
+      ) : null}
 
       <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>
         <Alert severity={snackbar.severity}>{snackbar.message}</Alert>

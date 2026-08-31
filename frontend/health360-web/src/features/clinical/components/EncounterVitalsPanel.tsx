@@ -108,12 +108,27 @@ interface EncounterVitalsPanelProps {
   encounterId: string;
   title?: string;
   canWrite?: boolean;
+  compact?: boolean;
+  onRecorded?: () => void;
 }
+
+const VITAL_PRESETS: Array<{ label: string; values: Partial<FormState> }> = [
+  {
+    label: 'Normal adult',
+    values: { systolicBp: '120', diastolicBp: '80', heartRate: '72', temperature: '36.8', spo2: '98' },
+  },
+  {
+    label: 'Stable elderly',
+    values: { systolicBp: '130', diastolicBp: '78', heartRate: '68', temperature: '36.5', spo2: '96' },
+  },
+];
 
 export function EncounterVitalsPanel({
   encounterId,
   title = 'Clinical vitals',
   canWrite = true,
+  compact = false,
+  onRecorded,
 }: EncounterVitalsPanelProps) {
   const { data: vitals = [], isLoading, error, refetch } = useEncounterVitals(encounterId);
   const actions = useEncounterActions(encounterId);
@@ -167,6 +182,7 @@ export function EncounterVitalsPanel({
       setForm(EMPTY_FORM);
       setSuccess('Vitals recorded.');
       refetch();
+      onRecorded?.();
     } catch (e) {
       setFormError(parseApiError(e).message);
     }
@@ -177,11 +193,13 @@ export function EncounterVitalsPanel({
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 1 }}>
-        {title}
+        {compact ? '' : title}
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Encounter-scoped clinical measurements (separate from patient self-tracked vitals).
-      </Typography>
+      {!compact ? (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Encounter-scoped clinical measurements (separate from patient self-tracked vitals).
+        </Typography>
+      ) : null}
 
       {success ? (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
@@ -200,7 +218,21 @@ export function EncounterVitalsPanel({
       ) : null}
 
       {canWrite ? (
-        <Stack spacing={2} sx={{ mb: 3 }}>
+        <Stack spacing={2} sx={{ mb: compact ? 1 : 3 }}>
+          {compact ? (
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              {VITAL_PRESETS.map((preset) => (
+                <Button
+                  key={preset.label}
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setForm((prev) => ({ ...prev, ...preset.values }))}
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </Stack>
+          ) : null}
           <Grid container spacing={1.5}>
             <Grid item xs={6} sm={4} md={3}>
               <TextField label="Systolic BP" size="small" fullWidth value={form.systolicBp} onChange={setField('systolicBp')} />
@@ -254,20 +286,28 @@ export function EncounterVitalsPanel({
             disabled={!hasAnyValue || actions.recordVitals.isPending}
             sx={{ alignSelf: 'flex-start' }}
           >
-            Record vitals
+            {compact ? 'Save vitals' : 'Record vitals'}
           </Button>
         </Stack>
       ) : null}
 
-      {isLoading ? (
+      {!compact && isLoading ? (
         <Typography variant="body2" color="text.secondary">
           Loading vitals…
         </Typography>
-      ) : vitals.length === 0 ? (
+      ) : compact && vitals.length > 0 ? (
+        <Typography variant="body2" color="text.secondary">
+          Latest: {[
+            vitals[0].systolicBp != null && vitals[0].diastolicBp != null ? `BP ${vitals[0].systolicBp}/${vitals[0].diastolicBp}` : null,
+            vitals[0].heartRate != null ? `HR ${vitals[0].heartRate}` : null,
+            vitals[0].temperature != null ? `${vitals[0].temperature}°C` : null,
+          ].filter(Boolean).join(' · ')}
+        </Typography>
+      ) : !compact && vitals.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
           No clinical vitals recorded for this encounter.
         </Typography>
-      ) : (
+      ) : !compact ? (
         <List dense disablePadding>
           {vitals.map((row) => {
             const parts = [
@@ -308,7 +348,7 @@ export function EncounterVitalsPanel({
             );
           })}
         </List>
-      )}
+      ) : null}
     </Box>
   );
 }

@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { useDoctorEncounters } from '@/features/clinical/hooks/useClinicalQueries';
-import { startEncounter } from '@/features/clinical/api/clinicalApi';
+import { beginEncounter } from '@/features/clinical/api/clinicalApi';
 import { encounterStatusColor, encounterStatusLabel, formatEncounterDate } from '@/features/clinical/utils/encounterUtils';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
@@ -43,12 +43,12 @@ export function DoctorOpdPage() {
   const totalPages = data?.totalPages ?? 0;
   const parsedError = error ? parseApiError(error) : null;
 
-  const startConsult = async (encounterId: string) => {
+  const startConsult = async (encounterId: string, status: string) => {
     setActionError(null);
     setStartingId(encounterId);
     try {
-      await startEncounter(encounterId);
-      await queryClient.invalidateQueries({ queryKey: ['opd'] });
+      await beginEncounter(encounterId, status);
+      await queryClient.invalidateQueries({ queryKey: ['clinical'] });
       await refetch();
       navigate(`/doctor/encounters/${encounterId}`);
     } catch (e) {
@@ -62,7 +62,7 @@ export function DoctorOpdPage() {
     <AnimatedPage>
       <DashboardPageHeader
         title="Today's OPD"
-        subtitle="Patients assigned to you today. Start consult updates the hospital and reception queue."
+        subtitle="Tap Begin & open to start documenting. Use finger tabs on the encounter screen."
         actions={
           <Button variant="outlined" onClick={() => refetch()} disabled={isFetching}>
             Refresh
@@ -148,9 +148,9 @@ export function DoctorOpdPage() {
                         size="small"
                         variant="contained"
                         disabled={startingId === enc.encounterId}
-                        onClick={() => startConsult(enc.encounterId)}
+                        onClick={() => startConsult(enc.encounterId, enc.status)}
                       >
-                        Start consultation
+                        Begin & open
                       </Button>
                     ) : (
                       <Button

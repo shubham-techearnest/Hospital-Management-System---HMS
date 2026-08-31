@@ -174,6 +174,19 @@ export async function lookupDeskAppointment(appointmentId: string) {
   return data.data;
 }
 
+export async function listDeskArrivals(params: {
+  hospitalId: string;
+  branchId: string;
+  patientId: string;
+  date?: string;
+}) {
+  const { data } = await apiClient.get<ApiEnvelope<DeskAppointmentLookup[]>>(
+    `/scheduling/hospitals/${params.hospitalId}/appointments/arrivals`,
+    { params: { branchId: params.branchId, patientId: params.patientId, date: params.date } },
+  );
+  return data.data ?? [];
+}
+
 export async function getDoctorAvailability(
   doctorId: string,
   params: { hospitalId: string; branchId: string; fromDate?: string; toDate?: string },

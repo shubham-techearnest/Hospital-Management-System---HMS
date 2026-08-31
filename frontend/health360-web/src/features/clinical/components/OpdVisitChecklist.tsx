@@ -23,9 +23,10 @@ export function opdStepSectionId(id: OpdChecklistStepId): string {
 type Props = {
   steps: OpdChecklistStep[];
   scrollToSections?: boolean;
+  onStepClick?: (stepId: OpdChecklistStepId) => void;
 };
 
-export function OpdVisitChecklist({ steps, scrollToSections = true }: Props) {
+export function OpdVisitChecklist({ steps, scrollToSections = true, onStepClick }: Props) {
   const { done, total } = opdChecklistProgress(steps);
   const requiredOpen = steps.filter((s) => s.required && !s.done);
 
@@ -53,9 +54,11 @@ export function OpdVisitChecklist({ steps, scrollToSections = true }: Props) {
             label={step.label}
             title={step.hint}
             onClick={
-              scrollToSections
-                ? () => document.getElementById(opdStepSectionId(step.id))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                : undefined
+              onStepClick
+                ? () => onStepClick(step.id)
+                : scrollToSections
+                  ? () => document.getElementById(opdStepSectionId(step.id))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  : undefined
             }
           />
         ))}

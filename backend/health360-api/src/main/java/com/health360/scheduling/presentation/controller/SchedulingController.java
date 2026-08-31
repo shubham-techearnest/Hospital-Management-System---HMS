@@ -131,6 +131,18 @@ public class SchedulingController {
                 appointmentService.bookAppointment(principal, request)));
     }
 
+    @GetMapping("/hospitals/{hospitalId}/appointments/arrivals")
+    @PreAuthorize("hasAuthority('scheduling:appointment:arrive') or hasAuthority('opd:registration:write')")
+    public ResponseEntity<ApiResponse<List<DeskAppointmentLookupResponse>>> listDeskArrivals(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID hospitalId,
+            @RequestParam UUID patientId,
+            @RequestParam(required = false) UUID branchId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                appointmentService.listDeskArrivalsForPatient(principal, hospitalId, branchId, patientId, date)));
+    }
+
     @GetMapping("/hospitals/{hospitalId}/appointments")
     @PreAuthorize("hasAuthority('appointment:view:hospital')")
     public ResponseEntity<ApiResponse<List<AppointmentSummaryResponse>>> listHospitalAppointments(
