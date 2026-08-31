@@ -9,6 +9,8 @@ import java.util.UUID;
 @Builder
 public class RegisterResponse {
     UUID userId;
+    UUID patientId;
+    String uhid;
     String email;
     String status;
     String message;

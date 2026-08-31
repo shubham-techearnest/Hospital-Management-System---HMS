@@ -40,9 +40,12 @@ export function RegisterPage() {
   const onSubmit = async (values: RegisterForm) => {
     setError(null);
     try {
-      await registerApi(values);
+      const result = await registerApi(values);
+      const uhidNote = result.uhid ? ` Your UHID is ${result.uhid}.` : '';
       navigate('/login', {
-        state: { message: 'Registration successful. Check your email to verify your account.' },
+        state: {
+          message: `Registration successful. Check your email to verify your account.${uhidNote}`,
+        },
       });
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: { message?: string } } } };

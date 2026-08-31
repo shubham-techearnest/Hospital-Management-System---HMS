@@ -212,7 +212,7 @@ public class BillingService {
         payment.setNotes(request.getNotes());
         payment.setCreatedBy(principal.getUserId());
         payment.setUpdatedBy(principal.getUserId());
-        paymentRepository.save(payment);
+        payment = paymentRepository.saveAndFlush(payment);
 
         BigDecimal newPaid = invoice.getAmountPaid().add(amount).setScale(2, RoundingMode.HALF_UP);
         invoice.setAmountPaid(newPaid);

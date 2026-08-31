@@ -46,7 +46,14 @@ export interface ApiEnvelope<T> {
 }
 
 export async function register(payload: RegisterPayload) {
-  const { data } = await apiClient.post<ApiEnvelope<{ userId: string; email: string; status: string; message: string }>>(
+  const { data } = await apiClient.post<ApiEnvelope<{
+    userId: string;
+    patientId?: string;
+    uhid?: string;
+    email: string;
+    status: string;
+    message: string;
+  }>>(
     '/auth/register',
     payload,
   );

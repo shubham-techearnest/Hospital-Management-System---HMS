@@ -28,4 +28,33 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID>, JpaSpec
     List<UserEntity> findPatientUsersByPhoneLast10(
             @Param("tenantId") UUID tenantId,
             @Param("phoneLast10") String phoneLast10);
+
+    @Query(value = """
+            SELECT DISTINCT u.* FROM iam.users u
+            INNER JOIN iam.user_roles ur ON ur.user_id = u.id
+            INNER JOIN iam.roles r ON r.id = ur.role_id AND r.deleted_at IS NULL
+            WHERE u.tenant_id = :tenantId
+              AND u.deleted_at IS NULL
+              AND r.name = 'PATIENT'
+              AND lower(trim(u.email)) = lower(trim(:email))
+            LIMIT 1
+            """, nativeQuery = true)
+    Optional<UserEntity> findPatientUserByEmail(
+            @Param("tenantId") UUID tenantId,
+            @Param("email") String email);
+
+    @Query(value = """
+            SELECT DISTINCT u.* FROM iam.users u
+            INNER JOIN iam.user_roles ur ON ur.user_id = u.id
+            INNER JOIN iam.roles r ON r.id = ur.role_id AND r.deleted_at IS NULL
+            WHERE u.tenant_id = :tenantId
+              AND u.deleted_at IS NULL
+              AND r.name = 'PATIENT'
+              AND lower(trim(u.first_name)) = lower(trim(:firstName))
+              AND lower(trim(u.last_name)) = lower(trim(:lastName))
+            """, nativeQuery = true)
+    List<UserEntity> findPatientUsersByName(
+            @Param("tenantId") UUID tenantId,
+            @Param("firstName") String firstName,
+            @Param("lastName") String lastName);
 }

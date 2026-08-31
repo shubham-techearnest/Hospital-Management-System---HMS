@@ -174,6 +174,14 @@ class HospitalPatientRegistryIntegrationTest {
                         .param("mobile", mobile))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].legalName").value("Neha Desai"))
-                .andExpect(jsonPath("$.data.content[0].primaryPhone").value("+91" + mobile.substring(mobile.length() - 10)));
+                .andExpect(jsonPath("$.data.content[0].primaryPhone").value("+91" + mobile.substring(mobile.length() - 10)))
+                .andExpect(jsonPath("$.data.content[0].uhid").exists());
+
+        mockMvc.perform(get("/api/v1/hospital/patients/search")
+                        .header("Authorization", IntegrationTestAuth.bearer(receptionistToken))
+                        .param("email", patientEmail))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].legalName").value("Neha Desai"))
+                .andExpect(jsonPath("$.data.content[0].uhid").exists());
     }
 }

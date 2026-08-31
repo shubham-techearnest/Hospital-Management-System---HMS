@@ -125,6 +125,7 @@ export function useEncounterOrders(encounterId: string, options?: { refetchInter
     queryFn: () => listEncounterOrders(encounterId),
     enabled: Boolean(encounterId),
     refetchInterval: options?.refetchInterval,
+    retry: (_, error) => !isAuthError(error),
   });
 }
 

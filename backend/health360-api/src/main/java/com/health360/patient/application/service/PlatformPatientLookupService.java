@@ -8,11 +8,13 @@ import com.health360.patient.infrastructure.persistence.repository.PatientProfil
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +67,39 @@ public class PlatformPatientLookupService {
 
         merged.replaceAll((id, profile) -> patientUhidAssignmentService.ensureAssigned(profile, actorUserId));
 
+        return List.copyOf(merged.values());
+    }
+
+    @Transactional
+    public PatientProfileEntity resolveProfileByEmail(UUID tenantId, String email, UUID actorUserId) {
+        UserEntity user = userRepository.findPatientUserByEmail(tenantId, email.trim())
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Patient not found"));
+        PatientProfileEntity profile = ensureProfileForAppUser(user, actorUserId);
+        return patientUhidAssignmentService.ensureAssigned(profile, actorUserId);
+    }
+
+    @Transactional
+    public List<PatientProfileEntity> resolveProfilesByNameAndDob(
+            UUID tenantId,
+            String firstName,
+            String lastName,
+            LocalDate dateOfBirth,
+            UUID actorUserId) {
+
+        Map<UUID, PatientProfileEntity> merged = new LinkedHashMap<>();
+        patientProfileRepository.searchByNameAndDob(
+                        tenantId, firstName.trim(), lastName.trim(), dateOfBirth, Pageable.unpaged())
+                .forEach(profile -> merged.put(profile.getId(), profile));
+
+        for (UserEntity user : userRepository.findPatientUsersByName(tenantId, firstName, lastName)) {
+            PatientProfileEntity profile = ensureProfileForAppUser(user, actorUserId);
+            if (profile.getDateOfBirth() == null || profile.getDateOfBirth().equals(dateOfBirth)) {
+                merged.put(profile.getId(), profile);
+            }
+        }
+
+        merged.replaceAll((id, profile) -> patientUhidAssignmentService.ensureAssigned(profile, actorUserId));
         return List.copyOf(merged.values());
     }
 

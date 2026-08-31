@@ -41,6 +41,10 @@ function looksLikeUhid(value: string): boolean {
   return /^H360-\d{4}-\d+$/i.test(value.trim());
 }
 
+function looksLikeEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit, pending }: Props) {
   const {
     data: doctors = [],
@@ -77,7 +81,7 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
     const hasNameDob = firstName.trim() && lastName.trim() && dateOfBirth;
 
     if (!q && !hasNameDob) {
-      setError('Enter UHID, mobile, patient UUID, or name + DOB.');
+      setError('Enter UHID, mobile, email, patient UUID, or name + DOB.');
       return;
     }
 
@@ -97,12 +101,15 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
       let params: {
         uhid?: string;
         mobile?: string;
+        email?: string;
         firstName?: string;
         lastName?: string;
         dateOfBirth?: string;
       };
 
-      if (q && looksLikeUhid(q)) {
+      if (q && looksLikeEmail(q)) {
+        params = { email: q.trim() };
+      } else if (q && looksLikeUhid(q)) {
         params = { uhid: q.toUpperCase() };
       } else if (q && !hasNameDob) {
         params = { mobile: q };
@@ -247,10 +254,11 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
           <TextField
-            label="UHID / mobile / patient UUID"
+            label="UHID / mobile / email / patient UUID"
             fullWidth
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            helperText="App-registered patients are found by mobile or email. UHID is assigned at signup."
           />
           <Button variant="outlined" onClick={runSearch} disabled={searching}>
             Find

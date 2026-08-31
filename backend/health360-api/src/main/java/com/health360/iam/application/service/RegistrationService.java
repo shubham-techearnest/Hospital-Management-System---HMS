@@ -11,7 +11,9 @@ import com.health360.iam.infrastructure.persistence.repository.UserRepository;
 import com.health360.iam.infrastructure.persistence.repository.UserRoleRepository;
 import com.health360.iam.presentation.dto.request.RegisterRequest;
 import com.health360.iam.presentation.dto.response.RegisterResponse;
+import com.health360.patient.application.service.PatientRegistrationProvisioner;
 import com.health360.patient.application.util.PhoneNormalizer;
+import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -36,6 +38,7 @@ public class RegistrationService {
     private final NotificationPreferenceService notificationPreferenceService;
     private final AuditLogService auditLogService;
     private final Health360Properties properties;
+    private final PatientRegistrationProvisioner patientRegistrationProvisioner;
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
@@ -58,6 +61,7 @@ public class RegistrationService {
 
         UserEntity savedUser = createUser(request, tenantId);
         assignRole(tenantId, savedUser.getId(), "PATIENT");
+        PatientProfileEntity profile = patientRegistrationProvisioner.provisionForNewAppUser(savedUser);
 
         emailVerificationService.createAndSendVerificationToken(savedUser);
         notificationPreferenceService.seedDefaultsForUser(savedUser);
@@ -67,6 +71,8 @@ public class RegistrationService {
 
         return RegisterResponse.builder()
                 .userId(savedUser.getId())
+                .patientId(profile.getId())
+                .uhid(profile.getUhid())
                 .email(savedUser.getEmail())
                 .status(savedUser.getStatus())
                 .message("Verification email sent")

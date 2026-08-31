@@ -84,6 +84,7 @@ function unwrap<T>(envelope: ApiEnvelope<T>): T {
 export async function searchHospitalPatients(params: {
   uhid?: string;
   mobile?: string;
+  email?: string;
   patientId?: string;
   firstName?: string;
   lastName?: string;

@@ -64,6 +64,7 @@ public class HospitalPatientRegistryService {
             UserPrincipal principal,
             String uhid,
             String mobile,
+            String email,
             UUID patientId,
             String firstName,
             String lastName,
@@ -86,8 +87,18 @@ public class HospitalPatientRegistryService {
         if (uhid != null && !uhid.isBlank()) {
             String normalized = uhid.trim().toUpperCase();
             return patientProfileRepository.findByTenantIdAndUhidAndDeletedAtIsNull(tenantId, normalized)
+                    .map(profile -> patientUhidAssignmentService.ensureAssigned(profile, principal.getUserId()))
                     .map(profile -> new PageImpl<>(List.of(toSummary(profile)), pageable, 1))
                     .orElseGet(() -> new PageImpl<>(List.of(), pageable, 0));
+        }
+
+        if (email != null && !email.isBlank()) {
+            PatientProfileEntity profile = patientUhidAssignmentService.ensureAssigned(
+                    platformPatientLookupService.resolveProfileByEmail(
+                            tenantId, email, principal.getUserId()),
+                    principal.getUserId());
+            auditSearch(principal, "EMAIL", 1);
+            return new PageImpl<>(List.of(toSummary(profile)), pageable, 1);
         }
 
         if (mobile != null && !mobile.isBlank()) {
@@ -101,16 +112,18 @@ public class HospitalPatientRegistryService {
         }
 
         if (firstName != null && lastName != null && dateOfBirth != null) {
-            Page<PatientProfileEntity> page = patientProfileRepository.searchByNameAndDob(
-                    tenantId, firstName.trim(), lastName.trim(), dateOfBirth, pageable);
-            Page<HospitalPatientSummaryResponse> mapped = page.map(profile ->
-                    toSummary(patientUhidAssignmentService.ensureAssigned(profile, principal.getUserId())));
-            auditSearch(principal, "NAME_DOB", (int) mapped.getTotalElements());
-            return mapped;
+            List<HospitalPatientSummaryResponse> results = platformPatientLookupService
+                    .resolveProfilesByNameAndDob(
+                            tenantId, firstName, lastName, dateOfBirth, principal.getUserId())
+                    .stream()
+                    .map(this::toSummary)
+                    .toList();
+            auditSearch(principal, "NAME_DOB", results.size());
+            return new PageImpl<>(results, pageable, results.size());
         }
 
         throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
-                "Provide patientId, uhid, mobile, or firstName+lastName+dateOfBirth");
+                "Provide patientId, uhid, mobile, email, or firstName+lastName+dateOfBirth");
     }
 
     @Transactional

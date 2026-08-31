@@ -57,11 +57,15 @@ export function ReceptionSlotBookingPanel({ hospitalId, branchId }: Props) {
     setPatient(null);
     const q = patientQuery.trim();
     if (!q) {
-      setError('Enter UHID or mobile to find the patient.');
+      setError('Enter UHID, mobile, or email to find the patient.');
       return;
     }
     try {
-      const params = /^H360-/i.test(q) ? { uhid: q.toUpperCase() } : { mobile: q };
+      const params = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q)
+        ? { email: q }
+        : /^H360-/i.test(q)
+          ? { uhid: q.toUpperCase() }
+          : { mobile: q };
       const page = await searchHospitalPatients(params);
       if (page.content.length === 0) {
         setError('Patient not found — register them first.');

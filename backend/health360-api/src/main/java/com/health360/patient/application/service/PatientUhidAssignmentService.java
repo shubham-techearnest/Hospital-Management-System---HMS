@@ -24,6 +24,11 @@ public class PatientUhidAssignmentService {
 
     @Transactional
     public PatientProfileEntity ensureAssigned(PatientProfileEntity profile, UUID actorUserId) {
+        return ensureAssigned(profile, actorUserId, "FIRST_HOSPITAL_CONTACT");
+    }
+
+    @Transactional
+    public PatientProfileEntity ensureAssigned(PatientProfileEntity profile, UUID actorUserId, String source) {
         if (profile.getUhid() != null && !profile.getUhid().isBlank()) {
             return profile;
         }
@@ -31,7 +36,7 @@ public class PatientUhidAssignmentService {
         profile.setUhid(uhid);
         profile.setUpdatedBy(actorUserId != null ? actorUserId : profile.getUserId());
         profile.touch();
-        PatientProfileEntity saved = patientProfileRepository.save(profile);
+        PatientProfileEntity saved = patientProfileRepository.saveAndFlush(profile);
 
         auditLogService.record(
                 profile.getTenantId(),
@@ -39,7 +44,7 @@ public class PatientUhidAssignmentService {
                 "UHID_ASSIGNED",
                 "PatientProfile",
                 saved.getId(),
-                Map.of("uhid", uhid, "source", "FIRST_HOSPITAL_CONTACT"));
+                Map.of("uhid", uhid, "source", source));
 
         return saved;
     }
