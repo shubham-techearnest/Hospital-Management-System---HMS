@@ -9,16 +9,15 @@ import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { useBranches, useHospitalProfile } from '@/features/hospital/hooks/useHospitalQueries';
 import {
-  useCheckInAppointment,
   useCreateOpdDesk,
   useOpdDesks,
   useOpdQueue,
   useRegisterWalkIn,
 } from '@/features/opd/hooks/useOpdQueries';
 import { OpdQueueTable } from '@/features/opd/components/OpdQueueTable';
-import { OpdFloorStatusHelp } from '@/features/opd/components/OpdFloorStatusHelp';
+import { ReceptionOpdFlowBanner } from '@/features/reception/components/ReceptionOpdFlowBanner';
+import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
 import { WalkInRegistrationPanel } from '@/features/reception/components/WalkInRegistrationPanel';
-import { ReceptionSlotBookingPanel } from '@/features/reception/components/ReceptionSlotBookingPanel';
 
 export function HospitalOpdPage() {
   const { data: profile } = useHospitalProfile();
@@ -48,11 +47,9 @@ export function HospitalOpdPage() {
 
   const createDesk = useCreateOpdDesk(hospitalId ?? '', branchId ?? '');
   const registerWalkIn = useRegisterWalkIn(hospitalId ?? '', branchId ?? '');
-  const checkIn = useCheckInAppointment(hospitalId ?? '', branchId ?? '');
 
   const [deskOpen, setDeskOpen] = useState(false);
   const [deskForm, setDeskForm] = useState({ name: '', code: '' });
-  const [checkInForm, setCheckInForm] = useState({ appointmentId: '', deskId: '' });
 
   const showError = (e: unknown) =>
     setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
@@ -74,25 +71,6 @@ export function HospitalOpdPage() {
     }
   };
 
-  const handleCheckIn = async () => {
-    if (!hospitalId || !branchId) return;
-    try {
-      const result = await checkIn.mutateAsync({
-        appointmentId: checkInForm.appointmentId.trim(),
-        deskId: checkInForm.deskId || undefined,
-      });
-      setCheckInForm({ appointmentId: '', deskId: '' });
-      setSnackbar({
-        open: true,
-        message: `Checked in — token ${result.queueEntry.tokenDisplay}`,
-        severity: 'success',
-      });
-      setTab(0);
-    } catch (e) {
-      showError(e);
-    }
-  };
-
   if (!profile) {
     return (
       <AnimatedPage>
@@ -105,9 +83,9 @@ export function HospitalOpdPage() {
     <AnimatedPage>
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} mb={2}>
         <Box>
-          <Typography variant="h4" fontWeight={700}>OPD</Typography>
+          <Typography variant="h4" fontWeight={700}>Reception & queue</Typography>
           <Typography variant="body2" color="text.secondary">
-            Same live floor as reception. Doctor start/complete updates Queue and Consult together
+            {VISIT_FLOW.walkIn.deskTab} · {VISIT_FLOW.queue.short}
             {primaryBranch ? ` — ${primaryBranch.name}` : ''}
           </Typography>
         </Box>
@@ -116,17 +94,16 @@ export function HospitalOpdPage() {
         </Button>
       </Stack>
 
+      <ReceptionOpdFlowBanner />
+
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
-        <Tab label="Queue" />
-        <Tab label="Walk-in" />
-        <Tab label="Book / close" />
-        <Tab label="Arrive" />
+        <Tab label={VISIT_FLOW.queue.short} />
+        <Tab label={VISIT_FLOW.walkIn.deskTab} />
         <Tab label="Desks" />
       </Tabs>
 
       {tab === 0 && hospitalId && branchId && (
         <Stack spacing={2}>
-          <OpdFloorStatusHelp audience="desk" />
           <TextField
             select
             label="Filter by status"
@@ -186,7 +163,7 @@ export function HospitalOpdPage() {
           desks={desks.map((d) => ({ id: d.deskId, label: `${d.name} (${d.code})` }))}
           pending={registerWalkIn.isPending}
           onSubmit={async ({ patientId, visitReason, deskId, primaryDoctorId }) => {
-            const result = await registerWalkIn.mutateAsync({
+            await registerWalkIn.mutateAsync({
               patientId,
               hospitalId,
               branchId,
@@ -196,7 +173,7 @@ export function HospitalOpdPage() {
             });
             setSnackbar({
               open: true,
-              message: `Walk-in registered — token ${result.queueEntry.tokenDisplay}`,
+              message: 'Patient added to OPD queue.',
               severity: 'success',
             });
             setTab(0);
@@ -204,40 +181,7 @@ export function HospitalOpdPage() {
         />
       ) : null}
 
-      {tab === 2 && hospitalId && branchId ? (
-        <ReceptionSlotBookingPanel hospitalId={hospitalId} branchId={branchId} />
-      ) : null}
-
-      {tab === 3 && (
-        <Paper variant="outlined" sx={{ p: 3, maxWidth: 480 }}>
-          <Stack spacing={2}>
-            <TextField
-              label="Appointment ID"
-              value={checkInForm.appointmentId}
-              onChange={(e) => setCheckInForm({ ...checkInForm, appointmentId: e.target.value })}
-              helperText="UUID of a confirmed or pending appointment"
-              fullWidth
-            />
-            <TextField
-              select
-              label="Desk (optional)"
-              value={checkInForm.deskId}
-              onChange={(e) => setCheckInForm({ ...checkInForm, deskId: e.target.value })}
-              fullWidth
-            >
-              <MenuItem value="">None</MenuItem>
-              {desks.map((d) => (
-                <MenuItem key={d.deskId} value={d.deskId}>{d.name} ({d.code})</MenuItem>
-              ))}
-            </TextField>
-            <Button variant="contained" onClick={handleCheckIn} disabled={!checkInForm.appointmentId.trim()}>
-              Mark arrived
-            </Button>
-          </Stack>
-        </Paper>
-      )}
-
-      {tab === 4 && (
+      {tab === 2 && (
         <Stack spacing={2}>
           <Button variant="contained" onClick={() => setDeskOpen(true)} sx={{ alignSelf: 'flex-start' }}>
             Add desk

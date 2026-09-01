@@ -118,4 +118,39 @@ public interface OpdQueueEntryRepository extends JpaRepository<OpdQueueEntryEnti
             @Param("tenantId") UUID tenantId,
             @Param("patientId") UUID patientId,
             @Param("queueDate") LocalDate queueDate);
+
+    @Query("""
+            SELECT q FROM OpdQueueEntryEntity q
+            JOIN EncounterEntity e ON e.id = q.encounterId
+            WHERE q.tenantId = :tenantId
+              AND e.patientId = :patientId
+              AND q.hospitalId = :hospitalId
+              AND q.branchId = :branchId
+              AND q.queueDate = :queueDate
+              AND q.deletedAt IS NULL
+              AND q.status NOT IN ('COMPLETED', 'CANCELLED', 'NO_SHOW')
+            """)
+    Optional<OpdQueueEntryEntity> findActiveQueueForPatient(
+            @Param("tenantId") UUID tenantId,
+            @Param("patientId") UUID patientId,
+            @Param("hospitalId") UUID hospitalId,
+            @Param("branchId") UUID branchId,
+            @Param("queueDate") LocalDate queueDate);
+
+    @Query("""
+            SELECT COUNT(q) FROM OpdQueueEntryEntity q
+            WHERE q.tenantId = :tenantId
+              AND q.hospitalId = :hospitalId
+              AND q.branchId = :branchId
+              AND q.queueDate = :queueDate
+              AND q.deletedAt IS NULL
+              AND q.status = 'WAITING'
+              AND q.tokenNumber < :tokenNumber
+            """)
+    long countWaitingAhead(
+            @Param("tenantId") UUID tenantId,
+            @Param("hospitalId") UUID hospitalId,
+            @Param("branchId") UUID branchId,
+            @Param("queueDate") LocalDate queueDate,
+            @Param("tokenNumber") int tokenNumber);
 }

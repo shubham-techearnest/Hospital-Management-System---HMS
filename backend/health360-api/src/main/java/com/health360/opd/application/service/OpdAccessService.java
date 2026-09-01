@@ -31,6 +31,12 @@ public class OpdAccessService {
         }
     }
 
+    public void assertCanRequestOpd(UserPrincipal principal) {
+        if (!principal.hasPermission("opd:request:own")) {
+            throw forbidden();
+        }
+    }
+
     public void assertCanReadQueue(UserPrincipal principal) {
         if (!principal.hasPermission("opd:queue:read")) {
             throw forbidden();

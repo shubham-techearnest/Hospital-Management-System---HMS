@@ -19,6 +19,7 @@ import {
 } from '@/features/reception/api/patientRegistryApi';
 import { useLinkExistingPatient, useRegistrationReceipt } from '@/features/reception/hooks/usePatientRegistryQueries';
 import { buildPatientSearchParams } from '@/features/reception/utils/patientSearchParams';
+import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
 import { useOpdDoctors } from '@/features/opd/hooks/useOpdQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
 
@@ -210,11 +211,9 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
   return (
     <Paper variant="outlined" sx={{ p: 2, maxWidth: 640 }}>
       <Stack spacing={2}>
-        <Typography variant="subtitle1">Walk-in today (queue now)</Typography>
+        <Typography variant="subtitle1">{VISIT_FLOW.walkIn.deskTab}</Typography>
         <Typography variant="body2" color="text.secondary">
-          Find existing Health360 members by mobile, email, or UHID (name + DOB optional).
-          If not on the platform yet, register with basic details — they can complete their profile later.
-          Walk-in automatically links them to this hospital.
+          {VISIT_FLOW.walkIn.hint}
         </Typography>
         {error ? <Alert severity="error">{error}</Alert> : null}
         {credentialsNotice ? (
@@ -384,7 +383,7 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
           ))}
         </TextField>
         <Button variant="contained" onClick={submit} disabled={pending || !selected}>
-          Register walk-in
+          {VISIT_FLOW.walkIn.deskAction}
         </Button>
       </Stack>
     </Paper>

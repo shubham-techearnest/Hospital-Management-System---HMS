@@ -60,8 +60,8 @@ export function DoctorListCard({ doctor, travelTimeMinutes }: DoctorListCardProp
             >
               View profile
             </Button>
-            <Button variant="contained" onClick={() => navigate(`/patient/book/${doctor.doctorId}`)}>
-              Book appointment
+            <Button variant="contained" onClick={() => navigate(`/patient/request-opd?doctorId=${doctor.doctorId}`)}>
+              Request OPD
             </Button>
           </Stack>
         </Stack>

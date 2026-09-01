@@ -13,6 +13,7 @@ import { buildPatientSearchParams } from '@/features/reception/utils/patientSear
 import { listDeskArrivals } from '@/features/scheduling/api/schedulingApi';
 import { appointmentLabel } from '@/features/scheduling/utils/schedulingUtils';
 import { arriveAppointment } from '@/features/opd/api/opdApi';
+import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { isValidUuid } from '@/shared/utils/uuid';
 
@@ -55,7 +56,7 @@ export function ReceptionArrivalPanel({ hospitalId, branchId, desks, onArrived }
       }
       const page = await searchHospitalPatients(params);
       if (page.content.length === 0) {
-        setError('Patient not found. Register them under Walk-in, or book an appointment first.');
+        setError(`Patient not found. Use "${VISIT_FLOW.walkIn.deskTab}" or "${VISIT_FLOW.request.deskTab}" first.`);
         return;
       }
       const found = page.content[0];
@@ -67,7 +68,7 @@ export function ReceptionArrivalPanel({ hospitalId, branchId, desks, onArrived }
       });
       setAppointments(arrivals);
       if (arrivals.length === 0) {
-        setError('No active appointments for today. Use Walk-in if they came without a booking.');
+        setError(`No bookings for today. Use "${VISIT_FLOW.walkIn.deskTab}" if they came without a booking.`);
       }
     } catch (e) {
       setError(parseApiError(e).message);
@@ -115,9 +116,9 @@ export function ReceptionArrivalPanel({ hospitalId, branchId, desks, onArrived }
     <Stack spacing={2}>
       <Paper variant="outlined" sx={{ p: 2, maxWidth: 720 }}>
         <Stack spacing={2}>
-          <Typography variant="subtitle1">Check in booked appointment (today)</Typography>
+          <Typography variant="subtitle1">{VISIT_FLOW.walkIn.deskTab}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Find the patient by mobile, email, or UHID to list today&apos;s bookings, then mark arrived to issue a queue token.
+            {VISIT_FLOW.walkIn.hint}
           </Typography>
           {error ? <Alert severity="warning">{error}</Alert> : null}
           {success ? <Alert severity="success">{success}</Alert> : null}

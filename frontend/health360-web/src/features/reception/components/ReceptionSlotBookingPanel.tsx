@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { searchHospitalPatients, type HospitalPatientSummary } from '@/features/reception/api/patientRegistryApi';
 import { buildPatientSearchParams } from '@/features/reception/utils/patientSearchParams';
+import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
 import { useOpdDoctors } from '@/features/opd/hooks/useOpdQueries';
 import {
   useBookAppointment,
@@ -96,7 +97,7 @@ export function ReceptionSlotBookingPanel({ hospitalId, branchId }: Props) {
         reasonForVisit: reason.trim() || undefined,
       });
       setSuccess(
-        `Booked ${result.appointmentId} — status ${result.status}. Patient is not on today's queue until arrival day — use the Check-in tab.`,
+        `Booked ${result.appointmentId}. ${VISIT_FLOW.request.hint} On visit day use "${VISIT_FLOW.walkIn.deskTab}".`,
       );
       setSlotId('');
       refetch();
@@ -119,9 +120,9 @@ export function ReceptionSlotBookingPanel({ hospitalId, branchId }: Props) {
     <Stack spacing={3}>
       <Paper variant="outlined" sx={{ p: 2, maxWidth: 640 }}>
         <Stack spacing={2}>
-          <Typography variant="subtitle1">Book future appointment (desk)</Typography>
+          <Typography variant="subtitle1">{VISIT_FLOW.request.deskTab}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Reserves a slot only — patient is not added to today&apos;s OPD queue. On visit day, use Check-in booked appointment.
+            {VISIT_FLOW.request.hint}
           </Typography>
           {error ? <Alert severity="error">{error}</Alert> : null}
           {success ? <Alert severity="success">{success}</Alert> : null}

@@ -84,7 +84,7 @@ export function OpdQueueTable({
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Token</TableCell>
+            <TableCell>Queue #</TableCell>
             <TableCell>Type</TableCell>
             <TableCell>Queue</TableCell>
             <TableCell>Consult</TableCell>
@@ -94,9 +94,9 @@ export function OpdQueueTable({
           </TableRow>
         </TableHead>
         <TableBody>
-          {queue.map((entry) => (
+          {queue.map((entry, index) => (
             <TableRow key={entry.queueEntryId}>
-              <TableCell><Typography fontWeight={700}>{entry.tokenDisplay}</Typography></TableCell>
+              <TableCell><Typography fontWeight={700}>#{entry.tokenNumber || index + 1}</Typography></TableCell>
               <TableCell>{entry.registrationType}</TableCell>
               <TableCell>
                 <Chip

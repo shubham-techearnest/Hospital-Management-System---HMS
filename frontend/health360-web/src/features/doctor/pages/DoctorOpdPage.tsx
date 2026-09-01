@@ -115,9 +115,6 @@ export function DoctorOpdPage() {
                 <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1.5}>
                   <Box>
                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                      {enc.tokenDisplay ? (
-                        <Typography variant="subtitle1" fontWeight={700}>{enc.tokenDisplay}</Typography>
-                      ) : null}
                       <Typography variant="subtitle1" fontWeight={600}>
                         {enc.patientName || 'Patient'}
                       </Typography>

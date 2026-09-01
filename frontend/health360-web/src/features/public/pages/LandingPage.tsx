@@ -54,8 +54,8 @@ const HOW_IT_WORKS = [
   {
     step: '03',
     icon: <EventAvailableOutlinedIcon color="primary" />,
-    title: 'Book and attend',
-    description: 'Request appointments from verified profiles. Reception and clinical teams manage the visit from their own portals.',
+    title: 'Request OPD',
+    description: 'Submit an OPD visit request for today. Reception adds you to the queue and the doctor consults when called.',
   },
   {
     step: '04',
@@ -68,8 +68,8 @@ const HOW_IT_WORKS = [
 const CAPABILITIES = [
   {
     icon: <EventAvailableOutlinedIcon />,
-    title: 'Appointments',
-    description: 'Search availability, book visits, and follow the schedule from patient, doctor, and reception views.',
+    title: 'OPD visits',
+    description: 'Request same-day OPD visits and track your queue position from patient, doctor, and reception views.',
   },
   {
     icon: <MonitorHeartOutlinedIcon />,
@@ -103,13 +103,13 @@ const PORTALS = [
     icon: <PersonIcon fontSize="large" color="primary" />,
     title: 'Patients',
     description:
-      'Health dashboard, vitals, lab values, documents, care timeline, and online booking. Search doctors and hospitals before you sign in; book after you create a free account.',
+      'Health dashboard, vitals, lab values, documents, care timeline, and OPD requests. Search doctors and hospitals before you sign in; request OPD after you create a free account.',
   },
   {
     icon: <MedicalServicesIcon fontSize="large" color="primary" />,
     title: 'Doctors',
     description:
-      'Professional profile, verification, schedule, appointments, and patient summaries — so clinic days stay organized in one place.',
+      'Professional profile, verification, schedule, OPD queue, and patient summaries — so clinic days stay organized in one place.',
   },
   {
     icon: <LocalHospitalIcon fontSize="large" color="primary" />,
@@ -123,7 +123,7 @@ const TRUST_ITEMS = [
   {
     icon: <LockOutlinedIcon color="primary" />,
     title: 'Sign in required for records',
-    body: 'Public pages help you discover care. Dashboards, bookings, and health data open only after authentication.',
+    body: 'Public pages help you discover care. Dashboards, OPD requests, and health data open only after authentication.',
   },
   {
     icon: <GroupsOutlinedIcon color="primary" />,

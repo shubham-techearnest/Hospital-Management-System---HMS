@@ -26,6 +26,8 @@ import {
   useDoctorAvailability,
   useDoctorBookingLocations,
 } from '@/features/scheduling/hooks/useSchedulingQueries';
+import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
+import { VisitFlowGuide } from '@/features/opd/components/VisitFlowGuide';
 import { isValidUuid } from '@/shared/utils/uuid';
 
 const STEPS = ['Select Hospital', 'Pick Date & Time', 'Confirm', 'Success'];
@@ -207,16 +209,17 @@ export function BookAppointmentPage() {
 
   return (
     <AnimatedPage>
-      <Typography variant="h4" sx={{ mb: 1 }}>Book Appointment</Typography>
+      <Typography variant="h4" sx={{ mb: 1 }}>{VISIT_FLOW.request.title}</Typography>
+      <VisitFlowGuide variant="patient" compact />
       {locations[0]?.doctorName ? (
-        <Typography color="text.secondary" sx={{ mb: 3 }}>
+        <Typography color="text.secondary" sx={{ mb: 3, mt: 2 }}>
           {locations[0].doctorName}
           {locations[0].specialization ? ` · ${locations[0].specialization}` : ''}
-          {' — '}choose hospital, then pick a slot. Your queue token is issued on arrival day at reception.
+          {' — '}choose hospital, then pick a slot.
         </Typography>
       ) : (
-        <Typography color="text.secondary" sx={{ mb: 3 }}>
-          Complete each step to schedule your consultation. You will receive a queue token when you check in at the hospital.
+        <Typography color="text.secondary" sx={{ mb: 3, mt: 2 }}>
+          {VISIT_FLOW.request.hint}
         </Typography>
       )}
 
@@ -374,7 +377,7 @@ export function BookAppointmentPage() {
               Appointment ID: {bookingResult.appointmentId}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              You are not on the OPD queue yet. On visit day, check in at reception (or use self check-in) to receive your token.
+              {VISIT_FLOW.request.hint} On visit day, tap &quot;{VISIT_FLOW.request.patientAction}&quot; or check in at reception — then open &quot;{VISIT_FLOW.queue.patientNav}&quot;.
             </Typography>
             <Typography sx={{ mt: 1 }}>
               Fee: {bookingResult.consultationFee.currency} {bookingResult.consultationFee.amount}

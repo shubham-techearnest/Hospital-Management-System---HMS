@@ -7,25 +7,28 @@ import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { useDoctorProfile } from '../hooks/useDoctorQueries';
-import { useDoctorAppointments } from '@/features/scheduling/hooks/useSchedulingQueries';
-import { appointmentLabel, formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { DashboardSection } from '@/shared/dashboard/DashboardSection';
 import { DashboardStatsGrid } from '@/features/dashboard/components/DashboardStatsGrid';
 import { useDoctorDashboardStats } from '@/features/dashboard/hooks/useDashboardQueries';
+import { useDoctorEncounters } from '@/features/clinical/hooks/useClinicalQueries';
+import { encounterStatusColor, encounterStatusLabel } from '@/features/clinical/utils/encounterUtils';
 
 export function DoctorDashboardPage() {
   const { data: profile, isLoading: profileLoading } = useDoctorProfile();
   const { data: clinical, isLoading: clinicalLoading } = useDoctorDashboardStats();
-  const { data: upcoming = [], isLoading: apptLoading } = useDoctorAppointments('upcoming');
+  const { data: opdPage, isLoading: opdLoading } = useDoctorEncounters(0, 20, true);
+  const opdEncounters = opdPage?.content ?? [];
 
-  const loading = profileLoading || apptLoading || clinicalLoading;
+  const waiting = opdEncounters.filter((e) => e.status === 'WAITING' || e.status === 'REGISTERED');
+  const inProgress = opdEncounters.filter((e) => e.status === 'IN_PROGRESS');
+  const loading = profileLoading || opdLoading || clinicalLoading;
 
   return (
     <AnimatedPage>
       <DashboardPageHeader
         title="Practice overview"
-        subtitle="Clinical workload, schedule, and verification status at a glance."
+        subtitle="Today's OPD queue, clinical workload, and verification status."
       />
 
       <DashboardStatsGrid
@@ -33,24 +36,24 @@ export function DoctorDashboardPage() {
         items={[
           {
             label: 'In progress',
-            value: clinical?.inProgressEncounters ?? 0,
+            value: clinical?.inProgressEncounters ?? inProgress.length,
             hint: 'Active encounters',
             icon: <MedicalServicesIcon />,
             to: '/doctor/opd',
           },
           {
             label: 'Waiting',
-            value: clinical?.waitingEncounters ?? 0,
-            hint: 'Encounters awaiting start',
+            value: clinical?.waitingEncounters ?? waiting.length,
+            hint: 'Patients awaiting consult',
             icon: <EventNoteIcon />,
             to: '/doctor/opd',
           },
           {
-            label: 'Upcoming appts',
-            value: clinical?.upcomingAppointments ?? upcoming.length,
-            hint: 'Confirmed future visits',
+            label: 'OPD today',
+            value: opdEncounters.length,
+            hint: 'Assigned to you today',
             icon: <EventAvailableIcon />,
-            to: '/doctor/appointments',
+            to: '/doctor/opd',
           },
           {
             label: 'Verification',
@@ -66,27 +69,27 @@ export function DoctorDashboardPage() {
       <Grid container spacing={{ xs: 2, md: 3 }}>
         <Grid item xs={12} md={7}>
           <DashboardSection
-            title="Upcoming appointments"
-            action={<Typography component={RouterLink} to="/doctor/appointments" variant="body2" color="primary">View all</Typography>}
+            title="Today's OPD queue"
+            action={<Typography component={RouterLink} to="/doctor/opd" variant="body2" color="primary">Open OPD</Typography>}
           >
-            {apptLoading ? (
+            {opdLoading ? (
               <Skeleton height={120} />
-            ) : upcoming.length === 0 ? (
-              <Typography color="text.secondary">No upcoming patient visits.</Typography>
+            ) : opdEncounters.length === 0 ? (
+              <Typography color="text.secondary">No OPD patients assigned to you today.</Typography>
             ) : (
               <List disablePadding>
-                {upcoming.slice(0, 5).map((appt) => (
+                {opdEncounters.slice(0, 5).map((enc) => (
                   <ListItem
-                    key={appt.appointmentId}
+                    key={enc.encounterId}
                     component={RouterLink}
-                    to={`/doctor/appointments/${appt.appointmentId}`}
+                    to={`/doctor/encounters/${enc.encounterId}`}
                     sx={{ px: 0, borderBottom: '1px solid', borderColor: 'divider' }}
                   >
                     <ListItemText
-                      primary={appt.patient.name}
-                      secondary={`${formatAppointmentDate(appt.scheduledAt)} · ${appt.consultationType?.replace(/_/g, ' ') ?? 'Visit'}`}
+                      primary={enc.patientName || 'Patient'}
+                      secondary={enc.visitReason || enc.encounterNumber}
                     />
-                    <Chip label={appointmentLabel(appt.status)} size="small" color={statusColor(appt.status)} />
+                    <Chip label={encounterStatusLabel(enc.status)} size="small" color={encounterStatusColor(enc.status)} />
                   </ListItem>
                 ))}
               </List>
@@ -96,6 +99,7 @@ export function DoctorDashboardPage() {
         <Grid item xs={12} md={5}>
           <DashboardSection title="Quick links">
             <Stack spacing={1}>
+              <Button component={RouterLink} to="/doctor/opd" variant="contained">Open OPD queue</Button>
               <Button component={RouterLink} to="/doctor/schedule" variant="outlined">Manage weekly schedule</Button>
               <Button component={RouterLink} to="/doctor/profile" variant="outlined">Update professional profile</Button>
               <Button component={RouterLink} to="/doctor/hospitals" variant="outlined" startIcon={<LocalHospitalIcon />}>

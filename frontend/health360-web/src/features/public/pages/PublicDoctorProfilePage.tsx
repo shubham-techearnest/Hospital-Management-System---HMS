@@ -51,9 +51,9 @@ export function PublicDoctorProfilePage() {
 
   const handleBook = () => {
     if (user) {
-      navigate(`/patient/book/${doctorId}`);
+      navigate(`/patient/request-opd?doctorId=${doctorId}`);
     } else {
-      navigate('/login', { state: { from: `/patient/book/${doctorId}` } });
+      navigate('/login', { state: { from: `/patient/request-opd?doctorId=${doctorId}` } });
     }
   };
 
@@ -78,7 +78,7 @@ export function PublicDoctorProfilePage() {
 
   return (
     <PublicProfileLayout>
-      <Button component={RouterLink} to={user ? '/patient/book' : '/'} sx={{ mb: 2 }}>
+      <Button component={RouterLink} to={user ? '/patient/request-opd' : '/'} sx={{ mb: 2 }}>
         ← Back
       </Button>
 
@@ -254,7 +254,7 @@ export function PublicDoctorProfilePage() {
         }}
       >
         <Button variant="contained" size="large" onClick={handleBook}>
-          Book appointment
+          Request OPD visit
         </Button>
       </Paper>
     </PublicProfileLayout>

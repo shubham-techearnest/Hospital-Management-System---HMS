@@ -22,6 +22,8 @@ import {
   useSelfCheckInMyAppointment,
 } from '@/features/scheduling/hooks/useSchedulingQueries';
 import { appointmentLabel, formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
+import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
+import { VisitFlowGuide } from '@/features/opd/components/VisitFlowGuide';
 import { SubmitReviewDialog } from '@/features/review/components/SubmitReviewDialog';
 
 const SELF_CHECK_IN_STATUSES = new Set(['PENDING', 'CONFIRMED', 'POSTPONED']);
@@ -121,7 +123,7 @@ export function PatientAppointmentDetailPage() {
       const result = await selfCheckInMutation.mutateAsync(appointmentId);
       const token = result?.queueEntry?.tokenDisplay;
       setSuccess(token
-        ? `Checked in. Your OPD token is ${token}.`
+        ? `Checked in. Your token is ${token}. Open "${VISIT_FLOW.queue.patientNav}" to track your place in line.`
         : 'Checked in successfully.');
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: { message?: string } } } };
@@ -131,11 +133,21 @@ export function PatientAppointmentDetailPage() {
 
   return (
     <AnimatedPage>
-      <Button component={RouterLink} to="/patient/appointments" sx={{ mb: 2 }}>← Back to appointments</Button>
-      <Typography variant="h4" sx={{ mb: 1 }}>Appointment Details</Typography>
+      <Button component={RouterLink} to="/patient/appointments" sx={{ mb: 2 }}>← {VISIT_FLOW.queue.patientNav}</Button>
+      <Typography variant="h4" sx={{ mb: 1 }}>Booking details</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        This is your reserved slot — not your live queue token. {VISIT_FLOW.request.hint}
+      </Typography>
+
+      <VisitFlowGuide variant="patient" compact />
 
       {success ? <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert> : null}
       {actionError ? <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert> : null}
+      {!isTodayAppointment && SELF_CHECK_IN_STATUSES.has(appointment.status) ? (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Check-in opens on the day of your visit. Your token will appear under &quot;{VISIT_FLOW.queue.patientNav}&quot; after you arrive.
+        </Alert>
+      ) : null}
 
       <Stack spacing={2} sx={{ mb: 3 }}>
         <Chip label={appointmentLabel(appointment.status)} color={statusColor(appointment.status)} sx={{ alignSelf: 'flex-start' }} />
@@ -161,12 +173,12 @@ export function PatientAppointmentDetailPage() {
             onClick={handleSelfCheckIn}
             disabled={selfCheckInMutation.isPending}
           >
-            Check in now
+            {VISIT_FLOW.request.patientAction}
           </Button>
         ) : null}
         {appointment.status === 'ARRIVED' ? (
-          <Button component={RouterLink} to="/patient/opd" variant="outlined">
-            View OPD status
+          <Button component={RouterLink} to="/patient/opd" variant="contained">
+            {VISIT_FLOW.queue.patientNav}
           </Button>
         ) : null}
         {appointment.canCancel ? (

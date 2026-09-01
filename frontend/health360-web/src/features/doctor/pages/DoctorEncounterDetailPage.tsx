@@ -219,7 +219,7 @@ export function DoctorEncounterDetailPage() {
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
           <Button component={RouterLink} to="/doctor/opd" size="small">← OPD</Button>
           <Typography variant="subtitle1" fontWeight={700}>
-            {encounter.tokenDisplay || encounter.encounterNumber}
+            {encounter.patientName || encounter.encounterNumber}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {encounter.patientName}

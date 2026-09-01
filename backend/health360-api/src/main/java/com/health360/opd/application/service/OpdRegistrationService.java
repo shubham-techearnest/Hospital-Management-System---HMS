@@ -11,6 +11,7 @@ import com.health360.opd.domain.QueueEntryStatus;
 import com.health360.opd.infrastructure.persistence.entity.OpdQueueEntryEntity;
 import com.health360.opd.infrastructure.persistence.repository.OpdQueueEntryRepository;
 import com.health360.opd.presentation.dto.request.CheckInAppointmentRequest;
+import com.health360.opd.presentation.dto.request.OpdRequestRegistrationRequest;
 import com.health360.opd.presentation.dto.request.WalkInRegistrationRequest;
 import com.health360.opd.presentation.dto.response.OpdQueueEntryResponse;
 import com.health360.opd.presentation.dto.response.OpdRegistrationResponse;
@@ -275,6 +276,74 @@ public class OpdRegistrationService {
                 "OpdQueueEntry", queueEntry.getId(),
                 Map.of("patientId", patientId.toString(),
                         "token", queueEntry.getTokenDisplay()));
+
+        return OpdRegistrationResponse.builder()
+                .queueEntry(queueResponse)
+                .encounter(encounterResponse)
+                .build();
+    }
+
+    /**
+     * Patient self-service OPD request — joins today's queue (same outcome as walk-in at desk).
+     */
+    @Transactional
+    public OpdRegistrationResponse registerOpdRequest(
+            UserPrincipal principal, OpdRequestRegistrationRequest request) {
+        opdAccessService.assertCanRequestOpd(principal);
+
+        UUID tenantId = principal.getTenantId();
+        PatientProfileEntity profile = patientProfileRepository
+                .findByTenantIdAndUserIdAndDeletedAtIsNull(tenantId, principal.getUserId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Patient profile not found"));
+
+        UUID patientId = profile.getId();
+        LocalDate today = LocalDate.now(ZoneId.systemDefault());
+
+        queueEntryRepository
+                .findActiveQueueForPatient(tenantId, patientId, request.getHospitalId(), request.getBranchId(), today)
+                .ifPresent(existing -> {
+                    throw new BusinessException(ErrorCode.DUPLICATE_REGISTRATION, HttpStatus.CONFLICT,
+                            "You already have an active OPD visit at this hospital today");
+                });
+
+        hospitalRegistrationLinker.ensureLinked(
+                tenantId, patientId, request.getHospitalId(), request.getBranchId(), principal.getUserId());
+
+        CreateEncounterRequest encounterRequest = new CreateEncounterRequest();
+        encounterRequest.setPatientId(patientId);
+        encounterRequest.setHospitalId(request.getHospitalId());
+        encounterRequest.setBranchId(request.getBranchId());
+        encounterRequest.setPrimaryDoctorId(request.getPrimaryDoctorId());
+        encounterRequest.setEncounterType("OPD");
+        encounterRequest.setVisitReason(request.getVisitReason());
+
+        EncounterResponse encounterResponse = encounterService.createEncounterForRegistration(principal, encounterRequest);
+        encounterResponse = encounterService.markWaitingForRegistration(
+                principal, encounterResponse.getEncounterId());
+
+        OpdQueueEntryEntity queueEntry = createQueueEntry(
+                principal,
+                encounterResponse.getEncounterId(),
+                request.getHospitalId(),
+                request.getBranchId(),
+                null,
+                null,
+                OpdRegistrationType.PATIENT_REQUEST,
+                null);
+
+        EncounterEntity encounterEntity = encounterRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(encounterResponse.getEncounterId(), tenantId)
+                .orElseThrow();
+
+        OpdQueueEntryResponse queueResponse = opdMapper.toQueueEntryResponse(
+                queueEntry, encounterEntity, encounterResponse);
+
+        auditLogService.record(tenantId, principal.getUserId(), "OPD_PATIENT_REQUEST",
+                "OpdQueueEntry", queueEntry.getId(),
+                Map.of("patientId", patientId.toString(),
+                        "hospitalId", request.getHospitalId().toString(),
+                        "branchId", request.getBranchId().toString()));
 
         return OpdRegistrationResponse.builder()
                 .queueEntry(queueResponse)

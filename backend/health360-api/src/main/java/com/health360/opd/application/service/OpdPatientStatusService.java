@@ -38,10 +38,21 @@ public class OpdPatientStatusService {
     private PatientOpdVisitStatusResponse toResponse(Object[] row) {
         OpdQueueEntryEntity entry = (OpdQueueEntryEntity) row[0];
         EncounterEntity encounter = (EncounterEntity) row[1];
+        Integer queuePosition = null;
+        if ("WAITING".equals(entry.getStatus())) {
+            long ahead = queueEntryRepository.countWaitingAhead(
+                    entry.getTenantId(),
+                    entry.getHospitalId(),
+                    entry.getBranchId(),
+                    entry.getQueueDate(),
+                    entry.getTokenNumber());
+            queuePosition = (int) ahead + 1;
+        }
         return PatientOpdVisitStatusResponse.builder()
                 .queueEntryId(entry.getId())
                 .tokenDisplay(entry.getTokenDisplay())
                 .tokenNumber(entry.getTokenNumber())
+                .queuePosition(queuePosition)
                 .status(entry.getStatus())
                 .hospitalId(entry.getHospitalId())
                 .branchId(entry.getBranchId())

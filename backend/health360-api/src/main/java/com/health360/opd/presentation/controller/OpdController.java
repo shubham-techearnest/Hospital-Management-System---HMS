@@ -10,6 +10,7 @@ import com.health360.opd.presentation.dto.request.AssignDoctorRequest;
 import com.health360.opd.presentation.dto.request.CheckInAppointmentRequest;
 import com.health360.opd.presentation.dto.request.CreateOpdDeskRequest;
 import com.health360.opd.presentation.dto.request.OpdQueueActionRequest;
+import com.health360.opd.presentation.dto.request.OpdRequestRegistrationRequest;
 import com.health360.opd.presentation.dto.request.SkipQueueEntryRequest;
 import com.health360.opd.presentation.dto.request.WalkInRegistrationRequest;
 import com.health360.opd.presentation.dto.response.OpdDeskResponse;
@@ -89,6 +90,15 @@ public class OpdController {
             @Valid @RequestBody WalkInRegistrationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
                 registrationService.registerWalkIn(principal, request)));
+    }
+
+    @PostMapping("/requests")
+    @PreAuthorize("hasAuthority('opd:request:own')")
+    public ResponseEntity<ApiResponse<OpdRegistrationResponse>> registerOpdRequest(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody OpdRequestRegistrationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
+                registrationService.registerOpdRequest(principal, request)));
     }
 
     @PostMapping("/registrations/check-in")

@@ -73,6 +73,13 @@ export interface WalkInRegistrationPayload {
   priority?: number;
 }
 
+export interface OpdRequestPayload {
+  hospitalId: string;
+  branchId: string;
+  primaryDoctorId?: string;
+  visitReason?: string;
+}
+
 export interface CheckInAppointmentPayload {
   appointmentId: string;
   deskId?: string;
@@ -124,6 +131,11 @@ export async function listOpdQueue(params: {
 }): Promise<SpringPage<OpdQueueEntry>> {
   const { data } = await apiClient.get<ApiEnvelope<SpringPage<OpdQueueEntry>>>('/opd/queue', { params });
   return unwrap(data) ?? { content: [], totalElements: 0, totalPages: 0, number: 0, size: params.size ?? 50 };
+}
+
+export async function registerOpdRequest(payload: OpdRequestPayload): Promise<OpdRegistrationResult> {
+  const { data } = await apiClient.post<ApiEnvelope<OpdRegistrationResult>>('/opd/requests', payload);
+  return unwrap(data);
 }
 
 export async function registerWalkIn(payload: WalkInRegistrationPayload): Promise<OpdRegistrationResult> {
@@ -222,6 +234,7 @@ export interface PatientOpdVisitStatus {
   queueEntryId: string;
   tokenDisplay: string;
   tokenNumber: number;
+  queuePosition?: number | null;
   status: string;
   hospitalId: string;
   branchId: string;

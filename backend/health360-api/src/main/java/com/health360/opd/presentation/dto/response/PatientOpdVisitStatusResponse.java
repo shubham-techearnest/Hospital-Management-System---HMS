@@ -12,6 +12,7 @@ public class PatientOpdVisitStatusResponse {
     UUID queueEntryId;
     String tokenDisplay;
     int tokenNumber;
+    Integer queuePosition;
     String status;
     UUID hospitalId;
     UUID branchId;

@@ -18,15 +18,15 @@ const CARE_OPTIONS = [
     key: 'doctor',
     title: 'Find a Doctor',
     guestDescription:
-      'Search verified doctors by specialty, city, availability, and patient ratings. View profiles and book appointments after sign in.',
+      'Search verified doctors by specialty, city, and patient ratings. View profiles and request OPD visits after sign in.',
     authDescription:
-      'Search verified doctors by specialty, city, availability, and patient ratings. View profiles and book appointments.',
+      'Search verified doctors by specialty, city, and patient ratings. View profiles and request same-day OPD visits.',
     icon: <MedicalServicesIcon sx={{ fontSize: 40 }} color="primary" />,
-    chips: ['Specialty search', 'Available today', 'Nearby & travel time', 'Book online'],
-    authPath: '/patient/book',
+    chips: ['Specialty search', 'Same-day OPD', 'Nearby & travel time', 'Request online'],
+    authPath: '/patient/search',
     loginState: {
-      redirectTo: '/patient/book',
-      message: 'Sign in to search doctors and book appointments.',
+      redirectTo: '/patient/search',
+      message: 'Sign in to search doctors and request OPD visits.',
     },
     guestButtonLabel: 'Sign in to find doctors',
     authButtonLabel: 'Find doctors',
@@ -74,8 +74,8 @@ export function PublicCareDiscovery({ isAuthenticated = false, showPatientAction
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 720, lineHeight: 1.7 }}>
         {isAuthenticated
-          ? 'Search doctors and hospitals, compare options, and book visits from your patient portal.'
-          : 'Explore doctors and hospitals. Create a free account or sign in to search, compare, and book.'}
+          ? 'Search doctors and hospitals, compare options, and request OPD visits from your patient portal.'
+          : 'Explore doctors and hospitals. Create a free account or sign in to search, compare, and request OPD visits.'}
       </Typography>
       <Grid container spacing={{ xs: 2, md: 3 }}>
         {CARE_OPTIONS.map((option) => (

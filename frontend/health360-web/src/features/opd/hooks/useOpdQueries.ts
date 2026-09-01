@@ -12,12 +12,14 @@ import {
   listOpdDoctors,
   listOpdQueue,
   registerWalkIn,
+  registerOpdRequest,
   recallQueueEntry,
   skipQueueEntry,
   startQueueService,
   type CheckInAppointmentPayload,
   type CreateOpdDeskPayload,
   type WalkInRegistrationPayload,
+  type OpdRequestPayload,
 } from '../api/opdApi';
 
 export type QueueActionOpts = { deskId?: string; primaryDoctorId?: string; reason?: string };
@@ -87,6 +89,16 @@ export function useRegisterWalkIn(hospitalId: string, branchId: string) {
     mutationFn: (payload: WalkInRegistrationPayload) => registerWalkIn(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['opd', 'queue', hospitalId, branchId] });
+    },
+  });
+}
+
+export function useRegisterOpdRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: OpdRequestPayload) => registerOpdRequest(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: opdKeys.myToday });
     },
   });
 }

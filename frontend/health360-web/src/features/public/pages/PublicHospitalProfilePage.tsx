@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/app/store';
 import { useQuery } from '@tanstack/react-query';
 import {
   Alert,
@@ -24,6 +26,7 @@ import { brand } from '@/shared/brand/brand';
 
 export function PublicHospitalProfilePage() {
   const { hospitalId = '' } = useParams<{ hospitalId: string }>();
+  const user = useSelector((state: RootState) => state.auth.user);
 
   const { data: profile, isLoading, error } = useQuery({
     queryKey: ['public', 'hospital', hospitalId],
@@ -58,6 +61,9 @@ export function PublicHospitalProfilePage() {
     );
   }
 
+  const primaryBranch = profile.branches.find((b) => b.primary) ?? profile.branches[0];
+  const requestOpdPath = `/patient/request-opd?hospitalId=${hospitalId}${primaryBranch ? `&branchId=${primaryBranch.id}` : ''}`;
+
   return (
     <PublicProfileLayout>
       <Button component={RouterLink} to="/" sx={{ mb: 2 }}>← Back</Button>
@@ -86,6 +92,26 @@ export function PublicHospitalProfilePage() {
           {profile.totalBedCount != null ? (
             <Chip label={`${profile.totalBedCount} beds`} size="small" variant="outlined" />
           ) : null}
+        </Stack>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mt: 2 }}>
+          {user ? (
+            <Button component={RouterLink} to={requestOpdPath} variant="contained" size="large">
+              Request OPD visit
+            </Button>
+          ) : (
+            <Button
+              component={RouterLink}
+              to="/login"
+              state={{ redirectTo: requestOpdPath, message: 'Sign in to request an OPD visit at this hospital.' }}
+              variant="contained"
+              size="large"
+            >
+              Sign in to request OPD
+            </Button>
+          )}
+          <Button component={RouterLink} to={user ? '/patient/search' : '/register'} variant="outlined" size="large">
+            {user ? 'Find a doctor' : 'Create free account'}
+          </Button>
         </Stack>
       </Paper>
 

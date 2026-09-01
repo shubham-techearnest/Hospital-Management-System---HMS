@@ -12,13 +12,14 @@ import {
   Typography,
 } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import EventIcon from '@mui/icons-material/Event';
+import QueueIcon from '@mui/icons-material/Queue';
 import type { RootState } from '@/app/store';
 import { AnimatedPage } from '../components/AnimatedPage';
 import { usePatientProfile, useProfileCompletion } from '../hooks/usePatientQueries';
 import { useHealthDashboard, useDownloadHealthReportPdf } from '@/features/analytics/hooks/useAnalyticsQueries';
-import { useMyAppointments } from '@/features/scheduling/hooks/useSchedulingQueries';
-import { appointmentLabel, formatAppointmentDate, statusColor } from '@/features/scheduling/utils/schedulingUtils';
+import { useMyTodayOpd } from '@/features/opd/hooks/useOpdQueries';
+import { VISIT_FLOW, queuePositionLabel } from '@/features/opd/utils/visitFlowCopy';
+import { queueStatusColor, queueStatusLabel } from '@/shared/status/visitStatus';
 import { ScoreGauge } from '@/features/analytics/components/ScoreGauge';
 import { GoalsProgressRow } from '@/features/analytics/components/GoalsProgressRow';
 import { VitalsTrendSection } from '@/features/analytics/components/VitalsTrendSection';
@@ -32,12 +33,12 @@ export function DashboardPage() {
   const { data: profile } = usePatientProfile();
   const { data: completion, isLoading: completionLoading } = useProfileCompletion();
   const { data: dashboard, isLoading: dashboardLoading, isError: dashboardError, refetch: refetchDashboard } = useHealthDashboard();
-  const { data: upcomingAppointments = [], isLoading: appointmentsLoading } = useMyAppointments('upcoming');
+  const { data: todayOpd = [], isLoading: opdLoading } = useMyTodayOpd();
   const downloadReport = useDownloadHealthReportPdf();
   const [exportError, setExportError] = useState<string | null>(null);
 
   const displayName = authUser?.firstName ?? 'there';
-  const nextAppointment = upcomingAppointments[0];
+  const activeOpd = todayOpd.find((v) => !['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(v.status));
   const loading = dashboardLoading || completionLoading;
   const uhid = profile?.uhid;
 
@@ -136,42 +137,42 @@ export function DashboardPage() {
 
         <Grid item xs={12} md={6}>
           <DashboardSection
-            title="Next appointment"
+            title="OPD today"
             action={
-              <Button component={RouterLink} to="/patient/appointments" size="small">
-                All appointments
+              <Button component={RouterLink} to="/patient/opd" size="small">
+                {VISIT_FLOW.queue.patientNav}
               </Button>
             }
           >
-            {appointmentsLoading ? (
+            {opdLoading ? (
               <Skeleton height={72} />
-            ) : nextAppointment ? (
+            ) : activeOpd ? (
               <Stack spacing={1}>
                 <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
-                  <EventIcon color="primary" fontSize="small" />
-                  <Typography fontWeight={600}>{nextAppointment.doctor.name}</Typography>
-                  <Chip label={appointmentLabel(nextAppointment.status)} size="small" color={statusColor(nextAppointment.status)} />
+                  <QueueIcon color="primary" fontSize="small" />
+                  {activeOpd.status === 'WAITING' && activeOpd.queuePosition != null ? (
+                    <Typography fontWeight={600}>Queue {queuePositionLabel(activeOpd.queuePosition)}</Typography>
+                  ) : (
+                    <Typography fontWeight={600}>{queueStatusLabel(activeOpd.status)}</Typography>
+                  )}
+                  <Chip label={queueStatusLabel(activeOpd.status)} size="small" color={queueStatusColor(activeOpd.status)} />
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
-                  {formatAppointmentDate(nextAppointment.scheduledAt)}
-                  {nextAppointment.hospital.name ? ` · ${nextAppointment.hospital.name}` : ''}
+                  {activeOpd.status === 'WAITING' && 'Waiting for your turn — stay in the waiting area.'}
+                  {activeOpd.status === 'CALLED' && 'Please proceed to the consultation room.'}
+                  {activeOpd.status === 'IN_SERVICE' && 'Consultation in progress.'}
                 </Typography>
-                <Button
-                  component={RouterLink}
-                  to={`/patient/appointments/${nextAppointment.appointmentId}`}
-                  size="small"
-                  sx={{ alignSelf: 'flex-start' }}
-                >
-                  View details
+                <Button component={RouterLink} to="/patient/opd" size="small" sx={{ alignSelf: 'flex-start' }}>
+                  View queue status
                 </Button>
               </Stack>
             ) : (
               <EmptyState
-                icon={<EventIcon />}
-                title="No upcoming appointments"
-                description="Find a doctor and book your next visit when you are ready."
-                actionLabel="Find care"
-                to="/patient/search"
+                icon={<QueueIcon />}
+                title="No OPD visit today"
+                description="Request an OPD visit at a hospital to join today's queue."
+                actionLabel={VISIT_FLOW.request.patientNav}
+                to="/patient/request-opd"
               />
             )}
           </DashboardSection>

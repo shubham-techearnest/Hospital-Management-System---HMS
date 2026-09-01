@@ -79,7 +79,7 @@ export function UnifiedSearchPage() {
           <Button size="small" variant="outlined" startIcon={<MyLocationIcon />} onClick={handleUseLocation} disabled={locating}>
             {coords ? 'Location on' : 'Near me'}
           </Button>
-          <Button component={RouterLink} to="/patient/book" size="small">Doctor filters</Button>
+          <Button component={RouterLink} to="/patient/request-opd" size="small">Request OPD</Button>
           <Button component={RouterLink} to="/patient/hospitals" size="small">Hospital filters</Button>
         </Stack>
         {locationError ? <Alert severity="warning" sx={{ py: 0.5 }}>{locationError}</Alert> : null}

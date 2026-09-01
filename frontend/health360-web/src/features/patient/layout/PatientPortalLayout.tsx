@@ -2,7 +2,6 @@ import { Navigate } from 'react-router-dom';
 import { Box, Skeleton } from '@mui/material';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
-import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import QueueOutlinedIcon from '@mui/icons-material/QueueOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
@@ -19,11 +18,12 @@ import { isAxiosError } from 'axios';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 import { usePatientProfile } from '../hooks/usePatientQueries';
 
+import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
+
 const navItems: PortalNavItem[] = [
   { section: 'Navigation', label: 'Overview', path: '/patient/dashboard', icon: <DashboardOutlinedIcon /> },
-  { section: 'Care', label: 'Book appointment', path: '/patient/book', icon: <EventAvailableOutlinedIcon /> },
-  { section: 'Care', label: 'OPD today', path: '/patient/opd', icon: <QueueOutlinedIcon /> },
-  { section: 'Care', label: 'Appointments', path: '/patient/appointments', icon: <EventNoteOutlinedIcon /> },
+  { section: 'Care', label: VISIT_FLOW.request.patientNav, path: '/patient/request-opd', icon: <EventAvailableOutlinedIcon /> },
+  { section: 'Care', label: VISIT_FLOW.queue.patientNav, path: '/patient/opd', icon: <QueueOutlinedIcon /> },
   { section: 'Care', label: 'Visits', path: '/patient/encounters', icon: <MedicalServicesOutlinedIcon /> },
   { section: 'Care', label: 'Find care', path: '/patient/search', icon: <SearchOutlinedIcon /> },
   { section: 'Health', label: 'Analytics', path: '/patient/health-score', icon: <InsightsOutlinedIcon /> },

@@ -21,9 +21,8 @@ import {
 import { OpdQueueTable } from '@/features/opd/components/OpdQueueTable';
 import { OpdFloorStatusHelp } from '@/features/opd/components/OpdFloorStatusHelp';
 import { WalkInRegistrationPanel } from '@/features/reception/components/WalkInRegistrationPanel';
-import { ReceptionSlotBookingPanel } from '@/features/reception/components/ReceptionSlotBookingPanel';
 import { ReceptionOpdFlowBanner } from '@/features/reception/components/ReceptionOpdFlowBanner';
-import { ReceptionArrivalPanel } from '@/features/reception/components/ReceptionArrivalPanel';
+import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
 
 const DEFAULT_HOSPITAL_ID = '00000000-0000-0000-0000-000000000030';
 const DEFAULT_BRANCH_ID = '00000000-0000-0000-0000-000000000031';
@@ -89,8 +88,8 @@ export function ReceptionDashboardPage() {
   return (
     <AnimatedPage>
       <DashboardPageHeader
-        title="Reception — OPD"
-        subtitle="Queue, walk-ins, slot booking, and appointment arrival. Doctor actions update this board."
+        title="Reception"
+        subtitle="New OPD registration and live queue — like a hospital OPD counter"
         actions={
           <Button variant="outlined" onClick={() => refetchQueue()}>Refresh queue</Button>
         }
@@ -145,10 +144,8 @@ export function ReceptionDashboardPage() {
       <ReceptionOpdFlowBanner />
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
-        <Tab label="Queue" />
-        <Tab label="Walk-in today (queue now)" />
-        <Tab label="Book future appointment" />
-        <Tab label="Check in booked appointment" />
+        <Tab label={VISIT_FLOW.queue.short} />
+        <Tab label={VISIT_FLOW.walkIn.deskTab} />
       </Tabs>
 
       {tab === 0 && (
@@ -197,7 +194,7 @@ export function ReceptionDashboardPage() {
           desks={deskOptions}
           pending={registerWalkIn.isPending}
           onSubmit={async ({ patientId, visitReason, deskId, primaryDoctorId }) => {
-            const result = await registerWalkIn.mutateAsync({
+            await registerWalkIn.mutateAsync({
               patientId,
               hospitalId,
               branchId,
@@ -207,29 +204,13 @@ export function ReceptionDashboardPage() {
             });
             setSnackbar({
               open: true,
-              message: `Walk-in registered — token ${result.queueEntry.tokenDisplay}. Send patient to vitals, then doctor completes the visit before checkout.`,
+              message: 'Patient added to OPD queue. Send to vitals, then doctor completes the visit before checkout.',
               severity: 'success',
             });
             setTab(0);
           }}
         />
       )}
-
-      {tab === 2 && scopeReady ? (
-        <ReceptionSlotBookingPanel hospitalId={hospitalId} branchId={branchId} />
-      ) : null}
-
-      {tab === 3 && scopeReady ? (
-        <ReceptionArrivalPanel
-          hospitalId={hospitalId}
-          branchId={branchId}
-          desks={deskOptions}
-          onArrived={(message) => {
-            setSnackbar({ open: true, message, severity: 'success' });
-            setTab(0);
-          }}
-        />
-      ) : null}
 
       <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>
         <Alert severity={snackbar.severity}>{snackbar.message}</Alert>

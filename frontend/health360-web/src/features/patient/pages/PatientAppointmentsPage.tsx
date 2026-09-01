@@ -18,6 +18,8 @@ import { APPOINTMENT_FILTERS, appointmentLabel, formatAppointmentDate, statusCol
 import { emptyStateMessage, parseApiError } from '@/shared/api/errorUtils';
 import { CompactFilterChips } from '@/shared/filters/CompactFilterChips';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
+import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
+import { VisitFlowGuide } from '@/features/opd/components/VisitFlowGuide';
 
 export function PatientAppointmentsPage() {
   const [filter, setFilter] = useState<AppointmentFilter>('upcoming');
@@ -29,14 +31,16 @@ export function PatientAppointmentsPage() {
   return (
     <AnimatedPage>
       <DashboardPageHeader
-        title="My Appointments"
-        subtitle="View upcoming visits, past appointments, and cancellations."
+        title={VISIT_FLOW.queue.patientNav}
+        subtitle={VISIT_FLOW.queue.hint}
         actions={
-          <Button component={RouterLink} to="/patient/book" size="small" variant="contained">
-            Find a doctor
+          <Button component={RouterLink} to="/patient/request-opd" size="small" variant="contained">
+            {VISIT_FLOW.request.patientNav}
           </Button>
         }
       />
+
+      <VisitFlowGuide variant="patient" compact />
 
       <CompactFilterChips value={filter} options={filterOptions} onChange={setFilter} />
 

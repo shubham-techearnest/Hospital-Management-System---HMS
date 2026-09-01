@@ -46,14 +46,22 @@ export function HospitalListCard({ hospital, travelTimeMinutes }: HospitalListCa
               ) : null}
             </Stack>
           </Box>
-          <Button
-            variant="outlined"
-            component={RouterLink}
-            to={`/hospitals/${hospital.hospitalId}`}
-            sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
-          >
-            View profile
-          </Button>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>
+            <Button
+              variant="contained"
+              component={RouterLink}
+              to={`/patient/request-opd?hospitalId=${hospital.hospitalId}`}
+            >
+              Request OPD
+            </Button>
+            <Button
+              variant="outlined"
+              component={RouterLink}
+              to={`/hospitals/${hospital.hospitalId}`}
+            >
+              View profile
+            </Button>
+          </Stack>
         </Stack>
       </CardContent>
     </Card>

@@ -79,11 +79,8 @@ const DoctorHospitalAssociationsPage = lazy(() =>
 const DoctorSchedulePage = lazy(() =>
   import('@/features/doctor/pages/DoctorSchedulePage').then((m) => ({ default: m.DoctorSchedulePage })),
 );
-const BookAppointmentPage = lazy(() =>
-  import('@/features/patient/pages/BookAppointmentPage').then((m) => ({ default: m.BookAppointmentPage })),
-);
-const DoctorSearchPage = lazy(() =>
-  import('@/features/patient/pages/DoctorSearchPage').then((m) => ({ default: m.DoctorSearchPage })),
+const RequestOpdPage = lazy(() =>
+  import('@/features/patient/pages/RequestOpdPage').then((m) => ({ default: m.RequestOpdPage })),
 );
 const UnifiedSearchPage = lazy(() =>
   import('@/features/patient/pages/UnifiedSearchPage').then((m) => ({ default: m.UnifiedSearchPage })),
@@ -172,12 +169,6 @@ const NursingDashboardPage = lazy(() =>
 const IcuNurseDashboardPage = lazy(() =>
   import('@/features/icu-nurse/pages/IcuNurseDashboardPage').then((m) => ({ default: m.IcuNurseDashboardPage })),
 );
-const PatientAppointmentsPage = lazy(() =>
-  import('@/features/patient/pages/PatientAppointmentsPage').then((m) => ({ default: m.PatientAppointmentsPage })),
-);
-const PatientAppointmentDetailPage = lazy(() =>
-  import('@/features/patient/pages/PatientAppointmentDetailPage').then((m) => ({ default: m.PatientAppointmentDetailPage })),
-);
 const LabValuesPage = lazy(() =>
   import('@/features/patient/pages/LabValuesPage').then((m) => ({ default: m.LabValuesPage })),
 );
@@ -207,12 +198,6 @@ const AdminAuditLogsPage = lazy(() =>
 );
 const HospitalSubscriptionPage = lazy(() =>
   import('@/features/hospital/pages/HospitalSubscriptionPage').then((m) => ({ default: m.HospitalSubscriptionPage })),
-);
-const DoctorAppointmentsPage = lazy(() =>
-  import('@/features/doctor/pages/DoctorAppointmentsPage').then((m) => ({ default: m.DoctorAppointmentsPage })),
-);
-const DoctorAppointmentDetailPage = lazy(() =>
-  import('@/features/doctor/pages/DoctorAppointmentDetailPage').then((m) => ({ default: m.DoctorAppointmentDetailPage })),
 );
 const DoctorOpdPage = lazy(() =>
   import('@/features/doctor/pages/DoctorOpdPage').then((m) => ({ default: m.DoctorOpdPage })),
@@ -343,10 +328,11 @@ export function AppRouter() {
             }
           />
           <Route path="search" element={<LazyPage><UnifiedSearchPage /></LazyPage>} />
-          <Route path="book" element={<LazyPage><DoctorSearchPage /></LazyPage>} />
+          <Route path="request-opd" element={<LazyPage><RequestOpdPage /></LazyPage>} />
+          <Route path="book" element={<Navigate to="/patient/request-opd" replace />} />
           <Route path="hospitals" element={<LazyPage><HospitalSearchPage /></LazyPage>} />
           <Route path="doctors/:doctorId" element={<LazyPage><DoctorBookingProfilePage /></LazyPage>} />
-          <Route path="book/:doctorId" element={<LazyPage><BookAppointmentPage /></LazyPage>} />
+          <Route path="book/:doctorId" element={<Navigate to="/patient/request-opd" replace />} />
           <Route path="reports" element={<LazyPage><HealthDocumentsPage /></LazyPage>} />
           <Route path="lab-values" element={<LazyPage><LabValuesPage /></LazyPage>} />
           <Route path="timeline" element={<LazyPage><HealthTimelinePage /></LazyPage>} />
@@ -355,22 +341,8 @@ export function AppRouter() {
           <Route path="payments" element={<LazyPage><PatientPaymentsPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
           <Route path="settings/notifications" element={<LazyPage><NotificationPreferencesPage /></LazyPage>} />
-          <Route
-            path="appointments"
-            element={
-              <LazyPage>
-                <PatientAppointmentsPage />
-              </LazyPage>
-            }
-          />
-          <Route
-            path="appointments/:appointmentId"
-            element={
-              <LazyPage>
-                <PatientAppointmentDetailPage />
-              </LazyPage>
-            }
-          />
+          <Route path="appointments" element={<Navigate to="/patient/opd" replace />} />
+          <Route path="appointments/:appointmentId" element={<Navigate to="/patient/opd" replace />} />
           <Route path="encounters" element={<LazyPage><PatientEncountersPage /></LazyPage>} />
           <Route path="encounters/:encounterId" element={<LazyPage><PatientEncounterDetailPage /></LazyPage>} />
         </Route>
@@ -413,13 +385,9 @@ export function AppRouter() {
           />
           <Route
             path="appointments"
-            element={
-              <LazyPage>
-                <DoctorAppointmentsPage />
-              </LazyPage>
-            }
+            element={<Navigate to="/doctor/opd" replace />}
           />
-          <Route path="appointments/:appointmentId" element={<LazyPage><DoctorAppointmentDetailPage /></LazyPage>} />
+          <Route path="appointments/:appointmentId" element={<Navigate to="/doctor/opd" replace />} />
           <Route path="opd" element={<LazyPage><DoctorOpdPage /></LazyPage>} />
           <Route path="encounters/:encounterId" element={<LazyPage><DoctorEncounterDetailPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
