@@ -17,11 +17,11 @@ import {
   useEncounterPrescriptions,
 } from '@/features/clinical/hooks/useClinicalQueries';
 import type { Prescription, PrescriptionItemPayload } from '@/features/clinical/api/clinicalApi';
+import type { PatientSummaryMedication } from '@/features/patient/api/patientSummaryApi';
 import { useMedicines } from '@/features/pharmacy/hooks/usePharmacyQueries';
 import { useDosageTemplates } from '@/features/hospital/hooks/useClinicalCatalogQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
 
-const ROUTE_OPTIONS = ['ORAL', 'TOPICAL', 'IV', 'IM', 'SC', 'INHALATION', 'NASAL', 'OPHTHALMIC', 'OTIC'];
 const FREQUENCY_OPTIONS = [
   'OD (once daily)',
   'BD (twice daily)',
@@ -31,6 +31,8 @@ const FREQUENCY_OPTIONS = [
   'SOS (as needed)',
   'STAT (immediately)',
 ];
+
+const QUICK_FREQUENCIES = ['OD (once daily)', 'BD (twice daily)', 'TDS (three times daily)', 'SOS (as needed)'];
 
 type LineForm = PrescriptionItemPayload & { key: string };
 
@@ -53,6 +55,7 @@ type Props = {
   canEdit: boolean;
   compact?: boolean;
   onSigned?: () => void;
+  patientMedications?: PatientSummaryMedication[];
 };
 
 export function EPrescriptionPanel({
@@ -62,6 +65,7 @@ export function EPrescriptionPanel({
   canEdit,
   compact = false,
   onSigned,
+  patientMedications = [],
 }: Props) {
   const { data: prescriptions = [], isLoading } = useEncounterPrescriptions(encounterId);
   const { data: medicines = [] } = useMedicines(hospitalId, branchId);
@@ -97,6 +101,33 @@ export function EPrescriptionPanel({
       setLines([emptyLine()]);
     }
   }, [draft?.prescriptionId, draft?.status, canEdit]);
+
+  const addQuickLine = (patch: Partial<LineForm>) => {
+    const emptyIdx = lines.findIndex((l) => !l.medicineName?.trim() && !l.medicineId);
+    if (emptyIdx >= 0) {
+      setLines((prev) => prev.map((l, i) => (i === emptyIdx ? { ...l, ...patch } : l)));
+    } else {
+      setLines((prev) => [...prev, { ...emptyLine(), ...patch }]);
+    }
+  };
+
+  const addMedicineQuick = (med: { medicineId?: string; name: string; defaultRoute?: string }) => {
+    addQuickLine({
+      medicineId: med.medicineId,
+      medicineName: med.name,
+      route: med.defaultRoute ?? 'ORAL',
+      frequency: 'BD (twice daily)',
+      durationDays: 5,
+      doseText: '1 tablet',
+      quantity: 1,
+    });
+  };
+
+  const applyFrequencyToLast = (freq: string) => {
+    if (lines.length === 0) return;
+    const lastKey = lines[lines.length - 1].key;
+    updateLine(lastKey, { frequency: freq });
+  };
 
   const pending =
     actions.createPrescription.isPending
@@ -225,67 +256,100 @@ export function EPrescriptionPanel({
 
       {canEdit ? (
         <Stack spacing={2}>
-          <TextField
-            label="Prescription notes"
-            fullWidth
-            multiline
-            minRows={1}
-            value={notes}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)}
-            disabled={pending}
-          />
-          {lines.map((line) => (
-            <Box key={line.key} sx={{ p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-              <Stack spacing={1.5}>
+          {compact && medicines.length > 0 ? (
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                Quick add medicine:
+              </Typography>
+              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                {medicines.slice(0, 10).map((m) => (
+                  <Chip
+                    key={m.medicineId}
+                    label={m.name}
+                    size="small"
+                    variant="outlined"
+                    onClick={() => addMedicineQuick(m)}
+                    disabled={pending}
+                  />
+                ))}
+              </Stack>
+            </Box>
+          ) : null}
+          {compact && patientMedications.length > 0 ? (
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                Repeat from patient profile:
+              </Typography>
+              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                {patientMedications.map((m) => (
+                  <Chip
+                    key={m.name}
+                    label={m.name}
+                    size="small"
+                    color="secondary"
+                    variant="outlined"
+                    onClick={() => addQuickLine({
+                      medicineName: m.name,
+                      doseText: m.dosage ?? '1 tablet',
+                      frequency: m.frequency ?? 'BD (twice daily)',
+                      route: 'ORAL',
+                      durationDays: 5,
+                      quantity: 1,
+                    })}
+                    disabled={pending}
+                  />
+                ))}
+              </Stack>
+            </Box>
+          ) : null}
+          {compact ? (
+            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+              <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                Frequency:
+              </Typography>
+              {QUICK_FREQUENCIES.map((f) => (
+                <Chip key={f} label={f.split(' ')[0]} size="small" variant="outlined"
+                  onClick={() => applyFrequencyToLast(f)} disabled={pending} />
+              ))}
+            </Stack>
+          ) : null}
+          {!compact ? (
+            <TextField
+              label="Prescription notes"
+              fullWidth
+              multiline
+              minRows={1}
+              value={notes}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)}
+              disabled={pending}
+            />
+          ) : null}
+          {lines.map((line, lineIdx) => (
+            <Box key={line.key} sx={{ p: compact ? 1 : 1.5, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+              <Stack spacing={1}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="flex-start">
                   <TextField
-                    select
-                    label="Medicine"
-                    size="small"
-                    sx={{ minWidth: 220, flex: 1 }}
-                    value={line.medicineId ?? ''}
-                    onChange={(e) => onMedicineSelect(line.key, e.target.value)}
-                    disabled={pending || medicines.length === 0}
-                  >
-                    <MenuItem value="">Free-text / other</MenuItem>
-                    {medicines.map((m) => (
-                      <MenuItem key={m.medicineId} value={m.medicineId}>
-                        {m.name} ({m.code})
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField
-                    label="Medicine name"
+                    label={`Medicine ${lineIdx + 1}`}
                     size="small"
                     fullWidth
                     value={line.medicineName ?? ''}
                     onChange={(e) => updateLine(line.key, { medicineName: e.target.value, medicineId: undefined })}
-                    disabled={pending || Boolean(line.medicineId)}
+                    disabled={pending}
+                    placeholder="Type or pick from chips above"
                   />
-                  {dosageTemplates.length > 0 ? (
+                  {!compact ? (
                     <TextField
                       select
-                      label="Dosage template"
+                      label="From formulary"
                       size="small"
                       sx={{ minWidth: 180 }}
-                      value=""
-                      onChange={(e) => {
-                        const t = dosageTemplates.find((d) => d.dosageTemplateId === e.target.value);
-                        if (!t) return;
-                        updateLine(line.key, {
-                          doseText: t.doseText ?? line.doseText,
-                          route: t.route ?? line.route,
-                          frequency: t.frequency ?? line.frequency,
-                          durationDays: t.durationDays ?? line.durationDays,
-                        });
-                      }}
-                      disabled={pending}
+                      value={line.medicineId ?? ''}
+                      onChange={(e) => onMedicineSelect(line.key, e.target.value)}
+                      disabled={pending || medicines.length === 0}
                     >
-                      <MenuItem value="">Apply template…</MenuItem>
-                      {dosageTemplates.map((d) => (
-                        <MenuItem key={d.dosageTemplateId} value={d.dosageTemplateId}>
-                          {d.label}
-                        </MenuItem>
+                      <MenuItem value="">—</MenuItem>
+                      {medicines.map((m) => (
+                        <MenuItem key={m.medicineId} value={m.medicineId}>{m.name}</MenuItem>
                       ))}
                     </TextField>
                   ) : null}
@@ -297,38 +361,49 @@ export function EPrescriptionPanel({
                     <DeleteOutlineIcon />
                   </IconButton>
                 </Stack>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                  <TextField label="Dose" size="small" value={line.doseText ?? ''}
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  <TextField label="Dose" size="small" sx={{ width: 100 }} value={line.doseText ?? ''}
                     onChange={(e) => updateLine(line.key, { doseText: e.target.value })} disabled={pending} />
-                  <TextField select label="Route" size="small" sx={{ minWidth: 120 }}
-                    value={line.route ?? 'ORAL'}
-                    onChange={(e) => updateLine(line.key, { route: e.target.value })} disabled={pending}>
-                    {ROUTE_OPTIONS.map((route) => (
-                      <MenuItem key={route} value={route}>{route}</MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField select label="Frequency" size="small" sx={{ minWidth: 180 }}
+                  <TextField select label="Freq" size="small" sx={{ minWidth: 140 }}
                     value={line.frequency ?? ''}
                     onChange={(e) => updateLine(line.key, { frequency: e.target.value })} disabled={pending}>
-                    <MenuItem value="">Custom / other</MenuItem>
+                    <MenuItem value="">—</MenuItem>
                     {FREQUENCY_OPTIONS.map((freq) => (
-                      <MenuItem key={freq} value={freq}>{freq}</MenuItem>
+                      <MenuItem key={freq} value={freq}>{freq.split(' ')[0]}</MenuItem>
                     ))}
                   </TextField>
-                  <TextField label="Days" size="small" type="number" sx={{ width: 100 }}
+                  <TextField label="Days" size="small" type="number" sx={{ width: 72 }}
                     value={line.durationDays ?? ''}
                     onChange={(e) => updateLine(line.key, {
                       durationDays: e.target.value ? Number(e.target.value) : undefined,
                     })} disabled={pending} />
-                  <TextField label="Qty" size="small" type="number" sx={{ width: 90 }}
-                    value={line.quantity ?? 1}
-                    onChange={(e) => updateLine(line.key, { quantity: Number(e.target.value) || 1 })}
-                    disabled={pending} />
                 </Stack>
-                <TextField label="Line instructions" size="small" fullWidth
-                  value={line.instructions ?? ''}
-                  onChange={(e) => updateLine(line.key, { instructions: e.target.value })}
-                  disabled={pending} />
+                {!compact ? (
+                  <>
+                    {dosageTemplates.length > 0 ? (
+                      <TextField select label="Dosage template" size="small" sx={{ maxWidth: 220 }}
+                        value="" onChange={(e) => {
+                          const t = dosageTemplates.find((d) => d.dosageTemplateId === e.target.value);
+                          if (!t) return;
+                          updateLine(line.key, {
+                            doseText: t.doseText ?? line.doseText,
+                            route: t.route ?? line.route,
+                            frequency: t.frequency ?? line.frequency,
+                            durationDays: t.durationDays ?? line.durationDays,
+                          });
+                        }} disabled={pending}>
+                        <MenuItem value="">Apply template…</MenuItem>
+                        {dosageTemplates.map((d) => (
+                          <MenuItem key={d.dosageTemplateId} value={d.dosageTemplateId}>{d.label}</MenuItem>
+                        ))}
+                      </TextField>
+                    ) : null}
+                    <TextField label="Instructions" size="small" fullWidth
+                      value={line.instructions ?? ''}
+                      onChange={(e) => updateLine(line.key, { instructions: e.target.value })}
+                      disabled={pending} />
+                  </>
+                ) : null}
               </Stack>
             </Box>
           ))}

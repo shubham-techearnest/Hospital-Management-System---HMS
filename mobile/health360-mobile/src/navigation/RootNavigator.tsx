@@ -16,8 +16,17 @@ const linking: LinkingOptions<RootStackParamList> = {
     screens: {
       Auth: {
         screens: {
+          Welcome: '',
+          Login: 'login',
+          Register: 'register',
           VerifyEmail: {
             path: 'verify-email',
+            parse: {
+              token: (token: string) => token,
+            },
+          },
+          CompletePatientAccount: {
+            path: 'complete-patient-account',
             parse: {
               token: (token: string) => token,
             },

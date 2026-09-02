@@ -19,6 +19,8 @@ import {
   queueStatusColor,
   queueStatusLabel,
   visitEncounterStatusLabel,
+  invoiceStatusColor,
+  invoiceStatusLabel,
 } from '@/shared/status/visitStatus';
 
 export function PatientOpdStatusPage() {
@@ -66,15 +68,32 @@ export function PatientOpdStatusPage() {
               )}
               <Chip size="small" label={queueStatusLabel(v.status)} color={queueStatusColor(v.status)} />
               <Chip size="small" variant="outlined" label={visitEncounterStatusLabel(v.encounterStatus)} />
+              <Chip
+                size="small"
+                variant={v.invoiceStatus === 'PAID' ? 'filled' : 'outlined'}
+                label={invoiceStatusLabel(v.invoiceStatus)}
+                color={invoiceStatusColor(v.invoiceStatus)}
+              />
             </Stack>
             <Typography variant="body2" color="text.secondary">
-              {v.primaryDoctorId ? 'Doctor assigned' : 'Doctor will be assigned at reception'}
+              {v.hospitalName ? `${v.hospitalName}${v.branchName ? ` · ${v.branchName}` : ''}` : 'Your hospital visit'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {v.primaryDoctorName
+                ? `Dr. ${v.primaryDoctorName}`
+                : v.primaryDoctorId
+                  ? 'Doctor assigned'
+                  : 'Doctor will be assigned at reception'}
+              {v.encounterNumber ? ` · ${v.encounterNumber}` : ''}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               {v.status === 'WAITING' && 'Please wait in the waiting area — you will be called soon.'}
               {v.status === 'CALLED' && 'Please proceed to the consultation room now.'}
               {v.status === 'IN_SERVICE' && 'Consultation in progress.'}
-              {v.status === 'COMPLETED' && 'Visit completed. View summary, prescriptions, and payment below.'}
+              {v.status === 'COMPLETED' && 'Visit completed. '}
+              {v.status === 'COMPLETED' && v.invoiceStatus === 'PAID' && 'Bill paid — view summary and prescriptions below.'}
+              {v.status === 'COMPLETED' && v.invoiceStatus && v.invoiceStatus !== 'PAID' && 'Payment pending at billing counter.'}
+              {v.status === 'COMPLETED' && !v.invoiceStatus && 'Billing not started yet — pay at reception after checkout.'}
               {v.status === 'SKIPPED' && 'Skipped in queue — reception may recall you shortly.'}
             </Typography>
             {v.status === 'COMPLETED' || v.encounterStatus === 'COMPLETED' ? (

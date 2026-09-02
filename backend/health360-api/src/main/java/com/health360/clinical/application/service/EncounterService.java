@@ -13,6 +13,7 @@ import com.health360.hospital.infrastructure.persistence.repository.DepartmentRe
 import com.health360.opd.application.service.OpdVisitStatusSyncService;
 import com.health360.opd.infrastructure.persistence.entity.OpdQueueEntryEntity;
 import com.health360.opd.infrastructure.persistence.repository.OpdQueueEntryRepository;
+import com.health360.patient.application.service.PatientDisplayNameResolver;
 import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.scheduling.infrastructure.persistence.entity.AppointmentEntity;
@@ -52,6 +53,7 @@ public class EncounterService {
     private final ClinicalMapper mapper;
     private final AuditLogService auditLogService;
     private final PatientProfileRepository patientProfileRepository;
+    private final PatientDisplayNameResolver patientDisplayNameResolver;
     private final OpdQueueEntryRepository opdQueueEntryRepository;
     private final OpdVisitStatusSyncService opdVisitStatusSyncService;
     private final EncounterCheckoutGateService checkoutGateService;
@@ -672,16 +674,8 @@ public class EncounterService {
             Map<UUID, PatientProfileEntity> patients,
             Map<UUID, OpdQueueEntryEntity> queues) {
         PatientProfileEntity patient = patients.get(entity.getPatientId());
-        String name = null;
-        String uhid = null;
-        if (patient != null) {
-            name = ((patient.getLegalFirstName() == null ? "" : patient.getLegalFirstName()) + " "
-                    + (patient.getLegalLastName() == null ? "" : patient.getLegalLastName())).trim();
-            if (name.isBlank()) {
-                name = null;
-            }
-            uhid = patient.getUhid();
-        }
+        String name = patientDisplayNameResolver.resolve(patient);
+        String uhid = patient != null ? patient.getUhid() : null;
         OpdQueueEntryEntity queue = queues.get(entity.getId());
         return base.toBuilder()
                 .patientName(name)

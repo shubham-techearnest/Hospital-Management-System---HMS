@@ -1,5 +1,6 @@
 package com.health360.patient.presentation.dto.request;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
@@ -30,6 +31,10 @@ public class RegisterHospitalPatientRequest {
 
     @NotBlank
     private String primaryPhone;
+
+    @Email
+    @Size(max = 255)
+    private String email;
 
     private String secondaryPhone;
     private String bloodGroup;

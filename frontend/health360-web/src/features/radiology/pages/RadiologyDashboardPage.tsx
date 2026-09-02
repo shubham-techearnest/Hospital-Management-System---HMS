@@ -28,6 +28,8 @@ import MedicalInformationIcon from '@mui/icons-material/MedicalInformation';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useBranches, useHospitalProfile } from '@/features/hospital/hooks/useHospitalQueries';
+import { StaffHospitalScopeBar } from '@/features/hospital/components/StaffHospitalScopeBar';
+import { useStaffHospitalScope } from '@/features/hospital/hooks/useStaffHospitalScope';
 import {
   useImagingOrder,
   useImagingOrders,
@@ -35,9 +37,6 @@ import {
   usePendingImagingWorklist,
   useRadiologyMutations,
 } from '@/features/radiology/hooks/useRadiologyQueries';
-
-const DEFAULT_HOSPITAL_ID = '00000000-0000-0000-0000-000000000030';
-const DEFAULT_BRANCH_ID = '00000000-0000-0000-0000-000000000031';
 
 const STATUS_COLOR: Record<string, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
   RECEIVED: 'info',
@@ -53,13 +52,12 @@ export function RadiologyDashboardPage() {
   const { data: profile } = useHospitalProfile();
   const { data: branches = [] } = useBranches();
   const primaryBranch = useMemo(() => branches.find((b) => b.primary) ?? branches[0], [branches]);
+  const staffScope = useStaffHospitalScope();
 
   const [tab, setTab] = useState(0);
-  const [manualHospitalId, setManualHospitalId] = useState(DEFAULT_HOSPITAL_ID);
-  const [manualBranchId, setManualBranchId] = useState(DEFAULT_BRANCH_ID);
-  const hospitalId = profile?.id ?? manualHospitalId;
-  const branchId = primaryBranch?.id ?? manualBranchId;
-  const showManualScope = !profile?.id;
+  const hospitalId = profile?.id ?? staffScope.hospitalId;
+  const branchId = primaryBranch?.id ?? staffScope.branchId;
+  const showStaffScope = !profile?.id;
   const [orderPage, setOrderPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState('');
@@ -126,16 +124,12 @@ export function RadiologyDashboardPage() {
         />
       )}
 
-      {showManualScope ? (
-        <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>Hospital scope</Typography>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-            <TextField label="Hospital ID" size="small" fullWidth value={manualHospitalId}
-              onChange={(e) => setManualHospitalId(e.target.value)} />
-            <TextField label="Branch ID" size="small" fullWidth value={manualBranchId}
-              onChange={(e) => setManualBranchId(e.target.value)} />
-          </Stack>
-        </Paper>
+      {showStaffScope ? (
+        <StaffHospitalScopeBar
+          {...staffScope}
+          onScopeIndexChange={staffScope.setActiveScopeIndex}
+          onBranchChange={staffScope.setBranchId}
+        />
       ) : null}
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }} variant="scrollable">

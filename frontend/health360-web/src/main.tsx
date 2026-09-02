@@ -5,6 +5,9 @@ import { AppRouter } from './app/router';
 import { startBackendKeepAlive } from './shared/api/keepAlive';
 import './index.css';
 
+// Start warming the API immediately (do not wait for boot animation).
+startBackendKeepAlive();
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AppProviders>
@@ -19,7 +22,6 @@ const bootStartedAt = performance.now();
 
 const hideBootLoader = () => {
   if (!bootLoader) {
-    startBackendKeepAlive();
     return;
   }
   const remaining = Math.max(0, BOOT_DURATION_MS - (performance.now() - bootStartedAt));
@@ -29,7 +31,6 @@ const hideBootLoader = () => {
       bootLoader.classList.add('is-complete');
       window.setTimeout(() => bootLoader.remove(), 300);
     }, 100);
-    startBackendKeepAlive();
   }, remaining);
 };
 

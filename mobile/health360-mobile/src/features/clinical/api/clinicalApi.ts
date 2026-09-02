@@ -6,6 +6,10 @@ export interface Encounter {
   encounterId: string;
   encounterNumber: string;
   patientId: string;
+  patientName?: string;
+  uhid?: string;
+  tokenDisplay?: string;
+  queueStatus?: string;
   hospitalId: string;
   branchId: string;
   departmentId?: string;
@@ -32,6 +36,12 @@ export interface ClinicalNote {
   noteId: string;
   noteType: string;
   content: string;
+  chiefComplaint?: string;
+  hpi?: string;
+  examination?: string;
+  assessment?: string;
+  plan?: string;
+  status?: string;
   recordedAt: string;
 }
 
@@ -42,6 +52,36 @@ export interface ClinicalOrder {
   instructions?: string;
   items: { itemId: string; itemName: string; itemCode?: string }[];
   orderedAt: string;
+}
+
+export interface PrescriptionItem {
+  itemId: string;
+  medicineId?: string;
+  medicineCode?: string;
+  medicineName: string;
+  doseText?: string;
+  route?: string;
+  frequency?: string;
+  durationDays?: number;
+  quantity?: number;
+  instructions?: string;
+  safetyWarning?: string;
+  sortOrder: number;
+}
+
+export interface Prescription {
+  prescriptionId: string;
+  encounterId: string;
+  patientId: string;
+  hospitalId: string;
+  branchId: string;
+  prescriptionNumber: string;
+  status: string;
+  notes?: string;
+  prescribedBy?: string;
+  signedAt?: string;
+  createdAt: string;
+  items: PrescriptionItem[];
 }
 
 const emptyPage = <T>(): SpringPage<T> => ({
@@ -111,4 +151,39 @@ export async function listEncounterNotes(encounterId: string): Promise<ClinicalN
 export async function listEncounterOrders(encounterId: string): Promise<ClinicalOrder[]> {
   const { data } = await apiClient.get<ApiEnvelope<ClinicalOrder[]>>(`/clinical/encounters/${encounterId}/orders`);
   return unwrap(data) ?? [];
+}
+
+export async function listEncounterPrescriptions(encounterId: string): Promise<Prescription[]> {
+  const { data } = await apiClient.get<ApiEnvelope<Prescription[]>>(
+    `/clinical/encounters/${encounterId}/prescriptions`,
+  );
+  return unwrap(data) ?? [];
+}
+
+export async function listMyPrescriptions(): Promise<Prescription[]> {
+  const { data } = await apiClient.get<ApiEnvelope<Prescription[]>>('/clinical/prescriptions/me');
+  return unwrap(data) ?? [];
+}
+
+export interface WellnessPlan {
+  wellnessPlanId?: string;
+  encounterId: string;
+  patientId: string;
+  diet?: string;
+  restGuidance?: string;
+  exercise?: string;
+  lifestyle?: string;
+  notes?: string;
+  followUpDate?: string;
+  followUpReason?: string;
+  followUpStatus?: string;
+  followUpId?: string;
+  updatedAt?: string;
+}
+
+export async function getEncounterWellnessPlan(encounterId: string): Promise<WellnessPlan> {
+  const { data } = await apiClient.get<ApiEnvelope<WellnessPlan>>(
+    `/clinical/encounters/${encounterId}/wellness-plan`,
+  );
+  return unwrap(data);
 }

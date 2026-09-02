@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Chip,
   FormControlLabel,
   List,
   ListItem,
@@ -18,6 +19,20 @@ import type { LabTest } from '@/features/lab/api/labApi';
 import type { ImagingModality } from '@/features/radiology/api/radiologyApi';
 import { useEncounterActions } from '@/features/clinical/hooks/useClinicalQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
+
+const LAB_PANELS: Array<{ label: string; match: RegExp }> = [
+  { label: 'CBC', match: /cbc|complete blood|hemoglobin|hb|wbc|platelet/i },
+  { label: 'LFT', match: /lft|liver|sgpt|sgot|bilirubin|alkaline/i },
+  { label: 'RFT', match: /rft|renal|creatinine|urea|kidney/i },
+  { label: 'Sugar', match: /glucose|sugar|hba1c|fasting/i },
+  { label: 'Lipid', match: /lipid|cholesterol|triglyceride|hdl|ldl/i },
+  { label: 'Thyroid', match: /thyroid|tsh|t3|t4/i },
+  { label: 'Urine', match: /urine|urinalysis/i },
+];
+
+function testsForPanel(tests: LabTest[], pattern: RegExp): LabTest[] {
+  return tests.filter((t) => pattern.test(`${t.name} ${t.code}`));
+}
 
 type Props = {
   encounterId: string;
@@ -78,6 +93,11 @@ export function ClinicalOrdersQuickPanel({
     setLabInstructions('');
   };
 
+  const selectPanel = (pattern: RegExp) => {
+    const ids = testsForPanel(labTests, pattern).map((t) => t.labTestId);
+    setSelectedLabIds((prev) => [...new Set([...prev, ...ids])]);
+  };
+
   const selectedModality = modalities.find((m) => m.modalityId === selectedModalityId);
 
   return (
@@ -93,6 +113,24 @@ export function ClinicalOrdersQuickPanel({
       {canOrder && labTests.length > 0 ? (
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>Lab tests</Typography>
+          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
+            {LAB_PANELS.map((panel) => {
+              const count = testsForPanel(labTests, panel.match).length;
+              if (count === 0) return null;
+              return (
+                <Chip
+                  key={panel.label}
+                  label={panel.label}
+                  size="small"
+                  variant="outlined"
+                  onClick={() => selectPanel(panel.match)}
+                />
+              );
+            })}
+            {selectedLabIds.length > 0 ? (
+              <Chip label="Clear" size="small" onClick={() => setSelectedLabIds([])} />
+            ) : null}
+          </Stack>
           <Stack spacing={0.5} sx={{ maxHeight: 220, overflow: 'auto', mb: 1 }}>
             {labTests.map((test) => (
               <FormControlLabel

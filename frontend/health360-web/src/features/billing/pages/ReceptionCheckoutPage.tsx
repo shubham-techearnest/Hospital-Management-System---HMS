@@ -23,6 +23,7 @@ import {
   useEncounterOrders,
   useEncounterPrescriptions,
   useEncounterVitals,
+  useEncounter,
 } from '@/features/clinical/hooks/useClinicalQueries';
 import { OpdVisitChecklist } from '@/features/clinical/components/OpdVisitChecklist';
 import {
@@ -31,6 +32,7 @@ import {
   checkoutBlockers,
 } from '@/features/clinical/utils/opdVisitChecklist';
 import { parseApiError } from '@/shared/api/errorUtils';
+import { patientDisplayLabel } from '@/shared/status/visitStatus';
 import { isAxiosError } from 'axios';
 
 type LineForm = { description: string; quantity: string; unitPrice: string };
@@ -65,6 +67,7 @@ export function ReceptionCheckoutPage() {
     error: prescriptionsQueryError,
   } = useEncounterPrescriptions(encounterId, pollOpts);
   const { data: orders = [] } = useEncounterOrders(encounterId, pollOpts);
+  const { data: encounter } = useEncounter(encounterId);
   const mutations = useBillingMutations(encounterId);
 
   const [lines, setLines] = useState<LineForm[]>([DEFAULT_LINE]);
@@ -198,12 +201,16 @@ export function ReceptionCheckoutPage() {
     : lineTotal;
   const canPay = Boolean(invoice && invoice.status !== 'PAID' && invoice.status !== 'CANCELLED' && outstanding > 0);
 
+  const checkoutSubtitle = encounter
+    ? `${patientDisplayLabel(encounter.patientName, encounter.uhid)}${encounter.encounterNumber ? ` · ${encounter.encounterNumber}` : ''}`
+    : 'Loading visit details…';
+
   return (
     <AnimatedPage>
       <Button component={RouterLink} to={backTo} sx={{ mb: 2 }}>← Back</Button>
       <DashboardPageHeader
         title="OPD checkout"
-        subtitle={`Encounter ${encounterId}`}
+        subtitle={checkoutSubtitle}
       />
       <OpdVisitChecklist steps={visitSteps} scrollToSections={false} />
       {clinicalLoadError ? (

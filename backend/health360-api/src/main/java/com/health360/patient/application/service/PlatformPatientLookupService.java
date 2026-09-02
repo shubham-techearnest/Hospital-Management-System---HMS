@@ -104,6 +104,26 @@ public class PlatformPatientLookupService {
     }
 
     @Transactional
+    public List<PatientProfileEntity> resolveProfilesByName(
+            UUID tenantId,
+            String firstName,
+            String lastName,
+            UUID actorUserId) {
+
+        Map<UUID, PatientProfileEntity> merged = new LinkedHashMap<>();
+        patientProfileRepository.searchByName(tenantId, firstName.trim(), lastName.trim(), Pageable.unpaged())
+                .forEach(profile -> merged.put(profile.getId(), profile));
+
+        for (UserEntity user : userRepository.findPatientUsersByName(tenantId, firstName, lastName)) {
+            PatientProfileEntity profile = ensureProfileForAppUser(user, actorUserId);
+            merged.put(profile.getId(), profile);
+        }
+
+        merged.replaceAll((id, profile) -> patientUhidAssignmentService.ensureAssigned(profile, actorUserId));
+        return List.copyOf(merged.values());
+    }
+
+    @Transactional
     public PatientProfileEntity ensureProfileForAppUser(UserEntity user, UUID actorUserId) {
         UUID tenantId = user.getTenantId();
         PatientProfileEntity profile = patientProfileRepository.findByTenantIdAndUserIdAndDeletedAtIsNull(tenantId, user.getId())

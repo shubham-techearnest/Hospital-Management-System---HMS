@@ -6,23 +6,25 @@ import {
 } from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
+import { StaffHospitalScopeBar } from '@/features/hospital/components/StaffHospitalScopeBar';
+import { useStaffHospitalScope } from '@/features/hospital/hooks/useStaffHospitalScope';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { useIcuMutations, useIcuStays } from '@/features/icu/hooks/useIcuQueries';
 
-const DEFAULT_HOSPITAL_ID = '00000000-0000-0000-0000-000000000030';
-const DEFAULT_BRANCH_ID = '00000000-0000-0000-0000-000000000031';
-
 export function IcuNurseDashboardPage() {
-  const [manualHospitalId, setManualHospitalId] = useState(DEFAULT_HOSPITAL_ID);
-  const [manualBranchId, setManualBranchId] = useState(DEFAULT_BRANCH_ID);
-  const hospitalId = manualHospitalId.trim();
-  const branchId = manualBranchId.trim();
+  const scope = useStaffHospitalScope();
+  const { hospitalId, branchId, scopeReady } = scope;
 
   const [tab, setTab] = useState(0);
   const [stayPage, setStayPage] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
-  const { data: staysPage, isError } = useIcuStays(hospitalId, branchId, stayPage, 'ACTIVE');
+  const { data: staysPage, isError } = useIcuStays(
+    scopeReady ? hospitalId : undefined,
+    scopeReady ? branchId : undefined,
+    stayPage,
+    'ACTIVE',
+  );
   const stays = staysPage?.content ?? [];
   const stayTotalPages = staysPage?.totalPages ?? 0;
   const mutations = useIcuMutations(hospitalId, branchId);
@@ -66,20 +68,14 @@ export function IcuNurseDashboardPage() {
         subtitle="Active ICU stays and monitoring records"
       />
 
-      <Alert severity="info" sx={{ mb: 2 }}>
-        Enter your assigned hospital and branch IDs. ICU access is scoped to your staff assignment.
-      </Alert>
+      <StaffHospitalScopeBar {...scope} onScopeIndexChange={scope.setActiveScopeIndex} onBranchChange={scope.setBranchId} />
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <TextField label="Hospital ID" size="small" fullWidth
-          value={manualHospitalId} onChange={(e) => setManualHospitalId(e.target.value)} />
-        <TextField label="Branch ID" size="small" fullWidth
-          value={manualBranchId} onChange={(e) => setManualBranchId(e.target.value)} />
-      </Stack>
-
-      {isError && (
+      {isError && scopeReady && (
         <Alert severity="warning" sx={{ mb: 2 }}>Unable to load ICU stays for this scope.</Alert>
       )}
+
+      {!scopeReady ? null : (
+      <>
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label="Active stays" />
@@ -103,7 +99,7 @@ export function IcuNurseDashboardPage() {
                   <TableRow key={stay.stayId}>
                     <TableCell>{stay.stayNumber}</TableCell>
                     <TableCell>{stay.patientId}</TableCell>
-                    <TableCell>{stay.bedId?.slice(0, 8) ?? '—'}</TableCell>
+                    <TableCell>{stay.bedId ?? '—'}</TableCell>
                     <TableCell><Chip size="small" label={stay.status} color="warning" /></TableCell>
                   </TableRow>
                 ))}
@@ -156,6 +152,9 @@ export function IcuNurseDashboardPage() {
             </Button>
           </Stack>
         </Paper>
+      )}
+
+      </>
       )}
 
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>

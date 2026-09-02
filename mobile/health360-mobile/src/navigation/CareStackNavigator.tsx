@@ -20,7 +20,7 @@ export function CareStackNavigator() {
       <Stack.Screen name="HospitalSearch" component={HospitalSearchScreen} options={{ title: 'Find a Hospital' }} />
       <Stack.Screen name="PublicDoctorProfile" component={PublicDoctorProfileScreen} options={{ title: 'Doctor Profile' }} />
       <Stack.Screen name="PublicHospitalProfile" component={PublicHospitalProfileScreen} options={{ title: 'Hospital Profile' }} />
-      <Stack.Screen name="BookAppointment" component={BookAppointmentScreen} options={{ title: 'Book Appointment' }} />
+      <Stack.Screen name="BookAppointment" component={BookAppointmentScreen} options={{ title: 'Request OPD' }} />
       <Stack.Screen name="AppointmentsList" component={AppointmentsListScreen} options={{ title: 'My Appointments' }} />
       <Stack.Screen name="AppointmentDetail" component={AppointmentDetailScreen} options={{ title: 'Appointment' }} />
     </Stack.Navigator>

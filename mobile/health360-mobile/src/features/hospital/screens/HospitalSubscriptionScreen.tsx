@@ -92,13 +92,13 @@ export function HospitalSubscriptionScreen(_props: Props) {
 }
 
 const styles = StyleSheet.create({
-  loader: { marginTop: layout.spacing.xl },
-  card: { marginBottom: layout.spacing.md },
-  planName: { fontWeight: '700', marginBottom: layout.spacing.xs },
-  muted: { color: appColors.textSecondary, marginBottom: layout.spacing.xs },
-  statusChip: { alignSelf: 'flex-start', marginTop: layout.spacing.sm },
-  sectionTitle: { fontWeight: '600', marginBottom: layout.spacing.sm },
-  usageRow: { marginBottom: layout.spacing.md },
+  loader: { marginTop: layout.sectionGap },
+  card: { marginBottom: layout.sectionGap },
+  planName: { fontWeight: '700', marginBottom: 4 },
+  muted: { color: appColors.textSecondary, marginBottom: 4 },
+  statusChip: { alignSelf: 'flex-start', marginTop: layout.stackGap },
+  sectionTitle: { fontWeight: '600', marginBottom: layout.stackGap },
+  usageRow: { marginBottom: layout.sectionGap },
   usageHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   usageLabel: { fontWeight: '600' },
   usageCount: { color: appColors.textSecondary },

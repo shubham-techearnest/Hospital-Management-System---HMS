@@ -251,6 +251,9 @@ export function AccountSettingsScreen({ navigation, route }: Props) {
         </View>
       </View>
 
+      <Button mode="text" onPress={() => navigation.navigate('NotificationsInbox')} style={styles.link}>
+        Notification inbox
+      </Button>
       <Button mode="text" onPress={() => navigation.navigate('NotificationPreferences')} style={styles.link}>
         Notification preferences
       </Button>

@@ -20,7 +20,7 @@ import { encounterStatusColor, encounterStatusLabel, formatEncounterDate } from 
 import { parseApiError } from '@/shared/api/errorUtils';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { OpdFloorStatusHelp } from '@/features/opd/components/OpdFloorStatusHelp';
-import { queueStatusLabel } from '@/shared/status/visitStatus';
+import { patientDisplayLabel, queueStatusLabel } from '@/shared/status/visitStatus';
 import { useQueryClient } from '@tanstack/react-query';
 
 const PAGE_SIZE = 20;
@@ -116,7 +116,7 @@ export function DoctorOpdPage() {
                   <Box>
                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                       <Typography variant="subtitle1" fontWeight={600}>
-                        {enc.patientName || 'Patient'}
+                        {patientDisplayLabel(enc.patientName, enc.uhid)}
                       </Typography>
                     </Stack>
                     <Typography variant="body2" color="text.secondary">

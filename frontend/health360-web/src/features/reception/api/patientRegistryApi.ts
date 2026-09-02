@@ -12,6 +12,7 @@ export interface HospitalPatientSummary {
   bloodGroup?: string;
   permanentCity?: string;
   permanentState?: string;
+  email?: string;
   portalAccountStatus?: string;
 }
 
@@ -48,6 +49,7 @@ export interface RegisterHospitalPatientPayload {
   permanentState?: string;
   permanentPincode?: string;
   permanentCountry?: string;
+  email?: string;
   duplicateOverride?: boolean;
   duplicateOverrideReason?: string;
 }

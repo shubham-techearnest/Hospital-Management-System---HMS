@@ -17,6 +17,8 @@ import com.health360.pharmacy.presentation.dto.request.AdministerMedicationReque
 import com.health360.pharmacy.presentation.dto.request.CreateMedicationOrderRequest;
 import com.health360.pharmacy.presentation.dto.request.PlanMedicationOrderItemRequest;
 import com.health360.pharmacy.presentation.dto.response.*;
+import com.health360.patient.application.service.PatientDisplayNameResolver;
+import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -47,6 +49,8 @@ public class PharmacyFulfillmentService {
     private final EncounterAccessService encounterAccessService;
     private final PharmacyMapper mapper;
     private final AuditLogService auditLogService;
+    private final PatientProfileRepository patientProfileRepository;
+    private final PatientDisplayNameResolver patientDisplayNameResolver;
 
     @Transactional(readOnly = true)
     public List<MedicationWorklistItemResponse> listPendingWorklist(
@@ -417,6 +421,14 @@ public class PharmacyFulfillmentService {
                     return mapper.toOrderItemResponse(item, admins);
                 })
                 .toList();
-        return mapper.toOrderResponse(order, items);
+
+        String patientName = patientProfileRepository.findById(order.getPatientId())
+                .map(patientDisplayNameResolver::resolve)
+                .orElse(null);
+        String encounterNumber = encounterRepository.findById(order.getEncounterId())
+                .map(EncounterEntity::getEncounterNumber)
+                .orElse(null);
+
+        return mapper.toOrderResponse(order, items, patientName, encounterNumber);
     }
 }

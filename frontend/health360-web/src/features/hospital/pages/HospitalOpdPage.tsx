@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
@@ -14,6 +14,7 @@ import {
   useOpdQueue,
   useRegisterWalkIn,
 } from '@/features/opd/hooks/useOpdQueries';
+import { OpdBranchScopeBar } from '@/features/opd/components/OpdBranchScopeBar';
 import { OpdQueueTable } from '@/features/opd/components/OpdQueueTable';
 import { ReceptionOpdFlowBanner } from '@/features/reception/components/ReceptionOpdFlowBanner';
 import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
@@ -22,16 +23,24 @@ import { WalkInRegistrationPanel } from '@/features/reception/components/WalkInR
 export function HospitalOpdPage() {
   const { data: profile } = useHospitalProfile();
   const { data: branches = [] } = useBranches();
-  const primaryBranch = useMemo(
-    () => branches.find((b) => b.primary) ?? branches[0],
+  const hospitalId = profile?.id;
+  const [branchId, setBranchId] = useState('');
+
+  const branchOptions = useMemo(
+    () => branches.map((b) => ({ id: b.id, name: b.name, primary: b.primary, city: b.city })),
     [branches],
   );
 
-  const hospitalId = profile?.id;
-  const branchId = primaryBranch?.id;
+  useEffect(() => {
+    if (!branchId && branches.length > 0) {
+      const primary = branches.find((b) => b.primary) ?? branches[0];
+      setBranchId(primary.id);
+    }
+  }, [branches, branchId]);
 
   const [tab, setTab] = useState(0);
   const [queueFilter, setQueueFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
   const [queuePage, setQueuePage] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
@@ -42,7 +51,11 @@ export function HospitalOpdPage() {
     queueFilter || undefined,
     queuePage,
   );
-  const queue = queuePageData?.content ?? [];
+  const queue = useMemo(() => {
+    const rows = queuePageData?.content ?? [];
+    if (!typeFilter) return rows;
+    return rows.filter((e) => e.registrationType === typeFilter);
+  }, [queuePageData?.content, typeFilter]);
   const queueTotalPages = queuePageData?.totalPages ?? 0;
 
   const createDesk = useCreateOpdDesk(hospitalId ?? '', branchId ?? '');
@@ -86,7 +99,6 @@ export function HospitalOpdPage() {
           <Typography variant="h4" fontWeight={700}>Reception & queue</Typography>
           <Typography variant="body2" color="text.secondary">
             {VISIT_FLOW.walkIn.deskTab} · {VISIT_FLOW.queue.short}
-            {primaryBranch ? ` — ${primaryBranch.name}` : ''}
           </Typography>
         </Box>
         <Button variant="outlined" onClick={() => refetchQueue()} sx={{ mt: { xs: 1, sm: 0 } }}>
@@ -96,6 +108,16 @@ export function HospitalOpdPage() {
 
       <ReceptionOpdFlowBanner />
 
+      {hospitalId && branchId ? (
+        <OpdBranchScopeBar
+          hospitalName={profile.name}
+          branches={branchOptions}
+          branchId={branchId}
+          onBranchChange={setBranchId}
+          hospitalWide
+        />
+      ) : null}
+
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label={VISIT_FLOW.queue.short} />
         <Tab label={VISIT_FLOW.walkIn.deskTab} />
@@ -104,21 +126,36 @@ export function HospitalOpdPage() {
 
       {tab === 0 && hospitalId && branchId && (
         <Stack spacing={2}>
-          <TextField
-            select
-            label="Filter by status"
-            value={queueFilter}
-            onChange={(e) => { setQueueFilter(e.target.value); setQueuePage(0); }}
-            sx={{ maxWidth: 240 }}
-            size="small"
-          >
-            <MenuItem value="">All active today</MenuItem>
-            <MenuItem value="WAITING">Waiting</MenuItem>
-            <MenuItem value="CALLED">Called</MenuItem>
-            <MenuItem value="SKIPPED">Skipped</MenuItem>
-            <MenuItem value="IN_SERVICE">In service</MenuItem>
-            <MenuItem value="COMPLETED">Completed</MenuItem>
-          </TextField>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <TextField
+              select
+              label="Filter by status"
+              value={queueFilter}
+              onChange={(e) => { setQueueFilter(e.target.value); setQueuePage(0); }}
+              sx={{ maxWidth: 240 }}
+              size="small"
+            >
+              <MenuItem value="">All active today</MenuItem>
+              <MenuItem value="WAITING">Waiting</MenuItem>
+              <MenuItem value="CALLED">Called</MenuItem>
+              <MenuItem value="SKIPPED">Skipped</MenuItem>
+              <MenuItem value="IN_SERVICE">In service</MenuItem>
+              <MenuItem value="COMPLETED">Completed</MenuItem>
+            </TextField>
+            <TextField
+              select
+              label="Source"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              sx={{ maxWidth: 240 }}
+              size="small"
+            >
+              <MenuItem value="">All sources</MenuItem>
+              <MenuItem value="PATIENT_REQUEST">App requests only</MenuItem>
+              <MenuItem value="WALK_IN">Walk-ins only</MenuItem>
+              <MenuItem value="APPOINTMENT">Appointments only</MenuItem>
+            </TextField>
+          </Stack>
 
           {queueError && (
             <Alert

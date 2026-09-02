@@ -69,6 +69,7 @@ export function useBillingMutations(encounterId?: string) {
       qc.invalidateQueries({ queryKey: ['billing', 'invoices', hospitalId, branchId] });
     }
     qc.invalidateQueries({ queryKey: ['billing', 'invoices', 'me'] });
+    qc.invalidateQueries({ queryKey: ['opd', 'queue'] });
   };
 
   return {

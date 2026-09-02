@@ -11,6 +11,7 @@ import type { HospitalPatientSummary } from '@/features/reception/api/patientReg
 import { lookupDeskAppointment, type DeskAppointmentLookup } from '@/features/scheduling/api/schedulingApi';
 import { arriveAppointment } from '@/features/opd/api/opdApi';
 import { appointmentLabel } from '@/features/scheduling/utils/schedulingUtils';
+import { formatPatientDob, formatPatientPhone } from '@/features/reception/utils/patientDisplayUtils';
 import { isValidUuid } from '@/shared/utils/uuid';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -20,6 +21,7 @@ export function PatientSearchPage() {
   const [tab, setTab] = useState(0);
   const [uhid, setUhid] = useState('');
   const [mobile, setMobile] = useState('');
+  const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -36,21 +38,23 @@ export function PatientSearchPage() {
     : tab === 1
       ? { mobile: submitted ? mobile : undefined }
       : tab === 2
+        ? { email: submitted ? email : undefined }
+        : tab === 3
         ? {
             firstName: submitted ? firstName : undefined,
             lastName: submitted ? lastName : undefined,
-            dateOfBirth: submitted ? dateOfBirth : undefined,
+            dateOfBirth: submitted && dateOfBirth ? dateOfBirth : undefined,
           }
         : {};
 
   const { data, isFetching, isError, error, refetch } = usePatientSearch({
     ...searchParams,
-    enabled: submitted && tab !== 3,
+    enabled: submitted && tab !== 4,
   });
 
   const handleSearch = async () => {
     setArriveMessage(null);
-    if (tab === 3) {
+    if (tab === 4) {
       setApptError(null);
       setApptLookup(null);
       const id = appointmentId.trim();
@@ -99,7 +103,7 @@ export function PatientSearchPage() {
     <AnimatedPage>
       <DashboardPageHeader
         title="Patient Search"
-        subtitle="Find by UHID, mobile, name + DOB, or appointment ID. Always open an existing record when it matches."
+        subtitle="Find by UHID, mobile, email, name (DOB optional), or appointment ID. Always open an existing record when it matches."
         actions={(
           <Button
             variant="contained"
@@ -125,7 +129,8 @@ export function PatientSearchPage() {
         }}>
           <Tab label="UHID" />
           <Tab label="Mobile" />
-          <Tab label="Name + DOB" />
+          <Tab label="Email" />
+          <Tab label="Name" />
           <Tab label="Appointment ID" />
         </Tabs>
 
@@ -137,11 +142,14 @@ export function PatientSearchPage() {
             <TextField label="Mobile number" value={mobile} onChange={(e) => setMobile(e.target.value)} fullWidth />
           )}
           {tab === 2 && (
+            <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth />
+          )}
+          {tab === 3 && (
             <>
               <TextField label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} fullWidth />
               <TextField label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} fullWidth />
               <TextField
-                label="Date of birth"
+                label="Date of birth (optional)"
                 type="date"
                 value={dateOfBirth}
                 onChange={(e) => setDateOfBirth(e.target.value)}
@@ -150,7 +158,7 @@ export function PatientSearchPage() {
               />
             </>
           )}
-          {tab === 3 && (
+          {tab === 4 && (
             <TextField
               label="Appointment ID"
               value={appointmentId}
@@ -170,11 +178,11 @@ export function PatientSearchPage() {
         </Stack>
       </Paper>
 
-      {isError && tab !== 3 && <Alert severity="error">{parseApiError(error).message}</Alert>}
+      {isError && tab !== 4 && <Alert severity="error">{parseApiError(error).message}</Alert>}
       {apptError && <Alert severity="error" sx={{ mb: 2 }}>{apptError}</Alert>}
       {arriveMessage && <Alert severity="success" sx={{ mb: 2 }}>{arriveMessage}</Alert>}
 
-      {tab === 3 && apptLookup && (
+      {tab === 4 && apptLookup && (
         <Paper sx={{ p: 3, mb: 3 }}>
           <Typography variant="h6" gutterBottom>{apptLookup.patientName}</Typography>
           <Typography variant="body2">UHID: {apptLookup.uhid ?? '—'}</Typography>
@@ -207,7 +215,7 @@ export function PatientSearchPage() {
         </Paper>
       )}
 
-      {submitted && tab !== 3 && !isFetching && data && (
+      {submitted && tab !== 4 && !isFetching && data && (
         <Paper sx={{ p: 3 }}>
           {data.content.length === 0 ? (
             <Box>
@@ -231,8 +239,10 @@ export function PatientSearchPage() {
                     <Box>
                       <Typography variant="h6">{patient.legalName || 'Unnamed patient'}</Typography>
                       <Typography variant="body2">UHID: {patient.uhid ?? '—'}</Typography>
-                      <Typography variant="body2">Mobile: {patient.primaryPhone ?? '—'}</Typography>
-                      <Typography variant="body2">DOB: {patient.dateOfBirth ?? '—'}</Typography>
+                      <Typography variant="body2">DOB: {formatPatientDob(patient.dateOfBirth)}</Typography>
+                      <Typography variant="body2">Mobile: {formatPatientPhone(patient.primaryPhone)}</Typography>
+                      <Typography variant="body2">Email: {patient.email ?? '—'}</Typography>
+                      <Typography variant="body2">Gender: {patient.gender ?? '—'}</Typography>
                     </Box>
                     <Button variant="contained" onClick={() => openPatient(patient)}>Open existing</Button>
                   </Stack>

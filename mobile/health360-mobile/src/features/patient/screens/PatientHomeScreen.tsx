@@ -15,13 +15,16 @@ import { RecentTimeline } from '@/features/analytics/components/RecentTimeline';
 import { AppCard } from '@/shared/components/AppCard';
 import { useLatestVitals, usePatientProfile, useProfileCompletionEnabled } from '@/features/patient/hooks/usePatientQueries';
 import { useDownloadHealthReportPdf, useHealthDashboard } from '@/features/analytics/hooks/useAnalyticsQueries';
-import { useMyAppointments } from '@/features/scheduling/hooks/useSchedulingQueries';
 import {
   computeBmi,
   formatVitalDate,
   mapBpClassification,
   type ProfileSectionId,
 } from '@/features/patient/utils/patientUtils';
+import { QuickActionGrid } from '@/shared/components/QuickActionGrid';
+import { useMyTodayOpd } from '@/features/opd/hooks/useOpdQueries';
+import { queueStatusLabel, queuePositionLabel, invoiceStatusLabel } from '@/features/opd/utils/visitStatus';
+import { useMyNotifications } from '@/features/settings/hooks/useNotificationQueries';
 import { useAuth, userHasRole } from '@/features/auth/context/AuthContext';
 import { appColors, layout } from '@/shared/theme';
 import type { HomeStackParamList, PatientTabParamList } from '@/navigation/types';
@@ -40,10 +43,6 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-function formatAppointment(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-}
-
 export function PatientHomeScreen({ navigation }: Props) {
   const { user } = useAuth();
   const isPatient = userHasRole(user, 'PATIENT');
@@ -51,7 +50,11 @@ export function PatientHomeScreen({ navigation }: Props) {
   const { data: completion, isLoading: completionLoading } = useProfileCompletionEnabled(true);
   const { data: dashboard, isLoading: dashboardLoading, isError: dashboardError, refetch: refetchDashboard } = useHealthDashboard(isPatient);
   const { data: latestVitals, isLoading: vitalsLoading } = useLatestVitals();
-  const { data: upcomingAppointments = [], isLoading: appointmentsLoading } = useMyAppointments('upcoming');
+  const { data: opdVisits = [] } = useMyTodayOpd(isPatient);
+  const { data: notifications = [] } = useMyNotifications(isPatient);
+  const unreadNotifications = notifications.filter((n) => !n.isRead).length;
+  const activeOpd =
+    opdVisits.find((v) => !['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(v.status)) ?? opdVisits[0];
   const downloadPdf = useDownloadHealthReportPdf();
   const [recordOpen, setRecordOpen] = useState(false);
   const [snackVisible, setSnackVisible] = useState(false);
@@ -59,7 +62,6 @@ export function PatientHomeScreen({ navigation }: Props) {
 
   const bmi = computeBmi(profile?.physicalMeasurements?.heightCm, profile?.physicalMeasurements?.weightKg);
   const bpStatus = mapBpClassification(latestVitals?.bpClassification);
-  const nextAppointment = upcomingAppointments[0];
   const loading = dashboardLoading || completionLoading;
 
   const goToProfile = (focusSection?: ProfileSectionId) => {
@@ -98,8 +100,100 @@ export function PatientHomeScreen({ navigation }: Props) {
           Welcome back, {user?.firstName ?? 'Patient'}
         </Text>
         <Text variant="bodyMedium" style={styles.welcome}>
-          Your daily health snapshot — scores, vitals, goals, and upcoming care.
+          {profile?.uhid
+            ? `UHID ${profile.uhid} — your daily health snapshot, OPD queue, and records.`
+            : 'Your daily health snapshot — scores, vitals, OPD queue, and care records.'}
         </Text>
+
+        <QuickActionGrid
+          actions={[
+            {
+              id: 'opd-status',
+              label: 'OPD queue',
+              subtitle: activeOpd ? queueStatusLabel(activeOpd.status) : 'Check today\'s visit',
+              icon: 'hospital-box',
+              color: appColors.primary,
+              onPress: () => navigation.navigate('OpdStatus'),
+            },
+            {
+              id: 'request-opd',
+              label: 'Request OPD',
+              subtitle: 'Walk-in without appointment',
+              icon: 'clipboard-plus-outline',
+              onPress: () => navigation.navigate('RequestOpd'),
+            },
+            {
+              id: 'find-doctor',
+              label: 'Find doctor',
+              subtitle: 'Search & request OPD',
+              icon: 'doctor',
+              onPress: () => navigation.getParent()?.navigate('Doctors', { screen: 'DoctorSearch' }),
+            },
+            {
+              id: 'vitals',
+              label: 'Record vitals',
+              subtitle: 'BP, pulse, SpO2',
+              icon: 'heart-pulse',
+              onPress: () => setRecordOpen(true),
+            },
+            {
+              id: 'labs',
+              label: 'Lab reports',
+              subtitle: 'Results & self-recorded',
+              icon: 'flask-outline',
+              onPress: () => navigation.navigate('LabValues'),
+            },
+            {
+              id: 'prescriptions',
+              label: 'Prescriptions',
+              subtitle: 'E-prescriptions & pharmacy',
+              icon: 'pill',
+              onPress: () => navigation.navigate('Prescriptions'),
+            },
+            {
+              id: 'payments',
+              label: 'Payments',
+              subtitle: 'Invoices & bills',
+              icon: 'receipt',
+              onPress: () => navigation.navigate('Payments'),
+            },
+            {
+              id: 'notifications',
+              label: 'Alerts',
+              subtitle: unreadNotifications > 0 ? `${unreadNotifications} unread` : 'Hospital updates',
+              icon: 'bell-outline',
+              onPress: () => navigation.getParent()?.navigate('Settings', { screen: 'NotificationsInbox' }),
+            },
+          ]}
+        />
+
+        {activeOpd ? (
+          <AppCard style={styles.section}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              {['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(activeOpd.status)
+                ? "Today's OPD visit"
+                : 'Active OPD visit'}
+            </Text>
+            <Text variant="bodyMedium" style={styles.meta}>
+              {activeOpd.hospitalName ?? 'Hospital'}
+              {activeOpd.branchName ? ` · ${activeOpd.branchName}` : ''}
+            </Text>
+            <View style={styles.chipRow}>
+              <Chip compact style={styles.chip}>{queueStatusLabel(activeOpd.status)}</Chip>
+              {(activeOpd.status === 'COMPLETED' || activeOpd.encounterStatus === 'COMPLETED') ? (
+                <Chip compact mode="outlined" style={styles.chip}>
+                  {invoiceStatusLabel(activeOpd.invoiceStatus)}
+                </Chip>
+              ) : null}
+            </View>
+            {activeOpd.queuePosition != null && activeOpd.status === 'WAITING' ? (
+              <Text variant="bodySmall" style={styles.meta}>Queue position: {activeOpd.queuePosition}</Text>
+            ) : null}
+            <Button mode="text" compact onPress={() => navigation.navigate('OpdStatus')} style={styles.cta}>
+              View queue status
+            </Button>
+          </AppCard>
+        ) : null}
 
         <View style={styles.headerActions}>
           <Button mode="outlined" onPress={() => navigation.navigate('HealthAnalytics')} style={styles.headerBtn}>
@@ -107,6 +201,12 @@ export function PatientHomeScreen({ navigation }: Props) {
           </Button>
           <Button mode="outlined" onPress={() => navigation.navigate('EncountersList')} style={styles.headerBtn}>
             My visits
+          </Button>
+          <Button mode="outlined" onPress={() => navigation.navigate('HealthDocuments')} style={styles.headerBtn}>
+            Documents
+          </Button>
+          <Button mode="outlined" onPress={() => navigation.navigate('HealthTimeline')} style={styles.headerBtn}>
+            Timeline
           </Button>
           <Button mode="contained" onPress={handleExportPdf} loading={downloadPdf.isPending} style={styles.headerBtn}>
             Export PDF
@@ -151,28 +251,37 @@ export function PatientHomeScreen({ navigation }: Props) {
 
         <AppCard style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Next appointment</Text>
+            <Text variant="titleMedium" style={styles.sectionTitle}>Today's OPD</Text>
             <Button compact mode="text" onPress={() => navigation.getParent()?.navigate('Appointments')}>
-              All
+              View queue
             </Button>
           </View>
-          {appointmentsLoading ? (
-            <ActivityIndicator />
-          ) : nextAppointment ? (
+          {activeOpd ? (
             <View style={styles.appointmentBlock}>
-              <Text variant="titleSmall" style={styles.appointmentDoctor}>{nextAppointment.doctor.name}</Text>
-              <Text variant="bodySmall" style={styles.meta}>{formatAppointment(nextAppointment.scheduledAt)}</Text>
-              <Chip compact style={styles.chip}>{nextAppointment.status}</Chip>
+              <Text variant="titleSmall" style={styles.appointmentDoctor}>
+                {activeOpd.hospitalName ?? 'Hospital visit'}
+              </Text>
+              <Text variant="bodySmall" style={styles.meta}>
+                {activeOpd.branchName ? `${activeOpd.branchName} · ` : ''}
+                {queueStatusLabel(activeOpd.status)}
+                {activeOpd.queuePosition != null && activeOpd.status === 'WAITING'
+                  ? ` · ${queuePositionLabel(activeOpd.queuePosition)}`
+                  : ''}
+              </Text>
+              <Chip compact style={styles.chip}>{queueStatusLabel(activeOpd.status)}</Chip>
+              <Button mode="outlined" onPress={() => navigation.navigate('OpdStatus')} style={styles.cta}>
+                Open OPD status
+              </Button>
             </View>
           ) : (
             <View>
-              <Text variant="bodyMedium" style={styles.meta}>No upcoming appointments.</Text>
+              <Text variant="bodyMedium" style={styles.meta}>No active OPD visit today.</Text>
               <Button
                 mode="outlined"
-                onPress={() => navigation.getParent()?.navigate('Doctors', { screen: 'DoctorSearch' })}
+                onPress={() => navigation.navigate('RequestOpd')}
                 style={styles.cta}
               >
-                Find a doctor
+                Request OPD
               </Button>
             </View>
           )}
@@ -307,6 +416,7 @@ const styles = StyleSheet.create({
   appointmentBlock: { gap: 4 },
   appointmentDoctor: { fontWeight: '600' },
   chip: { alignSelf: 'flex-start', marginTop: 4 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   vitalsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: layout.stackGap },
   cta: { alignSelf: 'flex-start', marginTop: 8, borderRadius: 12 },
   disclaimer: { color: appColors.textSecondary, fontStyle: 'italic' },

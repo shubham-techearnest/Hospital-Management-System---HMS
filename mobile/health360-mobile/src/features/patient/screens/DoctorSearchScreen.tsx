@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Button, Chip, Searchbar, Text, TextInput } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useDoctorSearch } from '@/features/search/hooks/useDoctorSearch';
 import { useUserLocation } from '@/features/location/hooks/useUserLocation';
 import { AppCard } from '@/shared/components/AppCard';
@@ -9,7 +10,8 @@ import { PageHero } from '@/shared/components/PageHero';
 import { ScreenContainer } from '@/shared/components/ScreenContainer';
 import { appColors, layout } from '@/shared/theme';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
-import type { CareStackParamList } from '@/navigation/types';
+import { navigateToRequestOpd } from '@/shared/navigation/opdNavigation';
+import type { CareStackParamList, PatientTabParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<CareStackParamList, 'DoctorSearch'>;
 
@@ -19,6 +21,7 @@ function travelEstimateMinutes(distanceKm?: number) {
 }
 
 export function DoctorSearchScreen({ navigation }: Props) {
+  const tabNavigation = navigation.getParent<BottomTabNavigationProp<PatientTabParamList>>();
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');
   const [specialization, setSpecialization] = useState('');
@@ -142,8 +145,12 @@ export function DoctorSearchScreen({ navigation }: Props) {
               <Button mode="outlined" compact onPress={() => navigation.navigate('PublicDoctorProfile', { doctorId: item.doctorId })}>
                 Profile
               </Button>
-              <Button mode="contained" compact onPress={() => navigation.navigate('BookAppointment', { doctorId: item.doctorId })}>
-                Book
+              <Button
+                mode="contained"
+                compact
+                onPress={() => navigateToRequestOpd(tabNavigation, { doctorId: item.doctorId })}
+              >
+                Request OPD
               </Button>
             </View>
           </AppCard>

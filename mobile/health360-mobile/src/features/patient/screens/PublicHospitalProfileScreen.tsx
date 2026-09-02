@@ -6,7 +6,9 @@ import {
   fetchHospitalReviews,
   fetchPublicHospitalProfile,
 } from '@/features/public/api/publicProfileApi';
-import type { CareStackParamList } from '@/navigation/types';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { navigateToRequestOpd } from '@/shared/navigation/opdNavigation';
+import type { CareStackParamList, PatientTabParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<CareStackParamList, 'PublicHospitalProfile'>;
 
@@ -16,6 +18,7 @@ function openMaps(lat: number, lng: number, label: string) {
 }
 
 export function PublicHospitalProfileScreen({ navigation, route }: Props) {
+  const tabNavigation = navigation.getParent<BottomTabNavigationProp<PatientTabParamList>>();
   const { hospitalId } = route.params;
 
   const { data: profile, isLoading, error } = useQuery({
@@ -56,6 +59,22 @@ export function PublicHospitalProfileScreen({ navigation, route }: Props) {
         {profile.emergencyInfo.icuAvailable ? <Chip>ICU</Chip> : null}
         {profile.emergencyInfo.ambulanceAvailable ? <Chip>Ambulance</Chip> : null}
       </View>
+
+      {profile.branches.length > 0 ? (
+        <Button
+          mode="contained"
+          icon="hospital-box"
+          onPress={() => {
+            navigateToRequestOpd(tabNavigation, {
+              hospitalId,
+              branchId: profile.branches[0]?.id,
+            });
+          }}
+          style={styles.opdButton}
+        >
+          Request OPD walk-in
+        </Button>
+      ) : null}
 
       {profile.description ? (
         <Card style={styles.card}>
@@ -141,6 +160,7 @@ const styles = StyleSheet.create({
   title: { fontWeight: '700' },
   subtitle: { marginBottom: 8, opacity: 0.7 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 },
+  opdButton: { marginTop: 8, borderRadius: 12 },
   card: { marginTop: 12 },
   listItem: { marginBottom: 12 },
   mapButton: { marginTop: 6, alignSelf: 'flex-start' },

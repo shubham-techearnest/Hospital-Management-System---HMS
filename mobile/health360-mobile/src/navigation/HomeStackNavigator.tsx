@@ -8,6 +8,10 @@ import { HealthDocumentsScreen } from '@/features/patient/screens/HealthDocument
 import { HealthTimelineScreen } from '@/features/patient/screens/HealthTimelineScreen';
 import { EncountersListScreen } from '@/features/clinical/screens/patient/EncountersListScreen';
 import { EncounterDetailScreen } from '@/features/clinical/screens/patient/EncounterDetailScreen';
+import { PatientRequestOpdScreen } from '@/features/opd/screens/PatientRequestOpdScreen';
+import { PatientOpdStatusScreen } from '@/features/opd/screens/PatientOpdStatusScreen';
+import { PatientPrescriptionsScreen } from '@/features/clinical/screens/patient/PatientPrescriptionsScreen';
+import { PatientPaymentsScreen } from '@/features/billing/screens/PatientPaymentsScreen';
 import { stackScreenOptions } from '@/shared/theme';
 import type { HomeStackParamList } from './types';
 
@@ -41,6 +45,10 @@ export function HomeStackNavigator() {
       <Stack.Screen name="HealthTimeline" component={HealthTimelineScreen} options={{ title: 'Health Timeline' }} />
       <Stack.Screen name="EncountersList" component={EncountersListScreen} options={{ title: 'My Visits' }} />
       <Stack.Screen name="EncounterDetail" component={EncounterDetailScreen} options={{ title: 'Visit Details' }} />
+      <Stack.Screen name="RequestOpd" component={PatientRequestOpdScreen} options={{ title: 'Request OPD' }} />
+      <Stack.Screen name="OpdStatus" component={PatientOpdStatusScreen} options={{ title: 'OPD Queue' }} />
+      <Stack.Screen name="Prescriptions" component={PatientPrescriptionsScreen} options={{ title: 'Prescriptions' }} />
+      <Stack.Screen name="Payments" component={PatientPaymentsScreen} options={{ title: 'Payments' }} />
     </Stack.Navigator>
   );
 }

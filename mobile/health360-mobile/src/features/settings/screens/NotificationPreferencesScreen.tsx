@@ -63,7 +63,7 @@ export function NotificationPreferencesScreen({ navigation }: Props) {
         Notification preferences
       </Text>
       <Text variant="bodyMedium" style={styles.subtitle}>
-        Choose how you receive alerts. In-app notifications are always enabled.
+        Choose how you receive alerts. OPD queue updates also use device notifications when permitted.
       </Text>
 
       {isLoading && <ActivityIndicator animating style={styles.loader} />}

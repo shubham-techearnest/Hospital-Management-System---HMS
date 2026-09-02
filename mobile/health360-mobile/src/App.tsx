@@ -17,6 +17,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider } from '@/features/auth/context/AuthContext';
 import { RootNavigator } from '@/navigation/RootNavigator';
+import { startBackendKeepAlive } from '@/shared/api/keepAlive';
 import { appColors, appTheme } from '@/shared/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -45,6 +46,8 @@ export default function App() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
+
+  useEffect(() => startBackendKeepAlive(), []);
 
   if (!fontsLoaded) {
     return null;

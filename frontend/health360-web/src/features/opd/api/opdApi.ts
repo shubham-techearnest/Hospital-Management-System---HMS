@@ -30,6 +30,10 @@ export interface OpdQueueEntry {
   deskId?: string;
   appointmentId?: string;
   patientId: string;
+  patientName?: string;
+  uhid?: string;
+  invoiceStatus?: string;
+  visitReason?: string;
   primaryDoctorId?: string;
   registrationType: string;
   tokenDisplay: string;
@@ -43,6 +47,10 @@ export interface OpdQueueEntry {
   completedAt?: string;
   encounterNumber: string;
   encounterStatus: string;
+  encounter?: {
+    patientName?: string;
+    uhid?: string;
+  };
 }
 
 export interface OpdRegistrationResult {
@@ -237,14 +245,19 @@ export interface PatientOpdVisitStatus {
   queuePosition?: number | null;
   status: string;
   hospitalId: string;
+  hospitalName?: string;
   branchId: string;
+  branchName?: string;
   encounterId: string;
+  encounterNumber?: string;
   encounterStatus: string;
   primaryDoctorId?: string;
+  primaryDoctorName?: string;
   checkedInAt?: string;
   calledAt?: string;
   serviceStartedAt?: string;
   completedAt?: string;
+  invoiceStatus?: string;
 }
 
 export async function getMyTodayOpdVisits(): Promise<PatientOpdVisitStatus[]> {

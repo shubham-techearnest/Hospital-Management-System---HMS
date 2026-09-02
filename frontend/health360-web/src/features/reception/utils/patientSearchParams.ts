@@ -20,13 +20,30 @@ export function looksLikeEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
+export function looksLikePhone(value: string): boolean {
+  const digits = value.replace(/\D/g, '');
+  return digits.length >= 10;
+}
+
+function parseNameFromQuery(query: string): { firstName: string; lastName: string } | null {
+  const parts = query.trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return null;
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(' '),
+  };
+}
+
 /** Build hospital patient search params from a single query field + optional name/DOB. */
 export function buildPatientSearchParams(
   query: string,
   nameDob?: { firstName: string; lastName: string; dateOfBirth: string },
 ): PatientSearchParams | null {
   const q = query.trim();
-  const hasNameDob = Boolean(nameDob?.firstName && nameDob?.lastName && nameDob?.dateOfBirth);
+  const firstName = nameDob?.firstName.trim() ?? '';
+  const lastName = nameDob?.lastName.trim() ?? '';
+  const dateOfBirth = nameDob?.dateOfBirth?.trim() ?? '';
+  const hasNameFields = Boolean(firstName && lastName);
 
   if (q && looksLikeUuid(q)) {
     return { patientId: q };
@@ -37,15 +54,26 @@ export function buildPatientSearchParams(
   if (q && looksLikeUhid(q)) {
     return { uhid: q.toUpperCase() };
   }
-  if (hasNameDob && nameDob) {
-    return {
-      firstName: nameDob.firstName.trim(),
-      lastName: nameDob.lastName.trim(),
-      dateOfBirth: nameDob.dateOfBirth,
-    };
-  }
-  if (q) {
+  if (q && looksLikePhone(q)) {
     return { mobile: q };
   }
+
+  if (hasNameFields) {
+    return {
+      firstName,
+      lastName,
+      ...(dateOfBirth ? { dateOfBirth } : {}),
+    };
+  }
+
+  const parsedName = q ? parseNameFromQuery(q) : null;
+  if (parsedName) {
+    return {
+      firstName: parsedName.firstName,
+      lastName: parsedName.lastName,
+      ...(dateOfBirth ? { dateOfBirth } : {}),
+    };
+  }
+
   return null;
 }

@@ -1,18 +1,21 @@
 import { FlatList, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Button, Chip, Text } from 'react-native-paper';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppCard } from '@/shared/components/AppCard';
 import { EmptyState } from '@/shared/components/EmptyState';
 import { ScreenContainer } from '@/shared/components/ScreenContainer';
 import { PageHero } from '@/shared/components/PageHero';
 import { useMyEncounters } from '@/features/clinical/hooks/useClinicalQueries';
 import { encounterStatusLabel, formatEncounterDate } from '@/features/clinical/utils/encounterUtils';
+import { queueStatusLabel } from '@/features/opd/utils/visitStatus';
 import { appColors, layout } from '@/shared/theme';
-import type { HomeStackParamList } from '@/navigation/types';
+import type { AppointmentsStackParamList, HomeStackParamList } from '@/navigation/types';
 
-type Props = NativeStackScreenProps<HomeStackParamList, 'EncountersList'>;
+type OpdNavParams = HomeStackParamList & AppointmentsStackParamList;
 
-export function EncountersListScreen({ navigation }: Props) {
+export function EncountersListScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<OpdNavParams>>();
   const { data, isLoading, refetch, isRefetching } = useMyEncounters();
   const encounters = data?.content ?? [];
 
@@ -32,16 +35,29 @@ export function EncountersListScreen({ navigation }: Props) {
         }
         ListEmptyComponent={
           !isLoading ? (
-            <EmptyState icon="hospital-box-outline" title="No visits on record" />
+            <EmptyState
+              icon="hospital-box-outline"
+              title="No visits on record"
+              message="Request an OPD visit at your hospital to start your care journey."
+              actionLabel="Request OPD"
+              onAction={() => navigation.navigate('RequestOpd')}
+            />
           ) : null
         }
         renderItem={({ item }) => (
           <AppCard style={styles.card}>
             <View style={styles.row}>
               <Text variant="titleMedium">{item.encounterNumber}</Text>
-              <Chip compact>{encounterStatusLabel(item.status)}</Chip>
+              <View style={styles.chips}>
+                <Chip compact>{encounterStatusLabel(item.status)}</Chip>
+                {item.queueStatus ? (
+                  <Chip compact mode="outlined">{queueStatusLabel(item.queueStatus)}</Chip>
+                ) : null}
+              </View>
             </View>
-            <Text style={styles.meta}>{item.encounterType} · {formatEncounterDate(item.startedAt ?? item.createdAt)}</Text>
+            <Text style={styles.meta}>
+              {item.encounterType} · {formatEncounterDate(item.startedAt ?? item.createdAt)}
+            </Text>
             {item.visitReason ? <Text style={styles.meta}>{item.visitReason}</Text> : null}
             <Button
               mode="outlined"
@@ -58,11 +74,12 @@ export function EncountersListScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  header: { marginBottom: layout.spacing.sm },
-  loader: { marginVertical: layout.spacing.md },
-  listContent: { paddingBottom: layout.spacing.xl },
-  card: { marginBottom: layout.spacing.sm },
+  header: { marginBottom: layout.stackGap },
+  loader: { marginVertical: layout.sectionGap },
+  listContent: { paddingBottom: layout.screenPaddingBottom },
+  card: { marginBottom: layout.stackGap },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, flexShrink: 1, justifyContent: 'flex-end' },
   meta: { color: appColors.textSecondary, marginTop: 4 },
-  btn: { marginTop: layout.spacing.sm },
+  btn: { marginTop: layout.stackGap },
 });

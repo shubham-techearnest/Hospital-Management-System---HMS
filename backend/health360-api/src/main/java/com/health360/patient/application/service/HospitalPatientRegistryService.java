@@ -123,8 +123,18 @@ public class HospitalPatientRegistryService {
             return new PageImpl<>(results, pageable, results.size());
         }
 
+        if (firstName != null && lastName != null) {
+            List<HospitalPatientSummaryResponse> results = platformPatientLookupService
+                    .resolveProfilesByName(tenantId, firstName, lastName, principal.getUserId())
+                    .stream()
+                    .map(this::toSummary)
+                    .toList();
+            auditSearch(principal, "NAME", results.size());
+            return new PageImpl<>(results, pageable, results.size());
+        }
+
         throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
-                "Provide patientId, uhid, mobile, email, or firstName+lastName+dateOfBirth");
+                "Provide patientId, uhid, mobile, email, or firstName+lastName (dateOfBirth optional)");
     }
 
     @Transactional
@@ -320,7 +330,7 @@ public class HospitalPatientRegistryService {
             String uhid,
             String temporaryPassword) {
 
-        String loginEmail = toDeskLoginEmail(uhid);
+        String loginEmail = resolveLoginEmail(request, tenantId, uhid);
         UserEntity user = new UserEntity();
         user.setTenantId(tenantId);
         user.setEmail(loginEmail);
@@ -337,6 +347,18 @@ public class HospitalPatientRegistryService {
 
         logDeskCredentials(uhid, loginEmail, temporaryPassword, storedPhone);
         return saved;
+    }
+
+    private String resolveLoginEmail(RegisterHospitalPatientRequest request, UUID tenantId, String uhid) {
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            String email = request.getEmail().trim().toLowerCase();
+            userRepository.findByTenantIdAndEmailIgnoreCase(tenantId, email).ifPresent(existing -> {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                        "Email is already registered");
+            });
+            return email;
+        }
+        return toDeskLoginEmail(uhid);
     }
 
     private static String toDeskLoginEmail(String uhid) {
@@ -405,8 +427,18 @@ public class HospitalPatientRegistryService {
                 .bloodGroup(profile.getBloodGroup())
                 .permanentCity(profile.getPermanentCity())
                 .permanentState(profile.getPermanentState())
+                .email(resolveEmail(profile))
                 .portalAccountStatus(portalStatus)
                 .build();
+    }
+
+    private String resolveEmail(PatientProfileEntity profile) {
+        if (profile.getUserId() == null) {
+            return null;
+        }
+        return userRepository.findById(profile.getUserId())
+                .map(UserEntity::getEmail)
+                .orElse(null);
     }
 
     private String buildDisplayName(PatientProfileEntity profile) {

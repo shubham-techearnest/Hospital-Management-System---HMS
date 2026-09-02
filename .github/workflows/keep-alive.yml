@@ -1,22 +1,37 @@
-# Keep-alive ping for the Render free API so it is less likely to sleep after ~15 minutes idle.
-# This only reduces cold starts. Render free-tier monthly hours still apply; it does not make the service unlimited.
+# External keep-alive for hosted API (Render free tier sleeps after ~15 min idle).
+# GitHub cron can be delayed; 5-minute schedule stays under that window.
+# Also configure UptimeRobot / cron-job.org as backup (see docs below).
 #
-# Preferred no-code alternative (UptimeRobot):
-#   Monitor type: HTTP(s)
-#   Friendly name: Health360 API keep-alive
-#   URL: https://health360-api-6hz5.onrender.com/api/v1/health
-#   Interval: 10 minutes (or 5 minutes if available on the plan)
-#   Expected status: 200
-name: Keep Render API awake
+# Required: set repository variable API_HEALTH_URL (Settings → Secrets and variables → Actions)
+#   Example: https://health360-api-6hz5.onrender.com/api/v1/health/awake
+#
+# UptimeRobot backup:
+#   URL: https://<your-api-host>/api/v1/health/awake
+#   Interval: 5 minutes
+name: Keep API awake
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    # Every 5 minutes (UTC). Render free tier idles ~15 min without traffic.
+    - cron: "*/5 * * * *"
   workflow_dispatch:
+
+concurrency:
+  group: keep-api-awake
+  cancel-in-progress: true
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Ping health endpoint
-        run: curl -fsS --retry 2 --retry-delay 5 --max-time 60 https://health360-api-6hz5.onrender.com/api/v1/health
+      - name: Ping wake endpoint
+        env:
+          API_HEALTH_URL: ${{ vars.API_HEALTH_URL }}
+        run: |
+          set -euo pipefail
+          URL="${API_HEALTH_URL:-https://health360-api-6hz5.onrender.com/api/v1/health/awake}"
+          echo "Pinging $URL"
+          # Cold start on Render can take 50–90s; allow retries.
+          curl -fsS --retry 5 --retry-delay 10 --retry-all-errors --max-time 120 "$URL"
+          echo "Wake ping OK"

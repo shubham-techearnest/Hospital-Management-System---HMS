@@ -57,6 +57,67 @@ const PHARMACY_REQUEST_LABELS: Record<string, string> = {
   CANCELLED: 'Cancelled',
 };
 
+const INVOICE_LABELS: Record<string, string> = {
+  DRAFT: 'Bill draft',
+  ISSUED: 'Payment pending',
+  PARTIALLY_PAID: 'Partially paid',
+  PAID: 'Paid',
+  CANCELLED: 'Cancelled',
+};
+
+export function invoiceStatusLabel(status: string | undefined | null): string {
+  if (!status) return 'No bill yet';
+  return INVOICE_LABELS[status] ?? status.replace(/_/g, ' ');
+}
+
+export function invoiceStatusColor(status: string | undefined | null): ChipColor {
+  switch (status) {
+    case 'PAID':
+      return 'success';
+    case 'ISSUED':
+    case 'PARTIALLY_PAID':
+      return 'warning';
+    case 'DRAFT':
+      return 'default';
+    case 'CANCELLED':
+      return 'error';
+    default:
+      return 'default';
+  }
+}
+
+export function patientDisplayLabel(name?: string | null, uhid?: string | null): string {
+  if (name?.trim()) return name.trim();
+  if (uhid?.trim()) return uhid.trim();
+  return 'Patient';
+}
+
+export function registrationTypeLabel(type: string): string {
+  switch (type) {
+    case 'PATIENT_REQUEST':
+      return 'App request';
+    case 'WALK_IN':
+      return 'Walk-in';
+    case 'APPOINTMENT':
+      return 'Appointment';
+    default:
+      return type.replace(/_/g, ' ');
+  }
+}
+
+export function registrationTypeColor(type: string): ChipColor {
+  switch (type) {
+    case 'PATIENT_REQUEST':
+      return 'info';
+    case 'WALK_IN':
+      return 'default';
+    case 'APPOINTMENT':
+      return 'warning';
+    default:
+      return 'default';
+  }
+}
+
 export function appointmentStatusLabel(status: string): string {
   return APPOINTMENT_LABELS[status] ?? status.replace(/_/g, ' ');
 }

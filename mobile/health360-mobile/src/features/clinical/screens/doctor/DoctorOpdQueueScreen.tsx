@@ -41,7 +41,10 @@ export function DoctorOpdQueueScreen({ navigation }: Props) {
               <Text variant="titleMedium">{item.encounterNumber}</Text>
               <Chip compact>{encounterStatusLabel(item.status)}</Chip>
             </View>
-            <Text style={styles.meta}>Patient {item.patientId.slice(0, 8)}…</Text>
+            <Text style={styles.meta}>
+              {item.patientName ?? `Patient ${item.patientId.slice(0, 8)}…`}
+              {item.uhid ? ` · ${item.uhid}` : ''}
+            </Text>
             <Text style={styles.meta}>{formatEncounterDate(item.startedAt ?? item.createdAt)}</Text>
             {item.visitReason ? <Text style={styles.meta}>{item.visitReason}</Text> : null}
             <Button
@@ -59,11 +62,11 @@ export function DoctorOpdQueueScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  header: { marginBottom: layout.spacing.sm },
-  loader: { marginVertical: layout.spacing.md },
-  listContent: { paddingBottom: layout.spacing.xl },
-  card: { marginBottom: layout.spacing.sm },
+  header: { marginBottom: layout.stackGap },
+  loader: { marginVertical: layout.stackGap },
+  listContent: { paddingBottom: layout.screenPaddingBottom },
+  card: { marginBottom: layout.stackGap },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   meta: { color: appColors.textSecondary, marginTop: 4 },
-  btn: { marginTop: layout.spacing.sm },
+  btn: { marginTop: layout.stackGap },
 });

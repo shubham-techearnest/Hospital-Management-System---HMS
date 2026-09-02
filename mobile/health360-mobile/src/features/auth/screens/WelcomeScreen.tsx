@@ -15,7 +15,7 @@ const PORTALS = [
   {
     icon: 'account-heart' as const,
     title: 'Patients',
-    text: 'Health dashboard, vitals, lab values, documents, and appointment booking.',
+    text: 'Health dashboard, vitals, OPD queue, labs, prescriptions, and payments.',
   },
   {
     icon: 'doctor' as const,

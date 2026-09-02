@@ -1,6 +1,8 @@
 package com.health360.opd.application.service;
 
-import com.health360.clinical.application.service.EncounterService;
+import com.health360.billing.domain.InvoiceStatus;
+import com.health360.billing.infrastructure.persistence.entity.InvoiceEntity;
+import com.health360.billing.infrastructure.persistence.repository.InvoiceRepository;
 import com.health360.clinical.domain.EncounterStatus;
 import com.health360.clinical.infrastructure.persistence.entity.EncounterEntity;
 import com.health360.clinical.infrastructure.persistence.repository.EncounterRepository;
@@ -16,12 +18,16 @@ import com.health360.opd.infrastructure.persistence.repository.OpdQueueEntryRepo
 import com.health360.opd.presentation.dto.request.OpdQueueActionRequest;
 import com.health360.opd.presentation.dto.request.SkipQueueEntryRequest;
 import com.health360.opd.presentation.dto.response.OpdQueueEntryResponse;
+import com.health360.clinical.application.service.EncounterService;
+import com.health360.patient.application.service.PatientDisplayNameResolver;
+import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,8 +36,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +55,8 @@ public class OpdQueueService {
     private final AuditLogService auditLogService;
     private final HospitalAssociationRepository hospitalAssociationRepository;
     private final PatientProfileRepository patientProfileRepository;
+    private final PatientDisplayNameResolver patientDisplayNameResolver;
+    private final InvoiceRepository invoiceRepository;
     private final TransactionalNotificationService notificationService;
 
     @Transactional(readOnly = true)
@@ -59,15 +70,15 @@ public class OpdQueueService {
             Pageable pageable) {
 
         opdAccessService.assertCanReadQueue(principal);
-        opdAccessService.assertHospitalScope(principal, hospitalId);
+        opdAccessService.assertHospitalScope(principal, hospitalId, branchId);
 
         UUID tenantId = principal.getTenantId();
         LocalDate effectiveDate = queueDate != null ? queueDate : LocalDate.now(ZoneId.systemDefault());
         String normalizedStatus = normalizeStatus(status);
 
-        return queueEntryRepository.findQueuePage(
-                        tenantId, hospitalId, branchId, effectiveDate, normalizedStatus, deskId, pageable)
-                .map(entry -> toQueueResponse(tenantId, entry));
+        Page<OpdQueueEntryEntity> page = queueEntryRepository.findQueuePage(
+                        tenantId, hospitalId, branchId, effectiveDate, normalizedStatus, deskId, pageable);
+        return toQueueResponsePage(tenantId, page);
     }
 
     @Transactional
@@ -277,7 +288,7 @@ public class OpdQueueService {
                     "OPD_QUEUE_" + targetStatus.name(), "OpdQueueEntry", entry.getId(),
                     Map.of("encounterStatus", updated.getStatus()));
             notifyPatientQueueStatus(principal.getTenantId(), encounter, targetStatus);
-            return toQueueResponse(principal.getTenantId(), entry, encounter, updated);
+            return toQueueResponse(principal.getTenantId(), entry, encounter);
         }
 
         auditLogService.record(principal.getTenantId(), principal.getUserId(),
@@ -371,18 +382,103 @@ public class OpdQueueService {
         return toQueueResponse(tenantId, entry, encounter);
     }
 
-    private OpdQueueEntryResponse toQueueResponse(
-            UUID tenantId, OpdQueueEntryEntity entry, EncounterEntity encounter) {
-        EncounterResponse encounterResponse = opdMapper.toEncounterResponse(encounter);
-        return opdMapper.toQueueEntryResponse(entry, encounter, encounterResponse);
+    private Page<OpdQueueEntryResponse> toQueueResponsePage(UUID tenantId, Page<OpdQueueEntryEntity> page) {
+        List<OpdQueueEntryEntity> content = page.getContent();
+        if (content.isEmpty()) {
+            return Page.empty(page.getPageable());
+        }
+
+        List<UUID> encounterIds = content.stream().map(OpdQueueEntryEntity::getEncounterId).toList();
+        Map<UUID, EncounterEntity> encounters = encounterRepository
+                .findAllById(encounterIds)
+                .stream()
+                .filter(e -> e.getTenantId().equals(tenantId) && e.getDeletedAt() == null)
+                .collect(Collectors.toMap(EncounterEntity::getId, Function.identity()));
+
+        List<UUID> patientIds = encounters.values().stream()
+                .map(EncounterEntity::getPatientId)
+                .distinct()
+                .toList();
+        Map<UUID, PatientProfileEntity> patients = patientProfileRepository
+                .findByTenantIdAndIdIn(tenantId, patientIds)
+                .stream()
+                .collect(Collectors.toMap(PatientProfileEntity::getId, Function.identity()));
+
+        Map<UUID, String> patientNames = patientDisplayNameResolver.resolveBatch(patients.values());
+
+        Map<UUID, String> invoiceStatusByEncounter = invoiceRepository
+                .findActiveByTenantAndEncounters(
+                        tenantId, encounterIds, InvoiceStatus.CANCELLED.name())
+                .stream()
+                .collect(Collectors.toMap(
+                        InvoiceEntity::getEncounterId,
+                        InvoiceEntity::getStatus,
+                        this::preferInvoiceStatus));
+
+        List<OpdQueueEntryResponse> responses = content.stream()
+                .map(entry -> {
+                    EncounterEntity encounter = encounters.get(entry.getEncounterId());
+                    if (encounter == null) {
+                        throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                                "Encounter not found");
+                    }
+                    PatientProfileEntity patient = patients.get(encounter.getPatientId());
+                    return toQueueResponse(
+                            entry,
+                            encounter,
+                            patientNames.get(encounter.getPatientId()),
+                            patient != null ? patient.getUhid() : null,
+                            invoiceStatusByEncounter.get(entry.getEncounterId()));
+                })
+                .toList();
+
+        return new PageImpl<>(responses, page.getPageable(), page.getTotalElements());
     }
 
     private OpdQueueEntryResponse toQueueResponse(
-            UUID tenantId,
+            UUID tenantId, OpdQueueEntryEntity entry, EncounterEntity encounter) {
+        PatientProfileEntity patient = patientProfileRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(encounter.getPatientId(), tenantId)
+                .orElse(null);
+        String invoiceStatus = invoiceRepository
+                .findFirstByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNotOrderByIssuedAtDesc(
+                        tenantId, encounter.getId(), InvoiceStatus.CANCELLED.name())
+                .map(InvoiceEntity::getStatus)
+                .orElse(null);
+        return toQueueResponse(
+                entry,
+                encounter,
+                patientDisplayNameResolver.resolve(patient),
+                patient != null ? patient.getUhid() : null,
+                invoiceStatus);
+    }
+
+    private OpdQueueEntryResponse toQueueResponse(
             OpdQueueEntryEntity entry,
             EncounterEntity encounter,
-            EncounterResponse encounterResponse) {
-        return opdMapper.toQueueEntryResponse(entry, encounter, encounterResponse);
+            String patientName,
+            String uhid,
+            String invoiceStatus) {
+        EncounterResponse encounterResponse = opdMapper.toEncounterResponse(encounter, patientName, uhid);
+        return opdMapper.toQueueEntryResponse(
+                entry, encounter, encounterResponse, patientName, uhid, invoiceStatus);
+    }
+
+    private String preferInvoiceStatus(String existing, String candidate) {
+        return invoiceStatusRank(candidate) > invoiceStatusRank(existing) ? candidate : existing;
+    }
+
+    private int invoiceStatusRank(String status) {
+        if (status == null) {
+            return 0;
+        }
+        return switch (status) {
+            case "PAID" -> 5;
+            case "PARTIALLY_PAID" -> 4;
+            case "ISSUED" -> 3;
+            case "DRAFT" -> 2;
+            default -> 1;
+        };
     }
 
     private QueueEntryStatus parseQueueStatus(String raw) {

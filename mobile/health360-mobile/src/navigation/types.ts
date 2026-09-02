@@ -8,11 +8,14 @@ export type AuthStackParamList = {
   Login: { message?: string } | undefined;
   Register: undefined;
   VerifyEmail: { token?: string };
+  CompletePatientAccount: { token?: string } | undefined;
 };
 
 export type SettingsStackParamList = {
+  SettingsHome: undefined;
   AccountSettings: { focusPassword?: boolean } | undefined;
   NotificationPreferences: undefined;
+  NotificationsInbox: undefined;
 };
 
 export type HomeStackParamList = {
@@ -25,6 +28,10 @@ export type HomeStackParamList = {
   HealthTimeline: undefined;
   EncountersList: undefined;
   EncounterDetail: { encounterId: string };
+  RequestOpd: { hospitalId?: string; branchId?: string; doctorId?: string } | undefined;
+  OpdStatus: undefined;
+  Prescriptions: undefined;
+  Payments: undefined;
 };
 
 export type CareStackParamList = {
@@ -40,15 +47,22 @@ export type CareStackParamList = {
 
 export type AppointmentsStackParamList = {
   AppointmentsList: undefined;
+  RequestOpd: { hospitalId?: string; branchId?: string; doctorId?: string } | undefined;
+  EncountersList: undefined;
+  EncounterDetail: { encounterId: string };
+  Prescriptions: undefined;
+  Payments: undefined;
+  HealthTimeline: undefined;
+  LabValues: undefined;
   AppointmentDetail: { appointmentId: string };
 };
 
 export type PatientTabParamList = {
-  Dashboard: undefined;
+  Dashboard: NavigatorScreenParams<HomeStackParamList> | undefined;
   Doctors: NavigatorScreenParams<CareStackParamList>;
   Appointments: NavigatorScreenParams<AppointmentsStackParamList>;
   Profile: { focusSection?: ProfileSectionId } | undefined;
-  Settings: undefined;
+  Settings: NavigatorScreenParams<SettingsStackParamList>;
 };
 
 export type DoctorAppointmentsStackParamList = {

@@ -1,5 +1,6 @@
 package com.health360.opd.application.service;
 
+import com.health360.billing.infrastructure.persistence.repository.InvoiceRepository;
 import com.health360.clinical.application.service.EncounterService;
 import com.health360.clinical.infrastructure.persistence.entity.EncounterEntity;
 import com.health360.clinical.infrastructure.persistence.repository.EncounterRepository;
@@ -7,6 +8,8 @@ import com.health360.clinical.presentation.dto.response.EncounterResponse;
 import com.health360.config.security.UserPrincipal;
 import com.health360.opd.infrastructure.persistence.entity.OpdQueueEntryEntity;
 import com.health360.opd.infrastructure.persistence.repository.OpdQueueEntryRepository;
+import com.health360.patient.application.service.HospitalRegistrationLinker;
+import com.health360.patient.application.service.PatientDisplayNameResolver;
 import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.scheduling.infrastructure.persistence.entity.AppointmentEntity;
@@ -50,6 +53,9 @@ class OpdRegistrationSelfCheckInTest {
     @Mock private OpdMapper opdMapper;
     @Mock private AuditLogService auditLogService;
     @Mock private PatientProfileRepository patientProfileRepository;
+    @Mock private PatientDisplayNameResolver patientDisplayNameResolver;
+    @Mock private InvoiceRepository invoiceRepository;
+    @Mock private HospitalRegistrationLinker hospitalRegistrationLinker;
 
     @InjectMocks
     private OpdRegistrationService registrationService;
@@ -116,7 +122,12 @@ class OpdRegistrationSelfCheckInTest {
         encounterEntity.setId(encounterId);
         when(encounterRepository.findByIdAndTenantIdAndDeletedAtIsNull(encounterId, tenantId))
                 .thenReturn(Optional.of(encounterEntity));
-        when(opdMapper.toQueueEntryResponse(any(), any(), any())).thenAnswer(inv -> null);
+        when(patientProfileRepository.findByIdAndTenantIdAndDeletedAtIsNull(patientId, tenantId))
+                .thenReturn(Optional.of(profile));
+        when(invoiceRepository.findFirstByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNotOrderByIssuedAtDesc(
+                eq(tenantId), eq(encounterId), any())).thenReturn(Optional.empty());
+        when(opdMapper.toEncounterResponse(any(), any(), any())).thenReturn(encounterResponse);
+        when(opdMapper.toQueueEntryResponse(any(), any(), any(), any(), any(), any())).thenAnswer(inv -> null);
 
         AppointmentArrivalResponse response = registrationService.selfCheckIn(principal, appointmentId);
 

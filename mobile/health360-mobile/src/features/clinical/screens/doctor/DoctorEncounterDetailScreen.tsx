@@ -122,12 +122,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: layout.spacing.xl },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: layout.spacing.sm },
+  content: { paddingBottom: layout.screenPaddingBottom },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: layout.stackGap },
   meta: { color: appColors.textSecondary, marginTop: 4 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: layout.spacing.md },
-  section: { marginTop: layout.spacing.lg },
-  divider: { marginVertical: layout.spacing.sm },
-  card: { marginTop: layout.spacing.sm },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: layout.sectionGap },
+  section: { marginTop: layout.sectionGap },
+  divider: { marginVertical: layout.stackGap },
+  card: { marginTop: layout.stackGap },
   empty: { color: appColors.textSecondary },
 });

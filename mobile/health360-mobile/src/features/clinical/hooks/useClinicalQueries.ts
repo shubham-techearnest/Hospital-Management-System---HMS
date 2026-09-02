@@ -8,7 +8,10 @@ import {
   listEncounterDiagnoses,
   listEncounterNotes,
   listEncounterOrders,
+  listEncounterPrescriptions,
   listMyEncounters,
+  listMyPrescriptions,
+  getEncounterWellnessPlan,
   startEncounter,
 } from '../api/clinicalApi';
 
@@ -20,6 +23,9 @@ export const clinicalKeys = {
   diagnoses: (id: string) => ['clinical', 'encounters', id, 'diagnoses'] as const,
   notes: (id: string) => ['clinical', 'encounters', id, 'notes'] as const,
   orders: (id: string) => ['clinical', 'encounters', id, 'orders'] as const,
+  prescriptions: (id: string) => ['clinical', 'encounters', id, 'prescriptions'] as const,
+  myPrescriptions: ['clinical', 'prescriptions', 'me'] as const,
+  wellnessPlan: (id: string) => ['clinical', 'encounters', id, 'wellness-plan'] as const,
 };
 
 function isAuthError(error: unknown): boolean {
@@ -74,6 +80,30 @@ export function useEncounterOrders(encounterId: string) {
   return useQuery({
     queryKey: clinicalKeys.orders(encounterId),
     queryFn: () => listEncounterOrders(encounterId),
+    enabled: Boolean(encounterId),
+  });
+}
+
+export function useEncounterPrescriptions(encounterId: string) {
+  return useQuery({
+    queryKey: clinicalKeys.prescriptions(encounterId),
+    queryFn: () => listEncounterPrescriptions(encounterId),
+    enabled: Boolean(encounterId),
+  });
+}
+
+export function useMyPrescriptions() {
+  return useQuery({
+    queryKey: clinicalKeys.myPrescriptions,
+    queryFn: listMyPrescriptions,
+    retry: (_, error) => !isAuthError(error),
+  });
+}
+
+export function useEncounterWellnessPlan(encounterId: string) {
+  return useQuery({
+    queryKey: clinicalKeys.wellnessPlan(encounterId),
+    queryFn: () => getEncounterWellnessPlan(encounterId),
     enabled: Boolean(encounterId),
   });
 }

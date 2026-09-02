@@ -2,15 +2,18 @@ import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, Button, Card, Chip, Text } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import {
   fetchDoctorReviews,
   fetchPublicDoctorProfile,
 } from '@/features/public/api/publicProfileApi';
-import type { CareStackParamList } from '@/navigation/types';
+import { navigateToRequestOpd } from '@/shared/navigation/opdNavigation';
+import type { CareStackParamList, PatientTabParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<CareStackParamList, 'PublicDoctorProfile'>;
 
 export function PublicDoctorProfileScreen({ navigation, route }: Props) {
+  const tabNavigation = navigation.getParent<BottomTabNavigationProp<PatientTabParamList>>();
   const { doctorId } = route.params;
 
   const { data: profile, isLoading, error } = useQuery({
@@ -91,11 +94,15 @@ export function PublicDoctorProfileScreen({ navigation, route }: Props) {
       ) : null}
 
       <Card style={styles.card}>
-        <Card.Title title="Availability" />
+        <Card.Title title="OPD availability" />
         <Card.Content>
           <Text>
-            {profile.availabilityPreview.availableToday ? 'Available today' : 'No slots today'} ·{' '}
-            {profile.availabilityPreview.availableSlotsNext7Days} slots in next 7 days
+            {profile.availabilityPreview.availableToday
+              ? 'Seeing patients today — request OPD at the hospital.'
+              : 'Not listed for OPD today — you can still request a walk-in visit.'}
+          </Text>
+          <Text style={styles.availabilityHint}>
+            Walk-in OPD does not use appointment slots. Reception adds you to today's queue.
           </Text>
         </Card.Content>
       </Card>
@@ -116,8 +123,19 @@ export function PublicDoctorProfileScreen({ navigation, route }: Props) {
         </Card.Content>
       </Card>
 
-      <Button mode="contained" onPress={() => navigation.navigate('BookAppointment', { doctorId })} style={styles.cta}>
-        Book appointment
+      <Button
+        mode="contained"
+        icon="clipboard-plus-outline"
+        onPress={() => {
+          const primaryHospital = profile.hospitals[0];
+          navigateToRequestOpd(tabNavigation, {
+            hospitalId: primaryHospital?.hospitalId,
+            doctorId,
+          });
+        }}
+        style={styles.cta}
+      >
+        Request OPD visit
       </Button>
     </ScrollView>
   );
@@ -131,5 +149,6 @@ const styles = StyleSheet.create({
   chip: { alignSelf: 'flex-start', marginBottom: 8 },
   card: { marginTop: 12 },
   listItem: { marginBottom: 12 },
-  cta: { marginTop: 16 },
+  availabilityHint: { marginTop: 8, opacity: 0.7, lineHeight: 20 },
+  cta: { marginTop: 16, borderRadius: 12 },
 });

@@ -77,7 +77,7 @@ public class OpdDeskService {
     public List<OpdDeskResponse> listDesks(
             UserPrincipal principal, UUID hospitalId, UUID branchId) {
         opdAccessService.assertCanReadDesks(principal);
-        opdAccessService.assertHospitalScope(principal, hospitalId);
+        opdAccessService.assertHospitalScope(principal, hospitalId, branchId);
 
         return deskRepository
                 .findByTenantIdAndHospitalIdAndBranchIdAndDeletedAtIsNullOrderByNameAsc(

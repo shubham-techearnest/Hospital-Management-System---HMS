@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { useEncounterActions, useEncounterVitals } from '@/features/clinical/hooks/useClinicalQueries';
 import { formatEncounterDate } from '@/features/clinical/utils/encounterUtils';
+import type { PatientSummaryVitals } from '@/features/patient/api/patientSummaryApi';
 import { parseApiError } from '@/shared/api/errorUtils';
 
 type FormState = {
@@ -109,7 +110,9 @@ interface EncounterVitalsPanelProps {
   title?: string;
   canWrite?: boolean;
   compact?: boolean;
+  lastVitals?: PatientSummaryVitals | null;
   onRecorded?: () => void;
+  onSkip?: () => void;
 }
 
 const VITAL_PRESETS: Array<{ label: string; values: Partial<FormState> }> = [
@@ -128,7 +131,9 @@ export function EncounterVitalsPanel({
   title = 'Clinical vitals',
   canWrite = true,
   compact = false,
+  lastVitals,
   onRecorded,
+  onSkip,
 }: EncounterVitalsPanelProps) {
   const { data: vitals = [], isLoading, error, refetch } = useEncounterVitals(encounterId);
   const actions = useEncounterActions(encounterId);
@@ -188,6 +193,20 @@ export function EncounterVitalsPanel({
     }
   };
 
+  const copyLastVitals = () => {
+    if (!lastVitals) return;
+    setForm({
+      systolicBp: lastVitals.systolicBp != null ? String(lastVitals.systolicBp) : '',
+      diastolicBp: lastVitals.diastolicBp != null ? String(lastVitals.diastolicBp) : '',
+      heartRate: lastVitals.heartRate != null ? String(lastVitals.heartRate) : '',
+      temperature: lastVitals.temperature != null ? String(lastVitals.temperature) : '',
+      respiratoryRate: lastVitals.respiratoryRate != null ? String(lastVitals.respiratoryRate) : '',
+      spo2: lastVitals.spo2 != null ? String(lastVitals.spo2) : '',
+      bloodGlucose: lastVitals.bloodGlucose != null ? String(lastVitals.bloodGlucose) : '',
+      notes: '',
+    });
+  };
+
   const loadError = error ? parseApiError(error).message : null;
 
   return (
@@ -231,63 +250,66 @@ export function EncounterVitalsPanel({
                   {preset.label}
                 </Button>
               ))}
+              {lastVitals ? (
+                <Button size="small" variant="outlined" onClick={copyLastVitals}>
+                  Copy last vitals
+                </Button>
+              ) : null}
+              {onSkip ? (
+                <Button size="small" variant="text" onClick={onSkip}>
+                  Skip → consult
+                </Button>
+              ) : null}
             </Stack>
           ) : null}
           <Grid container spacing={1.5}>
-            <Grid item xs={6} sm={4} md={3}>
-              <TextField label="Systolic BP" size="small" fullWidth value={form.systolicBp} onChange={setField('systolicBp')} />
+            <Grid item xs={6} sm={3}>
+              <TextField label="Sys BP" size="small" fullWidth value={form.systolicBp} onChange={setField('systolicBp')} />
             </Grid>
-            <Grid item xs={6} sm={4} md={3}>
-              <TextField label="Diastolic BP" size="small" fullWidth value={form.diastolicBp} onChange={setField('diastolicBp')} />
+            <Grid item xs={6} sm={3}>
+              <TextField label="Dia BP" size="small" fullWidth value={form.diastolicBp} onChange={setField('diastolicBp')} />
             </Grid>
-            <Grid item xs={6} sm={4} md={3}>
-              <TextField label="Heart rate" size="small" fullWidth value={form.heartRate} onChange={setField('heartRate')} />
+            <Grid item xs={6} sm={3}>
+              <TextField label="Pulse" size="small" fullWidth value={form.heartRate} onChange={setField('heartRate')} />
             </Grid>
-            <Grid item xs={6} sm={4} md={3}>
-              <TextField
-                label="Temp"
-                helperText="°C (36.5) or °F (98.6)"
-                size="small"
-                fullWidth
-                value={form.temperature}
-                onChange={setField('temperature')}
-              />
+            <Grid item xs={6} sm={3}>
+              <TextField label="Temp" size="small" fullWidth value={form.temperature} onChange={setField('temperature')} />
             </Grid>
-            <Grid item xs={6} sm={4} md={3}>
-              <TextField
-                label="Resp. rate"
-                helperText="/min"
-                size="small"
-                fullWidth
-                value={form.respiratoryRate}
-                onChange={setField('respiratoryRate')}
-              />
-            </Grid>
-            <Grid item xs={6} sm={4} md={3}>
-              <TextField label="SpO2 %" size="small" fullWidth value={form.spo2} onChange={setField('spo2')} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={3}>
-              <TextField
-                label="Glucose"
-                helperText="mg/dL or mmol/L"
-                size="small"
-                fullWidth
-                value={form.bloodGlucose}
-                onChange={setField('bloodGlucose')}
-              />
-            </Grid>
-            <Grid item xs={12} sm={8} md={6}>
-              <TextField label="Notes (optional)" size="small" fullWidth value={form.notes} onChange={setField('notes')} />
-            </Grid>
+            {!compact ? (
+              <>
+                <Grid item xs={6} sm={4} md={3}>
+                  <TextField label="Resp. rate" helperText="/min" size="small" fullWidth
+                    value={form.respiratoryRate} onChange={setField('respiratoryRate')} />
+                </Grid>
+                <Grid item xs={6} sm={4} md={3}>
+                  <TextField label="SpO2 %" size="small" fullWidth value={form.spo2} onChange={setField('spo2')} />
+                </Grid>
+                <Grid item xs={6} sm={4} md={3}>
+                  <TextField label="Glucose" helperText="mg/dL or mmol/L" size="small" fullWidth
+                    value={form.bloodGlucose} onChange={setField('bloodGlucose')} />
+                </Grid>
+                <Grid item xs={12} sm={8} md={6}>
+                  <TextField label="Notes (optional)" size="small" fullWidth value={form.notes} onChange={setField('notes')} />
+                </Grid>
+              </>
+            ) : (
+              <Grid item xs={6} sm={3}>
+                <TextField label="SpO2 %" size="small" fullWidth value={form.spo2} onChange={setField('spo2')} />
+              </Grid>
+            )}
           </Grid>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={!hasAnyValue || actions.recordVitals.isPending}
-            sx={{ alignSelf: 'flex-start' }}
-          >
-            {compact ? 'Save vitals' : 'Record vitals'}
-          </Button>
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={!hasAnyValue || actions.recordVitals.isPending}
+            >
+              {compact ? 'Save vitals' : 'Record vitals'}
+            </Button>
+            {compact && onSkip ? (
+              <Button variant="outlined" onClick={onSkip}>Skip</Button>
+            ) : null}
+          </Stack>
         </Stack>
       ) : null}
 

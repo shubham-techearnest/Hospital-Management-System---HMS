@@ -1,5 +1,8 @@
 package com.health360.opd.application.service;
 
+import com.health360.billing.domain.InvoiceStatus;
+import com.health360.billing.infrastructure.persistence.entity.InvoiceEntity;
+import com.health360.billing.infrastructure.persistence.repository.InvoiceRepository;
 import com.health360.clinical.application.service.EncounterService;
 import com.health360.clinical.infrastructure.persistence.entity.EncounterEntity;
 import com.health360.clinical.infrastructure.persistence.repository.EncounterRepository;
@@ -16,6 +19,7 @@ import com.health360.opd.presentation.dto.request.WalkInRegistrationRequest;
 import com.health360.opd.presentation.dto.response.OpdQueueEntryResponse;
 import com.health360.opd.presentation.dto.response.OpdRegistrationResponse;
 import com.health360.patient.application.service.HospitalRegistrationLinker;
+import com.health360.patient.application.service.PatientDisplayNameResolver;
 import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.scheduling.infrastructure.persistence.entity.AppointmentEntity;
@@ -53,6 +57,8 @@ public class OpdRegistrationService {
     private final OpdMapper opdMapper;
     private final AuditLogService auditLogService;
     private final PatientProfileRepository patientProfileRepository;
+    private final PatientDisplayNameResolver patientDisplayNameResolver;
+    private final InvoiceRepository invoiceRepository;
     private final HospitalRegistrationLinker hospitalRegistrationLinker;
 
     @Transactional
@@ -196,8 +202,8 @@ public class OpdRegistrationService {
                 .findByIdAndTenantIdAndDeletedAtIsNull(encounterResponse.getEncounterId(), tenantId)
                 .orElseThrow();
 
-        OpdQueueEntryResponse queueResponse = opdMapper.toQueueEntryResponse(
-                queueEntry, encounterEntity, encounterResponse);
+        OpdQueueEntryResponse queueResponse = buildQueueResponse(
+                queueEntry, encounterEntity, encounterResponse, appointment.getPatientId(), tenantId);
 
         if (newlyArrived) {
             auditLogService.record(tenantId, principal.getUserId(), "APPOINTMENT_ARRIVED", "Appointment",
@@ -269,8 +275,8 @@ public class OpdRegistrationService {
                 .findByIdAndTenantIdAndDeletedAtIsNull(encounterResponse.getEncounterId(), tenantId)
                 .orElseThrow();
 
-        OpdQueueEntryResponse queueResponse = opdMapper.toQueueEntryResponse(
-                queueEntry, encounterEntity, encounterResponse);
+        OpdQueueEntryResponse queueResponse = buildQueueResponse(
+                queueEntry, encounterEntity, encounterResponse, patientId, tenantId);
 
         auditLogService.record(tenantId, principal.getUserId(), "OPD_WALK_IN_REGISTERED",
                 "OpdQueueEntry", queueEntry.getId(),
@@ -336,8 +342,8 @@ public class OpdRegistrationService {
                 .findByIdAndTenantIdAndDeletedAtIsNull(encounterResponse.getEncounterId(), tenantId)
                 .orElseThrow();
 
-        OpdQueueEntryResponse queueResponse = opdMapper.toQueueEntryResponse(
-                queueEntry, encounterEntity, encounterResponse);
+        OpdQueueEntryResponse queueResponse = buildQueueResponse(
+                queueEntry, encounterEntity, encounterResponse, patientId, tenantId);
 
         auditLogService.record(tenantId, principal.getUserId(), "OPD_PATIENT_REQUEST",
                 "OpdQueueEntry", queueEntry.getId(),
@@ -405,5 +411,30 @@ public class OpdRegistrationService {
         entry.setUpdatedBy(principal.getUserId());
 
         return queueEntryRepository.save(entry);
+    }
+
+    private OpdQueueEntryResponse buildQueueResponse(
+            OpdQueueEntryEntity queueEntry,
+            EncounterEntity encounterEntity,
+            EncounterResponse encounterResponse,
+            UUID patientId,
+            UUID tenantId) {
+        PatientProfileEntity patient = patientProfileRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(patientId, tenantId)
+                .orElse(null);
+        String patientName = patientDisplayNameResolver.resolve(patient);
+        String uhid = patient != null ? patient.getUhid() : null;
+        String invoiceStatus = invoiceRepository
+                .findFirstByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNotOrderByIssuedAtDesc(
+                        tenantId, encounterEntity.getId(), InvoiceStatus.CANCELLED.name())
+                .map(InvoiceEntity::getStatus)
+                .orElse(null);
+        return opdMapper.toQueueEntryResponse(
+                queueEntry,
+                encounterEntity,
+                opdMapper.toEncounterResponse(encounterEntity, patientName, uhid),
+                patientName,
+                uhid,
+                invoiceStatus);
     }
 }

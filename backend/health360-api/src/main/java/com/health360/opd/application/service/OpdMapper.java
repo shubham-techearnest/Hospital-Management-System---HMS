@@ -24,7 +24,12 @@ public class OpdMapper {
     }
 
     OpdQueueEntryResponse toQueueEntryResponse(
-            OpdQueueEntryEntity entry, EncounterEntity encounter, EncounterResponse encounterResponse) {
+            OpdQueueEntryEntity entry,
+            EncounterEntity encounter,
+            EncounterResponse encounterResponse,
+            String patientName,
+            String uhid,
+            String invoiceStatus) {
         return OpdQueueEntryResponse.builder()
                 .queueEntryId(entry.getId())
                 .encounterId(entry.getEncounterId())
@@ -33,6 +38,10 @@ public class OpdMapper {
                 .deskId(entry.getDeskId())
                 .appointmentId(entry.getAppointmentId())
                 .patientId(encounter.getPatientId())
+                .patientName(patientName)
+                .uhid(uhid)
+                .invoiceStatus(invoiceStatus)
+                .visitReason(encounter.getVisitReason())
                 .primaryDoctorId(encounter.getPrimaryDoctorId())
                 .registrationType(entry.getRegistrationType())
                 .tokenDisplay(entry.getTokenDisplay())
@@ -51,10 +60,16 @@ public class OpdMapper {
     }
 
     EncounterResponse toEncounterResponse(EncounterEntity entity) {
+        return toEncounterResponse(entity, null, null);
+    }
+
+    EncounterResponse toEncounterResponse(EncounterEntity entity, String patientName, String uhid) {
         return EncounterResponse.builder()
                 .encounterId(entity.getId())
                 .encounterNumber(entity.getEncounterNumber())
                 .patientId(entity.getPatientId())
+                .patientName(patientName)
+                .uhid(uhid)
                 .hospitalId(entity.getHospitalId())
                 .branchId(entity.getBranchId())
                 .departmentId(entity.getDepartmentId())

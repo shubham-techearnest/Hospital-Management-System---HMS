@@ -57,7 +57,9 @@ export interface MedicationOrder {
   medicationOrderId: string;
   clinicalOrderId: string;
   encounterId: string;
+  encounterNumber?: string;
   patientId: string;
+  patientName?: string;
   hospitalId: string;
   branchId: string;
   status: string;

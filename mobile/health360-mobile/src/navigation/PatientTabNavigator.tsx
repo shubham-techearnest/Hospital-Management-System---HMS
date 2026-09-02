@@ -1,5 +1,13 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useCallback } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { usePatientDeepLinks } from '@/shared/hooks/usePatientDeepLinks';
+import {
+  useOpdNotificationNavigation,
+  useOpdQueueAlerts,
+} from '@/shared/hooks/useOpdQueueAlerts';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { HomeStackNavigator } from './HomeStackNavigator';
 import { CareStackNavigator } from './CareStackNavigator';
 import { AppointmentsStackNavigator } from './AppointmentsStackNavigator';
@@ -11,6 +19,15 @@ import type { PatientTabParamList } from './types';
 const Tab = createBottomTabNavigator<PatientTabParamList>();
 
 export function PatientTabNavigator() {
+  const navigation = useNavigation<BottomTabNavigationProp<PatientTabParamList>>();
+  usePatientDeepLinks(navigation);
+  useOpdQueueAlerts();
+  const openOpd = useCallback(
+    () => navigation.navigate('Appointments', { screen: 'AppointmentsList' }),
+    [navigation],
+  );
+  useOpdNotificationNavigation(openOpd);
+
   return (
     <Tab.Navigator screenOptions={tabBarOptions}>
       <Tab.Screen
@@ -40,9 +57,9 @@ export function PatientTabNavigator() {
         component={AppointmentsStackNavigator}
         options={{
           headerShown: false,
-          tabBarLabel: 'Appointments',
+          tabBarLabel: 'My OPD',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="calendar-check" color={color} size={size} />
+            <MaterialCommunityIcons name="hospital-box" color={color} size={size} />
           ),
         }}
       />

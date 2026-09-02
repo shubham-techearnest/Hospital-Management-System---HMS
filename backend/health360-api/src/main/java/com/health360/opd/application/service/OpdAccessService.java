@@ -65,6 +65,10 @@ public class OpdAccessService {
         hospitalScopeService.assertHospitalScope(principal, hospitalId);
     }
 
+    public void assertHospitalScope(UserPrincipal principal, UUID hospitalId, UUID branchId) {
+        hospitalScopeService.assertHospitalScope(principal, hospitalId, branchId);
+    }
+
     public void assertQueueEntryScope(UserPrincipal principal, OpdQueueEntryEntity entry) {
         assertHospitalScope(principal, entry.getHospitalId());
     }

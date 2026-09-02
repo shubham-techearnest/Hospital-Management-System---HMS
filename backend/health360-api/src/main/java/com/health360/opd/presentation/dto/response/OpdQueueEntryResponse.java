@@ -18,6 +18,10 @@ public class OpdQueueEntryResponse {
     UUID deskId;
     UUID appointmentId;
     UUID patientId;
+    String patientName;
+    String uhid;
+    String invoiceStatus;
+    String visitReason;
     UUID primaryDoctorId;
     String registrationType;
     String tokenDisplay;

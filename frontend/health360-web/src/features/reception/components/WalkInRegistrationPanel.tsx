@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Alert,
-  Box,
   Button,
   Divider,
   MenuItem,
@@ -18,7 +17,8 @@ import {
   type RegisterHospitalPatientResult,
 } from '@/features/reception/api/patientRegistryApi';
 import { useLinkExistingPatient, useRegistrationReceipt } from '@/features/reception/hooks/usePatientRegistryQueries';
-import { buildPatientSearchParams } from '@/features/reception/utils/patientSearchParams';
+import { buildPatientSearchParams, looksLikeEmail, looksLikePhone } from '@/features/reception/utils/patientSearchParams';
+import { PatientSearchMatchList, PatientSelectedSummary } from '@/features/reception/components/PatientSearchMatchList';
 import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
 import { useOpdDoctors } from '@/features/opd/hooks/useOpdQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
@@ -57,6 +57,7 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
   const [showNewPatient, setShowNewPatient] = useState(false);
   const [newGender, setNewGender] = useState('OTHER');
   const [newPhone, setNewPhone] = useState('');
+  const [newEmail, setNewEmail] = useState('');
   const [searching, setSearching] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,10 +74,10 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
     setCredentialsNotice(null);
 
     const q = query.trim();
-    const hasNameDob = firstName.trim() && lastName.trim() && dateOfBirth;
+    const hasNameDob = firstName.trim() && lastName.trim();
 
     if (!q && !hasNameDob) {
-      setError('Enter UHID, mobile, email, patient UUID, or name + DOB.');
+      setError('Enter UHID, mobile, email, patient name, or first + last name (DOB optional).');
       return;
     }
 
@@ -88,7 +89,7 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
         dateOfBirth,
       });
       if (!params) {
-        setError('Enter UHID, mobile, email, patient UUID, or name + DOB.');
+        setError('Enter UHID, mobile, email, full name (e.g. Rahul Sharma), or first + last name.');
         return;
       }
 
@@ -96,10 +97,23 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
       setMatches(page.content);
       if (page.content.length === 1) {
         setSelected(page.content[0]);
-      } else if (page.content.length === 0) {
+      } else {
+        setSelected(null);
+      }
+      if (page.content.length === 0) {
         setShowNewPatient(true);
-        if (q) {
+        if (q && looksLikePhone(q)) {
           setNewPhone(q);
+        } else if (q && looksLikeEmail(q)) {
+          setNewEmail(q);
+        } else if (firstName.trim()) {
+          // keep name fields as entered
+        } else {
+          const parts = q.split(/\s+/).filter(Boolean);
+          if (parts.length >= 2) {
+            setFirstName(parts[0]);
+            setLastName(parts.slice(1).join(' '));
+          }
         }
         setError(null);
       }
@@ -125,6 +139,7 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
         dateOfBirth,
         gender: newGender,
         primaryPhone: newPhone.trim(),
+        email: newEmail.trim() || undefined,
       });
       setCredentialsNotice(created);
       setSelected({
@@ -235,21 +250,21 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
           <TextField
-            label="UHID / mobile / email / patient UUID"
+            label="UHID / mobile / email / name"
             fullWidth
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            helperText="App-registered patients are found by mobile or email. UHID is assigned at signup."
+            helperText="Search by UHID, 10-digit mobile, email, or full name (e.g. Rahul Sharma). Add DOB below to narrow name matches."
           />
           <Button variant="outlined" onClick={runSearch} disabled={searching}>
-            Find
+            {searching ? 'Searching…' : 'Find'}
           </Button>
         </Stack>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
           <TextField label="First name" fullWidth value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           <TextField label="Last name" fullWidth value={lastName} onChange={(e) => setLastName(e.target.value)} />
           <TextField
-            label="Date of birth"
+            label="Date of birth (optional)"
             type="date"
             fullWidth
             InputLabelProps={{ shrink: true }}
@@ -258,33 +273,15 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
           />
         </Stack>
 
-        {matches.length > 1 ? (
-          <Box>
-            <Typography variant="body2" sx={{ mb: 1 }}>Multiple matches — pick the correct person:</Typography>
-            <Stack spacing={1}>
-              {matches.map((p) => (
-                <Button
-                  key={p.patientId}
-                  variant={selected?.patientId === p.patientId ? 'contained' : 'outlined'}
-                  onClick={() => setSelected(p)}
-                  sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
-                >
-                  {p.legalName}
-                  {p.uhid ? ` · ${p.uhid}` : ' · Platform member'}
-                  {p.dateOfBirth ? ` · DOB ${p.dateOfBirth}` : ''}
-                  {p.primaryPhone ? ` · ${p.primaryPhone}` : ''}
-                </Button>
-              ))}
-            </Stack>
-          </Box>
+        {matches.length > 0 ? (
+          <PatientSearchMatchList
+            patients={matches}
+            selectedPatientId={selected?.patientId}
+            onSelect={setSelected}
+          />
         ) : null}
 
-        {selected ? (
-          <Alert severity="success">
-            Selected: {selected.legalName}
-            {selected.uhid ? ` · ${selected.uhid}` : ' · existing platform member'}
-          </Alert>
-        ) : null}
+        {selected ? <PatientSelectedSummary patient={selected} /> : null}
 
         {selected && notLinkedAtHospital ? (
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
@@ -311,6 +308,13 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
               fullWidth
               value={newPhone}
               onChange={(e) => setNewPhone(e.target.value)}
+            />
+            <TextField
+              label="Email (optional — used for portal login)"
+              type="email"
+              fullWidth
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
             />
             <TextField
               select

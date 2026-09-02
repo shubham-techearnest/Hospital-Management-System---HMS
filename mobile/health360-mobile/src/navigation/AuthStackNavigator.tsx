@@ -3,6 +3,7 @@ import { WelcomeScreen } from '@/features/auth/screens/WelcomeScreen';
 import { LoginScreen } from '@/features/auth/screens/LoginScreen';
 import { RegisterScreen } from '@/features/auth/screens/RegisterScreen';
 import { VerifyEmailScreen } from '@/features/auth/screens/VerifyEmailScreen';
+import { CompletePatientAccountScreen } from '@/features/auth/screens/CompletePatientAccountScreen';
 import { appColors } from '@/shared/theme';
 import type { AuthStackParamList } from './types';
 
@@ -24,6 +25,11 @@ export function AuthStackNavigator() {
         name="VerifyEmail"
         component={VerifyEmailScreen}
         options={{ headerShown: true, title: 'Verify email' }}
+      />
+      <Stack.Screen
+        name="CompletePatientAccount"
+        component={CompletePatientAccountScreen}
+        options={{ headerShown: true, title: 'Activate account' }}
       />
     </Stack.Navigator>
   );

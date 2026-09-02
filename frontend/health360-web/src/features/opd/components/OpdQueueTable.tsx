@@ -18,8 +18,13 @@ import {
 import type { OpdQueueEntry } from '@/features/opd/api/opdApi';
 import { useOpdDoctors, useOpdQueueActions } from '@/features/opd/hooks/useOpdQueries';
 import {
+  invoiceStatusColor,
+  invoiceStatusLabel,
+  patientDisplayLabel,
   queueStatusColor,
   queueStatusLabel,
+  registrationTypeColor,
+  registrationTypeLabel,
   visitEncounterStatusColor,
   visitEncounterStatusLabel,
 } from '@/shared/status/visitStatus';
@@ -47,6 +52,15 @@ export function OpdQueueTable({
 
   const doctorFor = (entry: OpdQueueEntry) =>
     doctorByEntry[entry.queueEntryId] || entry.primaryDoctorId || '';
+
+  const patientLabel = (entry: OpdQueueEntry) =>
+    patientDisplayLabel(
+      entry.patientName ?? entry.encounter?.patientName,
+      entry.uhid ?? entry.encounter?.uhid,
+    );
+
+  const patientUhid = (entry: OpdQueueEntry) =>
+    entry.uhid ?? entry.encounter?.uhid;
 
   const run = async (
     action: 'call' | 'start' | 'complete' | 'cancel' | 'skip' | 'recall' | 'assign',
@@ -85,11 +99,13 @@ export function OpdQueueTable({
         <TableHead>
           <TableRow>
             <TableCell>Queue #</TableCell>
+            <TableCell>Patient</TableCell>
             <TableCell>Type</TableCell>
             <TableCell>Queue</TableCell>
             <TableCell>Consult</TableCell>
+            <TableCell>Billing</TableCell>
             <TableCell>Doctor</TableCell>
-            <TableCell>Encounter</TableCell>
+            <TableCell>Visit #</TableCell>
             <TableCell align="right">Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -97,7 +113,25 @@ export function OpdQueueTable({
           {queue.map((entry, index) => (
             <TableRow key={entry.queueEntryId}>
               <TableCell><Typography fontWeight={700}>#{entry.tokenNumber || index + 1}</Typography></TableCell>
-              <TableCell>{entry.registrationType}</TableCell>
+              <TableCell>
+                <Typography fontWeight={600}>{patientLabel(entry)}</Typography>
+                {patientUhid(entry) && (entry.patientName ?? entry.encounter?.patientName) ? (
+                  <Typography variant="caption" color="text.secondary" display="block">{patientUhid(entry)}</Typography>
+                ) : null}
+              </TableCell>
+              <TableCell>
+                <Chip
+                  size="small"
+                  label={registrationTypeLabel(entry.registrationType)}
+                  color={registrationTypeColor(entry.registrationType)}
+                  variant={entry.registrationType === 'PATIENT_REQUEST' ? 'filled' : 'outlined'}
+                />
+                {entry.visitReason ? (
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5, maxWidth: 160 }}>
+                    {entry.visitReason}
+                  </Typography>
+                ) : null}
+              </TableCell>
               <TableCell>
                 <Chip
                   size="small"
@@ -112,6 +146,18 @@ export function OpdQueueTable({
                   label={entry.encounterStatus ? visitEncounterStatusLabel(entry.encounterStatus) : '—'}
                   color={entry.encounterStatus ? visitEncounterStatusColor(entry.encounterStatus) : 'default'}
                 />
+              </TableCell>
+              <TableCell>
+                {entry.status === 'COMPLETED' ? (
+                  <Chip
+                    size="small"
+                    label={invoiceStatusLabel(entry.invoiceStatus)}
+                    color={invoiceStatusColor(entry.invoiceStatus)}
+                    variant={entry.invoiceStatus === 'PAID' ? 'filled' : 'outlined'}
+                  />
+                ) : (
+                  <Typography variant="caption" color="text.secondary">—</Typography>
+                )}
               </TableCell>
               <TableCell sx={{ minWidth: 180 }}>
                 <TextField
@@ -156,9 +202,36 @@ export function OpdQueueTable({
                     </Typography>
                   )}
                   {entry.status === 'COMPLETED' && entry.encounterId ? (
-                    <Button size="small" variant="contained" component={RouterLink} to={`${checkoutBasePath}/${entry.encounterId}`}>
-                      Checkout
-                    </Button>
+                    entry.invoiceStatus === 'PAID' ? (
+                      <Chip size="small" label="Paid ✓" color="success" />
+                    ) : entry.invoiceStatus === 'ISSUED' || entry.invoiceStatus === 'PARTIALLY_PAID' ? (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        component={RouterLink}
+                        to={`${checkoutBasePath}/${entry.encounterId}`}
+                      >
+                        Collect payment
+                      </Button>
+                    ) : entry.invoiceStatus === 'DRAFT' ? (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        component={RouterLink}
+                        to={`${checkoutBasePath}/${entry.encounterId}`}
+                      >
+                        Finalize bill
+                      </Button>
+                    ) : (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        component={RouterLink}
+                        to={`${checkoutBasePath}/${entry.encounterId}`}
+                      >
+                        Checkout
+                      </Button>
+                    )
                   ) : null}
                   {!['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(entry.status) && (
                     <Button size="small" color="error" onClick={() => run('cancel', entry)}>Cancel</Button>
@@ -168,7 +241,7 @@ export function OpdQueueTable({
             </TableRow>
           ))}
           {queue.length === 0 && (
-            <TableRow><TableCell colSpan={7}>No patients in queue for today.</TableCell></TableRow>
+            <TableRow><TableCell colSpan={9}>No patients in queue for today.</TableCell></TableRow>
           )}
         </TableBody>
       </Table>

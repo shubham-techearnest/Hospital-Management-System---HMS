@@ -23,6 +23,16 @@ public interface PatientProfileRepository extends JpaRepository<PatientProfileEn
     @Query("""
             SELECT p FROM PatientProfileEntity p
             WHERE p.tenantId = :tenantId
+              AND p.id IN :ids
+              AND p.deletedAt IS NULL
+            """)
+    List<PatientProfileEntity> findByTenantIdAndIdIn(
+            @Param("tenantId") UUID tenantId,
+            @Param("ids") Iterable<UUID> ids);
+
+    @Query("""
+            SELECT p FROM PatientProfileEntity p
+            WHERE p.tenantId = :tenantId
               AND p.deletedAt IS NULL
               AND p.primaryPhone = :phone
             """)
@@ -70,6 +80,45 @@ public interface PatientProfileRepository extends JpaRepository<PatientProfileEn
             @Param("firstName") String firstName,
             @Param("lastName") String lastName,
             @Param("dateOfBirth") LocalDate dateOfBirth,
+            Pageable pageable);
+
+    @Query(value = """
+            SELECT p.* FROM patient.patient_profiles p
+            LEFT JOIN iam.users u ON u.id = p.user_id AND u.deleted_at IS NULL
+            WHERE p.tenant_id = :tenantId
+              AND p.deleted_at IS NULL
+              AND (
+                (
+                  lower(trim(coalesce(p.legal_first_name, ''))) = lower(trim(:firstName))
+                  AND lower(trim(coalesce(p.legal_last_name, ''))) = lower(trim(:lastName))
+                )
+                OR (
+                  p.user_id IS NOT NULL
+                  AND lower(trim(u.first_name)) = lower(trim(:firstName))
+                  AND lower(trim(u.last_name)) = lower(trim(:lastName))
+                )
+              )
+            """, nativeQuery = true, countQuery = """
+            SELECT count(*) FROM patient.patient_profiles p
+            LEFT JOIN iam.users u ON u.id = p.user_id AND u.deleted_at IS NULL
+            WHERE p.tenant_id = :tenantId
+              AND p.deleted_at IS NULL
+              AND (
+                (
+                  lower(trim(coalesce(p.legal_first_name, ''))) = lower(trim(:firstName))
+                  AND lower(trim(coalesce(p.legal_last_name, ''))) = lower(trim(:lastName))
+                )
+                OR (
+                  p.user_id IS NOT NULL
+                  AND lower(trim(u.first_name)) = lower(trim(:firstName))
+                  AND lower(trim(u.last_name)) = lower(trim(:lastName))
+                )
+              )
+            """)
+    Page<PatientProfileEntity> searchByName(
+            @Param("tenantId") UUID tenantId,
+            @Param("firstName") String firstName,
+            @Param("lastName") String lastName,
             Pageable pageable);
 
     @Query(value = """

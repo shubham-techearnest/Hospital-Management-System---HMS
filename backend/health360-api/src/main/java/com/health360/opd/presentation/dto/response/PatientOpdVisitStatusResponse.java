@@ -15,12 +15,17 @@ public class PatientOpdVisitStatusResponse {
     Integer queuePosition;
     String status;
     UUID hospitalId;
+    String hospitalName;
     UUID branchId;
+    String branchName;
     UUID encounterId;
+    String encounterNumber;
     String encounterStatus;
     UUID primaryDoctorId;
+    String primaryDoctorName;
     Instant checkedInAt;
     Instant calledAt;
     Instant serviceStartedAt;
     Instant completedAt;
+    String invoiceStatus;
 }

@@ -14,14 +14,17 @@ import { MedicalInfoSection } from '@/features/patient/components/profile/sectio
 import { PhysicalMeasurementsSection } from '@/features/patient/components/profile/sections/PhysicalMeasurementsSection';
 import { ProfileCompletionWidget } from '@/features/patient/components/ProfileCompletionWidget';
 import { usePatientProfile, useProfileCompletionEnabled } from '@/features/patient/hooks/usePatientQueries';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { appColors } from '@/shared/theme';
 import { PROFILE_SECTIONS, type ProfileSectionId } from '@/features/patient/utils/patientUtils';
 
 const DEFAULT_EXPANDED: ProfileSectionId = 'basic-info';
 
 export function ProfileHubScreen() {
   const route = useRoute<RouteProp<PatientTabParamList, 'Profile'>>();
+  const { user } = useAuth();
   const scrollRef = useRef<ScrollView>(null);
-  const { isLoading: profileLoading } = usePatientProfile();
+  const { data: profile, isLoading: profileLoading } = usePatientProfile();
   const { data: completion, isLoading: completionLoading } = useProfileCompletionEnabled(true);
 
   const [expanded, setExpanded] = useState<Record<ProfileSectionId, boolean>>(() =>
@@ -85,9 +88,16 @@ export function ProfileHubScreen() {
     <>
       <ScrollView ref={scrollRef} contentContainerStyle={styles.container}>
         <Text variant="headlineSmall" style={styles.title}>My Health Profile</Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>
-          Expand a section to view or update your information. Your completion score updates when you save.
+        <Text variant="bodyMedium" style={[styles.subtitle, profile?.uhid && styles.subtitleWithId]}>
+          {profile?.uhid
+            ? `UHID ${profile.uhid}${user?.firstName ? ` · ${user.firstName} ${user.lastName ?? ''}`.trim() : ''}`
+            : 'Expand a section to view or update your information.'}
         </Text>
+        {!profile?.uhid ? (
+          <Text variant="bodySmall" style={styles.subtitleHint}>
+            Your completion score updates when you save each section.
+          </Text>
+        ) : null}
 
         <View style={styles.completionCard}>
           <ProfileCompletionWidget
@@ -185,7 +195,9 @@ export function ProfileHubScreen() {
 const styles = StyleSheet.create({
   container: { paddingBottom: 32 },
   title: { fontWeight: '700', paddingHorizontal: 16, paddingTop: 16 },
-  subtitle: { opacity: 0.7, paddingHorizontal: 16, marginBottom: 12 },
+  subtitle: { opacity: 0.7, paddingHorizontal: 16, marginBottom: 4 },
+  subtitleWithId: { marginBottom: 12 },
+  subtitleHint: { opacity: 0.65, paddingHorizontal: 16, marginBottom: 12, color: appColors.textSecondary },
   completionCard: {
     marginHorizontal: 16,
     marginBottom: 12,

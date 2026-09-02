@@ -5,7 +5,6 @@ import {
   AccordionDetails,
   AccordionSummary,
   Alert,
-  Autocomplete,
   Box,
   Button,
   Chip,
@@ -15,7 +14,6 @@ import {
   Paper,
   Skeleton,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -52,9 +50,8 @@ import { useEncounterImagingReports, useModalities } from '@/features/radiology/
 import { useEncounterProcedures } from '@/features/ot/hooks/useOtQueries';
 import { useEncounterAdministrations } from '@/features/pharmacy/hooks/usePharmacyQueries';
 import { useDiagnosisCatalog } from '@/features/hospital/hooks/useClinicalCatalogQueries';
-import type { DiagnosisCatalogItem } from '@/features/hospital/api/clinicalCatalogApi';
 import { encounterStatusColor, encounterStatusLabel } from '@/features/clinical/utils/encounterUtils';
-import { queueStatusLabel } from '@/shared/status/visitStatus';
+import { patientDisplayLabel, queueStatusLabel } from '@/shared/status/visitStatus';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -91,8 +88,6 @@ export function DoctorEncounterDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [beginning, setBeginning] = useState(false);
-  const [diagnosisText, setDiagnosisText] = useState('');
-  const [diagnosisCode, setDiagnosisCode] = useState('');
 
   const parsedError = error ? parseApiError(error) : null;
   const invoiceForbidden = isAxiosError(invoiceQuery.error) && invoiceQuery.error.response?.status === 403;
@@ -219,10 +214,10 @@ export function DoctorEncounterDetailPage() {
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
           <Button component={RouterLink} to="/doctor/opd" size="small">← OPD</Button>
           <Typography variant="subtitle1" fontWeight={700}>
-            {encounter.patientName || encounter.encounterNumber}
+            {patientDisplayLabel(encounter.patientName, encounter.uhid) || encounter.encounterNumber}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {encounter.patientName}
+            {encounter.patientName ? patientDisplayLabel(encounter.patientName, encounter.uhid) : encounter.encounterNumber}
             {encounter.uhid ? ` · ${encounter.uhid}` : ''}
           </Typography>
           <Chip label={encounterStatusLabel(encounter.status)} color={encounterStatusColor(encounter.status)} size="small" />
@@ -289,68 +284,23 @@ export function DoctorEncounterDetailPage() {
             encounterId={encounterId}
             canWrite={canEditClinical}
             compact
+            lastVitals={patientSummary?.latestVitals}
             onRecorded={() => setTab('consult')}
+            onSkip={() => setTab('consult')}
           />
         ) : null}
 
         {tab === 'consult' ? (
-          <Stack spacing={2}>
-            <StructuredConsultationPanel
-              encounterId={encounterId}
-              hospitalId={encounter.hospitalId}
-              branchId={encounter.branchId}
-              canEdit={canEditClinical}
-              compact
-              onFinalized={() => setTab('rx')}
-            />
-            {canEditClinical ? (
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>Diagnosis (optional)</Typography>
-                {diagnosisCatalog.length > 0 ? (
-                  <Autocomplete
-                    options={diagnosisCatalog}
-                    getOptionLabel={(option: DiagnosisCatalogItem) =>
-                      `${option.icdCode} — ${option.name}`
-                    }
-                    onChange={(_, item) => {
-                      if (!item) return;
-                      setDiagnosisCode(item.icdCode);
-                      setDiagnosisText(item.name);
-                    }}
-                    renderInput={(params) => (
-                      <TextField {...params} label="ICD search" size="small" sx={{ mb: 1 }} />
-                    )}
-                  />
-                ) : null}
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                  <TextField label="Diagnosis" size="small" fullWidth value={diagnosisText}
-                    onChange={(e) => setDiagnosisText(e.target.value)} />
-                  <TextField label="ICD" size="small" sx={{ minWidth: 120 }} value={diagnosisCode}
-                    onChange={(e) => setDiagnosisCode(e.target.value)} />
-                  <Button variant="outlined" size="small" disabled={!diagnosisText.trim() || actions.addDiagnosis.isPending}
-                    onClick={() => void runAction('Diagnosis', () => actions.addDiagnosis.mutateAsync({
-                      diagnosisText: diagnosisText.trim(),
-                      diagnosisCode: diagnosisCode.trim() || undefined,
-                      diagnosisType: diagnoses.length === 0 ? 'PRIMARY' : 'SECONDARY',
-                    }), () => {
-                      setDiagnosisText('');
-                      setDiagnosisCode('');
-                    })}>
-                    Add
-                  </Button>
-                </Stack>
-              </Box>
-            ) : null}
-            {diagnoses.length > 0 ? (
-              <List dense disablePadding>
-                {diagnoses.map((dx) => (
-                  <ListItem key={dx.diagnosisId} disableGutters>
-                    <ListItemText primary={dx.diagnosisText} secondary={dx.diagnosisCode} />
-                  </ListItem>
-                ))}
-              </List>
-            ) : null}
-          </Stack>
+          <StructuredConsultationPanel
+            encounterId={encounterId}
+            hospitalId={encounter.hospitalId}
+            branchId={encounter.branchId}
+            visitReason={encounter.visitReason}
+            diagnosisCatalog={diagnosisCatalog}
+            canEdit={canEditClinical}
+            compact
+            onFinalized={() => setTab('rx')}
+          />
         ) : null}
 
         {tab === 'rx' ? (
@@ -360,6 +310,7 @@ export function DoctorEncounterDetailPage() {
             branchId={encounter.branchId}
             canEdit={canEditClinical}
             compact
+            patientMedications={patientSummary?.medications ?? []}
             onSigned={() => setTab('done')}
           />
         ) : null}
@@ -398,7 +349,7 @@ export function DoctorEncounterDetailPage() {
                 )}
                 {nextWaitingEncounter ? (
                   <Button variant="outlined" onClick={goToNextPatient}>
-                    Skip to next: {nextWaitingEncounter.patientName}
+                    Skip to next: {patientDisplayLabel(nextWaitingEncounter.patientName, nextWaitingEncounter.uhid)}
                   </Button>
                 ) : null}
               </Stack>

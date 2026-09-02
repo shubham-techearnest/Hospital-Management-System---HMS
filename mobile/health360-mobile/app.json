@@ -34,6 +34,12 @@
         {
           "locationWhenInUsePermission": "Health360 uses your location to find nearby doctors and hospitals."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "sounds": []
+        }
       ]
     ]
   }

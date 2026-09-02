@@ -22,6 +22,7 @@ export function PatientRegisterPage() {
     dateOfBirth: '',
     gender: 'MALE',
     primaryPhone: '',
+    email: '',
     permanentCity: '',
     permanentState: '',
     permanentPincode: '',
@@ -95,6 +96,12 @@ export function PatientRegisterPage() {
             required
             value={form.primaryPhone}
             onChange={(e) => setForm({ ...form, primaryPhone: e.target.value })}
+          />
+          <TextField
+            label="Email (optional — used for portal login)"
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
           <TextField
             label="City"

@@ -28,6 +28,8 @@ import LocalPharmacyIcon from '@mui/icons-material/LocalPharmacy';
 import MedicationIcon from '@mui/icons-material/Medication';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useBranches, useHospitalProfile } from '@/features/hospital/hooks/useHospitalQueries';
+import { StaffHospitalScopeBar } from '@/features/hospital/components/StaffHospitalScopeBar';
+import { useStaffHospitalScope } from '@/features/hospital/hooks/useStaffHospitalScope';
 import {
   useMedicationOrder,
   useMedicationOrders,
@@ -37,10 +39,7 @@ import {
   usePharmacyRequestMutations,
   usePharmacyRequests,
 } from '@/features/pharmacy/hooks/usePharmacyQueries';
-import { pharmacyRequestStatusLabel } from '@/shared/status/visitStatus';
-
-const DEFAULT_HOSPITAL_ID = '00000000-0000-0000-0000-000000000030';
-const DEFAULT_BRANCH_ID = '00000000-0000-0000-0000-000000000031';
+import { pharmacyRequestStatusLabel, patientDisplayLabel } from '@/shared/status/visitStatus';
 
 const STATUS_COLOR: Record<string, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
   RECEIVED: 'info',
@@ -54,13 +53,12 @@ export function PharmacyDashboardPage() {
   const { data: profile } = useHospitalProfile();
   const { data: branches = [] } = useBranches();
   const primaryBranch = useMemo(() => branches.find((b) => b.primary) ?? branches[0], [branches]);
+  const staffScope = useStaffHospitalScope();
 
   const [tab, setTab] = useState(0);
-  const [manualHospitalId, setManualHospitalId] = useState(DEFAULT_HOSPITAL_ID);
-  const [manualBranchId, setManualBranchId] = useState(DEFAULT_BRANCH_ID);
-  const hospitalId = profile?.id ?? manualHospitalId;
-  const branchId = primaryBranch?.id ?? manualBranchId;
-  const showManualScope = !profile?.id;
+  const hospitalId = profile?.id ?? staffScope.hospitalId;
+  const branchId = primaryBranch?.id ?? staffScope.branchId;
+  const showStaffScope = !profile?.id;
   const [orderPage, setOrderPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState('');
@@ -134,16 +132,12 @@ export function PharmacyDashboardPage() {
         />
       )}
 
-      {showManualScope ? (
-        <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>Hospital scope</Typography>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-            <TextField label="Hospital ID" size="small" fullWidth value={manualHospitalId}
-              onChange={(e) => setManualHospitalId(e.target.value)} />
-            <TextField label="Branch ID" size="small" fullWidth value={manualBranchId}
-              onChange={(e) => setManualBranchId(e.target.value)} />
-          </Stack>
-        </Paper>
+      {showStaffScope ? (
+        <StaffHospitalScopeBar
+          {...staffScope}
+          onScopeIndexChange={staffScope.setActiveScopeIndex}
+          onBranchChange={staffScope.setBranchId}
+        />
       ) : null}
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }} variant="scrollable">
@@ -216,7 +210,8 @@ export function PharmacyDashboardPage() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Order</TableCell>
+                  <TableCell>Visit</TableCell>
+                  <TableCell>Patient</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Items</TableCell>
                   <TableCell>Received</TableCell>
@@ -226,8 +221,9 @@ export function PharmacyDashboardPage() {
               <TableBody>
                 {orders.map((order) => (
                   <TableRow key={order.medicationOrderId}>
-                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
-                      {order.medicationOrderId.slice(0, 8)}
+                    <TableCell>{order.encounterNumber ?? '—'}</TableCell>
+                    <TableCell>
+                      <Typography fontWeight={600}>{patientDisplayLabel(order.patientName, undefined)}</Typography>
                     </TableCell>
                     <TableCell>
                       <Chip label={order.status} size="small" color={STATUS_COLOR[order.status] ?? 'default'} />
@@ -270,7 +266,8 @@ export function PharmacyDashboardPage() {
                   <Chip label={selectedOrder.status} size="small" color={STATUS_COLOR[selectedOrder.status] ?? 'default'} />
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
-                  Order {selectedOrder.medicationOrderId} · Patient {selectedOrder.patientId}
+                  {patientDisplayLabel(selectedOrder.patientName, undefined)}
+                  {selectedOrder.encounterNumber ? ` · ${selectedOrder.encounterNumber}` : ''}
                 </Typography>
               </Paper>
 

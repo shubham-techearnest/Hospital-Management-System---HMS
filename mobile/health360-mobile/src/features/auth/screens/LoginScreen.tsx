@@ -51,7 +51,7 @@ export function LoginScreen({ navigation, route }: Props) {
     <ScreenContainer centered>
       <BrandHeader
         title="Welcome back"
-        subtitle="Sign in to manage your health profile, vitals, and appointments."
+        subtitle="Sign in to manage your health profile, vitals, OPD visits, and records."
       />
 
       {successMessage ? (
@@ -121,6 +121,9 @@ export function LoginScreen({ navigation, route }: Props) {
 
       <Button mode="text" onPress={() => navigation.navigate('Register')} style={styles.link}>
         Don&apos;t have an account? Register
+      </Button>
+      <Button mode="text" onPress={() => navigation.navigate('CompletePatientAccount')} style={styles.link}>
+        Hospital registered you? Activate account
       </Button>
       <Button mode="text" onPress={() => navigation.navigate('Welcome')} style={styles.link}>
         Back to overview

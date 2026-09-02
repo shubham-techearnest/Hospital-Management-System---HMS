@@ -13,7 +13,9 @@ public class MedicationOrderResponse {
     UUID medicationOrderId;
     UUID clinicalOrderId;
     UUID encounterId;
+    String encounterNumber;
     UUID patientId;
+    String patientName;
     UUID hospitalId;
     UUID branchId;
     String status;

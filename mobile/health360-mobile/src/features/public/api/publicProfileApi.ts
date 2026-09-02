@@ -103,3 +103,29 @@ export async function fetchHospitalReviews(hospitalId: string, page = 0): Promis
   });
   return data.data ?? { content: [], page: 0, totalPages: 0 };
 }
+
+export interface PublicHospitalDoctorSummary {
+  doctorId: string;
+  name: string;
+  specialization?: string;
+  averageRating?: number;
+  reviewCount?: number;
+}
+
+export interface PagedHospitalDoctors {
+  content: PublicHospitalDoctorSummary[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+export async function fetchHospitalDoctors(
+  hospitalId: string,
+  params?: { departmentId?: string; specialization?: string; page?: number; size?: number },
+): Promise<PagedHospitalDoctors> {
+  const { data } = await publicApiClient.get<ApiEnvelope<PagedHospitalDoctors>>(`/hospitals/${hospitalId}/doctors`, {
+    params,
+  });
+  return data.data ?? { content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
+}

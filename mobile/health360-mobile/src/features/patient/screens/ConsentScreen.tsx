@@ -38,11 +38,12 @@ export function ConsentScreen() {
       <AppCard style={styles.card}>
         <Text variant="headlineSmall" style={styles.title}>Health Data Consent</Text>
         <Text variant="bodyMedium" style={styles.body}>
-          To build your health profile, Health360 needs your consent to collect and store personal
-          health information. Your data is encrypted and used only to provide personalized health
-          insights and care coordination.
+          To use Health360 for OPD visits, prescriptions, lab reports, and your health profile, we need
+          your consent to collect and store personal health information. Your data is encrypted and
+          used only for your care.
         </Text>
         <View style={styles.list}>
+          <Text variant="bodySmall" style={styles.bullet}>• OPD queue status and hospital visit records</Text>
           <Text variant="bodySmall" style={styles.bullet}>• Basic demographics and contact details</Text>
           <Text variant="bodySmall" style={styles.bullet}>• Physical measurements and lifestyle information</Text>
           <Text variant="bodySmall" style={styles.bullet}>• Medical history including allergies and medications</Text>
