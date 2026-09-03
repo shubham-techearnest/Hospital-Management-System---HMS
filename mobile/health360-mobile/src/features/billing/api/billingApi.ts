@@ -31,6 +31,36 @@ export interface Invoice {
   lineItems: InvoiceLineItem[];
 }
 
+export interface Payment {
+  paymentId: string;
+  invoiceId: string;
+  amount: number;
+  status: string;
+  gateway: string;
+  paymentMethod: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export type CreateInvoicePayload = {
+  encounterId: string;
+  taxAmount?: number;
+  notes?: string;
+  lineItems: Array<{
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    sourceType?: string;
+    sourceId?: string;
+  }>;
+};
+
+export type RecordPaymentPayload = {
+  amount: number;
+  paymentMethod: string;
+  notes?: string;
+};
+
 const emptyPage = <T>(): SpringPage<T> => ({
   content: [],
   totalElements: 0,
@@ -44,6 +74,19 @@ function unwrap<T>(envelope: ApiEnvelope<T>): T {
     throw new Error(envelope.message ?? 'Request failed');
   }
   return envelope.data;
+}
+
+export async function createInvoice(payload: CreateInvoicePayload): Promise<Invoice> {
+  const { data } = await apiClient.post<ApiEnvelope<Invoice>>('/billing/invoices', payload);
+  return unwrap(data);
+}
+
+export async function recordPayment(invoiceId: string, payload: RecordPaymentPayload): Promise<Payment> {
+  const { data } = await apiClient.post<ApiEnvelope<Payment>>(
+    `/billing/invoices/${invoiceId}/payments`,
+    payload,
+  );
+  return unwrap(data);
 }
 
 export async function listMyInvoices(page = 0, size = 20): Promise<SpringPage<Invoice>> {

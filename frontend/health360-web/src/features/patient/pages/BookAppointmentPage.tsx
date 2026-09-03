@@ -29,6 +29,8 @@ import {
 import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
 import { VisitFlowGuide } from '@/features/opd/components/VisitFlowGuide';
 import { isValidUuid } from '@/shared/utils/uuid';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { isValidE164 } from '@/shared/phone/phoneUtils';
 
 const STEPS = ['Select Hospital', 'Pick Date & Time', 'Confirm', 'Success'];
 
@@ -145,6 +147,10 @@ export function BookAppointmentPage() {
   const handleBook = async () => {
     if (!selectedLocation || !selectedSlot) return;
     setError(null);
+    if (contactPhone.trim() && !isValidE164(contactPhone)) {
+      setError('Enter a valid contact phone number or leave it blank.');
+      return;
+    }
     try {
       const result = await bookMutation.mutateAsync({
         doctorId,
@@ -340,13 +346,11 @@ export function BookAppointmentPage() {
             inputProps={{ maxLength: 200 }}
             fullWidth
           />
-          <TextField
+          <PhoneField
             label="Contact phone for this visit"
             value={contactPhone}
-            onChange={(e) => setContactPhone(e.target.value)}
-            placeholder="10-digit mobile number"
-            inputProps={{ maxLength: 15 }}
-            fullWidth
+            onChange={setContactPhone}
+            optional
           />
           <TextField
             label="Additional notes (optional)"

@@ -25,6 +25,8 @@ import com.health360.hospital.application.service.HospitalScopeService;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
+import com.health360.subscription.application.service.FeatureAccessService;
+import com.health360.subscription.domain.PlanFeatureKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -54,6 +56,7 @@ public class BillingService {
     private final EncounterCheckoutGateService checkoutGateService;
     private final BillingMapper mapper;
     private final AuditLogService auditLogService;
+    private final FeatureAccessService featureAccessService;
 
     @Transactional
     public InvoiceResponse createInvoice(UserPrincipal principal, CreateInvoiceRequest request) {
@@ -66,6 +69,11 @@ public class BillingService {
 
         hospitalScopeService.assertHospitalScope(
                 principal, encounter.getHospitalId(), encounter.getBranchId());
+        featureAccessService.assertHasFeature(
+                encounter.getHospitalId(),
+                tenantId,
+                PlanFeatureKeys.FEATURE_BILLING,
+                "Billing is not available on this hospital's current plan.");
         checkoutGateService.assertReadyForCheckout(encounter.getId());
 
         if (invoiceRepository.existsByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNot(
@@ -186,6 +194,11 @@ public class BillingService {
         accessService.assertCanWritePayments(principal);
         InvoiceEntity invoice = requireInvoice(principal.getTenantId(), invoiceId);
         accessService.assertCanWriteInvoice(principal, invoice);
+        featureAccessService.assertHasFeature(
+                invoice.getHospitalId(),
+                principal.getTenantId(),
+                PlanFeatureKeys.FEATURE_BILLING,
+                "Billing is not available on this hospital's current plan.");
 
         if (InvoiceStatus.PAID.name().equals(invoice.getStatus())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, "Invoice is already paid");

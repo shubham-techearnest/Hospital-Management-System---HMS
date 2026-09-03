@@ -13,6 +13,7 @@ import { arriveAppointment } from '@/features/opd/api/opdApi';
 import { appointmentLabel } from '@/features/scheduling/utils/schedulingUtils';
 import { formatPatientDob, formatPatientPhone } from '@/features/reception/utils/patientDisplayUtils';
 import { isValidUuid } from '@/shared/utils/uuid';
+import { PhoneField } from '@/shared/phone/PhoneField';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
@@ -139,7 +140,12 @@ export function PatientSearchPage() {
             <TextField label="UHID" value={uhid} onChange={(e) => setUhid(e.target.value)} fullWidth />
           )}
           {tab === 1 && (
-            <TextField label="Mobile number" value={mobile} onChange={(e) => setMobile(e.target.value)} fullWidth />
+            <PhoneField
+              label="Mobile number"
+              value={mobile}
+              onChange={setMobile}
+              optional
+            />
           )}
           {tab === 2 && (
             <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth />

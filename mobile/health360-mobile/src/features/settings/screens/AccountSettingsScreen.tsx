@@ -16,6 +16,10 @@ import {
 import { mergeProfileIntoAuthUser } from '@/features/settings/utils/profileMapper';
 import { loginMessageStore } from '@/shared/storage/loginMessageStore';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
+import { LocaleField } from '@/shared/locale/LocaleField';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { TimezoneField } from '@/shared/timezone/TimezoneField';
+import { detectLocale, detectTimezone } from '@/shared/timezone/timezones';
 import type { SettingsStackParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<SettingsStackParamList, 'AccountSettings'>;
@@ -24,8 +28,8 @@ const profileDefaults: ProfileForm = {
   firstName: '',
   lastName: '',
   phone: '',
-  timezone: '',
-  locale: '',
+  timezone: detectTimezone(),
+  locale: detectLocale(),
 };
 
 export function AccountSettingsScreen({ navigation, route }: Props) {
@@ -59,8 +63,8 @@ export function AccountSettingsScreen({ navigation, route }: Props) {
         firstName: profile.firstName ?? '',
         lastName: profile.lastName ?? '',
         phone: profile.phone ?? '',
-        timezone: profile.timezone ?? '',
-        locale: profile.locale ?? '',
+        timezone: profile.timezone || detectTimezone(),
+        locale: profile.locale || detectLocale(),
       });
     }
   }, [profile, profileForm]);
@@ -153,34 +157,49 @@ export function AccountSettingsScreen({ navigation, route }: Props) {
             control={profileForm.control}
             name="phone"
             render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput label="Phone" mode="outlined" keyboardType="phone-pad" value={value} onBlur={onBlur} onChangeText={onChange} error={!!profileForm.formState.errors.phone} />
+              <PhoneField
+                label="Phone"
+                value={value}
+                onChange={onChange}
+                onBlur={onBlur}
+                error={!!profileForm.formState.errors.phone}
+                helperText={profileForm.formState.errors.phone?.message}
+                required
+              />
             )}
           />
-          <HelperText type="error" visible={!!profileForm.formState.errors.phone}>
-            {profileForm.formState.errors.phone?.message}
-          </HelperText>
 
           <Controller
             control={profileForm.control}
             name="timezone"
             render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput label="Timezone" mode="outlined" value={value} onBlur={onBlur} onChangeText={onChange} error={!!profileForm.formState.errors.timezone} />
+              <TimezoneField
+                value={value}
+                onChange={onChange}
+                onBlur={onBlur}
+                error={!!profileForm.formState.errors.timezone}
+                helperText={profileForm.formState.errors.timezone?.message}
+                required
+                autoDetect={false}
+              />
             )}
           />
-          <HelperText type="error" visible={!!profileForm.formState.errors.timezone}>
-            {profileForm.formState.errors.timezone?.message}
-          </HelperText>
 
           <Controller
             control={profileForm.control}
             name="locale"
             render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput label="Locale" mode="outlined" value={value} onBlur={onBlur} onChangeText={onChange} error={!!profileForm.formState.errors.locale} />
+              <LocaleField
+                value={value}
+                onChange={onChange}
+                onBlur={onBlur}
+                error={!!profileForm.formState.errors.locale}
+                helperText={profileForm.formState.errors.locale?.message}
+                required
+                autoDetect={false}
+              />
             )}
           />
-          <HelperText type="error" visible={!!profileForm.formState.errors.locale}>
-            {profileForm.formState.errors.locale?.message}
-          </HelperText>
 
           <Button
             mode="contained"

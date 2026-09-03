@@ -5,6 +5,7 @@ import { HospitalDepartmentsScreen } from '@/features/hospital/screens/HospitalD
 import { HospitalDoctorsScreen } from '@/features/hospital/screens/HospitalDoctorsScreen';
 import { HospitalEmergencyScreen } from '@/features/hospital/screens/HospitalEmergencyScreen';
 import { HospitalManageHubScreen } from '@/features/hospital/screens/HospitalManageHubScreen';
+import { HospitalStaffScreen } from '@/features/hospital/screens/HospitalStaffScreen';
 import { HospitalSubscriptionScreen } from '@/features/hospital/screens/HospitalSubscriptionScreen';
 import { stackScreenOptions } from '@/shared/theme';
 import type { HospitalManageStackParamList } from './types';
@@ -15,6 +16,7 @@ export function HospitalManageStackNavigator() {
   return (
     <Stack.Navigator screenOptions={stackScreenOptions}>
       <Stack.Screen name="ManageHub" component={HospitalManageHubScreen} options={{ title: 'Manage' }} />
+      <Stack.Screen name="Staff" component={HospitalStaffScreen} options={{ title: 'Staff' }} />
       <Stack.Screen name="Departments" component={HospitalDepartmentsScreen} options={{ title: 'Departments' }} />
       <Stack.Screen name="Emergency" component={HospitalEmergencyScreen} options={{ title: 'Emergency & ICU' }} />
       <Stack.Screen name="Doctors" component={HospitalDoctorsScreen} options={{ title: 'Doctor Roster' }} />

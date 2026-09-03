@@ -22,6 +22,7 @@ import { register as registerApi } from '../api/authApi';
 import { Health360Logo } from '@/shared/brand/Health360Logo';
 import { AppLayout } from '@/shared/layout/AppLayout';
 import { PasswordField } from '@/shared/ui/PasswordField';
+import { PhoneField } from '@/shared/phone/PhoneField';
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { role: 'PATIENT', acceptTerms: false },
+    defaultValues: { role: 'PATIENT', acceptTerms: false, phone: '' },
   });
 
   const onSubmit = async (values: RegisterForm) => {
@@ -100,13 +101,20 @@ export function RegisterPage() {
               error={!!errors.email}
               helperText={errors.email?.message}
             />
-            <TextField
-              label="Phone"
-              autoComplete="tel"
-              fullWidth
-              {...register('phone')}
-              error={!!errors.phone}
-              helperText={errors.phone?.message}
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <PhoneField
+                  label="Phone"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  error={!!errors.phone}
+                  helperText={errors.phone?.message}
+                  required
+                />
+              )}
             />
             <input type="hidden" {...register('role')} value="PATIENT" />
             <PasswordField

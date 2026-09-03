@@ -1,10 +1,13 @@
 package com.health360.iam.presentation.controller;
 
 import com.health360.config.security.UserPrincipal;
+import com.health360.iam.application.service.DeviceTokenService;
 import com.health360.iam.application.service.InAppNotificationService;
 import com.health360.iam.application.service.NotificationPreferenceService;
 import com.health360.iam.application.service.UserAccountService;
 import com.health360.iam.presentation.dto.request.NotificationPreferenceItemRequest;
+import com.health360.iam.presentation.dto.request.RegisterDeviceTokenRequest;
+import com.health360.iam.presentation.dto.request.UnregisterDeviceTokenRequest;
 import com.health360.iam.presentation.dto.request.UpdateUserProfileRequest;
 import com.health360.iam.presentation.dto.response.InAppNotificationResponse;
 import com.health360.iam.presentation.dto.response.NotificationPreferenceResponse;
@@ -15,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,6 +39,7 @@ public class UserController {
     private final UserAccountService userAccountService;
     private final NotificationPreferenceService notificationPreferenceService;
     private final InAppNotificationService inAppNotificationService;
+    private final DeviceTokenService deviceTokenService;
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserProfileResponse>> getCurrentUser(
@@ -81,5 +86,21 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.ok(
                 notificationPreferenceService.updatePreferences(
                         principal.getUserId(), principal.getTenantId(), request)));
+    }
+
+    @PostMapping("/me/device-tokens")
+    public ResponseEntity<ApiResponse<Void>> registerDeviceToken(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody RegisterDeviceTokenRequest request) {
+        deviceTokenService.register(principal.getUserId(), principal.getTenantId(), request);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    @DeleteMapping("/me/device-tokens")
+    public ResponseEntity<ApiResponse<Void>> unregisterDeviceToken(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody UnregisterDeviceTokenRequest request) {
+        deviceTokenService.unregister(principal.getUserId(), request.expoPushToken());
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 }

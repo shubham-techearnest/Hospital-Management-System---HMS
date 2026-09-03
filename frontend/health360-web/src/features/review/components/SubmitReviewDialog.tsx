@@ -8,7 +8,8 @@ import { useSubmitDoctorReview, useSubmitHospitalReview } from '@/features/patie
 interface SubmitReviewDialogProps {
   open: boolean;
   onClose: () => void;
-  appointmentId: string;
+  appointmentId?: string;
+  encounterId?: string;
   doctorName: string;
   hospitalName: string;
   onSuccess?: (message: string) => void;
@@ -18,6 +19,7 @@ export function SubmitReviewDialog({
   open,
   onClose,
   appointmentId,
+  encounterId,
   doctorName,
   hospitalName,
   onSuccess,
@@ -30,14 +32,24 @@ export function SubmitReviewDialog({
   const doctorMutation = useSubmitDoctorReview();
   const hospitalMutation = useSubmitHospitalReview();
   const pending = doctorMutation.isPending || hospitalMutation.isPending;
+  const canReviewDoctor = Boolean(doctorName && doctorName !== '—');
 
   const handleSubmit = async () => {
     if (!rating) {
       setError('Please select a rating.');
       return;
     }
+    if (!appointmentId && !encounterId) {
+      setError('Missing visit reference.');
+      return;
+    }
     setError(null);
-    const payload = { appointmentId, rating, comment: comment.trim() || undefined };
+    const payload = {
+      appointmentId: appointmentId || undefined,
+      encounterId: encounterId || undefined,
+      rating,
+      comment: comment.trim() || undefined,
+    };
     try {
       if (reviewType === 'doctor') {
         await doctorMutation.mutateAsync(payload);
@@ -60,7 +72,7 @@ export function SubmitReviewDialog({
       <DialogTitle>Leave a review</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Reviews can be submitted within 30 days of a completed appointment. One review per type per appointment.
+          Reviews can be submitted within 30 days of a completed visit. One review per type per visit.
         </Typography>
         <Stack spacing={2}>
           <ToggleButtonGroup
@@ -70,7 +82,9 @@ export function SubmitReviewDialog({
             fullWidth
             size="small"
           >
-            <ToggleButton value="doctor">Doctor: {doctorName}</ToggleButton>
+            <ToggleButton value="doctor" disabled={!canReviewDoctor}>
+              Doctor: {doctorName}
+            </ToggleButton>
             <ToggleButton value="hospital">Hospital: {hospitalName}</ToggleButton>
           </ToggleButtonGroup>
           <Stack direction="row" alignItems="center" spacing={1}>

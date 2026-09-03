@@ -12,9 +12,15 @@ type Props = NativeStackScreenProps<HospitalManageStackParamList, 'ManageHub'>;
 export function HospitalManageHubScreen({ navigation }: Props) {
   return (
     <ScreenContainer scroll={false}>
-      <ScreenIntro description="Manage departments, emergency capacity, and your doctor roster." />
+      <ScreenIntro description="Manage staff, departments, emergency capacity, and your doctor roster." />
       <AppCard style={styles.card}>
         <List.Section style={styles.section}>
+          <List.Item
+            title="Staff"
+            description="Invite reception, nursing, lab, and other operational staff"
+            left={(props) => <List.Icon {...props} icon="account-group" />}
+            onPress={() => navigation.navigate('Staff')}
+          />
           <List.Item
             title="Departments"
             description="Add and manage clinical departments"

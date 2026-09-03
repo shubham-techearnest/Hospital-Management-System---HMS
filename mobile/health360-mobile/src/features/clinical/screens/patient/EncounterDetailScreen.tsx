@@ -221,11 +221,9 @@ export function EncounterDetailScreen() {
 
         {encounter.status === 'COMPLETED' ? (
           <View style={styles.actions}>
-            {encounter.appointmentId ? (
-              <Button mode="outlined" compact icon="star" onPress={() => setReviewOpen(true)}>
-                Rate visit
-              </Button>
-            ) : null}
+            <Button mode="outlined" compact icon="star" onPress={() => setReviewOpen(true)}>
+              Rate visit
+            </Button>
             <Button mode="contained" compact onPress={() => navigation.navigate('Prescriptions')}>
               Prescriptions
             </Button>
@@ -239,14 +237,15 @@ export function EncounterDetailScreen() {
         ) : null}
       </ScrollView>
 
-      {encounter.appointmentId ? (
-        <LeaveReviewDialog
-          visible={reviewOpen}
-          appointmentId={encounter.appointmentId}
-          onDismiss={() => setReviewOpen(false)}
-          onSuccess={() => setSnack('Thank you for your review!')}
-        />
-      ) : null}
+      <LeaveReviewDialog
+        visible={reviewOpen}
+        encounterId={encounter.encounterId}
+        appointmentId={encounter.appointmentId}
+        doctorLabel={encounter.primaryDoctorId ? 'Your doctor' : undefined}
+        hospitalLabel="Hospital"
+        onDismiss={() => setReviewOpen(false)}
+        onSuccess={() => setSnack('Thank you for your review!')}
+      />
 
       <Snackbar visible={Boolean(snack)} onDismiss={() => setSnack(null)} duration={3000}>
         {snack}

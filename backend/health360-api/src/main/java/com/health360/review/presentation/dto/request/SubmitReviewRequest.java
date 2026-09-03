@@ -11,8 +11,11 @@ import java.util.UUID;
 @Data
 public class SubmitReviewRequest {
 
-    @NotNull
+    /** Completed appointment to review (legacy booked visits). */
     private UUID appointmentId;
+
+    /** Completed encounter to review (walk-in / OPD request visits). */
+    private UUID encounterId;
 
     @NotNull
     @Min(1)

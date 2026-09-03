@@ -5,6 +5,8 @@ import {
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { ICU_TYPES } from '@/features/hospital/api/hospitalApi';
 import { useHospitalProfile, useUpdateEmergencyInfo } from '@/features/hospital/hooks/useHospitalQueries';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { isValidE164 } from '@/shared/phone/phoneUtils';
 
 export function HospitalEmergencyPage() {
   const { data: profile, isError } = useHospitalProfile();
@@ -13,6 +15,7 @@ export function HospitalEmergencyPage() {
     emergencyAvailable24x7: false, emergencyPhone: '', ambulanceAvailable: false,
     icuAvailable: false, icuBedCount: '', icuType: 'GENERAL',
   });
+  const [phoneError, setPhoneError] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   useEffect(() => {
@@ -29,6 +32,11 @@ export function HospitalEmergencyPage() {
   }, [profile]);
 
   const handleSave = async () => {
+    setPhoneError('');
+    if (form.emergencyPhone.trim() && !isValidE164(form.emergencyPhone)) {
+      setPhoneError('Enter a valid phone number or leave blank.');
+      return;
+    }
     try {
       await updateEmergency.mutateAsync({
         emergencyAvailable24x7: form.emergencyAvailable24x7,
@@ -51,7 +59,17 @@ export function HospitalEmergencyPage() {
       <Paper variant="outlined" sx={{ p: 3 }}>
         <Stack spacing={2}>
           <FormControlLabel control={<Switch checked={form.emergencyAvailable24x7} onChange={(e) => setForm({ ...form, emergencyAvailable24x7: e.target.checked })} />} label="24×7 Emergency Available" />
-          <TextField label="Emergency Phone" value={form.emergencyPhone} onChange={(e) => setForm({ ...form, emergencyPhone: e.target.value })} />
+          <PhoneField
+            label="Emergency Phone"
+            value={form.emergencyPhone}
+            onChange={(emergencyPhone) => {
+              setForm({ ...form, emergencyPhone });
+              setPhoneError('');
+            }}
+            optional
+            error={!!phoneError}
+            helperText={phoneError || undefined}
+          />
           <FormControlLabel control={<Switch checked={form.ambulanceAvailable} onChange={(e) => setForm({ ...form, ambulanceAvailable: e.target.checked })} />} label="Ambulance Available" />
           <FormControlLabel control={<Switch checked={form.icuAvailable} onChange={(e) => setForm({ ...form, icuAvailable: e.target.checked })} />} label="ICU Available" />
           <TextField label="ICU Bed Count" type="number" value={form.icuBedCount} onChange={(e) => setForm({ ...form, icuBedCount: e.target.value })} />

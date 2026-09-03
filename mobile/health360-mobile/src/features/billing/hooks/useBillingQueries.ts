@@ -1,6 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
-import { getInvoiceByEncounter, listMyInvoices } from '../api/billingApi';
+import {
+  createInvoice,
+  getInvoiceByEncounter,
+  listMyInvoices,
+  recordPayment,
+  type CreateInvoicePayload,
+  type RecordPaymentPayload,
+} from '../api/billingApi';
 
 export const billingKeys = {
   myInvoices: (page: number) => ['billing', 'invoices', 'me', page] as const,
@@ -35,4 +42,30 @@ export function useEncounterInvoice(encounterId: string, enabled = true) {
     enabled: Boolean(encounterId) && enabled,
     retry: (_, error) => !isAuthError(error),
   });
+}
+
+export function useBillingMutations(encounterId?: string) {
+  const qc = useQueryClient();
+  const invalidate = (invoiceId?: string) => {
+    if (encounterId) {
+      void qc.invalidateQueries({ queryKey: billingKeys.encounterInvoice(encounterId) });
+    }
+    void qc.invalidateQueries({ queryKey: ['billing', 'invoices', 'me'] });
+    void qc.invalidateQueries({ queryKey: ['opd', 'queue'] });
+    if (invoiceId) {
+      void qc.invalidateQueries({ queryKey: ['billing', 'invoices', invoiceId] });
+    }
+  };
+
+  return {
+    createInvoice: useMutation({
+      mutationFn: (payload: CreateInvoicePayload) => createInvoice(payload),
+      onSuccess: (invoice) => invalidate(invoice.invoiceId),
+    }),
+    recordPayment: useMutation({
+      mutationFn: ({ invoiceId, payload }: { invoiceId: string; payload: RecordPaymentPayload }) =>
+        recordPayment(invoiceId, payload),
+      onSuccess: (payment) => invalidate(payment.invoiceId),
+    }),
+  };
 }

@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Button, Dialog, Portal, SegmentedButtons, Text, TextInput } from 'react-native-paper';
-import { useSubmitDoctorReview } from '@/features/patient/hooks/usePatientExtendedQueries';
+import {
+  useSubmitDoctorReview,
+  useSubmitHospitalReview,
+} from '@/features/patient/hooks/usePatientExtendedQueries';
 
 type Props = {
   visible: boolean;
-  appointmentId: string;
+  appointmentId?: string;
+  encounterId?: string;
   doctorLabel?: string;
+  hospitalLabel?: string;
   onDismiss: () => void;
   onSuccess?: () => void;
 };
@@ -14,14 +19,19 @@ type Props = {
 export function LeaveReviewDialog({
   visible,
   appointmentId,
+  encounterId,
   doctorLabel,
+  hospitalLabel,
   onDismiss,
   onSuccess,
 }: Props) {
-  const reviewMutation = useSubmitDoctorReview();
+  const doctorMutation = useSubmitDoctorReview();
+  const hospitalMutation = useSubmitHospitalReview();
+  const [reviewType, setReviewType] = useState<'doctor' | 'hospital'>(doctorLabel ? 'doctor' : 'hospital');
   const [rating, setRating] = useState('5');
   const [comment, setComment] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const pending = doctorMutation.isPending || hospitalMutation.isPending;
 
   const handleSubmit = async () => {
     const ratingNum = Number(rating);
@@ -29,13 +39,23 @@ export function LeaveReviewDialog({
       setError('Rating must be between 1 and 5.');
       return;
     }
+    if (!appointmentId && !encounterId) {
+      setError('Missing visit reference.');
+      return;
+    }
     setError(null);
+    const payload = {
+      appointmentId: appointmentId || undefined,
+      encounterId: encounterId || undefined,
+      rating: ratingNum,
+      comment: comment.trim() || undefined,
+    };
     try {
-      await reviewMutation.mutateAsync({
-        appointmentId,
-        rating: ratingNum,
-        comment: comment.trim() || undefined,
-      });
+      if (reviewType === 'doctor') {
+        await doctorMutation.mutateAsync(payload);
+      } else {
+        await hospitalMutation.mutateAsync(payload);
+      }
       setComment('');
       setRating('5');
       onSuccess?.();
@@ -55,11 +75,18 @@ export function LeaveReviewDialog({
       <Dialog visible={visible} onDismiss={handleDismiss}>
         <Dialog.Title>Leave a review</Dialog.Title>
         <Dialog.Content>
-          {doctorLabel ? (
-            <Text variant="bodyMedium" style={styles.subtitle}>
-              How was your visit with {doctorLabel}?
-            </Text>
-          ) : null}
+          <Text variant="bodyMedium" style={styles.subtitle}>
+            Rate your completed visit within 30 days.
+          </Text>
+          <SegmentedButtons
+            value={reviewType}
+            onValueChange={(value) => setReviewType(value as 'doctor' | 'hospital')}
+            buttons={[
+              { value: 'doctor', label: doctorLabel ? 'Doctor' : 'Doctor', disabled: !doctorLabel },
+              { value: 'hospital', label: hospitalLabel ? 'Hospital' : 'Hospital' },
+            ]}
+            style={styles.rating}
+          />
           <SegmentedButtons
             value={rating}
             onValueChange={setRating}
@@ -83,7 +110,7 @@ export function LeaveReviewDialog({
         </Dialog.Content>
         <Dialog.Actions>
           <Button onPress={handleDismiss}>Cancel</Button>
-          <Button onPress={handleSubmit} loading={reviewMutation.isPending}>
+          <Button onPress={() => void handleSubmit()} loading={pending}>
             Submit
           </Button>
         </Dialog.Actions>

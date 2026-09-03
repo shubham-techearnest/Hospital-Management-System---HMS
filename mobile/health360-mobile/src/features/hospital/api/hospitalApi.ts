@@ -77,6 +77,34 @@ export const HOSPITAL_TYPES = ['GOVERNMENT', 'PRIVATE', 'TRUST', 'CLINIC'] as co
 export const ICU_TYPES = ['GENERAL', 'CRITICAL_CARE'] as const;
 export const ACCREDITATION_OPTIONS = ['NABH', 'JCI', 'NONE'] as const;
 
+export interface HospitalOpsDashboard {
+  hospitalId: string;
+  branchId: string;
+  hospitalName: string;
+  branchName: string;
+  branchCount: number;
+  departmentCount: number;
+  doctorCount: number;
+  activeStaffCount: number;
+  totalEncounters: number;
+  opdWaitingToday: number;
+  opdInProgressToday: number;
+  activeIpdAdmissions: number;
+  activeIcuStays: number;
+  pendingLabOrders: number;
+  pendingRadiologyOrders: number;
+  pendingPharmacyOrders: number;
+  pendingOtProcedures: number;
+}
+
+export async function getHospitalOpsDashboard() {
+  const { data } = await apiClient.get<ApiEnvelope<HospitalOpsDashboard>>('/hospital/dashboard');
+  if (!data.success || data.data === undefined) {
+    throw new Error(data.message ?? 'Failed to load hospital dashboard');
+  }
+  return data.data;
+}
+
 export async function getHospitalProfile() {
   const { data } = await apiClient.get<ApiEnvelope<HospitalProfile>>('/hospitals/me/profile');
   return data.data;

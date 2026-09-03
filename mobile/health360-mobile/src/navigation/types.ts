@@ -72,6 +72,21 @@ export type DoctorAppointmentsStackParamList = {
   DoctorEncounterDetail: { encounterId: string };
 };
 
+export type ReceptionPatientsStackParamList = {
+  PatientSearch: undefined;
+  PatientRegister: undefined;
+  PatientDetail: { patientId: string };
+  PatientReceipt: { patientId: string };
+  WalkIn: { patientId?: string } | undefined;
+  Checkout: { encounterId: string };
+};
+
+export type ReceptionTabParamList = {
+  OpdQueue: undefined;
+  Patients: NavigatorScreenParams<ReceptionPatientsStackParamList>;
+  Settings: NavigatorScreenParams<SettingsStackParamList>;
+};
+
 export type DoctorTabParamList = {
   Overview: undefined;
   Profile: undefined;
@@ -92,6 +107,7 @@ export type HospitalTabParamList = {
 
 export type HospitalManageStackParamList = {
   ManageHub: undefined;
+  Staff: undefined;
   Departments: undefined;
   Emergency: undefined;
   Doctors: undefined;

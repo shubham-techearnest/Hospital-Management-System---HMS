@@ -20,7 +20,8 @@ export interface AdminReview {
   reviewType: string;
   targetId: string;
   patientId: string;
-  appointmentId: string;
+  appointmentId?: string;
+  encounterId?: string;
   rating: number;
   comment?: string;
   visible: boolean;

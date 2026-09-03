@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Dialog, IconButton, Portal, Snackbar, Text, TextInput } from 'react-native-paper';
 import { useBranches, useCreateBranch, useDeleteBranch } from '@/features/hospital/hooks/useHospitalQueries';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { isValidE164 } from '@/shared/phone/phoneUtils';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
 
 const EMPTY_FORM = {
@@ -21,9 +23,15 @@ export function HospitalBranchesScreen() {
   const deleteBranch = useDeleteBranch();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [phoneError, setPhoneError] = useState('');
   const [snackbar, setSnackbar] = useState({ visible: false, message: '', isError: false });
 
   const handleSave = async () => {
+    setPhoneError('');
+    if (!isValidE164(form.phone)) {
+      setPhoneError('Enter a valid phone number.');
+      return;
+    }
     try {
       await createBranch.mutateAsync({
         ...form,
@@ -35,6 +43,7 @@ export function HospitalBranchesScreen() {
       });
       setDialogOpen(false);
       setForm(EMPTY_FORM);
+      setPhoneError('');
       setSnackbar({ visible: true, message: 'Branch added.', isError: false });
     } catch (error) {
       setSnackbar({ visible: true, message: getApiErrorMessage(error, 'Unable to add branch.'), isError: true });
@@ -80,7 +89,17 @@ export function HospitalBranchesScreen() {
               <TextInput label="Pincode" mode="outlined" value={form.pincode} onChangeText={(pincode) => setForm({ ...form, pincode })} />
               <TextInput label="Latitude" mode="outlined" value={form.latitude} onChangeText={(latitude) => setForm({ ...form, latitude })} />
               <TextInput label="Longitude" mode="outlined" value={form.longitude} onChangeText={(longitude) => setForm({ ...form, longitude })} />
-              <TextInput label="Phone" mode="outlined" value={form.phone} onChangeText={(phone) => setForm({ ...form, phone })} />
+              <PhoneField
+                label="Phone"
+                required
+                value={form.phone}
+                onChange={(phone) => {
+                  setForm({ ...form, phone });
+                  setPhoneError('');
+                }}
+                error={!!phoneError}
+                helperText={phoneError || undefined}
+              />
             </ScrollView>
           </Dialog.ScrollArea>
           <Dialog.Actions>

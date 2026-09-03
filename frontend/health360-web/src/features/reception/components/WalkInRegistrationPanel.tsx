@@ -22,6 +22,8 @@ import { PatientSearchMatchList, PatientSelectedSummary } from '@/features/recep
 import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
 import { useOpdDoctors } from '@/features/opd/hooks/useOpdQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { isValidE164 } from '@/shared/phone/phoneUtils';
 
 type Props = {
   hospitalId: string;
@@ -129,6 +131,10 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
     setCredentialsNotice(null);
     if (!firstName.trim() || !lastName.trim() || !dateOfBirth || !newPhone.trim()) {
       setError('New patient needs first name, last name, DOB, and mobile.');
+      return;
+    }
+    if (!isValidE164(newPhone)) {
+      setError('Enter a valid mobile number.');
       return;
     }
     setRegistering(true);
@@ -303,11 +309,11 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
               Creates a platform account with UHID and portal login (credentials in server log and below).
               Patient can complete profile details after login.
             </Typography>
-            <TextField
-              label="Mobile (required)"
-              fullWidth
+            <PhoneField
+              label="Mobile"
+              required
               value={newPhone}
-              onChange={(e) => setNewPhone(e.target.value)}
+              onChange={setNewPhone}
             />
             <TextField
               label="Email (optional — used for portal login)"

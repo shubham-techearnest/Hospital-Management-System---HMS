@@ -16,6 +16,8 @@ import {
   useInviteDoctorAsAdmin,
   useUpdateAdminHospitalStatus,
 } from '../hooks/useAdminHospitalQueries';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { isValidE164 } from '@/shared/phone/phoneUtils';
 
 export function AdminHospitalDetailPage() {
   const { hospitalId = '' } = useParams();
@@ -32,6 +34,7 @@ export function AdminHospitalDetailPage() {
   const [inviteForm, setInviteForm] = useState({
     email: '', firstName: '', lastName: '', phone: '',
   });
+  const [phoneError, setPhoneError] = useState('');
   const [message, setMessage] = useState<string | null>(null);
 
   const loadError = isError ? parseApiError(error) : null;
@@ -61,10 +64,16 @@ export function AdminHospitalDetailPage() {
 
   const handleInvite = async () => {
     setMessage(null);
+    setPhoneError('');
+    if (inviteForm.phone.trim() && !isValidE164(inviteForm.phone)) {
+      setPhoneError('Enter a valid phone number or leave blank.');
+      return;
+    }
     try {
       const result = await inviteDoctor.mutateAsync({ hospitalId, payload: inviteForm });
       setInviteOpen(false);
       setInviteForm({ email: '', firstName: '', lastName: '', phone: '' });
+      setPhoneError('');
       setMessage(result.message);
     } catch (e) {
       setMessage(parseApiError(e).message);
@@ -180,7 +189,17 @@ export function AdminHospitalDetailPage() {
             <TextField label="Email" fullWidth value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} />
             <TextField label="First name" fullWidth value={inviteForm.firstName} onChange={(e) => setInviteForm({ ...inviteForm, firstName: e.target.value })} />
             <TextField label="Last name" fullWidth value={inviteForm.lastName} onChange={(e) => setInviteForm({ ...inviteForm, lastName: e.target.value })} />
-            <TextField label="Phone" fullWidth value={inviteForm.phone} onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })} />
+            <PhoneField
+              label="Phone"
+              value={inviteForm.phone}
+              onChange={(phone) => {
+                setInviteForm({ ...inviteForm, phone });
+                setPhoneError('');
+              }}
+              optional
+              error={!!phoneError}
+              helperText={phoneError || undefined}
+            />
             <Typography variant="body2" color="text.secondary">
               A temporary password will be emailed. The doctor must verify email and complete their profile after first login.
             </Typography>

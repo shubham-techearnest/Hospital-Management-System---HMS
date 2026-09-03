@@ -379,10 +379,17 @@ public class AppointmentService {
         }
 
         planLimitService.assertCanBookAppointment(request.getHospitalId(), tenantId);
+        featureAccessService.assertHasFeature(
+                request.getHospitalId(),
+                tenantId,
+                PlanFeatureKeys.FEATURE_APPOINTMENT_MANAGEMENT,
+                "Appointment booking is not available on this hospital's current plan.");
 
-        if ("TELECONSULTATION".equals(request.getConsultationType())
-                && !featureAccessService.hasFeature(request.getHospitalId(), tenantId, PlanFeatureKeys.FEATURE_TELEMEDICINE)) {
-            throw new BusinessException(ErrorCode.FEATURE_NOT_AVAILABLE, HttpStatus.FORBIDDEN,
+        if ("TELECONSULTATION".equals(request.getConsultationType())) {
+            featureAccessService.assertHasFeature(
+                    request.getHospitalId(),
+                    tenantId,
+                    PlanFeatureKeys.FEATURE_TELEMEDICINE,
                     "Teleconsultation is not available on this hospital's current plan. Please choose an in-person appointment.");
         }
 

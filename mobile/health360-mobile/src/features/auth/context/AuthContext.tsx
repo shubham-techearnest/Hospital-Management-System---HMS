@@ -11,6 +11,7 @@ import type { AuthTokenData, AuthUser } from '@/features/auth/api/authApi';
 import { logout as logoutApi } from '@/features/auth/api/authApi';
 import { clearSession, loadSession, saveSession } from '@/shared/storage/secureStorage';
 import { sessionStore } from '@/shared/storage/sessionStore';
+import { clearPushTokenFromBackend } from '@/shared/notifications/pushNotifications';
 
 interface AuthContextValue {
   accessToken: string | null;
@@ -90,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear locally even if API fails (mirrors web)
     }
 
+    await clearPushTokenFromBackend();
     await clearSession();
     sessionStore.clear();
     setAccessToken(null);

@@ -23,6 +23,12 @@ export const VISIT_FLOW = {
     deskAction: 'Register & add to queue',
     hint: 'Patient came to reception without using the app — search, register if needed, add to queue.',
   },
+  arrive: {
+    title: 'Appointment arrive',
+    short: 'Arrive',
+    deskTab: 'Arrive',
+    hint: 'Patient had a scheduled appointment — mark arrived to issue today’s OPD queue token.',
+  },
 } as const;
 
 export const VISIT_FLOW_STEPS = [

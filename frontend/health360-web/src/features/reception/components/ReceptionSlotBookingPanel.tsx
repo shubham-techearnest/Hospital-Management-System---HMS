@@ -1,3 +1,8 @@
+/**
+ * Deferred (Phase A decision): patient slot booking is not the primary OPD path.
+ * Canonical flow = Request OPD + walk-in + desk Arrive tab.
+ * Keep this panel for a future scheduling revival; do not route until product asks.
+ */
 import { useMemo, useState } from 'react';
 import {
   Alert,

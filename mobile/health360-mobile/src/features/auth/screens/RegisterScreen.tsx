@@ -9,6 +9,7 @@ import { register as registerApi } from '@/features/auth/api/authApi';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
 import { ScreenContainer } from '@/shared/components/ScreenContainer';
 import { BrandHeader } from '@/shared/components/BrandHeader';
+import { PhoneField } from '@/shared/phone/PhoneField';
 import { appColors } from '@/shared/theme';
 import type { AuthStackParamList } from '@/navigation/types';
 
@@ -92,10 +93,17 @@ export function RegisterScreen({ navigation }: Props) {
           control={control}
           name="phone"
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput label="Phone" mode="outlined" keyboardType="phone-pad" value={value ?? ''} onBlur={onBlur} onChangeText={onChange} error={!!errors.phone} />
+            <PhoneField
+              label="Phone"
+              value={value ?? ''}
+              onChange={onChange}
+              onBlur={onBlur}
+              error={!!errors.phone}
+              helperText={errors.phone?.message}
+              required
+            />
           )}
         />
-        <HelperText type="error" visible={!!errors.phone}>{errors.phone?.message}</HelperText>
 
         <Controller
           control={control}

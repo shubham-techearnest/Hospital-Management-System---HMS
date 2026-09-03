@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useMyTodayOpd } from '@/features/opd/hooks/useOpdQueries';
-
-const OPD_CHANNEL_ID = 'opd-queue';
+import {
+  getCachedPushToken,
+  OPD_CHANNEL_ID,
+  requestPushPermissions,
+} from '@/shared/notifications/pushNotifications';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -13,23 +16,6 @@ Notifications.setNotificationHandler({
   }),
 });
 
-async function ensureNotificationSetup(): Promise<boolean> {
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(OPD_CHANNEL_ID, {
-      name: 'OPD Queue',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#714fff',
-      sound: 'default',
-    });
-  }
-
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  if (existing === 'granted') return true;
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === 'granted';
-}
-
 export function useOpdQueueAlerts(enabled = true) {
   const { data: visits = [] } = useMyTodayOpd(enabled);
   const previousStatuses = useRef<Map<string, string>>(new Map());
@@ -38,11 +24,13 @@ export function useOpdQueueAlerts(enabled = true) {
 
   useEffect(() => {
     if (!enabled) return;
-    void ensureNotificationSetup().then(setAlertsReady);
+    void requestPushPermissions().then(setAlertsReady);
   }, [enabled]);
 
   useEffect(() => {
     if (!enabled || !alertsReady) return;
+    // Server push handles CALLED alerts when a device token is registered.
+    if (getCachedPushToken()) return;
 
     if (!seeded.current) {
       for (const visit of visits) {

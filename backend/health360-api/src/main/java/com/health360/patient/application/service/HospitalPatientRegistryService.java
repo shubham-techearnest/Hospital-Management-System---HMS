@@ -23,6 +23,8 @@ import com.health360.patient.presentation.dto.response.RegistrationReceiptRespon
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
+import com.health360.subscription.application.service.FeatureAccessService;
+import com.health360.subscription.domain.PlanFeatureKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -59,6 +61,7 @@ public class HospitalPatientRegistryService {
     private final PlatformPatientLookupService platformPatientLookupService;
     private final PatientUhidAssignmentService patientUhidAssignmentService;
     private final HospitalRegistrationLinker hospitalRegistrationLinker;
+    private final FeatureAccessService featureAccessService;
 
     @Transactional
     public Page<HospitalPatientSummaryResponse> searchPatients(
@@ -145,6 +148,11 @@ public class HospitalPatientRegistryService {
         assertCanWrite(principal);
         HospitalRegistrationScopeService.RegistrationScope scope = scopeService.resolveScope(principal);
         UUID tenantId = principal.getTenantId();
+        featureAccessService.assertHasFeature(
+                scope.hospitalId(),
+                tenantId,
+                PlanFeatureKeys.FEATURE_PATIENT_MANAGEMENT,
+                "Patient registration is not available on this hospital's current plan.");
 
         String storedPhone = PhoneNormalizer.toStorageFormat(request.getPrimaryPhone());
         List<DuplicateCandidateResponse> candidates = duplicateDetectionService.findCandidates(

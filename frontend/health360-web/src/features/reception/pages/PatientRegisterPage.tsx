@@ -12,6 +12,8 @@ import {
   type DuplicateCandidate,
 } from '@/features/reception/api/patientRegistryApi';
 import { useRegisterHospitalPatient } from '@/features/reception/hooks/usePatientRegistryQueries';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { isValidE164 } from '@/shared/phone/phoneUtils';
 
 export function PatientRegisterPage() {
   const navigate = useNavigate();
@@ -29,9 +31,15 @@ export function PatientRegisterPage() {
   });
   const [duplicateCandidates, setDuplicateCandidates] = useState<DuplicateCandidate[] | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
   const submitRegistration = async (duplicateOverride = false, duplicateOverrideReason?: string) => {
     setErrorMessage('');
+    setPhoneError('');
+    if (!isValidE164(form.primaryPhone)) {
+      setPhoneError('Enter a valid mobile number.');
+      return;
+    }
     try {
       const result = await register.mutateAsync({
         ...form,
@@ -91,11 +99,16 @@ export function PatientRegisterPage() {
               <MenuItem key={value} value={value}>{value}</MenuItem>
             ))}
           </TextField>
-          <TextField
+          <PhoneField
             label="Primary mobile"
             required
             value={form.primaryPhone}
-            onChange={(e) => setForm({ ...form, primaryPhone: e.target.value })}
+            onChange={(primaryPhone) => {
+              setForm({ ...form, primaryPhone });
+              setPhoneError('');
+            }}
+            error={!!phoneError}
+            helperText={phoneError || undefined}
           />
           <TextField
             label="Email (optional — used for portal login)"

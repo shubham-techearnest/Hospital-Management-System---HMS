@@ -2,14 +2,18 @@ import { apiClient } from '@/shared/api/client';
 import type { ApiEnvelope } from '@/features/auth/api/authApi';
 
 export interface SubmitReviewPayload {
-  appointmentId: string;
+  appointmentId?: string;
+  encounterId?: string;
   rating: number;
   comment?: string;
 }
 
 export interface SubmitReviewResult {
-  reviewId: string;
-  reviewType: string;
+  reviewId?: string;
+  id?: string;
+  appointmentId?: string;
+  encounterId?: string;
+  reviewType?: string;
   rating: number;
   createdAt: string;
 }

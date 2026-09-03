@@ -12,6 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -19,10 +22,18 @@ import java.util.UUID;
 @Slf4j
 public class TransactionalNotificationService {
 
+    private static final Set<NotificationType> PUSH_TYPES = Set.of(
+            NotificationType.OPD_CALLED,
+            NotificationType.OPD_IN_SERVICE,
+            NotificationType.OPD_COMPLETED,
+            NotificationType.OPD_APPROACHING,
+            NotificationType.OPD_DOCTOR_ASSIGNED);
+
     private final InAppNotificationRepository inAppNotificationRepository;
     private final NotificationPreferenceRepository preferenceRepository;
     private final UserRepository userRepository;
     private final EmailNotificationService emailNotificationService;
+    private final PushNotificationService pushNotificationService;
 
     @Transactional
     public void send(
@@ -51,6 +62,11 @@ public class TransactionalNotificationService {
             notification.setReferenceType(referenceType);
             notification.setReferenceId(referenceId);
             inAppNotificationRepository.save(notification);
+
+            if (PUSH_TYPES.contains(type)) {
+                pushNotificationService.sendToUser(
+                        userId, type, title, message, buildPushData(type, referenceType, referenceId));
+            }
         }
 
         if (emailEnabled || smsEnabled) {
@@ -69,5 +85,19 @@ public class TransactionalNotificationService {
     public UserEntity requireUser(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalStateException("User not found: " + userId));
+    }
+
+    private Map<String, String> buildPushData(
+            NotificationType type, String referenceType, UUID referenceId) {
+        Map<String, String> data = new LinkedHashMap<>();
+        data.put("screen", "opd");
+        data.put("notificationType", type.name());
+        if (referenceType != null) {
+            data.put("referenceType", referenceType);
+        }
+        if (referenceId != null) {
+            data.put("referenceId", referenceId.toString());
+        }
+        return data;
     }
 }

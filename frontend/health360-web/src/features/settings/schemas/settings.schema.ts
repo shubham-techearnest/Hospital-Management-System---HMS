@@ -1,11 +1,16 @@
 import { z } from 'zod';
+import {
+  localeSchema,
+  phoneRequiredSchema,
+  timezoneSchema,
+} from '@/shared/validation/inputSchemas';
 
 export const profileSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
-  phone: z.string().regex(/^(\+?[1-9]\d{9,14}|[6-9]\d{9})$/, 'Invalid phone number'),
-  timezone: z.string().min(1).max(50),
-  locale: z.string().min(2).max(10),
+  phone: phoneRequiredSchema,
+  timezone: timezoneSchema,
+  locale: localeSchema,
 });
 
 export type ProfileForm = z.infer<typeof profileSchema>;

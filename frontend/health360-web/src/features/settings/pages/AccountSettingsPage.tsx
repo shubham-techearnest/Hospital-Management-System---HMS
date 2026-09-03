@@ -29,13 +29,18 @@ import {
 } from '../schemas/settings.schema';
 import { clearCredentials } from '@/features/auth/store/authSlice';
 import { AppLayout } from '@/shared/layout/AppLayout';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { TimezoneField } from '@/shared/timezone/TimezoneField';
+import { LocaleField } from '@/shared/locale/LocaleField';
+import { detectLocale } from '@/shared/timezone/timezones';
+import { detectTimezone } from '@/shared/timezone/timezones';
 
 const profileDefaults: ProfileForm = {
   firstName: '',
   lastName: '',
   phone: '',
-  timezone: '',
-  locale: '',
+  timezone: detectTimezone(),
+  locale: detectLocale(),
 };
 
 export function AccountSettingsPage() {
@@ -91,8 +96,8 @@ export function AccountSettingsPage() {
           firstName: profile.firstName ?? '',
           lastName: profile.lastName ?? '',
           phone: profile.phone ?? '',
-          timezone: profile.timezone ?? '',
-          locale: profile.locale ?? '',
+          timezone: profile.timezone || detectTimezone(),
+          locale: profile.locale || detectLocale(),
         });
       })
       .catch((error: unknown) => {
@@ -214,12 +219,14 @@ export function AccountSettingsPage() {
                     name="phone"
                     control={profileControl}
                     render={({ field }) => (
-                      <TextField
-                        {...field}
+                      <PhoneField
                         label="Phone"
-                        fullWidth
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
                         error={!!profileErrors.phone}
                         helperText={profileErrors.phone?.message}
+                        required
                       />
                     )}
                   />
@@ -227,12 +234,14 @@ export function AccountSettingsPage() {
                     name="timezone"
                     control={profileControl}
                     render={({ field }) => (
-                      <TextField
-                        {...field}
-                        label="Timezone"
-                        fullWidth
+                      <TimezoneField
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
                         error={!!profileErrors.timezone}
                         helperText={profileErrors.timezone?.message}
+                        required
+                        autoDetect={false}
                       />
                     )}
                   />
@@ -240,12 +249,14 @@ export function AccountSettingsPage() {
                     name="locale"
                     control={profileControl}
                     render={({ field }) => (
-                      <TextField
-                        {...field}
-                        label="Locale"
-                        fullWidth
+                      <LocaleField
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
                         error={!!profileErrors.locale}
                         helperText={profileErrors.locale?.message}
+                        required
+                        autoDetect={false}
                       />
                     )}
                   />

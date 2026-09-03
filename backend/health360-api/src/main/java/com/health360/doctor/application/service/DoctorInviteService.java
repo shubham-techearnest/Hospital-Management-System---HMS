@@ -22,7 +22,9 @@ import com.health360.iam.infrastructure.persistence.repository.UserRoleRepositor
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
+import com.health360.subscription.application.service.FeatureAccessService;
 import com.health360.subscription.application.service.PlanLimitService;
+import com.health360.subscription.domain.PlanFeatureKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -51,6 +53,7 @@ public class DoctorInviteService {
     private final UserRoleRepository userRoleRepository;
     private final DoctorProfileProvisioningService doctorProfileProvisioningService;
     private final PlanLimitService planLimitService;
+    private final FeatureAccessService featureAccessService;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationService emailVerificationService;
     private final EmailNotificationService emailNotificationService;
@@ -71,6 +74,11 @@ public class DoctorInviteService {
         }
 
         validateBranchAndDepartment(hospital.getId(), request.getBranchId(), request.getDepartmentId());
+        featureAccessService.assertHasFeature(
+                hospital.getId(),
+                tenantId,
+                PlanFeatureKeys.FEATURE_DOCTOR_MANAGEMENT,
+                "Doctor management is not available on this hospital's current plan.");
         planLimitService.assertCanAddDoctor(hospital.getId(), tenantId);
 
         String temporaryPassword = resolvePassword(request.getPassword());

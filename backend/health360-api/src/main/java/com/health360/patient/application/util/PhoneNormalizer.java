@@ -5,6 +5,10 @@ public final class PhoneNormalizer {
     private PhoneNormalizer() {
     }
 
+    /**
+     * Digits-only form used for duplicate matching / search.
+     * Keeps last 10 digits for legacy India-centric matching when longer.
+     */
     public static String normalize(String phone) {
         if (phone == null || phone.isBlank()) {
             return "";
@@ -16,14 +20,27 @@ public final class PhoneNormalizer {
         return digits;
     }
 
+    /**
+     * Persist E.164 when provided; otherwise treat bare 10-digit numbers as India (+91).
+     */
     public static String toStorageFormat(String phone) {
-        String normalized = normalize(phone);
-        if (normalized.isEmpty()) {
-            return phone != null ? phone.trim() : "";
+        if (phone == null || phone.isBlank()) {
+            return "";
         }
-        if (normalized.length() == 10) {
-            return "+91" + normalized;
+        String trimmed = phone.trim();
+        String digits = trimmed.replaceAll("\\D", "");
+        if (digits.isEmpty()) {
+            return trimmed;
         }
-        return phone.trim();
+        if (trimmed.startsWith("+") && digits.length() >= 8 && digits.length() <= 15) {
+            return "+" + digits;
+        }
+        if (digits.length() == 10) {
+            return "+91" + digits;
+        }
+        if (digits.length() >= 8 && digits.length() <= 15) {
+            return "+" + digits;
+        }
+        return trimmed;
     }
 }

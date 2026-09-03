@@ -7,6 +7,10 @@ import {
   useOpdNotificationNavigation,
   useOpdQueueAlerts,
 } from '@/shared/hooks/useOpdQueueAlerts';
+import {
+  usePushNotificationRegistration,
+  useRemoteNotificationNavigation,
+} from '@/shared/hooks/usePushNotifications';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { HomeStackNavigator } from './HomeStackNavigator';
 import { CareStackNavigator } from './CareStackNavigator';
@@ -21,12 +25,14 @@ const Tab = createBottomTabNavigator<PatientTabParamList>();
 export function PatientTabNavigator() {
   const navigation = useNavigation<BottomTabNavigationProp<PatientTabParamList>>();
   usePatientDeepLinks(navigation);
+  usePushNotificationRegistration();
   useOpdQueueAlerts();
   const openOpd = useCallback(
     () => navigation.navigate('Appointments', { screen: 'AppointmentsList' }),
     [navigation],
   );
   useOpdNotificationNavigation(openOpd);
+  useRemoteNotificationNavigation(openOpd);
 
   return (
     <Tab.Navigator screenOptions={tabBarOptions}>

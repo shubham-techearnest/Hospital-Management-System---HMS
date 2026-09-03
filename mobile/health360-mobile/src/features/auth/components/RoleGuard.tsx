@@ -34,8 +34,14 @@ export function RoleGuard({ role, children, fallbackMessage }: RoleGuardProps) {
 
 export function getPrimaryRole(
   user: AuthUser | null,
-): 'PLATFORM_ADMIN' | 'HOSPITAL_ADMIN' | 'DOCTOR' | 'PATIENT' | null {
-  const priority = ['PLATFORM_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'PATIENT'] as const;
+): 'PLATFORM_ADMIN' | 'HOSPITAL_ADMIN' | 'DOCTOR' | 'RECEPTIONIST' | 'PATIENT' | null {
+  const priority = [
+    'PLATFORM_ADMIN',
+    'HOSPITAL_ADMIN',
+    'DOCTOR',
+    'RECEPTIONIST',
+    'PATIENT',
+  ] as const;
   for (const role of priority) {
     if (userHasRole(user, role)) {
       return role;

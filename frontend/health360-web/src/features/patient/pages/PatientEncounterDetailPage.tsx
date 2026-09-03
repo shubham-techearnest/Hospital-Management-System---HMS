@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import {
   Alert,
@@ -27,6 +28,7 @@ import { useEncounterProcedures } from '@/features/ot/hooks/useOtQueries';
 import { useEncounterAdministrations } from '@/features/pharmacy/hooks/usePharmacyQueries';
 import { encounterStatusColor, encounterStatusLabel, formatEncounterDate } from '@/features/clinical/utils/encounterUtils';
 import { parseApiError } from '@/shared/api/errorUtils';
+import { SubmitReviewDialog } from '@/features/review/components/SubmitReviewDialog';
 
 export function PatientEncounterDetailPage() {
   const { encounterId = '' } = useParams<{ encounterId: string }>();
@@ -41,6 +43,8 @@ export function PatientEncounterDetailPage() {
   const { data: procedures = [] } = useEncounterProcedures(encounterId);
   const { data: administrations = [] } = useEncounterAdministrations(encounterId);
   const parsedError = error ? parseApiError(error) : null;
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState<string | null>(null);
 
   const consultationNote = notes.find((n) => n.noteType === 'CONSULTATION');
   const wellnessHasContent = Boolean(
@@ -87,6 +91,12 @@ export function PatientEncounterDetailPage() {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Consultation package: diagnosis, medicines, care plan, wellness guidance, and follow-up.
       </Typography>
+      {reviewSuccess ? <Alert severity="success" sx={{ mb: 2 }}>{reviewSuccess}</Alert> : null}
+      {encounter.status === 'COMPLETED' ? (
+        <Button variant="outlined" sx={{ mb: 3 }} onClick={() => setReviewOpen(true)}>
+          Leave a review
+        </Button>
+      ) : null}
 
       {encounter.visitReason ? (
         <Box sx={{ mb: 3 }}>
@@ -340,6 +350,16 @@ export function PatientEncounterDetailPage() {
           </List>
         </Section>
       </Stack>
+
+      <SubmitReviewDialog
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        encounterId={encounterId}
+        appointmentId={encounter.appointmentId}
+        doctorName={encounter.primaryDoctorId ? 'Your doctor' : '—'}
+        hospitalName="Hospital"
+        onSuccess={(msg) => setReviewSuccess(msg)}
+      />
     </AnimatedPage>
   );
 }

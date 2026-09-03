@@ -14,6 +14,7 @@ import { contactInfoSchema, type ContactInfoForm } from '../../../schemas/patien
 import { sanitizeContactPayload } from '../../../utils/profileEnumMapper';
 import { SaveButton } from '../SaveButton';
 import type { ProfileSectionCallbacks } from '../types';
+import { PhoneField } from '@/shared/phone/PhoneField';
 
 const emptyAddress = { line1: '', line2: '', city: '', state: '', pincode: '', country: 'IN' };
 
@@ -65,12 +66,36 @@ export function ContactInfoSection({ onSaveSuccess, onSaveError }: ProfileSectio
   return (
     <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
       {error && <Alert severity="error">{error}</Alert>}
-      <Controller name="primaryPhone" control={control} render={({ field }) => (
-        <TextField {...field} label="Primary Phone" />
-      )} />
-      <Controller name="secondaryPhone" control={control} render={({ field }) => (
-        <TextField {...field} label="Secondary Phone" />
-      )} />
+      <Controller
+        name="primaryPhone"
+        control={control}
+        render={({ field, fieldState }) => (
+          <PhoneField
+            label="Primary Phone"
+            value={field.value ?? ''}
+            onChange={field.onChange}
+            onBlur={field.onBlur}
+            optional
+            error={!!fieldState.error}
+            helperText={fieldState.error?.message}
+          />
+        )}
+      />
+      <Controller
+        name="secondaryPhone"
+        control={control}
+        render={({ field, fieldState }) => (
+          <PhoneField
+            label="Secondary Phone"
+            value={field.value ?? ''}
+            onChange={field.onChange}
+            onBlur={field.onBlur}
+            optional
+            error={!!fieldState.error}
+            helperText={fieldState.error?.message}
+          />
+        )}
+      />
 
       <Typography variant="subtitle2" fontWeight={600}>Permanent Address</Typography>
       {(['line1', 'line2', 'city', 'state', 'pincode', 'country'] as const).map((key) => (

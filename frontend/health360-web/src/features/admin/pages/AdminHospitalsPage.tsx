@@ -8,6 +8,8 @@ import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { HOSPITAL_TYPES } from '@/features/hospital/api/hospitalApi';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { useAdminHospitals, useCreateAdminHospital } from '../hooks/useAdminHospitalQueries';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { isValidE164 } from '@/shared/phone/phoneUtils';
 
 const STATUSES = ['ACTIVE', 'INACTIVE', 'SUSPENDED'] as const;
 
@@ -17,6 +19,7 @@ export function AdminHospitalsPage() {
   const [page, setPage] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState('');
   const [form, setForm] = useState({
     name: '', registrationNumber: '', hospitalType: 'PRIVATE',
     adminEmail: '', adminFirstName: '', adminLastName: '', adminPhone: '', planCode: 'FREE',
@@ -34,9 +37,15 @@ export function AdminHospitalsPage() {
 
   const handleCreate = async () => {
     setMessage(null);
+    setPhoneError('');
+    if (form.adminPhone.trim() && !isValidE164(form.adminPhone)) {
+      setPhoneError('Enter a valid phone number or leave blank.');
+      return;
+    }
     try {
       await createHospital.mutateAsync(form);
       setCreateOpen(false);
+      setPhoneError('');
       setMessage('Hospital created and admin invitation sent.');
     } catch (e) {
       setMessage(parseApiError(e).message);
@@ -150,7 +159,17 @@ export function AdminHospitalsPage() {
             <TextField label="Admin email" fullWidth value={form.adminEmail} onChange={(e) => setForm({ ...form, adminEmail: e.target.value })} />
             <TextField label="Admin first name" fullWidth value={form.adminFirstName} onChange={(e) => setForm({ ...form, adminFirstName: e.target.value })} />
             <TextField label="Admin last name" fullWidth value={form.adminLastName} onChange={(e) => setForm({ ...form, adminLastName: e.target.value })} />
-            <TextField label="Admin phone" fullWidth value={form.adminPhone} onChange={(e) => setForm({ ...form, adminPhone: e.target.value })} />
+            <PhoneField
+              label="Admin phone"
+              value={form.adminPhone}
+              onChange={(adminPhone) => {
+                setForm({ ...form, adminPhone });
+                setPhoneError('');
+              }}
+              optional
+              error={!!phoneError}
+              helperText={phoneError || undefined}
+            />
           </Stack>
         </DialogContent>
         <DialogActions>

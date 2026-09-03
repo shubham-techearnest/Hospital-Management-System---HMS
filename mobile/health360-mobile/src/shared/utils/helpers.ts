@@ -5,6 +5,14 @@ export function getDeviceInfo(): string {
 }
 
 export function getApiErrorMessage(error: unknown, fallback: string): string {
-  const err = error as { response?: { data?: { error?: { message?: string } } } };
-  return err.response?.data?.error?.message ?? fallback;
+  const err = error as {
+    message?: string;
+    response?: { data?: { message?: string; error?: { message?: string } } };
+  };
+  return (
+    err.response?.data?.message
+    ?? err.response?.data?.error?.message
+    ?? (typeof err.message === 'string' && err.message !== 'Request failed' ? err.message : undefined)
+    ?? fallback
+  );
 }

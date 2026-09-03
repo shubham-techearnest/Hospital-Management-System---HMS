@@ -2,6 +2,7 @@
 
 | Document ID | PM-FEATURE-001 |
 | Status | DRAFT — updated each sprint |
+| Execution plan | [MODULE-DEVELOPMENT-PLAN.md](./MODULE-DEVELOPMENT-PLAN.md) (Phases A–G) |
 
 | Feature ID | Epic | Feature | Sprint | Doc | Approval | Impl | QA | Status |
 |------------|------|---------|--------|-----|----------|------|-----|--------|

@@ -5,6 +5,7 @@ import { AdminStackNavigator } from './AdminStackNavigator';
 import { DoctorTabNavigator } from './DoctorTabNavigator';
 import { HospitalTabNavigator } from './HospitalTabNavigator';
 import { PatientAppNavigator } from './PatientAppNavigator';
+import { ReceptionTabNavigator } from './ReceptionTabNavigator';
 
 export function AppShellNavigator() {
   const { user } = useAuth();
@@ -22,6 +23,14 @@ export function AppShellNavigator() {
     return (
       <RoleGuard role="DOCTOR">
         <DoctorTabNavigator />
+      </RoleGuard>
+    );
+  }
+
+  if (primaryRole === 'RECEPTIONIST') {
+    return (
+      <RoleGuard role="RECEPTIONIST">
+        <ReceptionTabNavigator />
       </RoleGuard>
     );
   }

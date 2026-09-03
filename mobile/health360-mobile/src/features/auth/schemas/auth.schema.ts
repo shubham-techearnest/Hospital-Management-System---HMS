@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { phoneRequiredSchema } from '@/shared/validation/inputSchemas';
 
 const passwordSchema = z
   .string()
@@ -15,7 +16,7 @@ export const registerSchema = z
     confirmPassword: z.string(),
     firstName: z.string().min(1).max(100),
     lastName: z.string().min(1).max(100),
-    phone: z.string().regex(/^(\+?[1-9]\d{9,14}|[6-9]\d{9})$/, 'Invalid phone number'),
+    phone: phoneRequiredSchema,
     role: z.literal('PATIENT'),
     acceptTerms: z.boolean().refine((val) => val === true, {
       message: 'You must accept the terms',

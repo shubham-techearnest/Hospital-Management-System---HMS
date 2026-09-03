@@ -4,6 +4,8 @@ import { Button, Snackbar, Switch, Text, TextInput } from 'react-native-paper';
 import { SelectField } from '@/features/patient/components/SelectField';
 import { ICU_TYPES } from '@/features/hospital/api/hospitalApi';
 import { useHospitalProfile, useUpdateEmergencyInfo } from '@/features/hospital/hooks/useHospitalQueries';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { isValidE164 } from '@/shared/phone/phoneUtils';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
 
 export function HospitalEmergencyScreen() {
@@ -17,6 +19,7 @@ export function HospitalEmergencyScreen() {
     icuBedCount: '',
     icuType: 'GENERAL',
   });
+  const [phoneError, setPhoneError] = useState('');
   const [snackbar, setSnackbar] = useState({ visible: false, message: '', isError: false });
 
   useEffect(() => {
@@ -33,6 +36,11 @@ export function HospitalEmergencyScreen() {
   }, [profile]);
 
   const handleSave = async () => {
+    setPhoneError('');
+    if (form.emergencyPhone.trim() && !isValidE164(form.emergencyPhone)) {
+      setPhoneError('Enter a valid phone number or leave blank.');
+      return;
+    }
     try {
       await updateEmergency.mutateAsync({
         emergencyAvailable24x7: form.emergencyAvailable24x7,
@@ -62,7 +70,18 @@ export function HospitalEmergencyScreen() {
           <Text>24×7 Emergency Available</Text>
           <Switch value={form.emergencyAvailable24x7} onValueChange={(emergencyAvailable24x7) => setForm({ ...form, emergencyAvailable24x7 })} />
         </View>
-        <TextInput label="Emergency Phone" mode="outlined" value={form.emergencyPhone} onChangeText={(emergencyPhone) => setForm({ ...form, emergencyPhone })} style={styles.field} />
+        <PhoneField
+          label="Emergency Phone"
+          value={form.emergencyPhone}
+          onChange={(emergencyPhone) => {
+            setForm({ ...form, emergencyPhone });
+            setPhoneError('');
+          }}
+          optional
+          error={!!phoneError}
+          helperText={phoneError || undefined}
+          style={styles.field}
+        />
         <View style={styles.switchRow}>
           <Text>Ambulance Available</Text>
           <Switch value={form.ambulanceAvailable} onValueChange={(ambulanceAvailable) => setForm({ ...form, ambulanceAvailable })} />

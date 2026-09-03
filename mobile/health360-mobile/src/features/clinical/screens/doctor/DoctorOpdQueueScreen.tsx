@@ -7,6 +7,7 @@ import { ScreenContainer } from '@/shared/components/ScreenContainer';
 import { PageHero } from '@/shared/components/PageHero';
 import { useDoctorEncounters } from '@/features/clinical/hooks/useClinicalQueries';
 import { encounterStatusLabel, formatEncounterDate } from '@/features/clinical/utils/encounterUtils';
+import { queueStatusColor, queueStatusLabel } from '@/features/opd/utils/visitStatus';
 import { appColors, layout } from '@/shared/theme';
 import type { DoctorAppointmentsStackParamList } from '@/navigation/types';
 
@@ -41,6 +42,16 @@ export function DoctorOpdQueueScreen({ navigation }: Props) {
               <Text variant="titleMedium">{item.encounterNumber}</Text>
               <Chip compact>{encounterStatusLabel(item.status)}</Chip>
             </View>
+            {item.tokenDisplay ? (
+              <Chip
+                compact
+                style={{ backgroundColor: queueStatusColor(item.queueStatus), alignSelf: 'flex-start' }}
+                textStyle={styles.chipText}
+              >
+                Token {item.tokenDisplay}
+                {item.queueStatus ? ` · ${queueStatusLabel(item.queueStatus)}` : ''}
+              </Chip>
+            ) : null}
             <Text style={styles.meta}>
               {item.patientName ?? `Patient ${item.patientId.slice(0, 8)}…`}
               {item.uhid ? ` · ${item.uhid}` : ''}
@@ -67,6 +78,7 @@ const styles = StyleSheet.create({
   listContent: { paddingBottom: layout.screenPaddingBottom },
   card: { marginBottom: layout.stackGap },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  chipText: { color: '#fff' },
   meta: { color: appColors.textSecondary, marginTop: 4 },
   btn: { marginTop: layout.stackGap },
 });

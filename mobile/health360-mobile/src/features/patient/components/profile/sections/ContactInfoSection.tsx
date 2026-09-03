@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Checkbox, HelperText, Text, TextInput } from 'react-native-paper';
+import { Checkbox, Text, TextInput } from 'react-native-paper';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SaveButton } from '@/features/patient/components/profile/SaveButton';
@@ -8,6 +8,7 @@ import type { ProfileSectionCallbacks } from '@/features/patient/components/prof
 import { usePatientProfile, useUpdateContactInfo } from '@/features/patient/hooks/usePatientQueries';
 import { contactInfoSchema, type ContactInfoForm } from '@/features/patient/schemas/patient.schema';
 import { sanitizeContactPayload } from '@/features/patient/utils/profileEnumMapper';
+import { PhoneField } from '@/shared/phone/PhoneField';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
 
 const emptyAddress = { line1: '', line2: '', city: '', state: '', pincode: '', country: 'IN' };
@@ -76,11 +77,27 @@ export function ContactInfoSection({ onSaveSuccess, onSaveError }: ProfileSectio
   return (
     <View style={styles.container}>
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Controller control={control} name="primaryPhone" render={({ field: { onChange, onBlur, value } }) => (
-        <TextInput label="Primary Phone" mode="outlined" value={value ?? ''} onBlur={onBlur} onChangeText={onChange} />
+      <Controller control={control} name="primaryPhone" render={({ field: { onChange, onBlur, value }, fieldState }) => (
+        <PhoneField
+          label="Primary Phone"
+          value={value ?? ''}
+          onChange={onChange}
+          onBlur={onBlur}
+          optional
+          error={!!fieldState.error}
+          helperText={fieldState.error?.message}
+        />
       )} />
-      <Controller control={control} name="secondaryPhone" render={({ field: { onChange, onBlur, value } }) => (
-        <TextInput label="Secondary Phone" mode="outlined" value={value ?? ''} onBlur={onBlur} onChangeText={onChange} />
+      <Controller control={control} name="secondaryPhone" render={({ field: { onChange, onBlur, value }, fieldState }) => (
+        <PhoneField
+          label="Secondary Phone"
+          value={value ?? ''}
+          onChange={onChange}
+          onBlur={onBlur}
+          optional
+          error={!!fieldState.error}
+          helperText={fieldState.error?.message}
+        />
       )} />
       {renderAddress('permanentAddress', 'Permanent Address')}
       <Controller control={control} name="sameAsPermanentAddress" render={({ field: { onChange, value } }) => (

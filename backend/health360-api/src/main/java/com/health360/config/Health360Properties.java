@@ -19,6 +19,7 @@ public class Health360Properties {
     private Jwt jwt = new Jwt();
     private Auth auth = new Auth();
     private Storage storage = new Storage();
+    private Push push = new Push();
 
     @Getter
     @Setter
@@ -47,5 +48,12 @@ public class Health360Properties {
         private int maxFailedLoginAttempts = 5;
         private long lockoutDurationMinutes = 30;
         private long emailVerificationTtlHours = 24;
+    }
+
+    @Getter
+    @Setter
+    public static class Push {
+        /** When false, mobile push is skipped (in-app notifications still work). */
+        private boolean enabled = true;
     }
 }

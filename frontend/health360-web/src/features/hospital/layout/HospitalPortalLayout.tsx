@@ -17,6 +17,7 @@ import LocalPharmacyOutlinedIcon from '@mui/icons-material/LocalPharmacyOutlined
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 
 const navItems: PortalNavItem[] = [
@@ -29,6 +30,7 @@ const navItems: PortalNavItem[] = [
   { section: 'Clinical', label: 'Theatre', path: '/hospital/ot', icon: <HealingOutlinedIcon /> },
   { section: 'Clinical', label: 'Pharmacy', path: '/hospital/pharmacy', icon: <LocalPharmacyOutlinedIcon /> },
   { section: 'Clinical', label: 'Invoices', path: '/hospital/billing/invoices', icon: <ReceiptLongOutlinedIcon /> },
+  { section: 'Clinical', label: 'Catalogs', path: '/hospital/catalogs', icon: <MenuBookOutlinedIcon /> },
   { section: 'Navigation', label: 'Profile', path: '/hospital/profile', icon: <LocalHospitalOutlinedIcon /> },
   { section: 'Navigation', label: 'Branches', path: '/hospital/branches', icon: <AccountTreeOutlinedIcon /> },
   { section: 'Navigation', label: 'Departments', path: '/hospital/departments', icon: <MeetingRoomOutlinedIcon /> },

@@ -14,6 +14,8 @@ public interface HospitalReviewRepository extends JpaRepository<HospitalReviewEn
 
     boolean existsByAppointmentId(UUID appointmentId);
 
+    boolean existsByEncounterId(UUID encounterId);
+
     Page<HospitalReviewEntity> findByTenantIdAndVisibleAndDeletedAtIsNullOrderByCreatedAtDesc(
             UUID tenantId, boolean visible, Pageable pageable);
 

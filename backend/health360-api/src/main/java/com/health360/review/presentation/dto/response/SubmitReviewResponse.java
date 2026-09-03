@@ -11,6 +11,7 @@ import java.util.UUID;
 public class SubmitReviewResponse {
     UUID id;
     UUID appointmentId;
+    UUID encounterId;
     int rating;
     String comment;
     Instant createdAt;

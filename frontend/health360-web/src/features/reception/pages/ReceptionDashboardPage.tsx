@@ -25,6 +25,7 @@ import { OpdBranchScopeBar } from '@/features/opd/components/OpdBranchScopeBar';
 import { OpdQueueTable } from '@/features/opd/components/OpdQueueTable';
 import { OpdFloorStatusHelp } from '@/features/opd/components/OpdFloorStatusHelp';
 import { WalkInRegistrationPanel } from '@/features/reception/components/WalkInRegistrationPanel';
+import { ReceptionArrivalPanel } from '@/features/reception/components/ReceptionArrivalPanel';
 import { ReceptionOpdFlowBanner } from '@/features/reception/components/ReceptionOpdFlowBanner';
 import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
 import type { StaffScope } from '@/features/hospital/api/staffApi';
@@ -278,6 +279,7 @@ export function ReceptionDashboardPage() {
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label={VISIT_FLOW.queue.short} />
         <Tab label={VISIT_FLOW.walkIn.deskTab} />
+        <Tab label={VISIT_FLOW.arrive.deskTab} />
       </Tabs>
 
       {tab === 0 && (
@@ -354,6 +356,18 @@ export function ReceptionDashboardPage() {
               message: 'Patient added to OPD queue. Send to vitals, then doctor completes the visit before checkout.',
               severity: 'success',
             });
+            setTab(0);
+          }}
+        />
+      )}
+
+      {tab === 2 && scopeReady && (
+        <ReceptionArrivalPanel
+          hospitalId={hospitalId}
+          branchId={effectiveBranchId}
+          desks={deskOptions}
+          onArrived={(message) => {
+            setSnackbar({ open: true, message, severity: 'success' });
             setTab(0);
           }}
         />

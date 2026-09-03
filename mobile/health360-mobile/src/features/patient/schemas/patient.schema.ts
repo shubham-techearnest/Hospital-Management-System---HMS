@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { phoneOptionalSchema, phoneRequiredSchema } from '@/shared/validation/inputSchemas';
 
 export const basicInfoSchema = z.object({
   dateOfBirth: z.string().optional(),
@@ -21,8 +22,8 @@ export const addressSchema = z.object({
 });
 
 export const contactInfoSchema = z.object({
-  primaryPhone: z.string().max(20).optional(),
-  secondaryPhone: z.string().max(20).optional(),
+  primaryPhone: phoneOptionalSchema,
+  secondaryPhone: phoneOptionalSchema,
   permanentAddress: addressSchema.optional(),
   currentAddress: addressSchema.optional(),
   sameAsPermanentAddress: z.boolean().optional(),
@@ -56,3 +57,13 @@ export const lifestyleSchema = z.object({
 });
 
 export type LifestyleForm = z.infer<typeof lifestyleSchema>;
+
+export const emergencyContactSchema = z.object({
+  name: z.string().min(1).max(200),
+  relationship: z.string().min(1).max(50),
+  phone: phoneRequiredSchema,
+  email: z.string().email().optional().or(z.literal('')),
+  primary: z.boolean().optional(),
+});
+
+export type EmergencyContactForm = z.infer<typeof emergencyContactSchema>;

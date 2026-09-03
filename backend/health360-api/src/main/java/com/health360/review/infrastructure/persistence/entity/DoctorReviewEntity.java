@@ -22,8 +22,11 @@ public class DoctorReviewEntity extends BaseAuditableEntity {
     @Column(name = "patient_id", nullable = false)
     private UUID patientId;
 
-    @Column(name = "appointment_id", nullable = false)
+    @Column(name = "appointment_id")
     private UUID appointmentId;
+
+    @Column(name = "encounter_id")
+    private UUID encounterId;
 
     @Column(nullable = false)
     private int rating;

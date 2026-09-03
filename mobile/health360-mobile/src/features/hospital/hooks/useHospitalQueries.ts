@@ -9,6 +9,7 @@ import {
   deleteDepartment,
   deleteFacility,
   deleteGalleryImage,
+  getHospitalOpsDashboard,
   getHospitalProfile,
   listBranches,
   listDepartments,
@@ -32,7 +33,19 @@ export const hospitalKeys = {
   facilities: ['hospital', 'facilities'] as const,
   gallery: ['hospital', 'gallery'] as const,
   subscription: ['hospital', 'subscription'] as const,
+  dashboard: ['hospital', 'dashboard'] as const,
 };
+
+export function useHospitalOpsDashboard() {
+  return useQuery({
+    queryKey: hospitalKeys.dashboard,
+    queryFn: getHospitalOpsDashboard,
+    retry: (_, error) => {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      return status !== 404 && status !== 403;
+    },
+  });
+}
 
 export function useHospitalProfile() {
   return useQuery({

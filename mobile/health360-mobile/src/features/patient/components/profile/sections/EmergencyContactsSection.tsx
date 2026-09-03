@@ -8,6 +8,8 @@ import {
   useEmergencyContacts,
 } from '@/features/patient/hooks/usePatientQueries';
 import { isValidEmail, sanitizeOptionalEmail } from '@/features/patient/utils/profileEnumMapper';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { isValidE164 } from '@/shared/phone/phoneUtils';
 
 interface EmergencyContactsSectionProps extends ProfileSectionCallbacks {
   active: boolean;
@@ -18,6 +20,7 @@ export function EmergencyContactsSection({ active, onSaveSuccess, onSaveError }:
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', relationship: '', phone: '', email: '', primary: false });
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const { data: contacts = [], isLoading, isError } = useEmergencyContacts(active);
   const createContact = useCreateEmergencyContact();
@@ -26,6 +29,11 @@ export function EmergencyContactsSection({ active, onSaveSuccess, onSaveError }:
   const handleSave = async () => {
     setError(null);
     setEmailError(null);
+    setPhoneError(null);
+    if (!isValidE164(form.phone)) {
+      setPhoneError('Enter a valid phone number.');
+      return;
+    }
     const trimmedEmail = form.email.trim();
     if (trimmedEmail && !isValidEmail(trimmedEmail)) {
       setEmailError('Enter a valid email address or leave blank.');
@@ -41,6 +49,7 @@ export function EmergencyContactsSection({ active, onSaveSuccess, onSaveError }:
       });
       setDialogOpen(false);
       setForm({ name: '', relationship: '', phone: '', email: '', primary: false });
+      setPhoneError(null);
       onSaveSuccess('Emergency contact added.');
     } catch {
       const msg = 'Unable to save contact. Maximum 5 contacts allowed.';
@@ -93,7 +102,17 @@ export function EmergencyContactsSection({ active, onSaveSuccess, onSaveError }:
             <ScrollView contentContainerStyle={styles.dialogContent}>
               <TextInput label="Name" mode="outlined" value={form.name} onChangeText={(name) => setForm({ ...form, name })} />
               <TextInput label="Relationship" mode="outlined" value={form.relationship} onChangeText={(relationship) => setForm({ ...form, relationship })} />
-              <TextInput label="Phone" mode="outlined" keyboardType="phone-pad" value={form.phone} onChangeText={(phone) => setForm({ ...form, phone })} />
+              <PhoneField
+                label="Phone"
+                value={form.phone}
+                onChange={(phone) => {
+                  setForm({ ...form, phone });
+                  setPhoneError(null);
+                }}
+                required
+                error={!!phoneError}
+                helperText={phoneError ?? undefined}
+              />
               <TextInput
                 label="Email (optional)"
                 mode="outlined"

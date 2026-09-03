@@ -14,6 +14,7 @@ public class AdminReviewResponse {
     UUID targetId;
     UUID patientId;
     UUID appointmentId;
+    UUID encounterId;
     int rating;
     String comment;
     boolean visible;

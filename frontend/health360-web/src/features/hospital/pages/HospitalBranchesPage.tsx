@@ -11,6 +11,8 @@ import { useBranches, useCreateBranch, useDeleteBranch } from '@/features/hospit
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { AppTable } from '@/shared/ui/AppTable';
 import { useToast } from '@/shared/ui/ToastProvider';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { isValidE164 } from '@/shared/phone/phoneUtils';
 
 const emptyForm = {
   name: '', addressLine1: '', addressLine2: '', city: '', state: '', pincode: '',
@@ -24,8 +26,14 @@ export function HospitalBranchesPage() {
   const { showToast } = useToast();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [phoneError, setPhoneError] = useState('');
 
   const handleSave = async () => {
+    setPhoneError('');
+    if (!isValidE164(form.phone)) {
+      setPhoneError('Enter a valid phone number.');
+      return;
+    }
     try {
       await createBranch.mutateAsync({
         ...form,
@@ -36,6 +44,7 @@ export function HospitalBranchesPage() {
       });
       setOpen(false);
       setForm(emptyForm);
+      setPhoneError('');
       showToast('Branch added.');
     } catch (e) {
       showToast(parseApiError(e).message, 'error');
@@ -133,7 +142,17 @@ export function HospitalBranchesPage() {
               <TextField label="Latitude" fullWidth value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} />
               <TextField label="Longitude" fullWidth value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} />
             </Stack>
-            <TextField label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <PhoneField
+              label="Phone"
+              required
+              value={form.phone}
+              onChange={(phone) => {
+                setForm({ ...form, phone });
+                setPhoneError('');
+              }}
+              error={!!phoneError}
+              helperText={phoneError || undefined}
+            />
           </Stack>
         </DialogContent>
         <DialogActions>

@@ -139,6 +139,11 @@ const PharmacyDashboardPage = lazy(() =>
 const HospitalStaffPage = lazy(() =>
   import('@/features/hospital/pages/HospitalStaffPage').then((m) => ({ default: m.HospitalStaffPage })),
 );
+const HospitalClinicalCatalogsPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalClinicalCatalogsPage').then((m) => ({
+    default: m.HospitalClinicalCatalogsPage,
+  })),
+);
 const ReceptionDashboardPage = lazy(() =>
   import('@/features/reception/pages/ReceptionDashboardPage').then((m) => ({ default: m.ReceptionDashboardPage })),
 );
@@ -403,7 +408,7 @@ export function AppRouter() {
           <Route path="doctors" element={<LazyPage><HospitalDoctorRosterPage /></LazyPage>} />
           <Route path="staff" element={<LazyPage><HospitalStaffPage /></LazyPage>} />
           <Route path="opd" element={<LazyPage><HospitalOpdPage /></LazyPage>} />
-          <Route path="catalogs" element={<Navigate to="/hospital/dashboard" replace />} />
+          <Route path="catalogs" element={<LazyPage><HospitalClinicalCatalogsPage /></LazyPage>} />
           <Route path="billing/invoices" element={<LazyPage><HospitalInvoicesPage /></LazyPage>} />
           <Route path="billing/invoices/:invoiceId" element={<LazyPage><HospitalInvoiceDetailPage /></LazyPage>} />
           <Route path="billing/checkout/:encounterId" element={<LazyPage><ReceptionCheckoutPage /></LazyPage>} />

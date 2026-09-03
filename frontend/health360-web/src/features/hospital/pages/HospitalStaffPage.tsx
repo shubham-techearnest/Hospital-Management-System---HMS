@@ -29,6 +29,8 @@ import { parseApiError } from '@/shared/api/errorUtils';
 import { useBranches, useDepartments, useHospitalProfile } from '@/features/hospital/hooks/useHospitalQueries';
 import { STAFF_ROLES } from '@/features/hospital/api/staffApi';
 import { useDeactivateStaff, useInviteStaff, useStaffList } from '@/features/hospital/hooks/useStaffQueries';
+import { PhoneField } from '@/shared/phone/PhoneField';
+import { isValidE164 } from '@/shared/phone/phoneUtils';
 
 const STATUS_COLOR: Record<string, 'default' | 'success' | 'warning' | 'error'> = {
   ACTIVE: 'success',
@@ -60,6 +62,7 @@ export function HospitalStaffPage() {
     departmentId: '',
     jobTitle: '',
   });
+  const [phoneError, setPhoneError] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   const showError = (e: unknown) =>
@@ -67,6 +70,11 @@ export function HospitalStaffPage() {
 
   const handleInvite = async () => {
     if (!hospitalId) return;
+    setPhoneError('');
+    if (form.phone.trim() && !isValidE164(form.phone)) {
+      setPhoneError('Enter a valid phone number or leave blank.');
+      return;
+    }
     try {
       await inviteStaff.mutateAsync({
         email: form.email,
@@ -91,6 +99,7 @@ export function HospitalStaffPage() {
         departmentId: '',
         jobTitle: '',
       });
+      setPhoneError('');
       setSnackbar({ open: true, message: 'Staff member invited.', severity: 'success' });
     } catch (e) {
       showError(e);
@@ -187,8 +196,17 @@ export function HospitalStaffPage() {
               <TextField label="Last name" required fullWidth
                 value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} />
             </Stack>
-            <TextField label="Phone" fullWidth
-              value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+            <PhoneField
+              label="Phone"
+              value={form.phone}
+              onChange={(phone) => {
+                setForm((f) => ({ ...f, phone }));
+                setPhoneError('');
+              }}
+              optional
+              error={!!phoneError}
+              helperText={phoneError || undefined}
+            />
             <TextField label="Temporary password" type="password" required fullWidth helperText="Min 8 characters"
               value={form.temporaryPassword} onChange={(e) => setForm((f) => ({ ...f, temporaryPassword: e.target.value }))} />
             <TextField select label="Role" required fullWidth
