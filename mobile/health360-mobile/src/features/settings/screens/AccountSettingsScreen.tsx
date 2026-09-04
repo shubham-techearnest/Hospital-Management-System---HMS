@@ -20,6 +20,7 @@ import { LocaleField } from '@/shared/locale/LocaleField';
 import { PhoneField } from '@/shared/phone/PhoneField';
 import { TimezoneField } from '@/shared/timezone/TimezoneField';
 import { detectLocale, detectTimezone } from '@/shared/timezone/timezones';
+import { liveValidationOptions } from '@/shared/validation/formConfig';
 import type { SettingsStackParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<SettingsStackParamList, 'AccountSettings'>;
@@ -44,11 +45,13 @@ export function AccountSettingsScreen({ navigation, route }: Props) {
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   const profileForm = useForm<ProfileForm>({
+    ...liveValidationOptions,
     resolver: zodResolver(profileSchema),
     defaultValues: profileDefaults,
   });
 
   const passwordForm = useForm<ChangePasswordForm>({
+    ...liveValidationOptions,
     resolver: zodResolver(changePasswordSchema),
     defaultValues: {
       currentPassword: '',
@@ -244,8 +247,9 @@ export function AccountSettingsScreen({ navigation, route }: Props) {
               <TextInput label="New password" mode="outlined" secureTextEntry value={value} onBlur={onBlur} onChangeText={onChange} error={!!passwordForm.formState.errors.newPassword} />
             )}
           />
-          <HelperText type="error" visible={!!passwordForm.formState.errors.newPassword}>
-            {passwordForm.formState.errors.newPassword?.message}
+          <HelperText type={passwordForm.formState.errors.newPassword ? 'error' : 'info'} visible>
+            {passwordForm.formState.errors.newPassword?.message
+              ?? '8+ chars with upper, lower, digit, and special (!@#$%^&*()_+=-)'}
           </HelperText>
 
           <Controller

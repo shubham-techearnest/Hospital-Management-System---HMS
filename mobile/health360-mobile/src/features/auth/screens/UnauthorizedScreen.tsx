@@ -26,7 +26,8 @@ export function UnauthorizedScreen() {
         </Text>
         <Text style={styles.message}>
           Your account roles ({user?.roles?.join(', ') ?? 'none'}) are not supported in the mobile app
-          yet. Please sign in with a patient, doctor, receptionist, hospital admin, or platform admin account.
+          yet. Supported roles include patient, doctor, receptionist, hospital/platform admin, nurse,
+          ICU nurse, lab, radiology, pharmacy, and OT.
         </Text>
         <Button mode="contained" onPress={() => signOut()} style={styles.button}>
           Sign out

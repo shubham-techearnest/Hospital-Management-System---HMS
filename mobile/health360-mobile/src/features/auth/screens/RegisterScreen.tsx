@@ -11,6 +11,7 @@ import { ScreenContainer } from '@/shared/components/ScreenContainer';
 import { BrandHeader } from '@/shared/components/BrandHeader';
 import { PhoneField } from '@/shared/phone/PhoneField';
 import { appColors } from '@/shared/theme';
+import { liveValidationOptions } from '@/shared/validation/formConfig';
 import type { AuthStackParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
@@ -23,6 +24,7 @@ export function RegisterScreen({ navigation }: Props) {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
+    ...liveValidationOptions,
     resolver: zodResolver(registerSchema),
     defaultValues: {
       firstName: '',
@@ -112,7 +114,10 @@ export function RegisterScreen({ navigation }: Props) {
             <TextInput label="Password" mode="outlined" secureTextEntry value={value ?? ''} onBlur={onBlur} onChangeText={onChange} error={!!errors.password} />
           )}
         />
-        <HelperText type="error" visible={!!errors.password}>{errors.password?.message}</HelperText>
+        <HelperText type={errors.password ? 'error' : 'info'} visible>
+          {errors.password?.message
+            ?? '8+ chars with upper, lower, digit, and special (!@#$%^&*()_+=-)'}
+        </HelperText>
 
         <Controller
           control={control}

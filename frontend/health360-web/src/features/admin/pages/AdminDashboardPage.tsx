@@ -3,56 +3,64 @@ import { Grid, List, ListItem, ListItemText, Skeleton, Typography } from '@mui/m
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import PeopleIcon from '@mui/icons-material/People';
 import RateReviewIcon from '@mui/icons-material/RateReview';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { usePendingVerifications } from '../hooks/useAdminDoctorQueries';
-import { useAdminUsers, useAdminReviews } from '../hooks/useAdminExtendedQueries';
+import { useAdminDashboard } from '../hooks/useAdminExtendedQueries';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { DashboardSection } from '@/shared/dashboard/DashboardSection';
 import { StatCard } from '@/shared/dashboard/StatCard';
 
 export function AdminDashboardPage() {
+  const { data: dashboard, isLoading: dashLoading } = useAdminDashboard();
   const { data: verifications, isLoading: verLoading } = usePendingVerifications();
-  const { data: usersPage, isLoading: usersLoading } = useAdminUsers({ page: 0, size: 1 });
-  const { data: reviewsPage, isLoading: reviewsLoading } = useAdminReviews('visible', 0);
 
-  const loading = verLoading || usersLoading || reviewsLoading;
   const pending = verifications?.content ?? [];
 
   return (
     <AnimatedPage>
       <DashboardPageHeader
         title="Platform administration"
-        subtitle="Monitor verifications, user accounts, and review moderation from one place."
+        subtitle="Monitor verifications, user accounts, hospitals, and review moderation from one place."
       />
 
       <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Pending verifications"
-            value={loading ? '—' : (verifications?.totalElements ?? pending.length)}
+            value={dashLoading ? '—' : (dashboard?.pendingVerifications ?? 0)}
             hint="Doctors awaiting review"
             icon={<VerifiedUserIcon />}
             to="/admin/verifications"
             accent="warning.main"
           />
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Registered users"
-            value={loading ? '—' : (usersPage?.totalElements ?? '—')}
+            value={dashLoading ? '—' : (dashboard?.registeredUsers ?? 0)}
             hint="All platform accounts"
             icon={<PeopleIcon />}
             to="/admin/users"
           />
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Visible reviews"
-            value={loading ? '—' : (reviewsPage?.totalElements ?? '—')}
+            value={dashLoading ? '—' : (dashboard?.visibleReviews ?? 0)}
             hint="Published patient reviews"
             icon={<RateReviewIcon />}
             to="/admin/reviews"
             accent="secondary.main"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard
+            label="Hospitals"
+            value={dashLoading ? '—' : (dashboard?.hospitalCount ?? 0)}
+            hint="Onboarded facilities"
+            icon={<LocalHospitalIcon />}
+            to="/admin/hospitals"
           />
         </Grid>
       </Grid>

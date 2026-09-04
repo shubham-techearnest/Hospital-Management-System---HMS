@@ -38,4 +38,6 @@ public interface DoctorProfileRepository extends JpaRepository<DoctorProfileEnti
 
     boolean existsByTenantIdAndMedicalRegistrationNumberAndDeletedAtIsNullAndIdNot(
             UUID tenantId, String medicalRegistrationNumber, UUID excludeId);
+
+    long countByTenantIdAndVerificationStatusAndDeletedAtIsNull(UUID tenantId, String verificationStatus);
 }

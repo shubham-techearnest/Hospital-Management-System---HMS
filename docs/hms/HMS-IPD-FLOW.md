@@ -66,7 +66,7 @@ Hospital / Branch
 |--------|---------|
 | ADMITTED | Active inpatient |
 | DISCHARGED | Closed with summary |
-| TRANSFERRED | Moved (future: ward/bed transfer) |
+| TRANSFERRED | Moved (legacy status; in-hospital bed moves keep ADMITTED and write a new bed assignment) |
 | CANCELLED | Admission voided |
 
 ### Bed (`ipd.beds`)

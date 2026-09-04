@@ -27,4 +27,6 @@ public interface HospitalRepository extends JpaRepository<HospitalEntity, UUID> 
 
     Page<HospitalEntity> findByTenantIdAndDeletedAtIsNullAndNameContainingIgnoreCaseAndStatus(
             UUID tenantId, String name, String status, Pageable pageable);
+
+    long countByTenantIdAndDeletedAtIsNull(UUID tenantId);
 }

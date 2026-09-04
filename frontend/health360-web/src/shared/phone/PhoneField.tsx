@@ -48,12 +48,12 @@ export function PhoneField({
     const parsed = parsePhone(value, country.iso);
     const nextCountry = getCountryByIso(parsed.iso) ?? country;
     setCountry(nextCountry);
-    setNational(parsed.nationalNumber);
+    setNational(digitsOnly(parsed.nationalNumber).slice(0, nextCountry.nationalLength));
   }, [value, touchedLocally]);
 
   const emit = (nextCountry: CountryDial, nextNational: string) => {
     setTouchedLocally(true);
-    const digits = digitsOnly(nextNational).slice(0, nextCountry.nationalLength + 1);
+    const digits = digitsOnly(nextNational).slice(0, nextCountry.nationalLength);
     setNational(digits);
     onChange(digits ? toE164(nextCountry.dialCode, digits) : '');
   };
@@ -90,13 +90,17 @@ export function PhoneField({
         error={error}
         helperText={
           helperText
-          ?? `+${country.dialCode} · about ${country.nationalLength} digits`
+          ?? `+${country.dialCode} · exactly ${country.nationalLength} digits`
         }
         required={Boolean(required && !optional)}
         disabled={disabled}
         fullWidth={fullWidth}
         inputMode="tel"
         autoComplete="tel-national"
+        inputProps={{
+          maxLength: country.nationalLength,
+          inputMode: 'tel',
+        }}
       />
     </Box>
   );

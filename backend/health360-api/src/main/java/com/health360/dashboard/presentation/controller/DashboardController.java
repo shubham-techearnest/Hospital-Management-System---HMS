@@ -20,6 +20,13 @@ public class DashboardController {
 
     private final DashboardService dashboardService;
 
+    @GetMapping("/api/v1/admin/dashboard")
+    @PreAuthorize("hasAuthority('admin:users:read')")
+    public ResponseEntity<ApiResponse<AdminDashboardResponse>> getAdminDashboard(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.ok(dashboardService.getAdminDashboard(principal)));
+    }
+
     @GetMapping("/api/v1/hospital/dashboard")
     @PreAuthorize("hasAuthority('hospital:profile:read')")
     public ResponseEntity<ApiResponse<HospitalDashboardResponse>> getHospitalDashboard(

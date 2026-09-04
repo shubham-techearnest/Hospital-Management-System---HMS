@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text, TextInput } from 'react-native-paper';
+import { HelperText, Text, TextInput } from 'react-native-paper';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SelectField } from '@/features/patient/components/SelectField';
@@ -17,6 +17,7 @@ import { usePatientProfile, useUpdateLifestyle } from '@/features/patient/hooks/
 import { lifestyleSchema, type LifestyleForm } from '@/features/patient/schemas/patient.schema';
 import { normalizeLifestyleForm } from '@/features/patient/utils/profileEnumMapper';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
+import { liveValidationOptions } from '@/shared/validation/formConfig';
 
 export function LifestyleSection({ onSaveSuccess, onSaveError }: ProfileSectionCallbacks) {
   const { data: profile } = usePatientProfile();
@@ -24,7 +25,8 @@ export function LifestyleSection({ onSaveSuccess, onSaveError }: ProfileSectionC
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const { control, handleSubmit, reset, formState: { isSubmitting } } = useForm<LifestyleForm>({
+  const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<LifestyleForm>({
+    ...liveValidationOptions,
     resolver: zodResolver(lifestyleSchema),
     defaultValues: {
       smokingStatus: '',
@@ -76,20 +78,53 @@ export function LifestyleSection({ onSaveSuccess, onSaveError }: ProfileSectionC
         <TextInput label="Exercise Type" mode="outlined" value={value ?? ''} onBlur={onBlur} onChangeText={onChange} />
       )} />
       <Controller control={control} name="exerciseDurationMinutes" render={({ field: { onChange, onBlur, value } }) => (
-        <TextInput label="Exercise Duration (min)" mode="outlined" keyboardType="number-pad" value={value?.toString() ?? ''} onBlur={onBlur} onChangeText={(t) => onChange(t === '' ? undefined : Number(t))} />
+        <TextInput
+          label="Exercise Duration (min)"
+          mode="outlined"
+          keyboardType="number-pad"
+          value={value?.toString() ?? ''}
+          onBlur={onBlur}
+          onChangeText={(t) => onChange(t === '' ? undefined : Number(t))}
+          error={!!errors.exerciseDurationMinutes}
+        />
       )} />
+      <HelperText type="error" visible={!!errors.exerciseDurationMinutes}>
+        {errors.exerciseDurationMinutes?.message}
+      </HelperText>
       <Controller control={control} name="occupationType" render={({ field: { onChange, value } }) => (
         <SelectField label="Occupation Type" value={value} options={OCCUPATION_OPTIONS} onChange={onChange} />
       )} />
       <Controller control={control} name="averageSleepHours" render={({ field: { onChange, onBlur, value } }) => (
-        <TextInput label="Average Sleep (hours)" mode="outlined" keyboardType="decimal-pad" value={value?.toString() ?? ''} onBlur={onBlur} onChangeText={(t) => onChange(t === '' ? undefined : Number(t))} />
+        <TextInput
+          label="Average Sleep (hours)"
+          mode="outlined"
+          keyboardType="decimal-pad"
+          value={value?.toString() ?? ''}
+          onBlur={onBlur}
+          onChangeText={(t) => onChange(t === '' ? undefined : Number(t))}
+          error={!!errors.averageSleepHours}
+        />
       )} />
+      <HelperText type="error" visible={!!errors.averageSleepHours}>
+        {errors.averageSleepHours?.message}
+      </HelperText>
       <Controller control={control} name="dietaryPreference" render={({ field: { onChange, value } }) => (
         <SelectField label="Dietary Preference" value={value} options={DIET_OPTIONS} onChange={onChange} />
       )} />
       <Controller control={control} name="stressLevel" render={({ field: { onChange, onBlur, value } }) => (
-        <TextInput label="Stress Level (1-5)" mode="outlined" keyboardType="number-pad" value={value?.toString() ?? ''} onBlur={onBlur} onChangeText={(t) => onChange(t === '' ? undefined : Number(t))} />
+        <TextInput
+          label="Stress Level (1-5)"
+          mode="outlined"
+          keyboardType="number-pad"
+          value={value?.toString() ?? ''}
+          onBlur={onBlur}
+          onChangeText={(t) => onChange(t === '' ? undefined : Number(t))}
+          error={!!errors.stressLevel}
+        />
       )} />
+      <HelperText type="error" visible={!!errors.stressLevel}>
+        {errors.stressLevel?.message}
+      </HelperText>
       <SaveButton saving={isSubmitting || updateMutation.isPending} saved={saved} onPress={handleSubmit(onSubmit)} />
     </View>
   );

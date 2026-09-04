@@ -3,6 +3,7 @@ package com.health360.icu.application.service;
 import com.health360.clinical.infrastructure.persistence.entity.EncounterEntity;
 import com.health360.icu.infrastructure.persistence.entity.*;
 import com.health360.icu.presentation.dto.response.*;
+import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -30,16 +31,37 @@ public class IcuMapper {
     }
 
     public IcuStayResponse toStayResponse(
-            IcuStayEntity stay, EncounterEntity encounter, IcuBedEntity bed) {
+            IcuStayEntity stay,
+            EncounterEntity encounter,
+            IcuBedEntity bed,
+            IcuUnitEntity unit,
+            PatientProfileEntity patient) {
+        String patientName = null;
+        String uhid = null;
+        if (patient != null) {
+            String first = patient.getLegalFirstName() != null ? patient.getLegalFirstName().trim() : "";
+            String last = patient.getLegalLastName() != null ? patient.getLegalLastName().trim() : "";
+            patientName = (first + " " + last).trim();
+            if (patientName.isEmpty()) {
+                patientName = null;
+            }
+            uhid = patient.getUhid();
+        }
+
         return IcuStayResponse.builder()
                 .stayId(stay.getId())
                 .encounterId(stay.getEncounterId())
+                .encounterNumber(encounter.getEncounterNumber())
                 .patientId(stay.getPatientId())
+                .patientName(patientName)
+                .uhid(uhid)
                 .hospitalId(stay.getHospitalId())
                 .branchId(stay.getBranchId())
                 .primaryDoctorId(stay.getPrimaryDoctorId())
                 .ipdAdmissionId(stay.getIpdAdmissionId())
                 .bedId(bed != null ? bed.getId() : null)
+                .unitCode(unit != null ? unit.getCode() : null)
+                .bedNumber(bed != null ? bed.getBedNumber() : null)
                 .stayNumber(stay.getStayNumber())
                 .admissionReason(stay.getAdmissionReason())
                 .status(stay.getStatus())

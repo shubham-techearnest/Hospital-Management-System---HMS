@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { HelperText, Menu, TextInput } from 'react-native-paper';
-import { detectTimezone, listTimezones } from './timezones';
+import { detectTimezone, listTimezoneOptions } from './timezones';
 
 export type TimezoneFieldProps = {
   label?: string;
@@ -28,7 +28,7 @@ export function TimezoneField({
   autoDetect = true,
   style,
 }: TimezoneFieldProps) {
-  const options = useMemo(() => listTimezones(), []);
+  const options = useMemo(() => listTimezoneOptions(value), [value]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [filter, setFilter] = useState('');
 
@@ -41,8 +41,8 @@ export function TimezoneField({
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    if (!q) return options.slice(0, 80);
-    return options.filter((tz) => tz.toLowerCase().includes(q)).slice(0, 80);
+    if (!q) return options;
+    return options.filter((tz) => tz.toLowerCase().includes(q));
   }, [filter, options]);
 
   return (
@@ -87,7 +87,7 @@ export function TimezoneField({
         ))}
       </Menu>
       <HelperText type={error ? 'error' : 'info'} visible>
-        {helperText ?? 'IANA timezone (auto-detected from device)'}
+        {helperText ?? 'Major timezones only (auto-detected when possible)'}
       </HelperText>
     </View>
   );

@@ -15,6 +15,7 @@ import { usePatientProfile, useUpdateBasicInfo } from '@/features/patient/hooks/
 import { basicInfoSchema, type BasicInfoForm } from '@/features/patient/schemas/patient.schema';
 import { normalizeBloodGroup, sanitizeBasicInfoPayload } from '@/features/patient/utils/profileEnumMapper';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
+import { liveValidationOptions } from '@/shared/validation/formConfig';
 
 export function BasicInfoSection({ onSaveSuccess, onSaveError }: ProfileSectionCallbacks) {
   const { data: profile } = usePatientProfile();
@@ -23,6 +24,7 @@ export function BasicInfoSection({ onSaveSuccess, onSaveError }: ProfileSectionC
   const [saved, setSaved] = useState(false);
 
   const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<BasicInfoForm>({
+    ...liveValidationOptions,
     resolver: zodResolver(basicInfoSchema),
     defaultValues: { dateOfBirth: '', gender: '', bloodGroup: '', maritalStatus: '', nationality: 'IN' },
   });

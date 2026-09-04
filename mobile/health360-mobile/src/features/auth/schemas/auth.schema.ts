@@ -1,21 +1,18 @@
 import { z } from 'zod';
-import { phoneRequiredSchema } from '@/shared/validation/inputSchemas';
-
-const passwordSchema = z
-  .string()
-  .min(8, 'Password must be at least 8 characters')
-  .regex(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+=-]).+$/,
-    'Password must include upper, lower, digit, and special character',
-  );
+import {
+  emailRequiredSchema,
+  nameRequiredSchema,
+  passwordRequiredSchema,
+  phoneRequiredSchema,
+} from '@/shared/validation/inputSchemas';
 
 export const registerSchema = z
   .object({
-    email: z.string().email('Invalid email address'),
-    password: passwordSchema,
-    confirmPassword: z.string(),
-    firstName: z.string().min(1).max(100),
-    lastName: z.string().min(1).max(100),
+    email: emailRequiredSchema,
+    password: passwordRequiredSchema,
+    confirmPassword: z.string().min(1, 'Confirm your password'),
+    firstName: nameRequiredSchema,
+    lastName: nameRequiredSchema,
     phone: phoneRequiredSchema,
     role: z.literal('PATIENT'),
     acceptTerms: z.boolean().refine((val) => val === true, {
@@ -28,7 +25,7 @@ export const registerSchema = z
   });
 
 export const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: emailRequiredSchema,
   password: z.string().min(1, 'Password is required'),
 });
 

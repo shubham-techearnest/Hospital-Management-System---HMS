@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet } from 'react-native';
-import { Button, Snackbar, Text, TextInput } from 'react-native-paper';
+import { Button, HelperText, Snackbar, Text, TextInput } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppCard } from '@/shared/components/AppCard';
 import { PageHero } from '@/shared/components/PageHero';
@@ -8,6 +8,10 @@ import { ScreenContainer } from '@/shared/components/ScreenContainer';
 import { completePatientPortalAccount } from '@/features/auth/api/patientAccountApi';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
 import { appColors, layout } from '@/shared/theme';
+import {
+  emailRequiredSchema,
+  passwordRequiredSchema,
+} from '@/shared/validation/inputSchemas';
 import type { AuthStackParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'CompletePatientAccount'>;
@@ -17,16 +21,36 @@ export function CompletePatientAccountScreen({ navigation, route }: Props) {
   const [token, setToken] = useState(tokenFromRoute);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
   const [snack, setSnack] = useState('');
 
+  const emailError = useMemo(() => {
+    if (!emailTouched && !email) return null;
+    const result = emailRequiredSchema.safeParse(email);
+    return result.success ? null : result.error.issues[0]?.message ?? 'Invalid email';
+  }, [email, emailTouched]);
+
+  const passwordError = useMemo(() => {
+    if (!passwordTouched && !password) return null;
+    const result = passwordRequiredSchema.safeParse(password);
+    return result.success ? null : result.error.issues[0]?.message ?? 'Invalid password';
+  }, [password, passwordTouched]);
+
   const canSubmit = useMemo(
-    () => token.trim().length > 0 && email.trim().length > 0 && password.length >= 8,
+    () =>
+      token.trim().length > 0
+      && emailRequiredSchema.safeParse(email).success
+      && passwordRequiredSchema.safeParse(password).success,
     [token, email, password],
   );
 
   const submit = async () => {
+    setEmailTouched(true);
+    setPasswordTouched(true);
+    if (!canSubmit) return;
     setPending(true);
     try {
       await completePatientPortalAccount({
@@ -72,17 +96,34 @@ export function CompletePatientAccountScreen({ navigation, route }: Props) {
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(value) => {
+              setEmail(value);
+              setEmailTouched(true);
+            }}
+            onBlur={() => setEmailTouched(true)}
+            error={!!emailError}
             style={styles.input}
           />
+          <HelperText type="error" visible={!!emailError}>
+            {emailError}
+          </HelperText>
           <TextInput
             label="Password"
             mode="outlined"
             secureTextEntry
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(value) => {
+              setPassword(value);
+              setPasswordTouched(true);
+            }}
+            onBlur={() => setPasswordTouched(true)}
+            error={!!passwordError}
             style={styles.input}
           />
+          <HelperText type={passwordError ? 'error' : 'info'} visible>
+            {passwordError
+              ?? '8+ chars with upper, lower, digit, and special (!@#$%^&*()_+=-)'}
+          </HelperText>
           <Button mode="contained" onPress={submit} loading={pending} disabled={!canSubmit || pending}>
             Activate account
           </Button>

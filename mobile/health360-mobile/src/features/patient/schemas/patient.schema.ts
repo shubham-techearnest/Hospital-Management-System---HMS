@@ -1,12 +1,18 @@
 import { z } from 'zod';
-import { phoneOptionalSchema, phoneRequiredSchema } from '@/shared/validation/inputSchemas';
+import {
+  optionalIsoCountrySchema,
+  optionalNumber,
+  optionalPincodeSchema,
+  phoneOptionalSchema,
+  phoneRequiredSchema,
+} from '@/shared/validation/inputSchemas';
 
 export const basicInfoSchema = z.object({
   dateOfBirth: z.string().optional(),
   gender: z.string().max(30).optional(),
   bloodGroup: z.string().max(20).optional(),
   maritalStatus: z.string().max(20).optional(),
-  nationality: z.string().length(2).optional().or(z.literal('')),
+  nationality: optionalIsoCountrySchema,
   profilePhotoUrl: z.string().max(500).optional(),
 });
 
@@ -17,8 +23,8 @@ export const addressSchema = z.object({
   line2: z.string().max(200).optional(),
   city: z.string().max(100).optional(),
   state: z.string().max(100).optional(),
-  pincode: z.string().regex(/^\d{6}$/, 'Pincode must be 6 digits').optional().or(z.literal('')),
-  country: z.string().length(2).optional().or(z.literal('')),
+  pincode: optionalPincodeSchema,
+  country: optionalIsoCountrySchema,
 });
 
 export const contactInfoSchema = z.object({
@@ -32,12 +38,27 @@ export const contactInfoSchema = z.object({
 export type ContactInfoForm = z.infer<typeof contactInfoSchema>;
 
 export const physicalMeasurementsSchema = z.object({
-  heightCm: z.coerce.number().min(30).max(300).optional(),
-  weightKg: z.coerce.number().min(1).max(500).optional(),
-  waistCm: z.coerce.number().optional(),
-  hipCm: z.coerce.number().optional(),
-  neckCm: z.coerce.number().optional(),
-  bodyFatPercent: z.coerce.number().optional(),
+  heightCm: optionalNumber({
+    min: 30,
+    max: 300,
+    minMessage: 'Height must be at least 30 cm',
+    maxMessage: 'Height must be 300 cm or less',
+  }),
+  weightKg: optionalNumber({
+    min: 1,
+    max: 500,
+    minMessage: 'Weight must be at least 1 kg',
+    maxMessage: 'Weight must be 500 kg or less',
+  }),
+  waistCm: optionalNumber({ min: 1, max: 400, minMessage: 'Enter a valid waist size' }),
+  hipCm: optionalNumber({ min: 1, max: 400, minMessage: 'Enter a valid hip size' }),
+  neckCm: optionalNumber({ min: 1, max: 100, minMessage: 'Enter a valid neck size' }),
+  bodyFatPercent: optionalNumber({
+    min: 1,
+    max: 70,
+    minMessage: 'Body fat must be at least 1%',
+    maxMessage: 'Body fat must be 70% or less',
+  }),
   measuredAt: z.string().min(1, 'Measurement date is required'),
 });
 
@@ -49,20 +70,38 @@ export const lifestyleSchema = z.object({
   alcoholConsumption: z.string().max(20).optional(),
   exerciseFrequency: z.string().max(20).optional(),
   exerciseType: z.string().max(100).optional(),
-  exerciseDurationMinutes: z.coerce.number().optional(),
+  exerciseDurationMinutes: optionalNumber({
+    min: 0,
+    max: 600,
+    maxMessage: 'Duration must be 600 minutes or less',
+  }),
   occupationType: z.string().max(20).optional(),
-  averageSleepHours: z.coerce.number().optional(),
+  averageSleepHours: optionalNumber({
+    min: 0,
+    max: 24,
+    maxMessage: 'Sleep hours must be 24 or less',
+  }),
   dietaryPreference: z.string().max(20).optional(),
-  stressLevel: z.coerce.number().min(1).max(5).optional(),
+  stressLevel: optionalNumber({
+    min: 1,
+    max: 5,
+    minMessage: 'Stress level must be 1–5',
+    maxMessage: 'Stress level must be 1–5',
+  }),
 });
 
 export type LifestyleForm = z.infer<typeof lifestyleSchema>;
 
 export const emergencyContactSchema = z.object({
-  name: z.string().min(1).max(200),
-  relationship: z.string().min(1).max(50),
+  name: z.string().trim().min(1, 'Name is required').max(200),
+  relationship: z.string().trim().min(1, 'Relationship is required').max(50),
   phone: phoneRequiredSchema,
-  email: z.string().email().optional().or(z.literal('')),
+  email: z
+    .string()
+    .trim()
+    .refine((value) => !value || z.string().email().safeParse(value).success, {
+      message: 'Enter a valid email address',
+    }),
   primary: z.boolean().optional(),
 });
 

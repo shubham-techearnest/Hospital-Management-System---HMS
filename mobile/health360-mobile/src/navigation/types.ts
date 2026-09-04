@@ -87,6 +87,11 @@ export type ReceptionTabParamList = {
   Settings: NavigatorScreenParams<SettingsStackParamList>;
 };
 
+export type StaffRoleTabParamList = {
+  Worklist: undefined;
+  Settings: NavigatorScreenParams<SettingsStackParamList>;
+};
+
 export type DoctorTabParamList = {
   Overview: undefined;
   Profile: undefined;
@@ -127,6 +132,10 @@ export type AdminStackParamList = {
   VerificationQueue: undefined;
   VerificationReview: { doctorId: string };
   ReviewModeration: undefined;
+  HospitalsList: undefined;
+  HospitalDetail: { hospitalId: string };
+  Plans: undefined;
+  AuditLogs: undefined;
 };
 
 export type RootStackParamList = {

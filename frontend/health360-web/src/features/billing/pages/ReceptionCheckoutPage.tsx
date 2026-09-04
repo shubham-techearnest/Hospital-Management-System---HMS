@@ -37,17 +37,34 @@ import { isAxiosError } from 'axios';
 
 type LineForm = { description: string; quantity: string; unitPrice: string };
 
-const DEFAULT_LINE: LineForm = {
+const OPD_DEFAULT_LINE: LineForm = {
   description: 'OPD consultation',
   quantity: '1',
   unitPrice: '500',
 };
 
+const IPD_DEFAULT_LINE: LineForm = {
+  description: 'IPD bed / room charges',
+  quantity: '1',
+  unitPrice: '2000',
+};
+
+const ICU_DEFAULT_LINE: LineForm = {
+  description: 'ICU bed / critical care charges',
+  quantity: '1',
+  unitPrice: '5000',
+};
+
+type CheckoutLocationState = { from?: string; mode?: string };
+
 export function ReceptionCheckoutPage() {
   const { encounterId = '' } = useParams<{ encounterId: string }>();
   const location = useLocation();
+  const locationState = (location.state ?? {}) as CheckoutLocationState;
+  const fromIpd = locationState.from === 'ipd' || locationState.mode === 'IPD';
+  const fromIcu = locationState.from === 'icu' || locationState.mode === 'ICU';
   const backTo = location.pathname.startsWith('/hospital')
-    ? '/hospital/billing/invoices'
+    ? (fromIcu ? '/hospital/icu' : fromIpd ? '/hospital/ipd' : '/hospital/billing/invoices')
     : '/reception/dashboard';
   const {
     data: existingInvoice,
@@ -70,12 +87,26 @@ export function ReceptionCheckoutPage() {
   const { data: encounter } = useEncounter(encounterId);
   const mutations = useBillingMutations(encounterId);
 
-  const [lines, setLines] = useState<LineForm[]>([DEFAULT_LINE]);
+  const isIpd = fromIpd || encounter?.encounterType === 'IPD';
+  const isIcu = fromIcu || encounter?.encounterType === 'ICU';
+  const isInpatient = isIpd || isIcu;
+
+  const [lines, setLines] = useState<LineForm[]>([OPD_DEFAULT_LINE]);
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [paymentAmount, setPaymentAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isInpatient) return;
+    const defaultLine = isIcu ? ICU_DEFAULT_LINE : IPD_DEFAULT_LINE;
+    setLines((current) =>
+      current.length === 1 && current[0].description === OPD_DEFAULT_LINE.description
+        ? [defaultLine]
+        : current,
+    );
+  }, [isInpatient, isIcu]);
 
   const noInvoiceYet = isAxiosError(invoiceLookupError) && invoiceLookupError.response?.status === 404;
   const invoice = existingInvoice;
@@ -108,8 +139,8 @@ export function ReceptionCheckoutPage() {
       }),
     [vitals, consultNotes, diagnoses, prescriptions, orders, invoice],
   );
-  const checkoutReady = canIssueCheckout(consultNotes, prescriptions);
-  const checkoutMissing = checkoutBlockers(consultNotes, prescriptions);
+  const checkoutReady = isInpatient || canIssueCheckout(consultNotes, prescriptions);
+  const checkoutMissing = isInpatient ? [] : checkoutBlockers(consultNotes, prescriptions);
   const clinicalLoadError =
   notesError || prescriptionsError || vitalsError
     ? parseApiError(notesQueryError ?? prescriptionsQueryError ?? vitalsQueryError).message
@@ -139,7 +170,8 @@ export function ReceptionCheckoutPage() {
     try {
       await mutations.createInvoice.mutateAsync({
         encounterId,
-        notes: notes.trim() || undefined,
+        notes: notes.trim()
+          || (isIcu ? 'ICU discharge billing' : isIpd ? 'IPD discharge billing' : undefined),
         lineItems: payloadLines,
       });
       setSuccess('Invoice issued.');
@@ -209,17 +241,21 @@ export function ReceptionCheckoutPage() {
     <AnimatedPage>
       <Button component={RouterLink} to={backTo} sx={{ mb: 2 }}>← Back</Button>
       <DashboardPageHeader
-        title="OPD checkout"
+        title={isIcu ? 'ICU discharge billing' : isIpd ? 'IPD discharge billing' : 'OPD checkout'}
         subtitle={checkoutSubtitle}
       />
-      <OpdVisitChecklist steps={visitSteps} scrollToSections={false} />
-      {clinicalLoadError ? (
+      {!isInpatient ? <OpdVisitChecklist steps={visitSteps} scrollToSections={false} /> : (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Patient is discharged and the bed is released. Issue the {isIcu ? 'ICU' : 'IPD'} invoice and record payment to complete billing.
+        </Alert>
+      )}
+      {!isInpatient && clinicalLoadError ? (
         <Alert severity="error" sx={{ mb: 2 }}>
           Unable to load clinical data for this visit: {clinicalLoadError}. Refresh the page or ask an administrator
           to verify your hospital assignment.
         </Alert>
       ) : null}
-      {!invoice && !checkoutReady ? (
+      {!isInpatient && !invoice && !checkoutReady ? (
         <Alert severity="warning" sx={{ mb: 2 }}>
           Checkout is locked until the doctor finalizes the consultation report and signs an e-prescription
           {checkoutMissing.length > 0 ? ` (missing: ${checkoutMissing.join(', ')})` : ''}.

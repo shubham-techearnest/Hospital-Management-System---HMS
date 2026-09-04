@@ -4,14 +4,36 @@ import { ActivityIndicator, Button, Portal, Dialog, Snackbar, Text, TextInput } 
 import { ScreenContainer } from '@/shared/components/ScreenContainer';
 import { ScreenIntro } from '@/shared/components/ScreenIntro';
 import { EmptyState } from '@/shared/components/EmptyState';
+import { FilterChipRow } from '@/shared/components/FilterChipRow';
 import { AdminUserCard } from '@/features/admin/components/AdminUserCard';
 import { appColors, layout } from '@/shared/theme';
 import { useAdminUsers, useUpdateUserStatus } from '../hooks/useAdminQueries';
 import type { AdminUser } from '../api/adminApi';
 
+const STATUS_OPTIONS = [
+  { value: '', label: 'All status' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'DEACTIVATED', label: 'Deactivated' },
+  { value: 'LOCKED', label: 'Locked' },
+] as const;
+
+const ROLE_OPTIONS = [
+  { value: '', label: 'All roles' },
+  { value: 'PATIENT', label: 'Patient' },
+  { value: 'DOCTOR', label: 'Doctor' },
+  { value: 'HOSPITAL_ADMIN', label: 'Hospital admin' },
+  { value: 'PLATFORM_ADMIN', label: 'Platform admin' },
+  { value: 'LAB_TECHNICIAN', label: 'Lab' },
+  { value: 'RADIOLOGY_TECHNICIAN', label: 'Radiology' },
+  { value: 'OT_COORDINATOR', label: 'OT' },
+  { value: 'PHARMACIST', label: 'Pharmacy' },
+] as const;
+
 export function AdminUsersScreen() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [role, setRole] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(0);
   const [menuUserId, setMenuUserId] = useState<string | null>(null);
   const [pendingStatus, setPendingStatus] = useState<{ user: AdminUser; status: string } | null>(null);
@@ -20,6 +42,8 @@ export function AdminUsersScreen() {
   const { data, isLoading, isError, refetch, isFetching } = useAdminUsers({
     email: email || undefined,
     name: name || undefined,
+    role: role || undefined,
+    status: statusFilter || undefined,
     page,
     size: 10,
   });
@@ -45,7 +69,7 @@ export function AdminUsersScreen() {
 
   const listHeader = (
     <View style={styles.headerBlock}>
-      <ScreenIntro description="Search accounts and update status when needed." />
+      <ScreenIntro description="Search accounts by email, name, role, or status." />
       <View style={styles.filters}>
         <TextInput
           label="Email"
@@ -70,6 +94,22 @@ export function AdminUsersScreen() {
           dense
           style={styles.input}
           left={<TextInput.Icon icon="account-outline" />}
+        />
+        <FilterChipRow
+          value={role}
+          options={[...ROLE_OPTIONS]}
+          onChange={(value) => {
+            setRole(value);
+            setPage(0);
+          }}
+        />
+        <FilterChipRow
+          value={statusFilter}
+          options={[...STATUS_OPTIONS]}
+          onChange={(value) => {
+            setStatusFilter(value);
+            setPage(0);
+          }}
         />
       </View>
       {isError ? <Text style={styles.error}>Unable to load users.</Text> : null}
@@ -109,7 +149,7 @@ export function AdminUsersScreen() {
             <EmptyState
               icon="account-off-outline"
               title="No users found"
-              message="Try adjusting your email or name filters."
+              message="Try adjusting your email, name, role, or status filters."
             />
           ) : null
         }

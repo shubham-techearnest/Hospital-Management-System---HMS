@@ -14,6 +14,8 @@ public class ImagingOrderResponse {
     UUID clinicalOrderId;
     UUID encounterId;
     UUID patientId;
+    String patientName;
+    String uhid;
     UUID hospitalId;
     UUID branchId;
     UUID modalityId;

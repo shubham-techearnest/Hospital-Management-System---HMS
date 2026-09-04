@@ -27,8 +27,24 @@ function redirectToLogin() {
 
 let refreshPromise: Promise<AuthTokenData | null> | null = null;
 
+function readAccessToken(): string | null {
+  const fromStore = store.getState().auth.accessToken;
+  if (fromStore) {
+    return fromStore;
+  }
+  return localStorage.getItem('accessToken');
+}
+
+function readRefreshToken(): string | null {
+  const fromStore = store.getState().auth.refreshToken;
+  if (fromStore) {
+    return fromStore;
+  }
+  return localStorage.getItem('refreshToken');
+}
+
 async function refreshAccessToken(): Promise<AuthTokenData | null> {
-  const refreshTokenValue = localStorage.getItem('refreshToken');
+  const refreshTokenValue = readRefreshToken();
   if (!refreshTokenValue) {
     return null;
   }
@@ -58,7 +74,7 @@ async function refreshAccessToken(): Promise<AuthTokenData | null> {
 }
 
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
+  const token = readAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -71,24 +87,15 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const status = error.response?.status;
 
-    if (status === 401 || status === 403) {
-      const errorBody = error.response?.data as { error?: { message?: string } } | undefined;
-      const apiMessage = errorBody?.error?.message;
-      const mightBeStaleAuth =
-        status === 401 || (status === 403 && apiMessage === 'Access denied');
-
-      if (originalRequest && !originalRequest._retry && mightBeStaleAuth) {
-        originalRequest._retry = true;
-        const refreshed = await refreshAccessToken();
-        if (refreshed) {
-          originalRequest.headers.Authorization = `Bearer ${refreshed.accessToken}`;
-          return apiClient(originalRequest);
-        }
-        if (status === 401 || (status === 403 && apiMessage === 'Access denied')) {
-          clearStoredSession();
-          redirectToLogin();
-        }
+    if (status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        originalRequest.headers.Authorization = `Bearer ${refreshed.accessToken}`;
+        return apiClient(originalRequest);
       }
+      clearStoredSession();
+      redirectToLogin();
     }
 
     return Promise.reject(error);

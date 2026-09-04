@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Autocomplete, TextField } from '@mui/material';
-import { detectTimezone, listTimezones } from './timezones';
+import { detectTimezone, listTimezoneOptions } from './timezones';
 
 export type TimezoneFieldProps = {
   label?: string;
@@ -27,7 +27,7 @@ export function TimezoneField({
   fullWidth = true,
   autoDetect = true,
 }: TimezoneFieldProps) {
-  const options = useMemo(() => listTimezones(), []);
+  const options = useMemo(() => listTimezoneOptions(value), [value]);
 
   useEffect(() => {
     if (autoDetect && !value) {
@@ -57,7 +57,7 @@ export function TimezoneField({
           {...params}
           label={label}
           error={error}
-          helperText={helperText ?? 'IANA timezone (auto-detected from device)'}
+          helperText={helperText ?? 'Major timezones only (auto-detected when possible)'}
           required={required}
         />
       )}

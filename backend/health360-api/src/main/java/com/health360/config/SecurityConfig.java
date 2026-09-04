@@ -1,10 +1,16 @@
 package com.health360.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.health360.config.security.JwtAuthenticationFilter;
+import com.health360.shared.domain.ErrorCode;
+import com.health360.shared.dto.ErrorResponse;
 import com.health360.shared.filter.CorrelationIdFilter;
+import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,6 +22,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import java.nio.charset.StandardCharsets;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -24,13 +32,16 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorrelationIdFilter correlationIdFilter;
     private final CorsConfigurationSource corsConfigurationSource;
+    private final ObjectMapper objectMapper;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
             CorrelationIdFilter correlationIdFilter,
+            ObjectMapper objectMapper,
             @Autowired(required = false) CorsConfigurationSource corsConfigurationSource) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.correlationIdFilter = correlationIdFilter;
+        this.objectMapper = objectMapper;
         this.corsConfigurationSource = corsConfigurationSource;
     }
 
@@ -72,6 +83,18 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_PATHS).permitAll()
                         .anyRequest().authenticated())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                            String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
+                            ErrorResponse body = ErrorResponse.of(
+                                    ErrorCode.UNAUTHORIZED.name(),
+                                    "Authentication required",
+                                    correlationId != null ? correlationId : "unknown");
+                            response.getWriter().write(objectMapper.writeValueAsString(body));
+                        }))
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)

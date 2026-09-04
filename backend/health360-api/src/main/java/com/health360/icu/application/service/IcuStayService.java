@@ -18,6 +18,8 @@ import com.health360.icu.presentation.dto.request.DischargeIcuStayRequest;
 import com.health360.icu.presentation.dto.response.IcuDischargeResponse;
 import com.health360.icu.presentation.dto.response.IcuMonitoringRecordResponse;
 import com.health360.icu.presentation.dto.response.IcuStayResponse;
+import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
+import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -46,6 +48,7 @@ public class IcuStayService {
     private final IcuFacilityService facilityService;
     private final IcuAccessService accessService;
     private final IcuMapper mapper;
+    private final PatientProfileRepository patientProfileRepository;
     private final AuditLogService auditLogService;
 
     @Transactional
@@ -117,7 +120,7 @@ public class IcuStayService {
                 "IcuStay", savedStay.getId(),
                 Map.of("patientId", request.getPatientId().toString(), "bedId", bed.getId().toString()));
 
-        return mapper.toStayResponse(savedStay, encounter, bed);
+        return mapper.toStayResponse(savedStay, encounter, bed, unit, resolvePatient(principal.getTenantId(), savedStay.getPatientId()));
     }
 
     @Transactional(readOnly = true)
@@ -140,11 +143,7 @@ public class IcuStayService {
                     tenantId, hospitalId, branchId, pageable);
         }
 
-        return page.map(stay -> {
-            EncounterEntity encounter = requireEncounter(tenantId, stay.getEncounterId());
-            IcuBedEntity bed = resolveActiveBed(tenantId, stay.getId());
-            return mapper.toStayResponse(stay, encounter, bed);
-        });
+        return page.map(stay -> toEnrichedStayResponse(tenantId, stay));
     }
 
     @Transactional(readOnly = true)
@@ -152,9 +151,7 @@ public class IcuStayService {
         accessService.assertCanReadStays(principal);
         IcuStayEntity stay = requireStay(principal.getTenantId(), stayId);
         accessService.assertStayScope(principal, stay);
-        EncounterEntity encounter = requireEncounter(principal.getTenantId(), stay.getEncounterId());
-        IcuBedEntity bed = resolveActiveBed(principal.getTenantId(), stay.getId());
-        return mapper.toStayResponse(stay, encounter, bed);
+        return toEnrichedStayResponse(principal.getTenantId(), stay);
     }
 
     @Transactional
@@ -248,6 +245,18 @@ public class IcuStayService {
 
         return mapper.toDischargeResponse(
                 stay, encounter, request.getSummaryText().trim(), trimToNull(request.getFollowUpPlan()));
+    }
+
+    private IcuStayResponse toEnrichedStayResponse(UUID tenantId, IcuStayEntity stay) {
+        EncounterEntity encounter = requireEncounter(tenantId, stay.getEncounterId());
+        IcuBedEntity bed = resolveActiveBed(tenantId, stay.getId());
+        IcuUnitEntity unit = bed != null ? facilityService.requireUnit(tenantId, bed.getUnitId()) : null;
+        return mapper.toStayResponse(stay, encounter, bed, unit, resolvePatient(tenantId, stay.getPatientId()));
+    }
+
+    private PatientProfileEntity resolvePatient(UUID tenantId, UUID patientId) {
+        return patientProfileRepository.findByIdAndTenantIdAndDeletedAtIsNull(patientId, tenantId)
+                .orElse(null);
     }
 
     private IcuStayEntity requireStay(UUID tenantId, UUID stayId) {

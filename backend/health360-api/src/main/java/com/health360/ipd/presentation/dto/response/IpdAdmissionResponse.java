@@ -13,10 +13,15 @@ public class IpdAdmissionResponse {
     UUID encounterId;
     String encounterNumber;
     UUID patientId;
+    String patientName;
+    String uhid;
     UUID hospitalId;
     UUID branchId;
     UUID primaryDoctorId;
     UUID bedId;
+    String wardCode;
+    String roomCode;
+    String bedNumber;
     String admissionNumber;
     String admissionReason;
     String status;

@@ -139,3 +139,16 @@ export async function moderateReview(reviewId: string, action: 'HIDE' | 'REMOVE'
   });
   return data.data!;
 }
+
+export interface AdminDashboard {
+  pendingVerifications: number;
+  registeredUsers: number;
+  visibleReviews: number;
+  hiddenReviews: number;
+  hospitalCount: number;
+}
+
+export async function getAdminDashboard(): Promise<AdminDashboard> {
+  const { data } = await apiClient.get<ApiEnvelope<AdminDashboard>>('/admin/dashboard');
+  return data.data!;
+}

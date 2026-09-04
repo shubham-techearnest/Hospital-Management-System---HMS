@@ -17,6 +17,8 @@ export interface ImagingWorklistItem {
   clinicalOrderId: string;
   encounterId: string;
   patientId: string;
+  patientName?: string;
+  uhid?: string;
   orderNumber?: string;
   itemName: string;
   itemCode?: string;
@@ -53,6 +55,8 @@ export interface ImagingOrder {
   clinicalOrderId: string;
   encounterId: string;
   patientId: string;
+  patientName?: string;
+  uhid?: string;
   hospitalId: string;
   branchId: string;
   modalityId: string;

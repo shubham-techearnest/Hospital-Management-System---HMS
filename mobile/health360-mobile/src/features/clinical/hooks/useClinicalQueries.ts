@@ -3,6 +3,10 @@ import { isAxiosError } from 'axios';
 import {
   checkInEncounter,
   completeEncounter,
+  createClinicalNote,
+  createPrescription,
+  declareNoMedication,
+  finalizeClinicalNote,
   getEncounter,
   listDoctorMyEncounters,
   listEncounterDiagnoses,
@@ -12,7 +16,12 @@ import {
   listMyEncounters,
   listMyPrescriptions,
   getEncounterWellnessPlan,
+  signPrescription,
   startEncounter,
+  updateClinicalNote,
+  updatePrescription,
+  type CreatePrescriptionPayload,
+  type StructuredConsultationPayload,
 } from '../api/clinicalApi';
 
 export const clinicalKeys = {
@@ -114,10 +123,70 @@ export function useEncounterActions(encounterId: string) {
     qc.invalidateQueries({ queryKey: clinicalKeys.encounter(encounterId) });
     qc.invalidateQueries({ queryKey: ['clinical', 'encounters'] });
   };
+  const invalidateClinical = () => {
+    invalidate();
+    qc.invalidateQueries({ queryKey: clinicalKeys.notes(encounterId) });
+    qc.invalidateQueries({ queryKey: clinicalKeys.prescriptions(encounterId) });
+    qc.invalidateQueries({ queryKey: clinicalKeys.diagnoses(encounterId) });
+  };
 
   return {
     checkIn: useMutation({ mutationFn: () => checkInEncounter(encounterId), onSuccess: invalidate }),
     start: useMutation({ mutationFn: () => startEncounter(encounterId), onSuccess: invalidate }),
     complete: useMutation({ mutationFn: () => completeEncounter(encounterId), onSuccess: invalidate }),
+    createNote: useMutation({
+      mutationFn: (payload: StructuredConsultationPayload & { noteType?: string; content?: string }) =>
+        createClinicalNote(encounterId, payload),
+      onSuccess: invalidateClinical,
+    }),
+    updateNote: useMutation({
+      mutationFn: ({ noteId, payload }: { noteId: string; payload: StructuredConsultationPayload }) =>
+        updateClinicalNote(encounterId, noteId, payload),
+      onSuccess: invalidateClinical,
+    }),
+    finalizeNote: useMutation({
+      mutationFn: (noteId: string) => finalizeClinicalNote(encounterId, noteId),
+      onSuccess: invalidateClinical,
+    }),
+    createPrescription: useMutation({
+      mutationFn: (payload: CreatePrescriptionPayload) => createPrescription(encounterId, payload),
+      onSuccess: invalidateClinical,
+    }),
+    updatePrescription: useMutation({
+      mutationFn: ({
+        prescriptionId,
+        payload,
+      }: {
+        prescriptionId: string;
+        payload: CreatePrescriptionPayload;
+      }) => updatePrescription(encounterId, prescriptionId, payload),
+      onSuccess: invalidateClinical,
+    }),
+    signPrescription: useMutation({
+      mutationFn: (prescriptionId: string) => signPrescription(encounterId, prescriptionId),
+      onSuccess: invalidateClinical,
+    }),
+    declareNoMedication: useMutation({
+      mutationFn: () => declareNoMedication(encounterId),
+      onSuccess: invalidateClinical,
+    }),
   };
+}
+
+export function hasFinalConsultation(notes: { noteType: string; status?: string }[]): boolean {
+  return notes.some((note) => note.noteType === 'CONSULTATION' && note.status === 'FINAL');
+}
+
+export function hasSignedPrescription(prescriptions: { status: string }[]): boolean {
+  return prescriptions.some((p) => p.status === 'SIGNED');
+}
+
+export function encounterCompleteBlockers(
+  notes: { noteType: string; status?: string }[],
+  prescriptions: { status: string }[],
+): string[] {
+  const missing: string[] = [];
+  if (!hasFinalConsultation(notes)) missing.push('finalized consultation');
+  if (!hasSignedPrescription(prescriptions)) missing.push('signed e-prescription');
+  return missing;
 }

@@ -8,6 +8,7 @@ import type { ProfileSectionCallbacks } from '@/features/patient/components/prof
 import { usePatientProfile, useUpdatePhysicalMeasurements } from '@/features/patient/hooks/usePatientQueries';
 import { physicalMeasurementsSchema, type PhysicalMeasurementsForm } from '@/features/patient/schemas/patient.schema';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
+import { liveValidationOptions } from '@/shared/validation/formConfig';
 
 function toLocalDateTimeInput(iso?: string): string {
   if (!iso) return new Date().toISOString().slice(0, 16);
@@ -21,6 +22,7 @@ export function PhysicalMeasurementsSection({ onSaveSuccess, onSaveError }: Prof
   const [saved, setSaved] = useState(false);
 
   const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<PhysicalMeasurementsForm>({
+    ...liveValidationOptions,
     resolver: zodResolver(physicalMeasurementsSchema),
     defaultValues: { measuredAt: new Date().toISOString().slice(0, 16) },
   });
@@ -57,23 +59,32 @@ export function PhysicalMeasurementsSection({ onSaveSuccess, onSaveError }: Prof
     }
   };
 
-  const numberField = (name: keyof PhysicalMeasurementsForm, label: string) => (
-    <Controller
-      key={name}
-      control={control}
-      name={name}
-      render={({ field: { onChange, onBlur, value } }) => (
-        <TextInput
-          label={label}
-          mode="outlined"
-          keyboardType="decimal-pad"
-          value={value?.toString() ?? ''}
-          onBlur={onBlur}
-          onChangeText={(text) => onChange(text === '' ? undefined : Number(text))}
-        />
-      )}
-    />
-  );
+  const numberField = (name: keyof PhysicalMeasurementsForm, label: string) => {
+    const fieldError = errors[name];
+    return (
+      <Controller
+        key={name}
+        control={control}
+        name={name}
+        render={({ field: { onChange, onBlur, value } }) => (
+          <View>
+            <TextInput
+              label={label}
+              mode="outlined"
+              keyboardType="decimal-pad"
+              value={value?.toString() ?? ''}
+              onBlur={onBlur}
+              onChangeText={(text) => onChange(text === '' ? undefined : Number(text))}
+              error={!!fieldError}
+            />
+            <HelperText type="error" visible={!!fieldError}>
+              {fieldError?.message}
+            </HelperText>
+          </View>
+        )}
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>

@@ -9,6 +9,9 @@ import com.health360.clinical.infrastructure.persistence.repository.ClinicalOrde
 import com.health360.clinical.infrastructure.persistence.repository.ClinicalOrderRepository;
 import com.health360.clinical.infrastructure.persistence.repository.EncounterRepository;
 import com.health360.config.security.UserPrincipal;
+import com.health360.patient.application.service.PatientDisplayNameResolver;
+import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
+import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.radiology.domain.ImagingOrderStatus;
 import com.health360.radiology.domain.ImagingReportStatus;
 import com.health360.radiology.infrastructure.persistence.entity.*;
@@ -45,6 +48,8 @@ public class RadiologyFulfillmentService {
     private final EncounterAccessService encounterAccessService;
     private final RadiologyMapper mapper;
     private final AuditLogService auditLogService;
+    private final PatientProfileRepository patientProfileRepository;
+    private final PatientDisplayNameResolver patientDisplayNameResolver;
 
     @Transactional(readOnly = true)
     public List<ImagingWorklistItemResponse> listPendingWorklist(
@@ -61,11 +66,16 @@ public class RadiologyFulfillmentService {
                     EncounterEntity encounter = encounterRepository
                             .findByIdAndTenantIdAndDeletedAtIsNull(order.getEncounterId(), tenantId)
                             .orElseThrow();
+                    PatientProfileEntity patient = patientProfileRepository
+                            .findByIdAndTenantIdAndDeletedAtIsNull(encounter.getPatientId(), tenantId)
+                            .orElse(null);
                     return ImagingWorklistItemResponse.builder()
                             .clinicalOrderItemId(item.getId())
                             .clinicalOrderId(order.getId())
                             .encounterId(encounter.getId())
                             .patientId(encounter.getPatientId())
+                            .patientName(patientDisplayNameResolver.resolve(patient))
+                            .uhid(patient != null ? patient.getUhid() : null)
                             .orderNumber(order.getOrderNumber())
                             .itemName(item.getItemName())
                             .itemCode(item.getItemCode())
@@ -404,7 +414,16 @@ public class RadiologyFulfillmentService {
         ImagingModalityEntity modality = catalogService.requireModality(tenantId, order.getModalityId());
         ImagingStudyEntity study = studyRepository.findByImagingOrderIdAndDeletedAtIsNull(order.getId()).orElse(null);
         ImagingReportEntity report = reportRepository.findByImagingOrderIdAndDeletedAtIsNull(order.getId()).orElse(null);
-        return mapper.toOrderResponse(order, modality, study, report);
+        PatientProfileEntity patient = patientProfileRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(order.getPatientId(), tenantId)
+                .orElse(null);
+        return mapper.toOrderResponse(
+                order,
+                modality,
+                study,
+                report,
+                patientDisplayNameResolver.resolve(patient),
+                patient != null ? patient.getUhid() : null);
     }
 
     private ImagingOrderEntity requireImagingOrder(UUID tenantId, UUID imagingOrderId) {

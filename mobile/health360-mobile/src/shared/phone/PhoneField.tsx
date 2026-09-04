@@ -49,12 +49,13 @@ export function PhoneField({
     if (touchedLocally) return;
     const parsed = parsePhone(value, country.iso);
     setCountry(getCountryByIso(parsed.iso) ?? country);
-    setNational(parsed.nationalNumber);
+    const nextCountry = getCountryByIso(parsed.iso) ?? country;
+    setNational(digitsOnly(parsed.nationalNumber).slice(0, nextCountry.nationalLength));
   }, [value, touchedLocally]);
 
   const emit = (nextCountry: CountryDial, nextNational: string) => {
     setTouchedLocally(true);
-    const digits = digitsOnly(nextNational).slice(0, nextCountry.nationalLength + 1);
+    const digits = digitsOnly(nextNational).slice(0, nextCountry.nationalLength);
     setNational(digits);
     onChange(digits ? toE164(nextCountry.dialCode, digits) : '');
   };
@@ -105,7 +106,7 @@ export function PhoneField({
         />
       </View>
       <HelperText type={error ? 'error' : 'info'} visible>
-        {helperText ?? `+${country.dialCode} · about ${country.nationalLength} digits`}
+        {helperText ?? `+${country.dialCode} · exactly ${country.nationalLength} digits`}
       </HelperText>
     </View>
   );

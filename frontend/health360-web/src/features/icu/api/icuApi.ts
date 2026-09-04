@@ -22,12 +22,17 @@ export interface IcuBed {
 export interface IcuStay {
   stayId: string;
   encounterId: string;
+  encounterNumber?: string;
   patientId: string;
+  patientName?: string;
+  uhid?: string;
   hospitalId: string;
   branchId: string;
   primaryDoctorId?: string;
   ipdAdmissionId?: string;
   bedId?: string;
+  unitCode?: string;
+  bedNumber?: string;
   stayNumber: string;
   admissionReason?: string;
   status: string;
@@ -133,8 +138,24 @@ export async function admitToIcu(payload: {
 export async function dischargeFromIcu(
   stayId: string,
   payload: { summaryText: string; followUpPlan?: string },
-): Promise<{ stayStatus: string; encounterStatus: string }> {
-  const { data } = await apiClient.post<ApiEnvelope<{ stayStatus: string; encounterStatus: string }>>(
+): Promise<{
+  stayId: string;
+  encounterId: string;
+  summaryText: string;
+  followUpPlan?: string;
+  stayStatus: string;
+  encounterStatus: string;
+  dischargedAt: string;
+}> {
+  const { data } = await apiClient.post<ApiEnvelope<{
+    stayId: string;
+    encounterId: string;
+    summaryText: string;
+    followUpPlan?: string;
+    stayStatus: string;
+    encounterStatus: string;
+    dischargedAt: string;
+  }>>(
     `/icu/stays/${stayId}/discharge`,
     payload,
   );
@@ -186,6 +207,11 @@ export async function addIcuMonitoringRecord(
     `/icu/stays/${stayId}/monitoring-records`,
     payload,
   );
+  return unwrap(data);
+}
+
+export async function getIcuStay(stayId: string): Promise<IcuStay> {
+  const { data } = await apiClient.get<ApiEnvelope<IcuStay>>(`/icu/stays/${stayId}`);
   return unwrap(data);
 }
 

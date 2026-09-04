@@ -1,19 +1,24 @@
 import { z } from 'zod';
-import { isValidE164 } from '@/shared/phone/phoneUtils';
+import { phoneValidationMessage } from '@/shared/phone/phoneUtils';
 import { isValidLocale, isValidTimezone } from '@/shared/timezone/timezones';
 
-export const phoneRequiredSchema = z
-  .string()
-  .min(1, 'Phone is required')
-  .refine((value) => isValidE164(value), {
-    message: 'Enter a valid phone number with country code',
-  });
+export const phoneRequiredSchema = z.string().superRefine((value, ctx) => {
+  const message = phoneValidationMessage(value?.trim() ?? '');
+  if (message) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message });
+  }
+});
 
-export const phoneOptionalSchema = z
-  .string()
-  .refine((value) => !value?.trim() || isValidE164(value), {
-    message: 'Enter a valid phone number with country code',
-  });
+export const phoneOptionalSchema = z.string().superRefine((value, ctx) => {
+  const trimmed = value?.trim() ?? '';
+  if (!trimmed) {
+    return;
+  }
+  const message = phoneValidationMessage(trimmed);
+  if (message && message !== 'Phone is required') {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message });
+  }
+});
 
 export const timezoneSchema = z
   .string()

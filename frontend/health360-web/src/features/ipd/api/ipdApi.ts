@@ -36,10 +36,15 @@ export interface IpdAdmission {
   encounterId: string;
   encounterNumber: string;
   patientId: string;
+  patientName?: string;
+  uhid?: string;
   hospitalId: string;
   branchId: string;
   primaryDoctorId?: string;
   bedId?: string;
+  wardCode?: string;
+  roomCode?: string;
+  bedNumber?: string;
   admissionNumber: string;
   admissionReason?: string;
   status: string;
@@ -118,12 +123,72 @@ export async function admitPatient(payload: {
   return unwrap(data);
 }
 
+export async function getIpdAdmission(admissionId: string): Promise<IpdAdmission> {
+  const { data } = await apiClient.get<ApiEnvelope<IpdAdmission>>(`/ipd/admissions/${admissionId}`);
+  return unwrap(data);
+}
+
+export interface IpdRound {
+  roundId: string;
+  admissionId: string;
+  encounterId: string;
+  roundType: string;
+  notes: string;
+  recordedAt: string;
+  recordedBy?: string;
+}
+
+export async function listIpdRounds(admissionId: string): Promise<IpdRound[]> {
+  const { data } = await apiClient.get<ApiEnvelope<IpdRound[]>>(`/ipd/admissions/${admissionId}/rounds`);
+  return unwrap(data) ?? [];
+}
+
+export async function addIpdRound(
+  admissionId: string,
+  payload: { roundType: string; notes: string },
+): Promise<IpdRound> {
+  const { data } = await apiClient.post<ApiEnvelope<IpdRound>>(
+    `/ipd/admissions/${admissionId}/rounds`,
+    payload,
+  );
+  return unwrap(data);
+}
+
 export async function dischargePatient(
   admissionId: string,
   payload: { summaryText: string; followUpPlan?: string },
-): Promise<{ admissionStatus: string; encounterStatus: string }> {
-  const { data } = await apiClient.post<ApiEnvelope<{ admissionStatus: string; encounterStatus: string }>>(
+): Promise<{
+  dischargeSummaryId: string;
+  admissionId: string;
+  encounterId: string;
+  summaryText: string;
+  followUpPlan?: string;
+  dischargedAt: string;
+  admissionStatus: string;
+  encounterStatus: string;
+}> {
+  const { data } = await apiClient.post<ApiEnvelope<{
+    dischargeSummaryId: string;
+    admissionId: string;
+    encounterId: string;
+    summaryText: string;
+    followUpPlan?: string;
+    dischargedAt: string;
+    admissionStatus: string;
+    encounterStatus: string;
+  }>>(
     `/ipd/admissions/${admissionId}/discharge`,
+    payload,
+  );
+  return unwrap(data);
+}
+
+export async function transferIpdBed(
+  admissionId: string,
+  payload: { bedId: string; reason?: string },
+): Promise<IpdAdmission> {
+  const { data } = await apiClient.post<ApiEnvelope<IpdAdmission>>(
+    `/ipd/admissions/${admissionId}/transfer-bed`,
     payload,
   );
   return unwrap(data);

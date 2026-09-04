@@ -16,7 +16,6 @@ import com.health360.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,7 +48,6 @@ public class UserController {
     }
 
     @PatchMapping("/me")
-    @PreAuthorize("hasAuthority('user:write')")
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateCurrentUser(
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody UpdateUserProfileRequest request) {

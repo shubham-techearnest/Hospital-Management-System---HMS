@@ -13,6 +13,8 @@ public class OtWorklistItemResponse {
     UUID clinicalOrderId;
     UUID encounterId;
     UUID patientId;
+    String patientName;
+    String uhid;
     String orderNumber;
     String itemName;
     String itemCode;

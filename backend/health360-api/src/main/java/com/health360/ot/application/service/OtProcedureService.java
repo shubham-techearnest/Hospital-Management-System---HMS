@@ -14,6 +14,9 @@ import com.health360.ot.infrastructure.persistence.entity.*;
 import com.health360.ot.infrastructure.persistence.repository.*;
 import com.health360.ot.presentation.dto.request.*;
 import com.health360.ot.presentation.dto.response.*;
+import com.health360.patient.application.service.PatientDisplayNameResolver;
+import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
+import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -46,6 +49,8 @@ public class OtProcedureService {
     private final EncounterAccessService encounterAccessService;
     private final OtMapper mapper;
     private final AuditLogService auditLogService;
+    private final PatientProfileRepository patientProfileRepository;
+    private final PatientDisplayNameResolver patientDisplayNameResolver;
 
     @Transactional(readOnly = true)
     public List<OtWorklistItemResponse> listPendingWorklist(
@@ -62,11 +67,16 @@ public class OtProcedureService {
                     EncounterEntity encounter = encounterRepository
                             .findByIdAndTenantIdAndDeletedAtIsNull(order.getEncounterId(), tenantId)
                             .orElseThrow();
+                    PatientProfileEntity patient = patientProfileRepository
+                            .findByIdAndTenantIdAndDeletedAtIsNull(encounter.getPatientId(), tenantId)
+                            .orElse(null);
                     return OtWorklistItemResponse.builder()
                             .clinicalOrderItemId(item.getId())
                             .clinicalOrderId(order.getId())
                             .encounterId(encounter.getId())
                             .patientId(encounter.getPatientId())
+                            .patientName(patientDisplayNameResolver.resolve(patient))
+                            .uhid(patient != null ? patient.getUhid() : null)
                             .orderNumber(order.getOrderNumber())
                             .itemName(item.getItemName())
                             .itemCode(item.getItemCode())
@@ -428,7 +438,17 @@ public class OtProcedureService {
                 .findByProcedureIdAndDeletedAtIsNullOrderByCreatedAtAsc(procedure.getId());
         List<OtNoteEntity> notes = noteRepository
                 .findByProcedureIdAndDeletedAtIsNullOrderByRecordedAtAsc(procedure.getId());
-        return mapper.toProcedureResponse(procedure, theatre, schedule, team, notes);
+        PatientProfileEntity patient = patientProfileRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(procedure.getPatientId(), tenantId)
+                .orElse(null);
+        return mapper.toProcedureResponse(
+                procedure,
+                theatre,
+                schedule,
+                team,
+                notes,
+                patientDisplayNameResolver.resolve(patient),
+                patient != null ? patient.getUhid() : null);
     }
 
     private OtProcedureEntity requireProcedure(UUID tenantId, UUID procedureId) {

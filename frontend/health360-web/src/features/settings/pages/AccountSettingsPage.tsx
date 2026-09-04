@@ -15,7 +15,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import type { RootState } from '@/app/store';
 import {
   changePassword,
   getCurrentUser,
@@ -27,7 +28,7 @@ import {
   type ChangePasswordForm,
   type ProfileForm,
 } from '../schemas/settings.schema';
-import { clearCredentials } from '@/features/auth/store/authSlice';
+import { clearCredentials, updateUser } from '@/features/auth/store/authSlice';
 import { AppLayout } from '@/shared/layout/AppLayout';
 import { PhoneField } from '@/shared/phone/PhoneField';
 import { TimezoneField } from '@/shared/timezone/TimezoneField';
@@ -43,20 +44,42 @@ const profileDefaults: ProfileForm = {
   locale: detectLocale(),
 };
 
+function readCachedAuthUser(): RootState['auth']['user'] {
+  try {
+    const raw = localStorage.getItem('user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function profileFromAuthUser(user: NonNullable<RootState['auth']['user']>): ProfileForm {
+  return {
+    firstName: user.firstName ?? '',
+    lastName: user.lastName ?? '',
+    phone: user.phone ?? '',
+    timezone: user.timezone || detectTimezone(),
+    locale: user.locale || detectLocale(),
+  };
+}
+
 export function AccountSettingsPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const authUser = useSelector((state: RootState) => state.auth.user) ?? readCachedAuthUser();
+  const cachedProfile = authUser ? profileFromAuthUser(authUser) : profileDefaults;
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
-  const [email, setEmail] = useState('');
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [email, setEmail] = useState(authUser?.email ?? '');
+  const [profileLoading, setProfileLoading] = useState(!authUser);
 
   const profileForm = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
-    defaultValues: profileDefaults,
-    mode: 'onBlur',
+    defaultValues: cachedProfile,
+    mode: 'onTouched',
+    reValidateMode: 'onChange',
   });
 
   const passwordForm = useForm<ChangePasswordForm>({
@@ -66,7 +89,8 @@ export function AccountSettingsPage() {
       newPassword: '',
       confirmPassword: '',
     },
-    mode: 'onBlur',
+    mode: 'onTouched',
+    reValidateMode: 'onChange',
   });
 
   const {
@@ -99,13 +123,29 @@ export function AccountSettingsPage() {
           timezone: profile.timezone || detectTimezone(),
           locale: profile.locale || detectLocale(),
         });
+        dispatch(
+          updateUser({
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            phone: profile.phone,
+            timezone: profile.timezone,
+            locale: profile.locale,
+            roles: profile.roles,
+            permissions: profile.permissions,
+            status: profile.status,
+            emailVerified: profile.emailVerified,
+          }),
+        );
       })
       .catch((error: unknown) => {
         if (cancelled) {
           return;
         }
-        const err = error as { response?: { data?: { error?: { message?: string } } } };
-        setProfileError(err.response?.data?.error?.message ?? 'Unable to load profile');
+        // Keep cached login profile usable; only surface error when nothing is prefilled.
+        if (!authUser) {
+          const err = error as { response?: { data?: { error?: { message?: string } } } };
+          setProfileError(err.response?.data?.error?.message ?? 'Unable to load profile');
+        }
       })
       .finally(() => {
         if (!cancelled) {
@@ -116,13 +156,22 @@ export function AccountSettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [resetProfileForm]);
+  }, [dispatch, resetProfileForm]);
 
   const onProfileSubmit = async (values: ProfileForm) => {
     setProfileError(null);
     setProfileSuccess(null);
     try {
-      await updateProfile(values);
+      const profile = await updateProfile(values);
+      dispatch(
+        updateUser({
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          phone: profile.phone,
+          timezone: profile.timezone,
+          locale: profile.locale,
+        }),
+      );
       setProfileSuccess('Profile updated successfully');
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: { message?: string } } } };

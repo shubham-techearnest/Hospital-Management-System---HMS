@@ -57,4 +57,6 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID>, JpaSpec
             @Param("tenantId") UUID tenantId,
             @Param("firstName") String firstName,
             @Param("lastName") String lastName);
+
+    long countByTenantIdAndDeletedAtIsNull(UUID tenantId);
 }

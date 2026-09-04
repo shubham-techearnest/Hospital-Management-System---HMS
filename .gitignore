@@ -62,3 +62,5 @@ backend/**/.local/
 *.pem
 *.key
 credentials.json
+
+Figma1/**

@@ -12,6 +12,7 @@ import { ScreenContainer } from '@/shared/components/ScreenContainer';
 import { appColors } from '@/shared/theme';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
 import { loginMessageStore } from '@/shared/storage/loginMessageStore';
+import { liveValidationOptions } from '@/shared/validation/formConfig';
 import type { AuthStackParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
@@ -33,6 +34,7 @@ export function LoginScreen({ navigation, route }: Props) {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({
+    ...liveValidationOptions,
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });

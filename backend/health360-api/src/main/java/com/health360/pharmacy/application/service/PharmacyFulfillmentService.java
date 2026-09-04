@@ -66,10 +66,13 @@ public class PharmacyFulfillmentService {
                             .orElseThrow();
                     int itemCount = clinicalOrderItemRepository
                             .findByOrderIdAndDeletedAtIsNullOrderByCreatedAtAsc(order.getId()).size();
+                    var patient = patientProfileRepository.findById(encounter.getPatientId()).orElse(null);
                     return MedicationWorklistItemResponse.builder()
                             .clinicalOrderId(order.getId())
                             .encounterId(encounter.getId())
                             .patientId(encounter.getPatientId())
+                            .patientName(patientDisplayNameResolver.resolve(patient))
+                            .uhid(patient != null ? patient.getUhid() : null)
                             .orderNumber(order.getOrderNumber())
                             .orderedAt(order.getOrderedAt())
                             .itemCount(itemCount)
@@ -425,10 +428,13 @@ public class PharmacyFulfillmentService {
         String patientName = patientProfileRepository.findById(order.getPatientId())
                 .map(patientDisplayNameResolver::resolve)
                 .orElse(null);
+        String uhid = patientProfileRepository.findById(order.getPatientId())
+                .map(p -> p.getUhid())
+                .orElse(null);
         String encounterNumber = encounterRepository.findById(order.getEncounterId())
                 .map(EncounterEntity::getEncounterNumber)
                 .orElse(null);
 
-        return mapper.toOrderResponse(order, items, patientName, encounterNumber);
+        return mapper.toOrderResponse(order, items, patientName, uhid, encounterNumber);
     }
 }

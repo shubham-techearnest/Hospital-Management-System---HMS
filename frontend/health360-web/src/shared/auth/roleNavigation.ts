@@ -48,17 +48,17 @@ export function getRoleDashboardPath(role: AppRole): string {
     case 'PLATFORM_ADMIN':
       return '/admin/dashboard';
     case 'LAB_TECHNICIAN':
-      return '/lab/dashboard';
+      return '/lab/worklist';
     case 'RADIOLOGY_TECHNICIAN':
-      return '/radiology/dashboard';
+      return '/radiology/worklist';
     case 'OT_COORDINATOR':
-      return '/ot/dashboard';
+      return '/ot/worklist';
     case 'PHARMACIST':
-      return '/pharmacy/dashboard';
+      return '/pharmacy/worklist';
     case 'RECEPTIONIST':
       return '/reception/dashboard';
     case 'NURSE':
-      return '/nursing/dashboard';
+      return '/nursing/ward';
     case 'ICU_NURSE':
       return '/icu-nurse/dashboard';
     default:

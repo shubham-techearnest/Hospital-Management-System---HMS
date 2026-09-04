@@ -3,7 +3,7 @@
 | Attribute | Value |
 |-----------|-------|
 | **Document ID** | PM-MODULE-PLAN-001 |
-| **Status** | ACTIVE — Phase B COMPLETE (code); Phase A ops + Phase C next |
+| **Status** | ACTIVE — Phase E COMPLETE (E1–E6); Phase A ops still pending; Phase F next |
 | **Created** | 2026-09-03 |
 | **Last Updated** | 2026-09-03 |
 | **Owner** | Engineering |
@@ -37,7 +37,7 @@
 
 | Module | Backend | Web | Mobile | Next focus |
 |--------|---------|-----|--------|------------|
-| Platform Admin | 90% | 95% | 55% | Phase C |
+| Platform Admin | 95% | 95% | 95% | Phase C complete (code) |
 | Hospital | 95% | 90% | 80% | Phase C (admin polish) |
 | Patient Registry | 95% | 90% | 80% staff | Stable |
 | OPD | 95% | 85% | 80% | Phase A prod QA |
@@ -47,13 +47,13 @@
 | Clinical | 90% | 90% | 40% | Phase E |
 | Billing | 80% | 75% | 55% desk checkout | Phase D / F |
 | Scheduling | 90% | 50% | 40% | Phase A decision |
-| Lab | 90% | 70% | 50% patient | Phase E |
-| Radiology | 90% | 70% | 40% | Phase E |
-| Pharmacy | 90% | 70% | 50% patient | Phase E |
-| OT | 85% | 70% | 0% | Phase E |
-| Nursing | 40% | 30% | 0% | Phase D |
-| IPD | 75% | 60% | 0% | Phase D |
-| ICU | 80% | 60% | 0% | Phase D |
+| Lab | 90% | 85% | 60% staff worklist | Phase F optional |
+| Radiology | 90% | 85% | 55% staff worklist | Phase F optional |
+| Pharmacy | 90% | 85% | 60% staff worklist | Phase F optional |
+| OT | 85% | 85% | 50% staff worklist | Phase F optional |
+| Nursing | 80% | 80% | 50% ward list | Phase F optional |
+| IPD | 90% | 85% | 0% | Phase E |
+| ICU | 90% | 80% | 0% | Phase E (mobile optional) |
 | Subscription | 80% | 80% | 20% | Phase C / F |
 | Analytics | 70% patient | 70% | 60% | Phase G |
 
@@ -123,8 +123,9 @@ flowchart TB
 |-------|------|----------|--------|------|
 | **A** | Stabilize & Release OPD | 2–3 weeks | **IN PROGRESS** | Production QA, orphans, push |
 | **B** | Patient + Hospital polish | 2 weeks | **COMPLETE** (code) | Reviews + feature flags; QA on live API |
-| **C** | Platform Admin completion | 1–2 weeks | NOT STARTED | Admin mobile gaps, dashboard API, audit |
-| **D** | IPD depth | 3–4 weeks | NOT STARTED | Admit UX, nursing, discharge billing |
+| **C** | Platform Admin completion | 1–2 weeks | **COMPLETE** (code) | Mobile admin parity for hospitals/plans/audit |
+| **D** | IPD depth | 3–4 weeks | **COMPLETE** | D1–D6 done |
+| **E** | Staff portals depth | 3–4 weeks | **COMPLETE** | E1–E6 done (web + mobile light) |
 | **E** | Staff portals depth | 3–4 weeks | NOT STARTED | Lab/Rad/Pharm/OT/Nurse worklists |
 | **F** | Payments & SaaS | Phase 2 | NOT STARTED | Razorpay, subscription billing |
 | **G** | Advanced / integrations | Ongoing | NOT STARTED | PACS, LIS, SMS, inventory |
@@ -204,7 +205,7 @@ Patient requests OPD (or reception walk-in)
 
 | Attribute | Value |
 |-----------|-------|
-| **Status** | NOT STARTED |
+| **Status** | **COMPLETE** (code) |
 | **Target** | Weeks 6–7 |
 | **Exit criteria** | Platform admin can onboard hospital, assign plan, approve doctor, moderate reviews, and audit — from web **and** mobile |
 
@@ -212,29 +213,29 @@ Patient requests OPD (or reception walk-in)
 
 | # | Function | Backend | Web | Mobile | Sprint | Done |
 |---|----------|---------|-----|--------|--------|------|
-| A1 | Platform dashboard KPIs | ⚠️ compose only | ✅ | ⚠️ | C1 | [ ] |
-| A2 | User directory + status | ✅ | ✅ | ⚠️ no filters | C2 | [ ] |
-| A3 | Hospital list + create | ✅ | ✅ | ❌ | C3 | [ ] |
-| A4 | Hospital detail + status | ✅ | ✅ | ❌ | C3 | [ ] |
-| A5 | Hospital doctor invite | ✅ | ✅ | ❌ | C4 | [ ] |
-| A6 | Hospital subscription assign | ✅ | ✅ | ❌ | C4 | [ ] |
-| A7 | Plans list / edit limits | ✅ | ✅ | ❌ | C5 | [ ] |
+| A1 | Platform dashboard KPIs | ✅ | ✅ | ✅ | C1 | [x] |
+| A2 | User directory + status | ✅ | ✅ | ✅ role/status filters | C2 | [x] |
+| A3 | Hospital list + create | ✅ | ✅ | ✅ | C3 | [x] |
+| A4 | Hospital detail + status | ✅ | ✅ | ✅ | C3 | [x] |
+| A5 | Hospital doctor invite | ✅ | ✅ | ✅ | C4 | [x] |
+| A6 | Hospital subscription assign | ✅ | ✅ | ✅ | C4 | [x] |
+| A7 | Plans list / edit limits | ✅ | ✅ | ✅ | C5 | [x] |
 | A8 | Doctor verification queue | ✅ | ✅ | ✅ | — | [x] |
 | A9 | Verification review + docs | ✅ | ✅ | ✅ | — | [x] |
 | A10 | Review moderation | ✅ | ✅ | ✅ | — | [x] |
-| A11 | Audit log search | ✅ | ✅ | ❌ | C6 | [ ] |
+| A11 | Audit log search | ✅ | ✅ | ✅ | C6 | [x] |
 | A12 | Account settings | ✅ | ✅ | ✅ | — | [x] |
 
 ### Tasks
 
 | ID | Task | Modules | Effort | Done |
 |----|------|---------|--------|------|
-| C1 | Backend `GET /api/v1/admin/dashboard` + wire web + enrich mobile home | Admin | 2d | [ ] |
-| C2 | Mobile admin user filters (role / status) | Admin | 1d | [ ] |
-| C3 | Mobile: AdminHospitalsList + AdminHospitalDetail | Admin | 4d | [ ] |
-| C4 | Mobile: hospital subscription + doctor invite | Admin, Subscription | 3d | [ ] |
-| C5 | Mobile: AdminPlansScreen (read + edit limits) | Admin, Subscription | 2d | [ ] |
-| C6 | Mobile: AdminAuditLogsScreen (paginated) | Admin | 2d | [ ] |
+| C1 | Backend `GET /api/v1/admin/dashboard` + wire web + enrich mobile home | Admin | 2d | [x] |
+| C2 | Mobile admin user filters (role / status) | Admin | 1d | [x] |
+| C3 | Mobile: AdminHospitalsList + AdminHospitalDetail | Admin | 4d | [x] |
+| C4 | Mobile: hospital subscription + doctor invite | Admin, Subscription | 3d | [x] |
+| C5 | Mobile: AdminPlansScreen (read + edit limits) | Admin, Subscription | 2d | [x] |
+| C6 | Mobile: AdminAuditLogsScreen (paginated) | Admin | 2d | [x] |
 
 ---
 
@@ -242,7 +243,7 @@ Patient requests OPD (or reception walk-in)
 
 | Attribute | Value |
 |-----------|-------|
-| **Status** | NOT STARTED |
+| **Status** | **COMPLETE** |
 | **Target** | Weeks 8–11 |
 | **Depends on** | Phase A + B exit criteria |
 | **Exit criteria** | Admit by UHID search → bed assigned → doctor rounds → discharge → invoice → bed free |
@@ -251,21 +252,23 @@ Patient requests OPD (or reception walk-in)
 
 | ID | Task | Modules | Effort | Done |
 |----|------|---------|--------|------|
-| D1 | IPD admit: patient search by UHID/name; discharge UX polish | IPD, Registry | 4d | [ ] |
-| D2 | Nursing: ward board, vitals rounds, assessments (backend + web) | Nursing, IPD | 2w | [ ] |
-| D3 | Discharge billing workflow | Billing, IPD | 1w | [ ] |
-| D4 | Doctor IPD rounds UI (web) | IPD, Doctor, Clinical | 1w | [ ] |
-| D5 | ICU polish (web / optional mobile nurse) | ICU | 1w | [ ] |
-| D6 | Bed transfer | IPD | 3d | [ ] |
+| D1 | IPD admit: patient search by UHID/name; discharge UX polish | IPD, Registry | 4d | [x] |
+| D2 | Nursing: ward board, vitals rounds, assessments (backend + web) | Nursing, IPD | 2w | [x] |
+| D3 | Discharge billing workflow | Billing, IPD | 1w | [x] |
+| D4 | Doctor IPD rounds UI (web) | IPD, Doctor, Clinical | 1w | [x] |
+| D5 | ICU polish (web / optional mobile nurse) | ICU | 1w | [x] |
+| D6 | Bed transfer | IPD | 3d | [x] |
 
 ### IPD DoD checklist
 
-- [ ] Admit via patient search (not raw UUID)
-- [ ] Ward / room / bed setup usable
-- [ ] Doctor can record rounds
-- [ ] Discharge releases bed
-- [ ] Discharge creates / links invoice
-- [ ] Nursing can chart vitals on IPD encounter
+- [x] Admit via patient search (not raw UUID)
+- [x] Ward / room / bed setup usable
+- [x] Doctor can record rounds
+- [x] Discharge releases bed
+- [x] Discharge creates / links invoice
+- [x] Nursing can chart vitals on IPD encounter
+- [x] ICU stay board + monitoring with valid record types
+- [x] IPD bed transfer (release old / assign new)
 
 ---
 
@@ -273,7 +276,7 @@ Patient requests OPD (or reception walk-in)
 
 | Attribute | Value |
 |-----------|-------|
-| **Status** | NOT STARTED |
+| **Status** | **COMPLETE** |
 | **Target** | Weeks 12–15 |
 | **Exit criteria** | Each staff role has a usable worklist (web depth; mobile selective) |
 
@@ -281,12 +284,12 @@ Patient requests OPD (or reception walk-in)
 
 | ID | Task | Modules | Effort | Done |
 |----|------|---------|--------|------|
-| E1 | Lab tech: enhanced worklist (order detail routes) | Lab | 1w | [ ] |
-| E2 | Radiology tech portal depth | Radiology | 1w | [ ] |
-| E3 | Pharmacy + MAR nursing (mobile optional) | Pharmacy, Nursing | 1w | [ ] |
-| E4 | OT coordinator portal depth | OT | 1w | [ ] |
-| E5 | Doctor mobile: light structured consult + e-Rx | Clinical, Doctor | 2w | [ ] |
-| E6 | Enable remaining staff roles on mobile (or keep Unauthorized) | Mobile nav | 1w | [ ] |
+| E1 | Lab tech: enhanced worklist (order detail routes) | Lab | 1w | [x] |
+| E2 | Radiology tech portal depth | Radiology | 1w | [x] |
+| E3 | Pharmacy + MAR nursing (mobile optional) | Pharmacy, Nursing | 1w | [x] |
+| E4 | OT coordinator portal depth | OT | 1w | [x] |
+| E5 | Doctor mobile: light structured consult + e-Rx | Clinical, Doctor | 2w | [x] |
+| E6 | Enable remaining staff roles on mobile (or keep Unauthorized) | Mobile nav | 1w | [x] |
 
 ---
 
@@ -402,7 +405,12 @@ Use before marking a module **RELEASED** on the feature board.
 |-----|-------|-----|--------|
 | Done | Mobile staff + ops dashboard + reception search/walk-in/checkout | B1–B6 | Code ready |
 | Done | Encounter reviews + subscription feature gates | B7, B8 | Code ready |
-| Next | Admin dashboard API + mobile polish | C1, C2 | — |
+| Done | Admin dashboard API + mobile user role/status filters | C1, C2 | Code ready |
+| Done | Mobile hospitals list/detail + create + status | C3 | Code ready |
+| Done | Mobile hospital subscription + doctor invite | C4 | Code ready |
+| Done | Mobile plans editor + audit logs | C5, C6 | Code ready |
+| Done | IPD admit patient search + discharge polish | D1 | Code ready |
+| Next | Nursing ward board / IPD vitals | D2 | — |
 
 **After production A1/A6:** mark Phase A exit criteria when golden path passes on Render. Phase B is code-complete; QA on a live API before Phase D (IPD).
 

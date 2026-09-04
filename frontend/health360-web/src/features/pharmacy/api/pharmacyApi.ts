@@ -18,6 +18,8 @@ export interface MedicationWorklistItem {
   clinicalOrderId: string;
   encounterId: string;
   patientId: string;
+  patientName?: string;
+  uhid?: string;
   orderNumber?: string;
   orderedAt: string;
   itemCount: number;
@@ -60,6 +62,7 @@ export interface MedicationOrder {
   encounterNumber?: string;
   patientId: string;
   patientName?: string;
+  uhid?: string;
   hospitalId: string;
   branchId: string;
   status: string;

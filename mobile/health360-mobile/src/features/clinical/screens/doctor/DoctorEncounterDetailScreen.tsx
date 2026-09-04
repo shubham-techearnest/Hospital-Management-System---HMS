@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Button, Chip, Divider, Snackbar, Text } from 'react-native-paper';
+import { ActivityIndicator, Button, Chip, Divider, HelperText, Snackbar, Text } from 'react-native-paper';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AppCard } from '@/shared/components/AppCard';
 import { ScreenContainer } from '@/shared/components/ScreenContainer';
+import { CompactConsultForm } from '@/features/clinical/components/CompactConsultForm';
+import { CompactERxForm } from '@/features/clinical/components/CompactERxForm';
 import {
+  encounterCompleteBlockers,
   useEncounter,
   useEncounterActions,
   useEncounterDiagnoses,
   useEncounterNotes,
   useEncounterOrders,
+  useEncounterPrescriptions,
 } from '@/features/clinical/hooks/useClinicalQueries';
 import { encounterStatusLabel, formatEncounterDate } from '@/features/clinical/utils/encounterUtils';
 import { appColors, layout } from '@/shared/theme';
@@ -23,6 +27,7 @@ export function DoctorEncounterDetailScreen({ route, navigation }: Props) {
   const { data: diagnoses = [] } = useEncounterDiagnoses(encounterId);
   const { data: notes = [] } = useEncounterNotes(encounterId);
   const { data: orders = [] } = useEncounterOrders(encounterId);
+  const { data: prescriptions = [] } = useEncounterPrescriptions(encounterId);
   const actions = useEncounterActions(encounterId);
   const [snack, setSnack] = useState('');
 
@@ -47,6 +52,9 @@ export function DoctorEncounterDetailScreen({ route, navigation }: Props) {
   const canCheckIn = encounter.status === 'REGISTERED';
   const canStart = encounter.status === 'WAITING' || encounter.status === 'REGISTERED';
   const canComplete = encounter.status === 'IN_PROGRESS';
+  const canEditClinical = encounter.status === 'IN_PROGRESS';
+  const completeBlockers = encounterCompleteBlockers(notes, prescriptions);
+  const completeReady = completeBlockers.length === 0;
 
   return (
     <ScreenContainer>
@@ -56,6 +64,9 @@ export function DoctorEncounterDetailScreen({ route, navigation }: Props) {
           <Text variant="headlineSmall">{encounter.encounterNumber}</Text>
           <Chip compact>{encounterStatusLabel(encounter.status)}</Chip>
         </View>
+        <Text style={styles.meta}>
+          {[encounter.patientName, encounter.uhid].filter(Boolean).join(' · ') || 'Patient'}
+        </Text>
         <Text style={styles.meta}>
           {encounter.encounterType} · {formatEncounterDate(encounter.startedAt ?? encounter.createdAt)}
         </Text>
@@ -72,11 +83,40 @@ export function DoctorEncounterDetailScreen({ route, navigation }: Props) {
             </Button>
           ) : null}
           {canComplete ? (
-            <Button mode="contained" loading={actions.complete.isPending} onPress={() => runAction('Complete', () => actions.complete.mutateAsync())}>
+            <Button
+              mode="contained"
+              loading={actions.complete.isPending}
+              disabled={!completeReady}
+              onPress={() => runAction('Complete', () => actions.complete.mutateAsync())}
+            >
               Complete
             </Button>
           ) : null}
         </View>
+        {canComplete && !completeReady ? (
+          <HelperText type="error" visible>
+            Complete requires: {completeBlockers.join(' and ')}
+          </HelperText>
+        ) : null}
+
+        {canEditClinical || notes.some((n) => n.noteType === 'CONSULTATION') ? (
+          <CompactConsultForm
+            encounterId={encounterId}
+            notes={notes}
+            visitReason={encounter.visitReason}
+            canEdit={canEditClinical}
+            onMessage={setSnack}
+          />
+        ) : null}
+
+        {canEditClinical || prescriptions.length > 0 ? (
+          <CompactERxForm
+            encounterId={encounterId}
+            prescriptions={prescriptions}
+            canEdit={canEditClinical}
+            onMessage={setSnack}
+          />
+        ) : null}
 
         <Section title="Diagnoses">
           {diagnoses.map((dx) => (
@@ -85,16 +125,6 @@ export function DoctorEncounterDetailScreen({ route, navigation }: Props) {
             </AppCard>
           ))}
           {diagnoses.length === 0 ? <Text style={styles.empty}>None recorded.</Text> : null}
-        </Section>
-
-        <Section title="Notes">
-          {notes.map((note) => (
-            <AppCard key={note.noteId} style={styles.card}>
-              <Text variant="labelLarge">{note.noteType}</Text>
-              <Text>{note.content}</Text>
-            </AppCard>
-          ))}
-          {notes.length === 0 ? <Text style={styles.empty}>None recorded.</Text> : null}
         </Section>
 
         <Section title="Orders">

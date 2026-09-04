@@ -62,7 +62,7 @@ public class PharmacyMapper {
 
     public MedicationOrderResponse toOrderResponse(
             MedicationOrderEntity order, List<MedicationOrderItemResponse> items,
-            String patientName, String encounterNumber) {
+            String patientName, String uhid, String encounterNumber) {
         return MedicationOrderResponse.builder()
                 .medicationOrderId(order.getId())
                 .clinicalOrderId(order.getClinicalOrderId())
@@ -70,6 +70,7 @@ public class PharmacyMapper {
                 .encounterNumber(encounterNumber)
                 .patientId(order.getPatientId())
                 .patientName(patientName)
+                .uhid(uhid)
                 .hospitalId(order.getHospitalId())
                 .branchId(order.getBranchId())
                 .status(order.getStatus())

@@ -154,6 +154,32 @@ class IpdIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.roundType").value("NURSING"));
 
+        CreateIpdBedRequest bed2Request = new CreateIpdBedRequest();
+        bed2Request.setRoomId(UUID.fromString(roomId));
+        bed2Request.setBedNumber("A2");
+
+        MvcResult bed2Result = mockMvc.perform(post("/api/v1/ipd/beds")
+                        .header("Authorization", IntegrationTestAuth.bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(bed2Request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String bed2Id = objectMapper.readTree(bed2Result.getResponse().getContentAsString())
+                .path("data").path("bedId").asText();
+
+        var transferRequest = new com.health360.ipd.presentation.dto.request.TransferIpdBedRequest();
+        transferRequest.setBedId(UUID.fromString(bed2Id));
+        transferRequest.setReason("Closer to nursing station");
+
+        mockMvc.perform(post("/api/v1/ipd/admissions/" + admissionId + "/transfer-bed")
+                        .header("Authorization", IntegrationTestAuth.bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(transferRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.bedId").value(bed2Id))
+                .andExpect(jsonPath("$.data.status").value("ADMITTED"));
+
         DischargeIpdPatientRequest dischargeRequest = new DischargeIpdPatientRequest();
         dischargeRequest.setSummaryText("Recovered well, fit for discharge");
         dischargeRequest.setFollowUpPlan("OPD follow-up in 1 week");

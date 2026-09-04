@@ -127,14 +127,53 @@ const AdminDashboardPage = lazy(() =>
 const LabDashboardPage = lazy(() =>
   import('@/features/lab/pages/LabDashboardPage').then((m) => ({ default: m.LabDashboardPage })),
 );
+const LabWorklistPage = lazy(() =>
+  import('@/features/lab/pages/LabWorklistPage').then((m) => ({ default: m.LabWorklistPage })),
+);
+const LabOrderDetailPage = lazy(() =>
+  import('@/features/lab/pages/LabOrderDetailPage').then((m) => ({ default: m.LabOrderDetailPage })),
+);
+const LabCatalogPage = lazy(() =>
+  import('@/features/lab/pages/LabCatalogPage').then((m) => ({ default: m.LabCatalogPage })),
+);
 const RadiologyDashboardPage = lazy(() =>
   import('@/features/radiology/pages/RadiologyDashboardPage').then((m) => ({ default: m.RadiologyDashboardPage })),
+);
+const RadiologyWorklistPage = lazy(() =>
+  import('@/features/radiology/pages/RadiologyWorklistPage').then((m) => ({ default: m.RadiologyWorklistPage })),
+);
+const ImagingOrderDetailPage = lazy(() =>
+  import('@/features/radiology/pages/ImagingOrderDetailPage').then((m) => ({ default: m.ImagingOrderDetailPage })),
+);
+const RadiologyCatalogPage = lazy(() =>
+  import('@/features/radiology/pages/RadiologyCatalogPage').then((m) => ({ default: m.RadiologyCatalogPage })),
 );
 const OtDashboardPage = lazy(() =>
   import('@/features/ot/pages/OtDashboardPage').then((m) => ({ default: m.OtDashboardPage })),
 );
+const OtWorklistPage = lazy(() =>
+  import('@/features/ot/pages/OtWorklistPage').then((m) => ({ default: m.OtWorklistPage })),
+);
+const OtProcedureDetailPage = lazy(() =>
+  import('@/features/ot/pages/OtProcedureDetailPage').then((m) => ({ default: m.OtProcedureDetailPage })),
+);
+const OtCatalogPage = lazy(() =>
+  import('@/features/ot/pages/OtCatalogPage').then((m) => ({ default: m.OtCatalogPage })),
+);
 const PharmacyDashboardPage = lazy(() =>
   import('@/features/pharmacy/pages/PharmacyDashboardPage').then((m) => ({ default: m.PharmacyDashboardPage })),
+);
+const PharmacyWorklistPage = lazy(() =>
+  import('@/features/pharmacy/pages/PharmacyWorklistPage').then((m) => ({ default: m.PharmacyWorklistPage })),
+);
+const MedicationOrderDetailPage = lazy(() =>
+  import('@/features/pharmacy/pages/MedicationOrderDetailPage').then((m) => ({ default: m.MedicationOrderDetailPage })),
+);
+const PharmacyRequestsPage = lazy(() =>
+  import('@/features/pharmacy/pages/PharmacyRequestsPage').then((m) => ({ default: m.PharmacyRequestsPage })),
+);
+const PharmacyCatalogPage = lazy(() =>
+  import('@/features/pharmacy/pages/PharmacyCatalogPage').then((m) => ({ default: m.PharmacyCatalogPage })),
 );
 const HospitalStaffPage = lazy(() =>
   import('@/features/hospital/pages/HospitalStaffPage').then((m) => ({ default: m.HospitalStaffPage })),
@@ -171,8 +210,23 @@ const PatientReceiptPage = lazy(() =>
 const NursingDashboardPage = lazy(() =>
   import('@/features/nursing/pages/NursingDashboardPage').then((m) => ({ default: m.NursingDashboardPage })),
 );
+const NursingWardBoardPage = lazy(() =>
+  import('@/features/nursing/pages/NursingWardBoardPage').then((m) => ({ default: m.NursingWardBoardPage })),
+);
+const NursingAdmissionPage = lazy(() =>
+  import('@/features/nursing/pages/NursingAdmissionPage').then((m) => ({ default: m.NursingAdmissionPage })),
+);
+const NursingMarPage = lazy(() =>
+  import('@/features/nursing/pages/NursingMarPage').then((m) => ({ default: m.NursingMarPage })),
+);
+const NursingMarOrderPage = lazy(() =>
+  import('@/features/nursing/pages/NursingMarOrderPage').then((m) => ({ default: m.NursingMarOrderPage })),
+);
 const IcuNurseDashboardPage = lazy(() =>
   import('@/features/icu-nurse/pages/IcuNurseDashboardPage').then((m) => ({ default: m.IcuNurseDashboardPage })),
+);
+const IcuNurseStayPage = lazy(() =>
+  import('@/features/icu-nurse/pages/IcuNurseStayPage').then((m) => ({ default: m.IcuNurseStayPage })),
 );
 const LabValuesPage = lazy(() =>
   import('@/features/patient/pages/LabValuesPage').then((m) => ({ default: m.LabValuesPage })),
@@ -206,6 +260,12 @@ const HospitalSubscriptionPage = lazy(() =>
 );
 const DoctorOpdPage = lazy(() =>
   import('@/features/doctor/pages/DoctorOpdPage').then((m) => ({ default: m.DoctorOpdPage })),
+);
+const DoctorIpdPage = lazy(() =>
+  import('@/features/doctor/pages/DoctorIpdPage').then((m) => ({ default: m.DoctorIpdPage })),
+);
+const DoctorIpdAdmissionPage = lazy(() =>
+  import('@/features/doctor/pages/DoctorIpdAdmissionPage').then((m) => ({ default: m.DoctorIpdAdmissionPage })),
 );
 const DoctorEncounterDetailPage = lazy(() =>
   import('@/features/doctor/pages/DoctorEncounterDetailPage').then((m) => ({ default: m.DoctorEncounterDetailPage })),
@@ -394,6 +454,8 @@ export function AppRouter() {
           />
           <Route path="appointments/:appointmentId" element={<Navigate to="/doctor/opd" replace />} />
           <Route path="opd" element={<LazyPage><DoctorOpdPage /></LazyPage>} />
+          <Route path="ipd" element={<LazyPage><DoctorIpdPage /></LazyPage>} />
+          <Route path="ipd/admissions/:admissionId" element={<LazyPage><DoctorIpdAdmissionPage /></LazyPage>} />
           <Route path="encounters/:encounterId" element={<LazyPage><DoctorEncounterDetailPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
           <Route path="settings/notifications" element={<LazyPage><NotificationPreferencesPage /></LazyPage>} />
@@ -443,23 +505,36 @@ export function AppRouter() {
           <Route path="settings/notifications" element={<LazyPage><NotificationPreferencesPage /></LazyPage>} />
         </Route>
         <Route path="/lab" element={<ProtectedRoute><RoleRoute role="LAB_TECHNICIAN"><LabPortalLayout /></RoleRoute></ProtectedRoute>}>
-          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route index element={<Navigate to="worklist" replace />} />
           <Route path="dashboard" element={<LazyPage><LabDashboardPage /></LazyPage>} />
+          <Route path="worklist" element={<LazyPage><LabWorklistPage /></LazyPage>} />
+          <Route path="orders/:labOrderId" element={<LazyPage><LabOrderDetailPage /></LazyPage>} />
+          <Route path="catalog" element={<LazyPage><LabCatalogPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
         </Route>
         <Route path="/radiology" element={<ProtectedRoute><RoleRoute role="RADIOLOGY_TECHNICIAN"><RadiologyPortalLayout /></RoleRoute></ProtectedRoute>}>
-          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route index element={<Navigate to="worklist" replace />} />
           <Route path="dashboard" element={<LazyPage><RadiologyDashboardPage /></LazyPage>} />
+          <Route path="worklist" element={<LazyPage><RadiologyWorklistPage /></LazyPage>} />
+          <Route path="orders/:imagingOrderId" element={<LazyPage><ImagingOrderDetailPage /></LazyPage>} />
+          <Route path="catalog" element={<LazyPage><RadiologyCatalogPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
         </Route>
         <Route path="/ot" element={<ProtectedRoute><RoleRoute role="OT_COORDINATOR"><OtPortalLayout /></RoleRoute></ProtectedRoute>}>
-          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route index element={<Navigate to="worklist" replace />} />
           <Route path="dashboard" element={<LazyPage><OtDashboardPage /></LazyPage>} />
+          <Route path="worklist" element={<LazyPage><OtWorklistPage /></LazyPage>} />
+          <Route path="procedures/:procedureId" element={<LazyPage><OtProcedureDetailPage /></LazyPage>} />
+          <Route path="catalog" element={<LazyPage><OtCatalogPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
         </Route>
         <Route path="/pharmacy" element={<ProtectedRoute><RoleRoute role="PHARMACIST"><PharmacyPortalLayout /></RoleRoute></ProtectedRoute>}>
-          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route index element={<Navigate to="worklist" replace />} />
           <Route path="dashboard" element={<LazyPage><PharmacyDashboardPage /></LazyPage>} />
+          <Route path="worklist" element={<LazyPage><PharmacyWorklistPage /></LazyPage>} />
+          <Route path="orders/:medicationOrderId" element={<LazyPage><MedicationOrderDetailPage /></LazyPage>} />
+          <Route path="requests" element={<LazyPage><PharmacyRequestsPage /></LazyPage>} />
+          <Route path="catalog" element={<LazyPage><PharmacyCatalogPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
         </Route>
         <Route path="/reception" element={<ProtectedRoute><RoleRoute role="RECEPTIONIST"><ReceptionPortalLayout /></RoleRoute></ProtectedRoute>}>
@@ -473,13 +548,18 @@ export function AppRouter() {
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
         </Route>
         <Route path="/nursing" element={<ProtectedRoute><RoleRoute role="NURSE"><NursingPortalLayout /></RoleRoute></ProtectedRoute>}>
-          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route index element={<Navigate to="ward" replace />} />
+          <Route path="ward" element={<LazyPage><NursingWardBoardPage /></LazyPage>} />
+          <Route path="admissions/:admissionId" element={<LazyPage><NursingAdmissionPage /></LazyPage>} />
+          <Route path="mar" element={<LazyPage><NursingMarPage /></LazyPage>} />
+          <Route path="mar/:medicationOrderId" element={<LazyPage><NursingMarOrderPage /></LazyPage>} />
           <Route path="dashboard" element={<LazyPage><NursingDashboardPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
         </Route>
         <Route path="/icu-nurse" element={<ProtectedRoute><RoleRoute role="ICU_NURSE"><IcuNursePortalLayout /></RoleRoute></ProtectedRoute>}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<LazyPage><IcuNurseDashboardPage /></LazyPage>} />
+          <Route path="stays/:stayId" element={<LazyPage><IcuNurseStayPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
         </Route>
       </Routes>

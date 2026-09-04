@@ -3,7 +3,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 
 const navItems: PortalNavItem[] = [
-  { section: 'Navigation', label: 'ICU', path: '/icu-nurse/dashboard', icon: <MonitorHeartOutlinedIcon /> },
+  { section: 'Navigation', label: 'ICU board', path: '/icu-nurse/dashboard', icon: <MonitorHeartOutlinedIcon /> },
   { section: 'Account', label: 'Settings', path: '/icu-nurse/settings/account', icon: <SettingsOutlinedIcon /> },
 ];
 

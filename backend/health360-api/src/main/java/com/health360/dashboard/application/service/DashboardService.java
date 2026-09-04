@@ -8,6 +8,7 @@ import com.health360.doctor.infrastructure.persistence.entity.DoctorProfileEntit
 import com.health360.doctor.infrastructure.persistence.repository.DoctorProfileRepository;
 import com.health360.doctor.infrastructure.persistence.repository.HospitalAssociationRepository;
 import com.health360.hospital.infrastructure.persistence.repository.*;
+import com.health360.iam.infrastructure.persistence.repository.UserRepository;
 import com.health360.icu.infrastructure.persistence.repository.IcuBedRepository;
 import com.health360.icu.infrastructure.persistence.repository.IcuStayRepository;
 import com.health360.ipd.infrastructure.persistence.repository.IpdAdmissionRepository;
@@ -20,6 +21,8 @@ import com.health360.patient.infrastructure.persistence.entity.PatientProfileEnt
 import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.pharmacy.infrastructure.persistence.repository.MedicationOrderRepository;
 import com.health360.radiology.infrastructure.persistence.repository.ImagingOrderRepository;
+import com.health360.review.infrastructure.persistence.repository.DoctorReviewRepository;
+import com.health360.review.infrastructure.persistence.repository.HospitalReviewRepository;
 import com.health360.scheduling.infrastructure.persistence.repository.AppointmentRepository;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -57,6 +60,28 @@ public class DashboardService {
     private final DoctorProfileRepository doctorProfileRepository;
     private final PatientProfileRepository patientProfileRepository;
     private final AppointmentRepository appointmentRepository;
+    private final UserRepository userRepository;
+    private final HospitalRepository hospitalRepository;
+    private final DoctorReviewRepository doctorReviewRepository;
+    private final HospitalReviewRepository hospitalReviewRepository;
+
+    @Transactional(readOnly = true)
+    public AdminDashboardResponse getAdminDashboard(UserPrincipal principal) {
+        UUID tenantId = principal.getTenantId();
+        long visibleDoctor = doctorReviewRepository.countByTenantIdAndVisibleAndDeletedAtIsNull(tenantId, true);
+        long visibleHospital = hospitalReviewRepository.countByTenantIdAndVisibleAndDeletedAtIsNull(tenantId, true);
+        long hiddenDoctor = doctorReviewRepository.countByTenantIdAndVisibleAndDeletedAtIsNull(tenantId, false);
+        long hiddenHospital = hospitalReviewRepository.countByTenantIdAndVisibleAndDeletedAtIsNull(tenantId, false);
+
+        return AdminDashboardResponse.builder()
+                .pendingVerifications(doctorProfileRepository
+                        .countByTenantIdAndVerificationStatusAndDeletedAtIsNull(tenantId, "PENDING_VERIFICATION"))
+                .registeredUsers(userRepository.countByTenantIdAndDeletedAtIsNull(tenantId))
+                .visibleReviews(visibleDoctor + visibleHospital)
+                .hiddenReviews(hiddenDoctor + hiddenHospital)
+                .hospitalCount(hospitalRepository.countByTenantIdAndDeletedAtIsNull(tenantId))
+                .build();
+    }
 
     @Transactional(readOnly = true)
     public HospitalDashboardResponse getHospitalDashboard(UserPrincipal principal, UUID hospitalId, UUID branchId) {

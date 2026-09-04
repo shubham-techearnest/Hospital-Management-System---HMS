@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface IpdDischargeSummaryRepository extends JpaRepository<IpdDischargeSummaryEntity, UUID> {
 
     Optional<IpdDischargeSummaryEntity> findByAdmissionIdAndDeletedAtIsNull(UUID admissionId);
+
+    boolean existsByEncounterIdAndDeletedAtIsNull(UUID encounterId);
 }

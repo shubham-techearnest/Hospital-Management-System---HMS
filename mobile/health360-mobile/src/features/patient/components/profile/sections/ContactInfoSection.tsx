@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Checkbox, Text, TextInput } from 'react-native-paper';
+import { Checkbox, HelperText, Text, TextInput } from 'react-native-paper';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SaveButton } from '@/features/patient/components/profile/SaveButton';
@@ -10,6 +10,7 @@ import { contactInfoSchema, type ContactInfoForm } from '@/features/patient/sche
 import { sanitizeContactPayload } from '@/features/patient/utils/profileEnumMapper';
 import { PhoneField } from '@/shared/phone/PhoneField';
 import { getApiErrorMessage } from '@/shared/utils/helpers';
+import { liveValidationOptions } from '@/shared/validation/formConfig';
 
 const emptyAddress = { line1: '', line2: '', city: '', state: '', pincode: '', country: 'IN' };
 
@@ -20,6 +21,7 @@ export function ContactInfoSection({ onSaveSuccess, onSaveError }: ProfileSectio
   const [saved, setSaved] = useState(false);
 
   const { control, handleSubmit, reset, watch, formState: { isSubmitting } } = useForm<ContactInfoForm>({
+    ...liveValidationOptions,
     resolver: zodResolver(contactInfoSchema),
     defaultValues: {
       primaryPhone: '',
@@ -66,8 +68,20 @@ export function ContactInfoSection({ onSaveSuccess, onSaveError }: ProfileSectio
           key={`${prefix}-${key}`}
           control={control}
           name={`${prefix}.${key}`}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput label={key} mode="outlined" value={value ?? ''} onBlur={onBlur} onChangeText={onChange} />
+          render={({ field: { onChange, onBlur, value }, fieldState }) => (
+            <View>
+              <TextInput
+                label={key}
+                mode="outlined"
+                value={value ?? ''}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                error={!!fieldState.error}
+              />
+              <HelperText type="error" visible={!!fieldState.error}>
+                {fieldState.error?.message}
+              </HelperText>
+            </View>
           )}
         />
       ))}

@@ -33,8 +33,15 @@ const authSlice = createSlice({
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
     },
+    updateUser: (state, action: PayloadAction<Partial<AuthUser>>) => {
+      if (!state.user) {
+        return;
+      }
+      state.user = { ...state.user, ...action.payload };
+      localStorage.setItem('user', JSON.stringify(state.user));
+    },
   },
 });
 
-export const { setCredentials, clearCredentials } = authSlice.actions;
+export const { setCredentials, clearCredentials, updateUser } = authSlice.actions;
 export const authReducer = authSlice.reducer;

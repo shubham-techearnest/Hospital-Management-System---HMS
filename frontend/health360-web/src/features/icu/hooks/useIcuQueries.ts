@@ -8,8 +8,11 @@ import {
   createIcuUnit,
   dischargeFromIcu,
   addIcuMonitoringRecord,
+  getIcuStay,
   listIcuBeds,
   listIcuEquipment,
+  listIcuEquipmentAssignments,
+  listIcuMonitoringRecords,
   listIcuStays,
   listIcuUnits,
   releaseIcuEquipment,
@@ -21,6 +24,9 @@ export const icuKeys = {
     ['icu', 'beds', hospitalId, branchId, status ?? 'ALL'] as const,
   stays: (hospitalId: string, branchId: string, page: number, status?: string) =>
     ['icu', 'stays', hospitalId, branchId, page, status ?? 'ALL'] as const,
+  stay: (stayId: string) => ['icu', 'stay', stayId] as const,
+  monitoring: (stayId: string) => ['icu', 'monitoring', stayId] as const,
+  equipmentAssignments: (stayId: string) => ['icu', 'equipment-assignments', stayId] as const,
   equipment: (hospitalId: string, branchId: string) => ['icu', 'equipment', hospitalId, branchId] as const,
 };
 
@@ -58,6 +64,33 @@ export function useIcuStays(
     queryKey: icuKeys.stays(hospitalId ?? '', branchId ?? '', page, status),
     queryFn: () => listIcuStays(hospitalId!, branchId!, page, 20, status),
     enabled: Boolean(hospitalId && branchId),
+    retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function useIcuStay(stayId?: string) {
+  return useQuery({
+    queryKey: icuKeys.stay(stayId ?? ''),
+    queryFn: () => getIcuStay(stayId!),
+    enabled: Boolean(stayId),
+    retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function useIcuMonitoringRecords(stayId?: string) {
+  return useQuery({
+    queryKey: icuKeys.monitoring(stayId ?? ''),
+    queryFn: () => listIcuMonitoringRecords(stayId!),
+    enabled: Boolean(stayId),
+    retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function useIcuEquipmentAssignments(stayId?: string) {
+  return useQuery({
+    queryKey: icuKeys.equipmentAssignments(stayId ?? ''),
+    queryFn: () => listIcuEquipmentAssignments(stayId!),
+    enabled: Boolean(stayId),
     retry: (_, error) => isRetryableError(error),
   });
 }
@@ -109,7 +142,11 @@ export function useIcuMutations(hospitalId: string, branchId: string) {
         payload?: Record<string, unknown>;
         notes?: string;
       }) => addIcuMonitoringRecord(stayId, { recordType, payload, notes }),
-      onSuccess: invalidateAll,
+      onSuccess: (_data, vars) => {
+        invalidateAll();
+        qc.invalidateQueries({ queryKey: icuKeys.monitoring(vars.stayId) });
+        qc.invalidateQueries({ queryKey: icuKeys.stay(vars.stayId) });
+      },
     }),
   };
 }

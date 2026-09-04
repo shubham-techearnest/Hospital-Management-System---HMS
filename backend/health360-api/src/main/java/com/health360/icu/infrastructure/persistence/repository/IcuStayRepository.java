@@ -18,6 +18,8 @@ public interface IcuStayRepository extends JpaRepository<IcuStayEntity, UUID> {
     Page<IcuStayEntity> findByTenantIdAndHospitalIdAndBranchIdAndStatusAndDeletedAtIsNullOrderByAdmittedAtDesc(
             UUID tenantId, UUID hospitalId, UUID branchId, String status, Pageable pageable);
 
+    boolean existsByEncounterIdAndDeletedAtIsNull(UUID encounterId);
+
     long countByTenantIdAndHospitalIdAndBranchIdAndStatusAndDeletedAtIsNull(
             UUID tenantId, UUID hospitalId, UUID branchId, String status);
 }

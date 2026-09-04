@@ -1,15 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import {
+  addIpdRound,
   admitPatient,
   createIpdBed,
   createIpdRoom,
   createIpdWard,
   dischargePatient,
+  getIpdAdmission,
   listIpdAdmissions,
   listIpdBeds,
   listIpdRooms,
+  listIpdRounds,
   listIpdWards,
+  transferIpdBed,
 } from '../api/ipdApi';
 
 export const ipdKeys = {
@@ -17,8 +21,10 @@ export const ipdKeys = {
   rooms: (wardId: string) => ['ipd', 'rooms', wardId] as const,
   beds: (hospitalId: string, branchId: string, status?: string) =>
     ['ipd', 'beds', hospitalId, branchId, status ?? 'ALL'] as const,
-  admissions: (hospitalId: string, branchId: string, page: number, status?: string) =>
-    ['ipd', 'admissions', hospitalId, branchId, page, status ?? 'ALL'] as const,
+  admissions: (hospitalId: string, branchId: string, page: number, status?: string, size = 20) =>
+    ['ipd', 'admissions', hospitalId, branchId, page, status ?? 'ALL', size] as const,
+  admission: (admissionId: string) => ['ipd', 'admission', admissionId] as const,
+  rounds: (admissionId: string) => ['ipd', 'rounds', admissionId] as const,
 };
 
 function isRetryableError(error: unknown): boolean {
@@ -58,11 +64,30 @@ export function useIpdAdmissions(
   branchId?: string,
   page = 0,
   status?: string,
+  size = 20,
 ) {
   return useQuery({
-    queryKey: ipdKeys.admissions(hospitalId ?? '', branchId ?? '', page, status),
-    queryFn: () => listIpdAdmissions(hospitalId!, branchId!, page, 20, status),
+    queryKey: ipdKeys.admissions(hospitalId ?? '', branchId ?? '', page, status, size),
+    queryFn: () => listIpdAdmissions(hospitalId!, branchId!, page, size, status),
     enabled: Boolean(hospitalId && branchId),
+    retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function useIpdAdmission(admissionId?: string) {
+  return useQuery({
+    queryKey: ipdKeys.admission(admissionId ?? ''),
+    queryFn: () => getIpdAdmission(admissionId!),
+    enabled: Boolean(admissionId),
+    retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function useIpdRounds(admissionId?: string) {
+  return useQuery({
+    queryKey: ipdKeys.rounds(admissionId ?? ''),
+    queryFn: () => listIpdRounds(admissionId!),
+    enabled: Boolean(admissionId),
     retry: (_, error) => isRetryableError(error),
   });
 }
@@ -99,6 +124,28 @@ export function useIpdMutations(hospitalId: string, branchId: string) {
         followUpPlan?: string;
       }) => dischargePatient(admissionId, { summaryText, followUpPlan }),
       onSuccess: invalidateAll,
+    }),
+    transferBed: useMutation({
+      mutationFn: ({ admissionId, bedId, reason }: {
+        admissionId: string;
+        bedId: string;
+        reason?: string;
+      }) => transferIpdBed(admissionId, { bedId, reason }),
+      onSuccess: (_data, vars) => {
+        invalidateAll();
+        qc.invalidateQueries({ queryKey: ipdKeys.admission(vars.admissionId) });
+      },
+    }),
+    addRound: useMutation({
+      mutationFn: ({ admissionId, roundType, notes }: {
+        admissionId: string;
+        roundType: string;
+        notes: string;
+      }) => addIpdRound(admissionId, { roundType, notes }),
+      onSuccess: (_data, vars) => {
+        qc.invalidateQueries({ queryKey: ipdKeys.rounds(vars.admissionId) });
+        qc.invalidateQueries({ queryKey: ipdKeys.admission(vars.admissionId) });
+      },
     }),
   };
 }

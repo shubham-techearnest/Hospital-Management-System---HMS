@@ -57,13 +57,17 @@ public class OtMapper {
             OperationTheatreEntity theatre,
             OtScheduleEntity schedule,
             List<OtTeamMemberEntity> teamMembers,
-            List<OtNoteEntity> notes) {
+            List<OtNoteEntity> notes,
+            String patientName,
+            String uhid) {
         return OtProcedureResponse.builder()
                 .procedureId(procedure.getId())
                 .clinicalOrderItemId(procedure.getClinicalOrderItemId())
                 .clinicalOrderId(procedure.getClinicalOrderId())
                 .encounterId(procedure.getEncounterId())
                 .patientId(procedure.getPatientId())
+                .patientName(patientName)
+                .uhid(uhid)
                 .hospitalId(procedure.getHospitalId())
                 .branchId(procedure.getBranchId())
                 .theatreId(procedure.getTheatreId())

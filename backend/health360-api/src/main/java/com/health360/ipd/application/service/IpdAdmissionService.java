@@ -15,9 +15,12 @@ import com.health360.ipd.infrastructure.persistence.repository.*;
 import com.health360.ipd.presentation.dto.request.CreateIpdAdmissionRequest;
 import com.health360.ipd.presentation.dto.request.CreateIpdRoundRequest;
 import com.health360.ipd.presentation.dto.request.DischargeIpdPatientRequest;
+import com.health360.ipd.presentation.dto.request.TransferIpdBedRequest;
 import com.health360.ipd.presentation.dto.response.IpdAdmissionResponse;
 import com.health360.ipd.presentation.dto.response.IpdDischargeResponse;
 import com.health360.ipd.presentation.dto.response.IpdRoundResponse;
+import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
+import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -46,6 +49,7 @@ public class IpdAdmissionService {
     private final IpdFacilityService facilityService;
     private final IpdAccessService accessService;
     private final IpdMapper mapper;
+    private final PatientProfileRepository patientProfileRepository;
     private final AuditLogService auditLogService;
 
     @Transactional
@@ -117,7 +121,7 @@ public class IpdAdmissionService {
                 "IpdAdmission", savedAdmission.getId(),
                 Map.of("patientId", request.getPatientId().toString(), "bedId", bed.getId().toString()));
 
-        return mapper.toAdmissionResponse(savedAdmission, encounter, bed);
+        return toAdmissionResponse(principal.getTenantId(), savedAdmission, encounter, bed);
     }
 
     @Transactional(readOnly = true)
@@ -143,7 +147,7 @@ public class IpdAdmissionService {
         return page.map(admission -> {
             EncounterEntity encounter = requireEncounter(tenantId, admission.getEncounterId());
             IpdBedEntity bed = resolveActiveBed(tenantId, admission.getId());
-            return mapper.toAdmissionResponse(admission, encounter, bed);
+            return toAdmissionResponse(tenantId, admission, encounter, bed);
         });
     }
 
@@ -154,7 +158,7 @@ public class IpdAdmissionService {
         accessService.assertAdmissionScope(principal, admission);
         EncounterEntity encounter = requireEncounter(principal.getTenantId(), admission.getEncounterId());
         IpdBedEntity bed = resolveActiveBed(principal.getTenantId(), admission.getId());
-        return mapper.toAdmissionResponse(admission, encounter, bed);
+        return toAdmissionResponse(principal.getTenantId(), admission, encounter, bed);
     }
 
     @Transactional
@@ -258,6 +262,79 @@ public class IpdAdmissionService {
         return mapper.toDischargeResponse(savedSummary, admission, encounter);
     }
 
+    @Transactional
+    public IpdAdmissionResponse transferBed(
+            UserPrincipal principal, UUID admissionId, TransferIpdBedRequest request) {
+        accessService.assertCanManageAdmissions(principal);
+        UUID tenantId = principal.getTenantId();
+        IpdAdmissionEntity admission = requireAdmission(tenantId, admissionId);
+        accessService.assertAdmissionScope(principal, admission);
+
+        if (!AdmissionStatus.ADMITTED.name().equals(admission.getStatus())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Only active admissions can transfer beds");
+        }
+
+        IpdBedAssignmentEntity currentAssignment = bedAssignmentRepository
+                .findByAdmissionIdAndActiveTrueAndDeletedAtIsNull(admissionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Active bed assignment not found"));
+
+        if (currentAssignment.getBedId().equals(request.getBedId())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Patient is already on the selected bed");
+        }
+
+        IpdBedEntity targetBed = facilityService.requireAvailableBed(tenantId, request.getBedId());
+        IpdRoomEntity targetRoom = facilityService.requireRoom(tenantId, targetBed.getRoomId());
+        IpdWardEntity targetWard = facilityService.requireWard(tenantId, targetRoom.getWardId());
+
+        if (!targetWard.getHospitalId().equals(admission.getHospitalId())
+                || !targetWard.getBranchId().equals(admission.getBranchId())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Target bed must be in the same hospital branch");
+        }
+
+        if (bedAssignmentRepository.existsByBedIdAndActiveTrueAndDeletedAtIsNull(targetBed.getId())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                    "Target bed is already assigned");
+        }
+
+        IpdBedEntity currentBed = facilityService.requireBed(tenantId, currentAssignment.getBedId());
+        Instant now = Instant.now();
+
+        currentAssignment.setActive(false);
+        currentAssignment.setReleasedAt(now);
+        currentAssignment.setUpdatedBy(principal.getUserId());
+        bedAssignmentRepository.save(currentAssignment);
+        facilityService.releaseBed(currentBed, principal.getUserId());
+
+        IpdBedAssignmentEntity newAssignment = new IpdBedAssignmentEntity();
+        newAssignment.setTenantId(tenantId);
+        newAssignment.setAdmissionId(admissionId);
+        newAssignment.setBedId(targetBed.getId());
+        newAssignment.setAssignedAt(now);
+        newAssignment.setActive(true);
+        newAssignment.setCreatedBy(principal.getUserId());
+        newAssignment.setUpdatedBy(principal.getUserId());
+        bedAssignmentRepository.save(newAssignment);
+        facilityService.occupyBed(targetBed, principal.getUserId());
+
+        admission.setUpdatedBy(principal.getUserId());
+        admissionRepository.save(admission);
+
+        EncounterEntity encounter = requireEncounter(tenantId, admission.getEncounterId());
+
+        auditLogService.record(tenantId, principal.getUserId(), "IPD_BED_TRANSFERRED",
+                "IpdAdmission", admissionId,
+                Map.of(
+                        "fromBedId", currentBed.getId().toString(),
+                        "toBedId", targetBed.getId().toString(),
+                        "reason", trimToNull(request.getReason()) != null ? request.getReason().trim() : ""));
+
+        return toAdmissionResponse(tenantId, admission, encounter, targetBed);
+    }
+
     private IpdAdmissionEntity requireAdmission(UUID tenantId, UUID admissionId) {
         return admissionRepository.findByIdAndTenantIdAndDeletedAtIsNull(admissionId, tenantId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
@@ -274,6 +351,23 @@ public class IpdAdmissionService {
         return bedAssignmentRepository.findByAdmissionIdAndActiveTrueAndDeletedAtIsNull(admissionId)
                 .map(a -> facilityService.requireBed(tenantId, a.getBedId()))
                 .orElse(null);
+    }
+
+    private IpdAdmissionResponse toAdmissionResponse(
+            UUID tenantId,
+            IpdAdmissionEntity admission,
+            EncounterEntity encounter,
+            IpdBedEntity bed) {
+        IpdRoomEntity room = null;
+        IpdWardEntity ward = null;
+        if (bed != null) {
+            room = facilityService.requireRoom(tenantId, bed.getRoomId());
+            ward = facilityService.requireWard(tenantId, room.getWardId());
+        }
+        PatientProfileEntity patient = patientProfileRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(admission.getPatientId(), tenantId)
+                .orElse(null);
+        return mapper.toAdmissionResponse(admission, encounter, bed, room, ward, patient);
     }
 
     private RoundType parseRoundType(String value) {

@@ -131,6 +131,16 @@ public class IpdController {
         return ResponseEntity.ok(ApiResponse.ok(admissionService.listRounds(principal, admissionId)));
     }
 
+    @PostMapping("/admissions/{admissionId}/transfer-bed")
+    @PreAuthorize("hasAuthority('ipd:admission:write')")
+    public ResponseEntity<ApiResponse<IpdAdmissionResponse>> transferBed(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID admissionId,
+            @Valid @RequestBody TransferIpdBedRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                admissionService.transferBed(principal, admissionId, request)));
+    }
+
     @PostMapping("/admissions/{admissionId}/discharge")
     @PreAuthorize("hasAuthority('ipd:discharge:write')")
     public ResponseEntity<ApiResponse<IpdDischargeResponse>> dischargePatient(

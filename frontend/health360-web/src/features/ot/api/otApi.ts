@@ -17,6 +17,8 @@ export interface OtWorklistItem {
   clinicalOrderId: string;
   encounterId: string;
   patientId: string;
+  patientName?: string;
+  uhid?: string;
   orderNumber?: string;
   itemName: string;
   itemCode?: string;
@@ -54,6 +56,8 @@ export interface OtProcedure {
   clinicalOrderId: string;
   encounterId: string;
   patientId: string;
+  patientName?: string;
+  uhid?: string;
   hospitalId: string;
   branchId: string;
   theatreId?: string;

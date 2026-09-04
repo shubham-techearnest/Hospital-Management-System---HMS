@@ -12,6 +12,8 @@ public class MedicationWorklistItemResponse {
     UUID clinicalOrderId;
     UUID encounterId;
     UUID patientId;
+    String patientName;
+    String uhid;
     String orderNumber;
     Instant orderedAt;
     int itemCount;

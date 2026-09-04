@@ -6,7 +6,7 @@ import { ScreenContainer } from '@/shared/components/ScreenContainer';
 import { ScreenIntro } from '@/shared/components/ScreenIntro';
 import { StatCard } from '@/shared/components/StatCard';
 import { AppCard } from '@/shared/components/AppCard';
-import { useAdminUsers, usePendingVerifications } from '@/features/admin/hooks/useAdminQueries';
+import { useAdminDashboard } from '@/features/admin/hooks/useAdminQueries';
 import { appColors, layout } from '@/shared/theme';
 import type { AdminStackParamList, AdminTabParamList } from '@/navigation/types';
 import type { CompositeNavigationProp } from '@react-navigation/native';
@@ -19,12 +19,12 @@ type Nav = CompositeNavigationProp<
 
 export function AdminHomeScreen() {
   const navigation = useNavigation<Nav>();
-  const { data: usersData, isLoading: usersLoading } = useAdminUsers({ page: 0, size: 1 });
-  const { data: verificationsData, isLoading: verificationsLoading } = usePendingVerifications();
+  const { data: dashboard, isLoading } = useAdminDashboard();
 
-  const totalUsers = usersLoading ? '—' : (usersData?.totalElements ?? 0);
-  const pendingVerifications = verificationsLoading ? '—' : (verificationsData?.totalElements ?? 0);
-  const loading = usersLoading || verificationsLoading;
+  const totalUsers = isLoading ? '—' : (dashboard?.registeredUsers ?? 0);
+  const pendingVerifications = isLoading ? '—' : (dashboard?.pendingVerifications ?? 0);
+  const visibleReviews = isLoading ? '—' : (dashboard?.visibleReviews ?? 0);
+  const hospitalCount = isLoading ? '—' : (dashboard?.hospitalCount ?? 0);
 
   return (
     <ScreenContainer>
@@ -48,12 +48,39 @@ export function AdminHomeScreen() {
         />
       </View>
 
+      <View style={styles.statsGrid}>
+        <StatCard
+          label="Visible reviews"
+          value={visibleReviews}
+          hint="Published patient reviews"
+          icon="comment-text-outline"
+          onPress={() => navigation.navigate('ReviewModeration')}
+        />
+        <StatCard
+          label="Hospitals"
+          value={hospitalCount}
+          hint="Onboarded facilities"
+          icon="hospital-building"
+          onPress={() => navigation.navigate('HospitalsList')}
+        />
+      </View>
+
       <Text variant="titleMedium" style={styles.sectionTitle}>Quick actions</Text>
+
+      <AppCard style={styles.actionCard}>
+        <Text variant="titleSmall" style={styles.actionTitle}>Hospitals</Text>
+        <Text variant="bodyMedium" style={styles.actionBody}>
+          Create facilities, change plans, invite doctors, and update hospital status.
+        </Text>
+        <Button mode="contained" icon="hospital-building" onPress={() => navigation.navigate('HospitalsList')} style={styles.actionButton}>
+          Open hospitals
+        </Button>
+      </AppCard>
 
       <AppCard style={styles.actionCard}>
         <Text variant="titleSmall" style={styles.actionTitle}>User management</Text>
         <Text variant="bodyMedium" style={styles.actionBody}>
-          Search users by email or name, review roles, and update account status.
+          Search users by email, name, role, or status, and update account status.
         </Text>
         <Button mode="contained" icon="account-search" onPress={() => navigation.navigate('Users')} style={styles.actionButton}>
           Open users
@@ -71,6 +98,26 @@ export function AdminHomeScreen() {
       </AppCard>
 
       <AppCard style={styles.actionCard}>
+        <Text variant="titleSmall" style={styles.actionTitle}>Subscription plans</Text>
+        <Text variant="bodyMedium" style={styles.actionBody}>
+          Review plan catalog pricing and edit doctor or usage limits.
+        </Text>
+        <Button mode="contained" icon="clipboard-list-outline" onPress={() => navigation.navigate('Plans')} style={styles.actionButton}>
+          Open plans
+        </Button>
+      </AppCard>
+
+      <AppCard style={styles.actionCard}>
+        <Text variant="titleSmall" style={styles.actionTitle}>Audit logs</Text>
+        <Text variant="bodyMedium" style={styles.actionBody}>
+          Search recent platform actions by type for support and compliance.
+        </Text>
+        <Button mode="outlined" icon="clipboard-text-clock-outline" onPress={() => navigation.navigate('AuditLogs')} style={styles.actionButton}>
+          Open audit logs
+        </Button>
+      </AppCard>
+
+      <AppCard style={styles.actionCard}>
         <Text variant="titleSmall" style={styles.actionTitle}>Review moderation</Text>
         <Text variant="bodyMedium" style={styles.actionBody}>
           Hide or remove inappropriate doctor and hospital reviews.
@@ -80,7 +127,7 @@ export function AdminHomeScreen() {
         </Button>
       </AppCard>
 
-      {loading ? <ActivityIndicator style={styles.loader} /> : null}
+      {isLoading ? <ActivityIndicator style={styles.loader} /> : null}
     </ScreenContainer>
   );
 }
@@ -89,12 +136,13 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     gap: layout.stackGap,
-    marginBottom: layout.sectionGap,
+    marginBottom: layout.stackGap,
   },
   sectionTitle: {
     fontWeight: '600',
     color: appColors.textPrimary,
     marginBottom: layout.stackGap,
+    marginTop: layout.stackGap,
   },
   actionCard: {
     marginBottom: layout.stackGap,

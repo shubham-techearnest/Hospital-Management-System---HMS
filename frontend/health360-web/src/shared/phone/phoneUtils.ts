@@ -84,15 +84,47 @@ export function toE164(dialCode: string, nationalNumber: string): string {
   return `+${code}${national}`;
 }
 
+export function expectedNationalLength(iso: string): number {
+  return getCountryByIso(iso)?.nationalLength ?? 10;
+}
+
 export function isValidNationalNumber(iso: string, nationalNumber: string): boolean {
   const country = getCountryByIso(iso);
   const digits = digitsOnly(nationalNumber);
   if (!country) {
     return digits.length >= 6 && digits.length <= 14;
   }
-  // Allow slight variance (±1) for some regions
-  return digits.length >= Math.max(6, country.nationalLength - 1)
-    && digits.length <= country.nationalLength + 1;
+  if (digits.length !== country.nationalLength) {
+    return false;
+  }
+  // India mobile numbers start with 6–9
+  if (country.iso === 'IN') {
+    return /^[6-9]\d{9}$/.test(digits);
+  }
+  return true;
+}
+
+export function phoneValidationMessage(value: string): string | null {
+  const trimmed = value?.trim() ?? '';
+  if (!trimmed) {
+    return 'Phone is required';
+  }
+  const parsed = parsePhone(trimmed);
+  const digits = digitsOnly(parsed.nationalNumber);
+  const expected = expectedNationalLength(parsed.iso);
+  if (digits.length < expected) {
+    return `Enter ${expected}-digit phone number`;
+  }
+  if (digits.length > expected) {
+    return `Phone number must be exactly ${expected} digits`;
+  }
+  if (parsed.iso === 'IN' && !/^[6-9]/.test(digits)) {
+    return 'Indian mobile numbers must start with 6, 7, 8, or 9';
+  }
+  if (!isValidE164(trimmed)) {
+    return 'Enter a valid phone number with country code';
+  }
+  return null;
 }
 
 export function isValidE164(value: string): boolean {

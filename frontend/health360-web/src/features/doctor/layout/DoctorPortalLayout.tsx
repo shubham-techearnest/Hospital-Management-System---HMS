@@ -6,6 +6,7 @@ import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlin
 import LocalHospitalOutlinedIcon from '@mui/icons-material/LocalHospitalOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined';
+import AirlineSeatFlatOutlinedIcon from '@mui/icons-material/AirlineSeatFlatOutlined';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { useDoctorProfile } from '../hooks/useDoctorQueries';
@@ -13,6 +14,7 @@ import { useDoctorProfile } from '../hooks/useDoctorQueries';
 const navItems: PortalNavItem[] = [
   { section: 'Navigation', label: 'Overview', path: '/doctor/dashboard', icon: <DashboardOutlinedIcon /> },
   { section: 'Navigation', label: 'OPD', path: '/doctor/opd', icon: <MedicalServicesOutlinedIcon /> },
+  { section: 'Navigation', label: 'IPD rounds', path: '/doctor/ipd', icon: <AirlineSeatFlatOutlinedIcon /> },
   { section: 'Navigation', label: 'Schedule', path: '/doctor/schedule', icon: <EventAvailableOutlinedIcon /> },
   { section: 'Profile', label: 'Profile', path: '/doctor/profile', icon: <PersonOutlinedIcon /> },
   { section: 'Profile', label: 'Verification', path: '/doctor/verification', icon: <VerifiedUserOutlinedIcon /> },

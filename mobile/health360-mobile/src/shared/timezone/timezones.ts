@@ -1,19 +1,19 @@
-/** IANA timezone + locale helpers with auto-detect. */
+/** Curated major IANA timezones for account / hospital settings. */
 
-const FALLBACK_TIMEZONES = [
+export const MAJOR_TIMEZONES = [
   'Asia/Kolkata',
   'Asia/Dubai',
-  'Asia/Singapore',
-  'Asia/Tokyo',
-  'Asia/Shanghai',
-  'Asia/Hong_Kong',
+  'Asia/Riyadh',
   'Asia/Karachi',
   'Asia/Dhaka',
   'Asia/Colombo',
   'Asia/Kathmandu',
   'Asia/Bangkok',
+  'Asia/Singapore',
   'Asia/Jakarta',
-  'Asia/Riyadh',
+  'Asia/Hong_Kong',
+  'Asia/Shanghai',
+  'Asia/Tokyo',
   'Europe/London',
   'Europe/Paris',
   'Europe/Berlin',
@@ -28,6 +28,7 @@ const FALLBACK_TIMEZONES = [
   'Australia/Melbourne',
   'Pacific/Auckland',
   'Africa/Johannesburg',
+  'Africa/Cairo',
   'UTC',
 ] as const;
 
@@ -42,30 +43,26 @@ export const APP_LOCALES = [
   { code: 'en-AU', label: 'English (Australia)' },
 ] as const;
 
-let cachedTimezones: string[] | null = null;
-
 export function listTimezones(): string[] {
-  if (cachedTimezones) return cachedTimezones;
-  try {
-    const intlWithZones = Intl as typeof Intl & {
-      supportedValuesOf?: (key: string) => string[];
-    };
-    if (typeof intlWithZones.supportedValuesOf === 'function') {
-      cachedTimezones = intlWithZones.supportedValuesOf('timeZone');
-      return cachedTimezones;
-    }
-  } catch {
-    // ignore
+  return [...MAJOR_TIMEZONES];
+}
+
+/** Options for pickers — includes current value if it is a legacy non-major zone. */
+export function listTimezoneOptions(currentValue?: string | null): string[] {
+  const majors = listTimezones();
+  const current = currentValue?.trim();
+  if (current && !majors.includes(current)) {
+    return [current, ...majors];
   }
-  cachedTimezones = [...FALLBACK_TIMEZONES];
-  return cachedTimezones;
+  return majors;
 }
 
 export function detectTimezone(): string {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (tz && listTimezones().includes(tz)) return tz;
-    if (tz) return tz;
+    if (tz && (MAJOR_TIMEZONES as readonly string[]).includes(tz)) {
+      return tz;
+    }
   } catch {
     // ignore
   }
@@ -74,8 +71,8 @@ export function detectTimezone(): string {
 
 export function isValidTimezone(value: string): boolean {
   if (!value) return false;
-  if (listTimezones().includes(value)) return true;
-  // Accept IANA-style ids even if the runtime list is a fallback subset
+  if ((MAJOR_TIMEZONES as readonly string[]).includes(value)) return true;
+  // Accept legacy / device IANA ids so existing profiles still validate
   return value === 'UTC' || /^[A-Za-z_]+\/[A-Za-z0-9_+\-]+(?:\/[A-Za-z0-9_+\-]+)?$/.test(value);
 }
 

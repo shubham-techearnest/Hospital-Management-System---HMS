@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getAdminDashboard } from '../api/adminDashboardApi';
 import {
   listAdminReviews,
   moderateReview,
@@ -7,9 +8,17 @@ import {
 } from '../api/adminUserApi';
 
 export const adminExtendedKeys = {
+  dashboard: ['admin', 'dashboard'] as const,
   users: (params: Record<string, string | number | undefined>) => ['admin', 'users', params] as const,
   reviews: (status: string, page: number) => ['admin', 'reviews', status, page] as const,
 };
+
+export function useAdminDashboard() {
+  return useQuery({
+    queryKey: adminExtendedKeys.dashboard,
+    queryFn: getAdminDashboard,
+  });
+}
 
 export function useAdminUsers(params: {
   email?: string;

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Alert, Button, Chip, MenuItem, Paper, Snackbar, Stack, Tab, Tabs,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -14,6 +15,10 @@ import {
   useIcuStays,
   useIcuUnits,
 } from '@/features/icu/hooks/useIcuQueries';
+import { searchHospitalPatients, type HospitalPatientSummary } from '@/features/reception/api/patientRegistryApi';
+import { buildPatientSearchParams } from '@/features/reception/utils/patientSearchParams';
+import { PatientSearchMatchList, PatientSelectedSummary } from '@/features/reception/components/PatientSearchMatchList';
+import type { IcuStay } from '@/features/icu/api/icuApi';
 
 const BED_COLOR: Record<string, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
   AVAILABLE: 'success',
@@ -30,7 +35,26 @@ const EQUIP_COLOR: Record<string, 'default' | 'success' | 'warning' | 'error'> =
   RETIRED: 'error',
 };
 
+function stayPatientLabel(s: IcuStay) {
+  if (s.patientName || s.uhid) {
+    return [s.patientName, s.uhid].filter(Boolean).join(' · ');
+  }
+  return `${s.patientId.slice(0, 8)}…`;
+}
+
+function stayBedLabel(s: IcuStay) {
+  if (s.unitCode && s.bedNumber) {
+    return `${s.unitCode}-${s.bedNumber}`;
+  }
+  return '—';
+}
+
+function staySelectLabel(s: IcuStay) {
+  return `${s.stayNumber} · ${stayPatientLabel(s)} · ${stayBedLabel(s)}`;
+}
+
 export function HospitalIcuPage() {
+  const navigate = useNavigate();
   const { data: profile } = useHospitalProfile();
   const { data: branches = [] } = useBranches();
   const primaryBranch = useMemo(() => branches.find((b) => b.primary) ?? branches[0], [branches]);
@@ -55,7 +79,12 @@ export function HospitalIcuPage() {
 
   const [unitForm, setUnitForm] = useState({ name: '', code: '' });
   const [bedForm, setBedForm] = useState({ bedNumber: '' });
-  const [admitForm, setAdmitForm] = useState({ patientId: '', bedId: '', reason: '' });
+  const [patientQuery, setPatientQuery] = useState('');
+  const [patientMatches, setPatientMatches] = useState<HospitalPatientSummary[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<HospitalPatientSummary | null>(null);
+  const [patientSearchError, setPatientSearchError] = useState<string | null>(null);
+  const [patientSearching, setPatientSearching] = useState(false);
+  const [admitForm, setAdmitForm] = useState({ bedId: '', reason: '' });
   const [dischargeForm, setDischargeForm] = useState({ stayId: '', summary: '', followUp: '' });
   const [equipmentForm, setEquipmentForm] = useState({ name: '', code: '', type: 'VENTILATOR' });
   const [assignForm, setAssignForm] = useState({ equipmentId: '', stayId: '', notes: '' });
@@ -63,6 +92,58 @@ export function HospitalIcuPage() {
 
   const showError = (e: unknown) =>
     setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
+
+  const findPatient = async () => {
+    setPatientSearchError(null);
+    setSelectedPatient(null);
+    setPatientMatches([]);
+    const q = patientQuery.trim();
+    if (!q) {
+      setPatientSearchError('Enter UHID, name, mobile, or email to find the patient.');
+      return;
+    }
+    const params = buildPatientSearchParams(q);
+    if (!params) {
+      setPatientSearchError('Enter UHID, full name, mobile, or email to find the patient.');
+      return;
+    }
+    setPatientSearching(true);
+    try {
+      const page = await searchHospitalPatients(params);
+      if (page.content.length === 0) {
+        setPatientSearchError('Patient not found — register them at reception first.');
+        return;
+      }
+      setPatientMatches(page.content);
+      if (page.content.length === 1) {
+        setSelectedPatient(page.content[0]);
+      }
+    } catch (e) {
+      setPatientSearchError(parseApiError(e).message);
+    } finally {
+      setPatientSearching(false);
+    }
+  };
+
+  const handleAdmit = async () => {
+    if (!hospitalId || !branchId || !selectedPatient?.patientId || !admitForm.bedId) return;
+    try {
+      await mutations.admit.mutateAsync({
+        patientId: selectedPatient.patientId,
+        hospitalId,
+        branchId,
+        bedId: admitForm.bedId,
+        admissionReason: admitForm.reason || undefined,
+      });
+      setAdmitForm({ bedId: '', reason: '' });
+      setSelectedPatient(null);
+      setPatientMatches([]);
+      setPatientQuery('');
+      setSnackbar({ open: true, message: 'Patient admitted to ICU.', severity: 'success' });
+    } catch (e) {
+      showError(e);
+    }
+  };
 
   if (!profile) {
     return (
@@ -100,30 +181,56 @@ export function HospitalIcuPage() {
           </TextField>
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="subtitle2" gutterBottom>Admit to ICU</Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap">
-              <TextField label="Patient ID" size="small" value={admitForm.patientId}
-                onChange={(e) => setAdmitForm({ ...admitForm, patientId: e.target.value })} />
-              <TextField select label="Bed" size="small" sx={{ minWidth: 160 }} value={admitForm.bedId}
-                onChange={(e) => setAdmitForm({ ...admitForm, bedId: e.target.value })}>
-                {beds.filter((b) => b.status === 'AVAILABLE').map((b) => (
-                  <MenuItem key={b.bedId} value={b.bedId}>{b.unitCode}-{b.bedNumber}</MenuItem>
-                ))}
-              </TextField>
-              <TextField label="Reason" size="small" value={admitForm.reason}
-                onChange={(e) => setAdmitForm({ ...admitForm, reason: e.target.value })} />
-              <Button variant="contained" disabled={!hospitalId || !branchId} onClick={async () => {
-                try {
-                  await mutations.admit.mutateAsync({
-                    patientId: admitForm.patientId.trim(),
-                    hospitalId: hospitalId!,
-                    branchId: branchId!,
-                    bedId: admitForm.bedId,
-                    admissionReason: admitForm.reason || undefined,
-                  });
-                  setAdmitForm({ patientId: '', bedId: '', reason: '' });
-                  setSnackbar({ open: true, message: 'Patient admitted to ICU.', severity: 'success' });
-                } catch (e) { showError(e); }
-              }}>Admit</Button>
+            <Stack spacing={2}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'flex-start' }}>
+                <TextField
+                  label="Find patient (UHID / name / mobile / email)"
+                  size="small"
+                  fullWidth
+                  value={patientQuery}
+                  onChange={(e) => setPatientQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void findPatient();
+                    }
+                  }}
+                />
+                <Button
+                  variant="outlined"
+                  disabled={patientSearching}
+                  onClick={() => void findPatient()}
+                  sx={{ whiteSpace: 'nowrap' }}
+                >
+                  {patientSearching ? 'Searching…' : 'Find'}
+                </Button>
+              </Stack>
+              {patientSearchError ? <Alert severity="warning">{patientSearchError}</Alert> : null}
+              {selectedPatient ? <PatientSelectedSummary patient={selectedPatient} /> : null}
+              {!selectedPatient && patientMatches.length > 1 ? (
+                <PatientSearchMatchList
+                  patients={patientMatches}
+                  selectedPatientId={selectedPatient?.patientId}
+                  onSelect={setSelectedPatient}
+                />
+              ) : null}
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap">
+                <TextField select label="Bed" size="small" sx={{ minWidth: 160 }} value={admitForm.bedId}
+                  onChange={(e) => setAdmitForm({ ...admitForm, bedId: e.target.value })}>
+                  {beds.filter((b) => b.status === 'AVAILABLE').map((b) => (
+                    <MenuItem key={b.bedId} value={b.bedId}>{b.unitCode}-{b.bedNumber}</MenuItem>
+                  ))}
+                </TextField>
+                <TextField label="Reason" size="small" value={admitForm.reason}
+                  onChange={(e) => setAdmitForm({ ...admitForm, reason: e.target.value })} />
+                <Button
+                  variant="contained"
+                  disabled={!hospitalId || !branchId || !selectedPatient || !admitForm.bedId || mutations.admit.isPending}
+                  onClick={() => void handleAdmit()}
+                >
+                  Admit
+                </Button>
+              </Stack>
             </Stack>
           </Paper>
           <TableContainer component={Paper} variant="outlined">
@@ -132,6 +239,7 @@ export function HospitalIcuPage() {
                 <TableRow>
                   <TableCell>Stay #</TableCell>
                   <TableCell>Patient</TableCell>
+                  <TableCell>Bed</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Encounter</TableCell>
                 </TableRow>
@@ -140,13 +248,14 @@ export function HospitalIcuPage() {
                 {stays.map((s) => (
                   <TableRow key={s.stayId}>
                     <TableCell>{s.stayNumber}</TableCell>
-                    <TableCell>{s.patientId.slice(0, 8)}…</TableCell>
+                    <TableCell>{stayPatientLabel(s)}</TableCell>
+                    <TableCell>{stayBedLabel(s)}</TableCell>
                     <TableCell><Chip size="small" label={s.status} /></TableCell>
                     <TableCell>{s.encounterStatus}</TableCell>
                   </TableRow>
                 ))}
                 {stays.length === 0 && (
-                  <TableRow><TableCell colSpan={4}>No ICU stays.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5}>No ICU stays.</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -228,11 +337,11 @@ export function HospitalIcuPage() {
                   <MenuItem key={eq.equipmentId} value={eq.equipmentId}>{eq.code}</MenuItem>
                 ))}
               </TextField>
-              <TextField select label="Stay" size="small" sx={{ minWidth: 160 }}
+              <TextField select label="Stay" size="small" sx={{ minWidth: 220 }}
                 value={assignForm.stayId}
                 onChange={(e) => setAssignForm({ ...assignForm, stayId: e.target.value })}>
                 {activeStays.map((s) => (
-                  <MenuItem key={s.stayId} value={s.stayId}>{s.stayNumber}</MenuItem>
+                  <MenuItem key={s.stayId} value={s.stayId}>{staySelectLabel(s)}</MenuItem>
                 ))}
               </TextField>
               <Button variant="contained" onClick={async () => {
@@ -282,7 +391,7 @@ export function HospitalIcuPage() {
             <TextField select label="Active stay" fullWidth size="small" value={monitorForm.stayId}
               onChange={(e) => setMonitorForm({ ...monitorForm, stayId: e.target.value })}>
               {activeStays.map((s) => (
-                <MenuItem key={s.stayId} value={s.stayId}>{s.stayNumber}</MenuItem>
+                <MenuItem key={s.stayId} value={s.stayId}>{staySelectLabel(s)}</MenuItem>
               ))}
             </TextField>
             <TextField select label="Record type" fullWidth size="small" value={monitorForm.recordType}
@@ -366,7 +475,7 @@ export function HospitalIcuPage() {
               value={dischargeForm.stayId}
               onChange={(e) => setDischargeForm({ ...dischargeForm, stayId: e.target.value })}>
               {activeStays.map((s) => (
-                <MenuItem key={s.stayId} value={s.stayId}>{s.stayNumber}</MenuItem>
+                <MenuItem key={s.stayId} value={s.stayId}>{staySelectLabel(s)}</MenuItem>
               ))}
             </TextField>
             <TextField label="Discharge summary" multiline minRows={3} fullWidth
@@ -376,22 +485,31 @@ export function HospitalIcuPage() {
               onChange={(e) => setDischargeForm({ ...dischargeForm, followUp: e.target.value })} />
             <Button variant="contained" color="success" onClick={async () => {
               try {
-                await mutations.discharge.mutateAsync({
+                const result = await mutations.discharge.mutateAsync({
                   stayId: dischargeForm.stayId,
                   summaryText: dischargeForm.summary,
                   followUpPlan: dischargeForm.followUp || undefined,
                 });
                 setDischargeForm({ stayId: '', summary: '', followUp: '' });
-                setSnackbar({ open: true, message: 'Patient discharged from ICU.', severity: 'success' });
+                setSnackbar({
+                  open: true,
+                  message: 'Patient discharged from ICU. Opening billing…',
+                  severity: 'success',
+                });
+                if (result.encounterId) {
+                  navigate(`/hospital/billing/checkout/${result.encounterId}`, {
+                    state: { from: 'icu', mode: 'ICU' },
+                  });
+                }
               } catch (e) { showError(e); }
             }}>Discharge</Button>
           </Stack>
         </Paper>
       )}
 
-      <Snackbar open={snackbar.open} autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        message={snackbar.message} />
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
+      </Snackbar>
     </AnimatedPage>
   );
 }

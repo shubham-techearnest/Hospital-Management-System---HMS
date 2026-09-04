@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   approveVerification,
   fetchVerificationDocumentBlob,
+  getAdminDashboard,
   getVerificationReview,
   listAdminReviews,
   listPendingVerifications,
@@ -12,11 +13,19 @@ import {
 } from '../api/adminApi';
 
 export const adminKeys = {
+  dashboard: ['admin', 'dashboard'] as const,
   users: (params: Record<string, string | number | undefined>) => ['admin', 'users', params] as const,
   verifications: (status: string, page: number) => ['admin', 'doctor-verifications', status, page] as const,
   review: (doctorId: string) => ['admin', 'doctor-verification-review', doctorId] as const,
   reviews: (status: string, page: number) => ['admin', 'reviews', status, page] as const,
 };
+
+export function useAdminDashboard() {
+  return useQuery({
+    queryKey: adminKeys.dashboard,
+    queryFn: getAdminDashboard,
+  });
+}
 
 export function useAdminUsers(params: {
   email?: string;

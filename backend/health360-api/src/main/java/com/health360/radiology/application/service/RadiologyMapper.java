@@ -50,13 +50,17 @@ public class RadiologyMapper {
             ImagingOrderEntity order,
             ImagingModalityEntity modality,
             ImagingStudyEntity study,
-            ImagingReportEntity report) {
+            ImagingReportEntity report,
+            String patientName,
+            String uhid) {
         return ImagingOrderResponse.builder()
                 .imagingOrderId(order.getId())
                 .clinicalOrderItemId(order.getClinicalOrderItemId())
                 .clinicalOrderId(order.getClinicalOrderId())
                 .encounterId(order.getEncounterId())
                 .patientId(order.getPatientId())
+                .patientName(patientName)
+                .uhid(uhid)
                 .hospitalId(order.getHospitalId())
                 .branchId(order.getBranchId())
                 .modalityId(order.getModalityId())
