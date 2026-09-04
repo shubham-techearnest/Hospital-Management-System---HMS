@@ -20,6 +20,7 @@ public class Health360Properties {
     private Auth auth = new Auth();
     private Storage storage = new Storage();
     private Push push = new Push();
+    private Payments payments = new Payments();
 
     @Getter
     @Setter
@@ -55,5 +56,25 @@ public class Health360Properties {
     public static class Push {
         /** When false, mobile push is skipped (in-app notifications still work). */
         private boolean enabled = true;
+    }
+
+    @Getter
+    @Setter
+    public static class Payments {
+        private Razorpay razorpay = new Razorpay();
+    }
+
+    @Getter
+    @Setter
+    public static class Razorpay {
+        /**
+         * sandbox = mock orders locally when keys are blank, or use test keys when set.
+         * live = require key-id / key-secret.
+         */
+        private String mode = "sandbox";
+        private String keyId = "";
+        private String keySecret = "";
+        private String webhookSecret = "";
+        private String apiBaseUrl = "https://api.razorpay.com/v1";
     }
 }

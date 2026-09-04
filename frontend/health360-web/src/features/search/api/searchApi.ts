@@ -5,7 +5,9 @@ export interface DoctorSearchResult {
   doctorId: string;
   name: string;
   specialization?: string;
+  hospitalId?: string;
   hospitalName?: string;
+  branchId?: string;
   branchName?: string;
   city?: string;
   gender?: string;

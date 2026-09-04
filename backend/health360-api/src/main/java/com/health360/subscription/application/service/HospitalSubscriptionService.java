@@ -142,6 +142,25 @@ public class HospitalSubscriptionService {
         return next;
     }
 
+    @Transactional
+    public HospitalSubscriptionEntity renewAfterPayment(
+            UUID hospitalId, UUID tenantId, LocalDate newEndDate, UUID actorId, String notes) {
+        HospitalSubscriptionEntity subscription = requireActiveSubscription(hospitalId, tenantId);
+        subscription.setEndDate(newEndDate);
+        subscription.setStatus(SubscriptionStatus.ACTIVE.name());
+        subscription.setUpdatedBy(actorId);
+        subscription.touch();
+        subscription = subscriptionRepository.save(subscription);
+
+        recordHistory(subscription, subscription.getPlanId(), SubscriptionHistoryEventType.RENEWAL.name(),
+                notes != null ? notes : "Subscription renewed after payment", actorId);
+
+        auditLogService.record(tenantId, actorId, "HOSPITAL_SUBSCRIPTION_RENEWED", "HospitalSubscription",
+                subscription.getId(), Map.of("endDate", newEndDate.toString()));
+
+        return subscription;
+    }
+
     private void recordHistory(
             HospitalSubscriptionEntity subscription,
             UUID previousPlanId,

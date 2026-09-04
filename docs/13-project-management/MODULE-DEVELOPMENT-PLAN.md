@@ -3,9 +3,9 @@
 | Attribute | Value |
 |-----------|-------|
 | **Document ID** | PM-MODULE-PLAN-001 |
-| **Status** | ACTIVE — Phase E COMPLETE (E1–E6); Phase A ops still pending; Phase F next |
+| **Status** | ACTIVE — Phase F IN PROGRESS (F1–F3 code); Phase A ops still pending |
 | **Created** | 2026-09-03 |
-| **Last Updated** | 2026-09-03 |
+| **Last Updated** | 2026-09-04 |
 | **Owner** | Engineering |
 | **Related** | [feature-status-board.md](./feature-status-board.md), [PHASE-A-OPS-CHECKLIST.md](./PHASE-A-OPS-CHECKLIST.md), [HMS-ROADMAP.md](../hms/HMS-ROADMAP.md), [HOSPITAL-OPD-REALISM-BACKLOG.md](../hms/HOSPITAL-OPD-REALISM-BACKLOG.md) |
 
@@ -126,8 +126,7 @@ flowchart TB
 | **C** | Platform Admin completion | 1–2 weeks | **COMPLETE** (code) | Mobile admin parity for hospitals/plans/audit |
 | **D** | IPD depth | 3–4 weeks | **COMPLETE** | D1–D6 done |
 | **E** | Staff portals depth | 3–4 weeks | **COMPLETE** | E1–E6 done (web + mobile light) |
-| **E** | Staff portals depth | 3–4 weeks | NOT STARTED | Lab/Rad/Pharm/OT/Nurse worklists |
-| **F** | Payments & SaaS | Phase 2 | NOT STARTED | Razorpay, subscription billing |
+| **F** | Payments & SaaS | Phase 2 | **IN PROGRESS** | Razorpay sandbox + patient pay + SaaS renew |
 | **G** | Advanced / integrations | Ongoing | NOT STARTED | PACS, LIS, SMS, inventory |
 
 ---
@@ -297,14 +296,17 @@ Patient requests OPD (or reception walk-in)
 
 | Attribute | Value |
 |-----------|-------|
-| **Status** | NOT STARTED |
+| **Status** | **IN PROGRESS** (F1–F3 implemented; needs Razorpay keys + webhook QA) |
 | **Depends on** | Phase A–B stable |
+| **Flow doc** | [P2-B2-RAZORPAY-PAYMENTS.md](../post-hms/P2-B2-RAZORPAY-PAYMENTS.md) |
 
 | ID | Task | Modules | Done |
 |----|------|---------|------|
-| F1 | Razorpay sandbox integration | Billing | [ ] |
-| F2 | Patient online pay + webhook | Billing, Patient | [ ] |
-| F3 | Subscription SaaS billing for hospitals | Subscription, Admin | [ ] |
+| F1 | Razorpay sandbox integration | Billing | [x] |
+| F2 | Patient online pay + webhook | Billing, Patient | [x] |
+| F3 | Subscription SaaS billing for hospitals | Subscription, Admin | [x] |
+
+**Remaining ops:** set `RAZORPAY_*` env vars; point Razorpay webhook to `/api/v1/billing/payments/webhook`; verify Checkout on unpaid invoice + hospital plan renew.
 
 ---
 
@@ -439,6 +441,7 @@ Deepen or wire — do not recreate:
 | 2026-09-03 | Initial tracked plan created from module audit (OPD / Patient / Hospital / Admin + full HMS map) |
 | 2026-09-03 | Phase A started: A2/A3/A4 implemented; A1/A6 ops checklist added |
 | 2026-09-03 | A5 done: Playwright OPD smoke (2/2 local pass) + `.github/workflows/e2e-opd.yml` |
+| 2026-09-04 | Phase F started: F1–F3 Razorpay sandbox, patient pay + webhook, SaaS renew (V73) |
 
 ---
 

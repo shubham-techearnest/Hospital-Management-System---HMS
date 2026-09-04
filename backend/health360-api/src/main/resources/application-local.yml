@@ -23,3 +23,10 @@ logging:
 
 health360:
   app-base-url: ${APP_BASE_URL:http://localhost:5173}
+  # Razorpay keys come from env / root .env (see .env.example). Blank = sandbox mock.
+  payments:
+    razorpay:
+      mode: ${RAZORPAY_MODE:sandbox}
+      key-id: ${RAZORPAY_KEY_ID:}
+      key-secret: ${RAZORPAY_KEY_SECRET:}
+      webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}

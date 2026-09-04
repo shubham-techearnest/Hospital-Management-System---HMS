@@ -223,6 +223,7 @@ public class BillingService {
         payment.setGateway(PaymentGateway.MANUAL.name());
         payment.setPaymentMethod(paymentMethod.name());
         payment.setNotes(request.getNotes());
+        payment.setPaidAt(Instant.now());
         payment.setCreatedBy(principal.getUserId());
         payment.setUpdatedBy(principal.getUserId());
         payment = paymentRepository.saveAndFlush(payment);

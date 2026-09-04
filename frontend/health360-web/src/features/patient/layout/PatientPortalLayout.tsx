@@ -14,6 +14,7 @@ import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined';
 import InsightsOutlinedIcon from '@mui/icons-material/InsightsOutlined';
+import LocalHospitalOutlinedIcon from '@mui/icons-material/LocalHospitalOutlined';
 import { isAxiosError } from 'axios';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 import { usePatientProfile } from '../hooks/usePatientQueries';
@@ -21,19 +22,20 @@ import { usePatientProfile } from '../hooks/usePatientQueries';
 import { VISIT_FLOW } from '@/features/opd/utils/visitFlowCopy';
 
 const navItems: PortalNavItem[] = [
-  { section: 'Navigation', label: 'Overview', path: '/patient/dashboard', icon: <DashboardOutlinedIcon /> },
-  { section: 'Care', label: VISIT_FLOW.request.patientNav, path: '/patient/request-opd', icon: <EventAvailableOutlinedIcon /> },
-  { section: 'Care', label: VISIT_FLOW.queue.patientNav, path: '/patient/opd', icon: <QueueOutlinedIcon /> },
-  { section: 'Care', label: 'Visits', path: '/patient/encounters', icon: <MedicalServicesOutlinedIcon /> },
-  { section: 'Care', label: 'Find care', path: '/patient/search', icon: <SearchOutlinedIcon /> },
-  { section: 'Health', label: 'Analytics', path: '/patient/health-score', icon: <InsightsOutlinedIcon /> },
-  { section: 'Health', label: 'Profile', path: '/patient/profile', icon: <PersonOutlinedIcon /> },
-  { section: 'Health', label: 'Vitals', path: '/patient/vitals', icon: <MonitorHeartOutlinedIcon /> },
-  { section: 'Health', label: 'Labs', path: '/patient/lab-values', icon: <ScienceOutlinedIcon /> },
-  { section: 'Health', label: 'Documents', path: '/patient/reports', icon: <DescriptionOutlinedIcon /> },
-  { section: 'Health', label: 'Timeline', path: '/patient/timeline', icon: <TimelineOutlinedIcon /> },
-  { section: 'Health', label: 'Prescriptions', path: '/patient/prescriptions', icon: <MedicationOutlinedIcon /> },
-  { section: 'Health', label: 'Payments', path: '/patient/payments', icon: <PaymentOutlinedIcon /> },
+  { section: 'HOME', label: 'Dashboard', path: '/patient/dashboard', icon: <DashboardOutlinedIcon /> },
+  { section: 'CARE', label: 'Find a Doctor', path: '/patient/doctors', icon: <SearchOutlinedIcon /> },
+  { section: 'CARE', label: 'Find a Hospital', path: '/patient/hospitals', icon: <LocalHospitalOutlinedIcon /> },
+  { section: 'CARE', label: VISIT_FLOW.request.patientNav, path: '/patient/request-opd', icon: <EventAvailableOutlinedIcon /> },
+  { section: 'CARE', label: VISIT_FLOW.queue.patientNav, path: '/patient/opd', icon: <QueueOutlinedIcon /> },
+  { section: 'CARE', label: 'Visits', path: '/patient/encounters', icon: <MedicalServicesOutlinedIcon /> },
+  { section: 'HEALTH', label: 'Analytics', path: '/patient/health-score', icon: <InsightsOutlinedIcon /> },
+  { section: 'HEALTH', label: 'Profile', path: '/patient/profile', icon: <PersonOutlinedIcon /> },
+  { section: 'HEALTH', label: 'Vitals', path: '/patient/vitals', icon: <MonitorHeartOutlinedIcon /> },
+  { section: 'HEALTH', label: 'Labs', path: '/patient/lab-values', icon: <ScienceOutlinedIcon /> },
+  { section: 'HEALTH', label: 'Documents', path: '/patient/reports', icon: <DescriptionOutlinedIcon /> },
+  { section: 'HEALTH', label: 'Timeline', path: '/patient/timeline', icon: <TimelineOutlinedIcon /> },
+  { section: 'HEALTH', label: 'Prescriptions', path: '/patient/prescriptions', icon: <MedicationOutlinedIcon /> },
+  { section: 'FINANCE', label: 'Payments', path: '/patient/payments', icon: <PaymentOutlinedIcon /> },
   { section: 'Account', label: 'Settings', path: '/patient/settings/account', icon: <SettingsOutlinedIcon /> },
 ];
 

@@ -13,7 +13,9 @@ public class DoctorSearchResultResponse {
     UUID doctorId;
     String name;
     String specialization;
+    UUID hospitalId;
     String hospitalName;
+    UUID branchId;
     String branchName;
     String city;
     String gender;

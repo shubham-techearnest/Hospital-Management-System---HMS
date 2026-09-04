@@ -1,5 +1,7 @@
 package com.health360.subscription.presentation.controller;
 
+import com.health360.billing.application.service.SaasBillingService;
+import com.health360.billing.presentation.dto.response.SaasPaymentIntentResponse;
 import com.health360.config.security.UserPrincipal;
 import com.health360.shared.dto.ApiResponse;
 import com.health360.subscription.application.service.AdminHospitalSubscriptionService;
@@ -8,6 +10,7 @@ import com.health360.subscription.presentation.dto.response.HospitalSubscription
 import com.health360.subscription.presentation.dto.response.SubscriptionHistoryResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +25,7 @@ import java.util.UUID;
 public class AdminHospitalSubscriptionController {
 
     private final AdminHospitalSubscriptionService adminHospitalSubscriptionService;
+    private final SaasBillingService saasBillingService;
 
     @GetMapping
     @PreAuthorize("hasAuthority('admin:subscriptions:read')")
@@ -50,5 +54,24 @@ public class AdminHospitalSubscriptionController {
             @PathVariable UUID hospitalId) {
         return ResponseEntity.ok(ApiResponse.ok(
                 adminHospitalSubscriptionService.getHistory(principal.getTenantId(), hospitalId)));
+    }
+
+    @PostMapping("/payment-intents")
+    @PreAuthorize("hasAuthority('admin:subscriptions:write')")
+    public ResponseEntity<ApiResponse<SaasPaymentIntentResponse>> createPaymentIntent(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID hospitalId) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                ApiResponse.ok(saasBillingService.createRenewalIntentForAdmin(principal, hospitalId)));
+    }
+
+    @PostMapping("/saas-invoices/{saasInvoiceId}/confirm-sandbox")
+    @PreAuthorize("hasAuthority('admin:subscriptions:write')")
+    public ResponseEntity<ApiResponse<SaasPaymentIntentResponse>> confirmSandbox(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID hospitalId,
+            @PathVariable UUID saasInvoiceId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                saasBillingService.confirmSandboxForPlatformAdmin(principal, saasInvoiceId)));
     }
 }

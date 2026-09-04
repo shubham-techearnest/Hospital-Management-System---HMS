@@ -42,6 +42,36 @@ export interface Payment {
   createdAt: string;
 }
 
+export interface PaymentIntent {
+  paymentId: string;
+  invoiceId: string;
+  amount: number;
+  currency: string;
+  status: string;
+  gateway: string;
+  gatewayOrderId: string;
+  razorpayKeyId?: string;
+  sandbox: boolean;
+  description?: string;
+}
+
+export interface SaasPaymentIntent {
+  saasInvoiceId: string;
+  hospitalId: string;
+  planId: string;
+  invoiceNumber: string;
+  amount: number;
+  currency: string;
+  status: string;
+  paymentStatus: string;
+  gatewayOrderId: string;
+  razorpayKeyId?: string;
+  sandbox: boolean;
+  billingPeriodStart: string;
+  billingPeriodEnd: string;
+  createdAt?: string;
+}
+
 export type CreateInvoicePayload = {
   encounterId: string;
   taxAmount?: number;
@@ -118,4 +148,121 @@ export async function recordPayment(invoiceId: string, payload: RecordPaymentPay
     payload,
   );
   return unwrap(data);
+}
+
+export async function createPaymentIntent(
+  invoiceId: string,
+  payload?: { amount?: number; idempotencyKey?: string },
+): Promise<PaymentIntent> {
+  const { data } = await apiClient.post<ApiEnvelope<PaymentIntent>>(
+    `/billing/invoices/${invoiceId}/payment-intents`,
+    payload ?? {},
+  );
+  return unwrap(data);
+}
+
+export async function confirmSandboxPayment(paymentId: string): Promise<Payment> {
+  const { data } = await apiClient.post<ApiEnvelope<Payment>>(
+    `/billing/payments/${paymentId}/confirm-sandbox`,
+    {},
+  );
+  return unwrap(data);
+}
+
+export async function createSaasPaymentIntent(): Promise<SaasPaymentIntent> {
+  const { data } = await apiClient.post<ApiEnvelope<SaasPaymentIntent>>(
+    '/billing/saas/payment-intents',
+  );
+  return unwrap(data);
+}
+
+export async function confirmSaasSandboxPayment(saasInvoiceId: string): Promise<SaasPaymentIntent> {
+  const { data } = await apiClient.post<ApiEnvelope<SaasPaymentIntent>>(
+    `/billing/saas/${saasInvoiceId}/confirm-sandbox`,
+  );
+  return unwrap(data);
+}
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
+  }
+}
+
+export async function loadRazorpayCheckout(): Promise<boolean> {
+  if (window.Razorpay) return true;
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(Boolean(window.Razorpay));
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
+/** Opens Razorpay Checkout when key is present; otherwise confirms via sandbox API. */
+export async function payInvoiceOnline(invoiceId: string): Promise<'captured' | 'opened'> {
+  const intent = await createPaymentIntent(invoiceId);
+  if (intent.sandbox && !intent.razorpayKeyId) {
+    await confirmSandboxPayment(intent.paymentId);
+    return 'captured';
+  }
+
+  const loaded = await loadRazorpayCheckout();
+  if (!loaded || !window.Razorpay || !intent.razorpayKeyId) {
+    if (intent.sandbox) {
+      await confirmSandboxPayment(intent.paymentId);
+      return 'captured';
+    }
+    throw new Error('Payment checkout is unavailable. Configure Razorpay keys.');
+  }
+
+  return new Promise((resolve, reject) => {
+    const rzp = new window.Razorpay!({
+      key: intent.razorpayKeyId,
+      amount: Math.round(Number(intent.amount) * 100),
+      currency: intent.currency || 'INR',
+      name: 'Health360',
+      description: intent.description ?? 'Invoice payment',
+      order_id: intent.gatewayOrderId,
+      handler: () => resolve('opened'),
+      modal: {
+        ondismiss: () => reject(new Error('Payment cancelled')),
+      },
+    });
+    rzp.open();
+  });
+}
+
+export async function payHospitalSubscriptionOnline(): Promise<'captured' | 'opened'> {
+  const intent = await createSaasPaymentIntent();
+  if (intent.sandbox && !intent.razorpayKeyId) {
+    await confirmSaasSandboxPayment(intent.saasInvoiceId);
+    return 'captured';
+  }
+
+  const loaded = await loadRazorpayCheckout();
+  if (!loaded || !window.Razorpay || !intent.razorpayKeyId) {
+    if (intent.sandbox) {
+      await confirmSaasSandboxPayment(intent.saasInvoiceId);
+      return 'captured';
+    }
+    throw new Error('Payment checkout is unavailable. Configure Razorpay keys.');
+  }
+
+  return new Promise((resolve, reject) => {
+    const rzp = new window.Razorpay!({
+      key: intent.razorpayKeyId,
+      amount: Math.round(Number(intent.amount) * 100),
+      currency: intent.currency || 'INR',
+      name: 'Health360',
+      description: `Subscription ${intent.invoiceNumber}`,
+      order_id: intent.gatewayOrderId,
+      handler: () => resolve('opened'),
+      modal: {
+        ondismiss: () => reject(new Error('Payment cancelled')),
+      },
+    });
+    rzp.open();
+  });
 }

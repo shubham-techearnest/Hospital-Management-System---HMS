@@ -70,7 +70,7 @@ HMS phases HMS-0 … HMS-11 are **complete**. Next work follows [POST-HMS-PHASE-
 | Sprint | Focus | Status |
 |--------|-------|--------|
 | P2-B1 | Billing schema + encounter invoices + manual payment | ✅ Backend (V41) |
-| P2-B2 | Razorpay integration | ⏳ Planned |
+| P2-B2 | Razorpay integration | ✅ Phase F (sandbox + webhook + SaaS) |
 | P2-Rx1 | E-prescription | ⏳ Planned |
 
 ---

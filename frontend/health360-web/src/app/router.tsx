@@ -97,6 +97,9 @@ const PatientPaymentsPage = lazy(() =>
 const HospitalSearchPage = lazy(() =>
   import('@/features/patient/pages/HospitalSearchPage').then((m) => ({ default: m.HospitalSearchPage })),
 );
+const DoctorSearchPage = lazy(() =>
+  import('@/features/patient/pages/DoctorSearchPage').then((m) => ({ default: m.DoctorSearchPage })),
+);
 const DoctorBookingProfilePage = lazy(() =>
   import('@/features/patient/pages/DoctorBookingProfilePage').then((m) => ({ default: m.DoctorBookingProfilePage })),
 );
@@ -396,6 +399,7 @@ export function AppRouter() {
           <Route path="request-opd" element={<LazyPage><RequestOpdPage /></LazyPage>} />
           <Route path="book" element={<Navigate to="/patient/request-opd" replace />} />
           <Route path="hospitals" element={<LazyPage><HospitalSearchPage /></LazyPage>} />
+          <Route path="doctors" element={<LazyPage><DoctorSearchPage /></LazyPage>} />
           <Route path="doctors/:doctorId" element={<LazyPage><DoctorBookingProfilePage /></LazyPage>} />
           <Route path="book/:doctorId" element={<Navigate to="/patient/request-opd" replace />} />
           <Route path="reports" element={<LazyPage><HealthDocumentsPage /></LazyPage>} />

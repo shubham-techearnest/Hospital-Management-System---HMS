@@ -299,11 +299,12 @@ export function ReceptionCheckoutPage() {
                 select
                 label="Method"
                 size="small"
-                sx={{ minWidth: 140 }}
+                sx={{ minWidth: 160 }}
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
               >
                 <MenuItem value="CASH">Cash</MenuItem>
+                <MenuItem value="ONLINE">Online</MenuItem>
                 <MenuItem value="UPI">UPI</MenuItem>
                 <MenuItem value="CARD">Card</MenuItem>
                 <MenuItem value="OTHER">Other</MenuItem>

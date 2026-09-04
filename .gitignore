@@ -63,4 +63,3 @@ backend/**/.local/
 *.key
 credentials.json
 
-Figma1/**

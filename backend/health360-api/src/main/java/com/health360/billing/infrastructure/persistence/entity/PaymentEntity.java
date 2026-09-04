@@ -35,11 +35,17 @@ public class PaymentEntity extends BaseAuditableEntity {
     @Column(name = "gateway_payment_id", length = 100)
     private String gatewayPaymentId;
 
+    @Column(name = "gateway_order_id", length = 100)
+    private String gatewayOrderId;
+
+    @Column(name = "idempotency_key", length = 100)
+    private String idempotencyKey;
+
     @Column(name = "payment_method", nullable = false, length = 30)
     private String paymentMethod = "CASH";
 
-    @Column(name = "paid_at", nullable = false)
-    private Instant paidAt = Instant.now();
+    @Column(name = "paid_at")
+    private Instant paidAt;
 
     @Column(columnDefinition = "TEXT")
     private String notes;

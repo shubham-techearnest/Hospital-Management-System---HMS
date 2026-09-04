@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import {
-  Alert, Box, Chip, LinearProgress, Paper, Stack, Typography,
+  Alert, Box, Button, Chip, LinearProgress, Paper, Stack, Typography,
 } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { parseApiError } from '@/shared/api/errorUtils';
+import { payHospitalSubscriptionOnline } from '@/features/billing/api/billingApi';
 import { useHospitalSubscription } from '../hooks/useHospitalQueries';
 
 function UsageBar({ label, used, limit }: { label: string; used: number; limit: number }) {
@@ -27,9 +30,36 @@ function UsageBar({ label, used, limit }: { label: string; used: number; limit: 
 }
 
 export function HospitalSubscriptionPage() {
-  const { data, isLoading, isError, error } = useHospitalSubscription();
+  const qc = useQueryClient();
+  const { data, isLoading, isError, error, refetch } = useHospitalSubscription();
   const loadError = isError ? parseApiError(error) : null;
   const doctorUsage = data?.usage?.doctors;
+  const [paying, setPaying] = useState(false);
+  const [payMessage, setPayMessage] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+
+  const planPrice = Number(data?.plan?.price ?? 0);
+  const canPay = Boolean(data && planPrice > 0);
+
+  const handlePay = async () => {
+    setPayError(null);
+    setPayMessage(null);
+    setPaying(true);
+    try {
+      const result = await payHospitalSubscriptionOnline();
+      setPayMessage(
+        result === 'captured'
+          ? 'Subscription payment recorded. Period extended.'
+          : 'Payment submitted. Period updates when the gateway confirms.',
+      );
+      await refetch();
+      await qc.invalidateQueries({ queryKey: ['hospital', 'subscription'] });
+    } catch (e) {
+      setPayError(parseApiError(e).message);
+    } finally {
+      setPaying(false);
+    }
+  };
 
   return (
     <AnimatedPage>
@@ -39,6 +69,8 @@ export function HospitalSubscriptionPage() {
       </Typography>
 
       {loadError && <Alert severity="error" sx={{ mb: 2 }}>{loadError.message}</Alert>}
+      {payError && <Alert severity="error" sx={{ mb: 2 }}>{payError}</Alert>}
+      {payMessage && <Alert severity="success" sx={{ mb: 2 }}>{payMessage}</Alert>}
 
       {isLoading && <Typography>Loading subscription…</Typography>}
 
@@ -53,8 +85,24 @@ export function HospitalSubscriptionPage() {
                   {data.plan.currency} {data.plan.price}
                   {data.plan.billingCycle !== 'NONE' ? ` / ${data.plan.billingCycle.toLowerCase()}` : ''}
                 </Typography>
+                {data.endDate ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    Current period ends {data.endDate}
+                  </Typography>
+                ) : null}
               </Box>
-              <Chip label={data.status} color="primary" sx={{ alignSelf: 'flex-start' }} />
+              <Stack spacing={1} alignItems={{ xs: 'stretch', sm: 'flex-end' }}>
+                <Chip label={data.status} color="primary" sx={{ alignSelf: 'flex-start' }} />
+                {canPay ? (
+                  <Button variant="contained" disabled={paying} onClick={handlePay}>
+                    {paying ? 'Processing…' : 'Pay / renew online'}
+                  </Button>
+                ) : (
+                  <Typography variant="caption" color="text.secondary">
+                    Free plan — no online renewal required
+                  </Typography>
+                )}
+              </Stack>
             </Stack>
           </Paper>
 
