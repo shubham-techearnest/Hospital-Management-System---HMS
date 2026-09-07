@@ -19,6 +19,12 @@ export interface HospitalDashboard {
   pendingRadiologyOrders: number;
   pendingPharmacyOrders: number;
   pendingOtProcedures: number;
+  opsTrend7d?: Array<{
+    date: string;
+    opdWaiting: number;
+    opdCompleted: number;
+    opdInProgress: number;
+  }>;
 }
 
 export interface OpdDashboard {

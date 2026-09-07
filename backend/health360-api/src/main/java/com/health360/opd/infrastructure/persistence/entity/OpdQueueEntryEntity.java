@@ -70,4 +70,7 @@ public class OpdQueueEntryEntity extends BaseAuditableEntity {
 
     @Column(name = "recalled_at")
     private Instant recalledAt;
+
+    @Column(name = "approaching_notified_at")
+    private Instant approachingNotifiedAt;
 }

@@ -3,9 +3,9 @@
 | Attribute | Value |
 |-----------|-------|
 | **Document ID** | PM-MODULE-PLAN-001 |
-| **Status** | ACTIVE — Phase F IN PROGRESS (F1–F3 code); Phase A ops still pending |
+| **Status** | ACTIVE — Phase A COMPLETE; Phase F COMPLETE (code); Phase G IN PROGRESS |
 | **Created** | 2026-09-03 |
-| **Last Updated** | 2026-09-04 |
+| **Last Updated** | 2026-09-07 |
 | **Owner** | Engineering |
 | **Related** | [feature-status-board.md](./feature-status-board.md), [PHASE-A-OPS-CHECKLIST.md](./PHASE-A-OPS-CHECKLIST.md), [HMS-ROADMAP.md](../hms/HMS-ROADMAP.md), [HOSPITAL-OPD-REALISM-BACKLOG.md](../hms/HOSPITAL-OPD-REALISM-BACKLOG.md) |
 
@@ -121,13 +121,13 @@ flowchart TB
 
 | Phase | Name | Duration | Status | Goal |
 |-------|------|----------|--------|------|
-| **A** | Stabilize & Release OPD | 2–3 weeks | **IN PROGRESS** | Production QA, orphans, push |
+| **A** | Stabilize & Release OPD | 2–3 weeks | **COMPLETE** | Production QA signed off |
 | **B** | Patient + Hospital polish | 2 weeks | **COMPLETE** (code) | Reviews + feature flags; QA on live API |
 | **C** | Platform Admin completion | 1–2 weeks | **COMPLETE** (code) | Mobile admin parity for hospitals/plans/audit |
 | **D** | IPD depth | 3–4 weeks | **COMPLETE** | D1–D6 done |
 | **E** | Staff portals depth | 3–4 weeks | **COMPLETE** | E1–E6 done (web + mobile light) |
-| **F** | Payments & SaaS | Phase 2 | **IN PROGRESS** | Razorpay sandbox + patient pay + SaaS renew |
-| **G** | Advanced / integrations | Ongoing | NOT STARTED | PACS, LIS, SMS, inventory |
+| **F** | Payments & SaaS | Phase 2 | **COMPLETE** (code) | Razorpay sandbox + patient/SaaS pay (keys optional) |
+| **G** | Advanced / integrations | Ongoing | **IN PROGRESS** | G2/G3/G6/G9/G10 MVPs |
 
 ---
 
@@ -135,21 +135,21 @@ flowchart TB
 
 | Attribute | Value |
 |-----------|-------|
-| **Status** | **IN PROGRESS** |
+| **Status** | **COMPLETE** |
 | **Target** | Weeks 1–3 |
 | **Exit criteria** | OPD golden path passes on deployed env; push delivers CALLED; no orphaned OPD UI |
-| **Ops checklist** | [PHASE-A-OPS-CHECKLIST.md](./PHASE-A-OPS-CHECKLIST.md) |
+| **Ops checklist** | [PHASE-A-OPS-CHECKLIST.md](./PHASE-A-OPS-CHECKLIST.md) — production QA signed off 2026-09-07 |
 
 ### Tasks
 
 | ID | Task | Modules | Effort | Done |
 |----|------|---------|--------|------|
-| A1 | EAS push production setup + golden path QA on Render | IAM, OPD, Patient | 3d | [~] code ready — Render wake timed out (cold/sleep); see ops checklist |
+| A1 | EAS push production setup + golden path QA on Render | IAM, OPD, Patient | 3d | [x] production QA signed off |
 | A2 | Self check-in: fix web routing OR deprecate; add mobile self check-in if kept | Scheduling, OPD | 3d | [x] deprecated patient UI; desk Arrive wired |
 | A3 | Mobile reception: queue **complete** action | OPD, Reception | 1d | [x] |
 | A4 | Wire clinical catalogs route **or** remove; clean orphan slot-booking / arrival panels | OPD, Scheduling, Hospital | 3d | [x] catalogs + Arrive wired; slot panel deferred |
 | A5 | CI: keep `OpdWalkInGoldenPathIntegrationTest`; add 1 Playwright OPD script | OPD | 3d | [x] Playwright OPD smoke + GH workflow |
-| A6 | Deploy keep-alive workflow + set `API_HEALTH_URL` + absolute `VITE_API_BASE_URL` | Ops | 1d | [~] code ready — production ping failed (API asleep/unreachable) |
+| A6 | Deploy keep-alive workflow + set `API_HEALTH_URL` + absolute `VITE_API_BASE_URL` | Ops | 1d | [x] production ops signed off |
 
 ### OPD golden path (must pass)
 
@@ -164,7 +164,7 @@ Patient requests OPD (or reception walk-in)
 ```
 
 - [x] Golden path verified on local (Playwright patient request → My OPD; backend IT exists)
-- [ ] Golden path verified on production (Render)
+- [x] Golden path verified on production (Render)
 
 ### Decision (A2 / A4)
 
@@ -296,7 +296,7 @@ Patient requests OPD (or reception walk-in)
 
 | Attribute | Value |
 |-----------|-------|
-| **Status** | **IN PROGRESS** (F1–F3 implemented; needs Razorpay keys + webhook QA) |
+| **Status** | **COMPLETE** (code; Razorpay keys optional / blank = sandbox) |
 | **Depends on** | Phase A–B stable |
 | **Flow doc** | [P2-B2-RAZORPAY-PAYMENTS.md](../post-hms/P2-B2-RAZORPAY-PAYMENTS.md) |
 
@@ -306,24 +306,29 @@ Patient requests OPD (or reception walk-in)
 | F2 | Patient online pay + webhook | Billing, Patient | [x] |
 | F3 | Subscription SaaS billing for hospitals | Subscription, Admin | [x] |
 
-**Remaining ops:** set `RAZORPAY_*` env vars; point Razorpay webhook to `/api/v1/billing/payments/webhook`; verify Checkout on unpaid invoice + hospital plan renew.
+**Ops note:** Fill `RAZORPAY_*` in `.env` when keys are available; sandbox works with blank values.
 
 ---
 
 ## 10. Phase G — Advanced / deferred
 
+| Attribute | Value |
+|-----------|-------|
+| **Status** | **IN PROGRESS** |
+| **Started** | 2026-09-07 |
+
 | ID | Item | Notes | Done |
 |----|------|-------|------|
-| G1 | SMS / WhatsApp gateway | ECO-P5 deferred | [ ] |
-| G2 | QR deep-link self check-in packaging | ECO-P5 deferred | [ ] |
-| G3 | OPD_APPROACHING queue-position alerts | Enum reserved | [ ] |
-| G4 | PACS / DICOM | Radiology | [ ] |
-| G5 | LIS integration | Lab | [ ] |
-| G6 | Pharmacy inventory / stock | Pharmacy | [ ] |
-| G7 | Anesthesia / implant tracking | OT | [ ] |
-| G8 | Partner admin portal | Org | [ ] |
-| G9 | Hospital / platform ops analytics | Analytics | [ ] |
-| G10 | MFA / password reset | IAM Phase 1.5+ | [ ] |
+| G1 | SMS / WhatsApp gateway | Needs vendor keys — stub interface later | [ ] |
+| G2 | QR deep-link self check-in packaging | Web QR + mobile deep-link path | [x] |
+| G3 | OPD_APPROACHING queue-position alerts | Position ≤ 3, once | [x] |
+| G4 | PACS / DICOM | Needs hospital PACS contract | [ ] |
+| G5 | LIS integration | Needs external LIS | [ ] |
+| G6 | Pharmacy inventory / stock | Batches + ledger + dispense decrement | [x] |
+| G7 | Anesthesia / implant tracking | Implant tracking MVP (anesthesia chart later) | [x] implants |
+| G8 | Partner admin portal | Org / location / hospital-link CRUD | [x] |
+| G9 | Hospital / platform ops analytics | 7-day trend on hospital dashboard | [x] |
+| G10 | MFA / password reset | Forgot + reset email done; MFA later | [x] password reset; MFA [ ] |
 | G11 | TV / display board | Non-goal unless requested | [-] |
 
 ---
@@ -442,6 +447,8 @@ Deepen or wire — do not recreate:
 | 2026-09-03 | Phase A started: A2/A3/A4 implemented; A1/A6 ops checklist added |
 | 2026-09-03 | A5 done: Playwright OPD smoke (2/2 local pass) + `.github/workflows/e2e-opd.yml` |
 | 2026-09-04 | Phase F started: F1–F3 Razorpay sandbox, patient pay + webhook, SaaS renew (V73) |
+| 2026-09-07 | Phase A production QA signed off COMPLETE; Phase F COMPLETE (code); Phase G started (G2/G3/G6/G9/G10) |
+| 2026-09-07 | Phase G: G7 implant tracking + G8 partner admin CRUD (V76); V75 SaaS sequence version fix |
 
 ---
 

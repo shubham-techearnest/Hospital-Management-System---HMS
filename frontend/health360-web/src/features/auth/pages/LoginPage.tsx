@@ -97,6 +97,11 @@ export function LoginPage() {
                 error={!!errors.password}
                 helperText={errors.password?.message}
               />
+              <Box sx={{ textAlign: 'right', mt: -1 }}>
+                <Link component={RouterLink} to="/forgot-password" variant="body2">
+                  Forgot password?
+                </Link>
+              </Box>
               <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
                 {isSubmitting ? 'Signing in…' : 'Sign in'}
               </Button>

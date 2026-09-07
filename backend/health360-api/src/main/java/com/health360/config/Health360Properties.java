@@ -49,6 +49,7 @@ public class Health360Properties {
         private int maxFailedLoginAttempts = 5;
         private long lockoutDurationMinutes = 30;
         private long emailVerificationTtlHours = 24;
+        private long passwordResetTtlHours = 2;
     }
 
     @Getter

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import {
+  addOtImplant,
   addOtNote,
   addOtTeamMember,
   completeOtProcedure,
@@ -148,6 +149,25 @@ export function useOtMutations(hospitalId: string, branchId: string) {
         qc.invalidateQueries({ queryKey: otKeys.procedure(vars.procedureId) });
       },
     }),
+    addImplant: useMutation({
+      mutationFn: ({
+        procedureId,
+        ...payload
+      }: {
+        procedureId: string;
+        implantName: string;
+        implantType?: string;
+        manufacturer?: string;
+        lotNumber?: string;
+        serialNumber?: string;
+        quantity?: number;
+        notes?: string;
+      }) => addOtImplant(procedureId, payload),
+      onSuccess: (_, vars) => {
+        invalidateScope();
+        qc.invalidateQueries({ queryKey: otKeys.procedure(vars.procedureId) });
+      },
+    }),
     startProcedure: useMutation({
       mutationFn: startOtProcedure,
       onSuccess: (procedure) => {
@@ -162,7 +182,7 @@ export function useOtMutations(hospitalId: string, branchId: string) {
       }: {
         procedureId: string;
         completionSummary?: string;
-      }) => completeOtProcedure(procedureId, { completionSummary }),
+      }) => completeOtProcedure(procedureId, { summaryText: completionSummary }),
       onSuccess: (procedure) => {
         invalidateScope();
         qc.invalidateQueries({ queryKey: otKeys.procedure(procedure.procedureId) });

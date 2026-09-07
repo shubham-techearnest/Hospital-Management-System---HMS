@@ -62,6 +62,15 @@ export function OtProcedureDetailPage() {
   });
   const [teamForm, setTeamForm] = useState({ memberRole: 'SURGEON', userId: '', memberName: '' });
   const [noteForm, setNoteForm] = useState({ noteType: 'PRE_OP', content: '' });
+  const [implantForm, setImplantForm] = useState({
+    implantName: '',
+    implantType: '',
+    manufacturer: '',
+    lotNumber: '',
+    serialNumber: '',
+    quantity: '1',
+    notes: '',
+  });
   const [completionSummary, setCompletionSummary] = useState('');
 
   const showError = (e: unknown) =>
@@ -305,6 +314,117 @@ export function OtProcedureDetailPage() {
                   Add note
                 </Button>
               </Paper>
+
+              <Paper variant="outlined" sx={{ p: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>Implants</Typography>
+                {(procedure.implants ?? []).length > 0 ? (
+                  <Stack spacing={1} sx={{ mb: 2 }}>
+                    {(procedure.implants ?? []).map((implant) => (
+                      <Typography key={implant.implantId} variant="body2">
+                        <strong>{implant.implantName}</strong>
+                        {implant.implantType ? ` · ${implant.implantType}` : ''}
+                        {implant.manufacturer ? ` · ${implant.manufacturer}` : ''}
+                        {implant.lotNumber ? ` · lot ${implant.lotNumber}` : ''}
+                        {implant.serialNumber ? ` · S/N ${implant.serialNumber}` : ''}
+                        {` · qty ${implant.quantity}`}
+                      </Typography>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    No implants recorded yet.
+                  </Typography>
+                )}
+                <Stack spacing={1} sx={{ mb: 1 }}>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                    <TextField
+                      label="Implant name"
+                      size="small"
+                      fullWidth
+                      required
+                      value={implantForm.implantName}
+                      onChange={(e) => setImplantForm({ ...implantForm, implantName: e.target.value })}
+                    />
+                    <TextField
+                      label="Type"
+                      size="small"
+                      fullWidth
+                      value={implantForm.implantType}
+                      onChange={(e) => setImplantForm({ ...implantForm, implantType: e.target.value })}
+                    />
+                  </Stack>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                    <TextField
+                      label="Manufacturer"
+                      size="small"
+                      fullWidth
+                      value={implantForm.manufacturer}
+                      onChange={(e) => setImplantForm({ ...implantForm, manufacturer: e.target.value })}
+                    />
+                    <TextField
+                      label="Lot #"
+                      size="small"
+                      fullWidth
+                      value={implantForm.lotNumber}
+                      onChange={(e) => setImplantForm({ ...implantForm, lotNumber: e.target.value })}
+                    />
+                    <TextField
+                      label="Serial #"
+                      size="small"
+                      fullWidth
+                      value={implantForm.serialNumber}
+                      onChange={(e) => setImplantForm({ ...implantForm, serialNumber: e.target.value })}
+                    />
+                    <TextField
+                      label="Qty"
+                      size="small"
+                      sx={{ width: { xs: '100%', sm: 88 } }}
+                      value={implantForm.quantity}
+                      onChange={(e) => setImplantForm({ ...implantForm, quantity: e.target.value })}
+                    />
+                  </Stack>
+                  <TextField
+                    label="Notes"
+                    size="small"
+                    fullWidth
+                    value={implantForm.notes}
+                    onChange={(e) => setImplantForm({ ...implantForm, notes: e.target.value })}
+                  />
+                </Stack>
+                <Button
+                  variant="outlined"
+                  disabled={!implantForm.implantName.trim() || mutations.addImplant.isPending}
+                  onClick={async () => {
+                    try {
+                      const qty = Number(implantForm.quantity);
+                      await mutations.addImplant.mutateAsync({
+                        procedureId: procedure.procedureId,
+                        implantName: implantForm.implantName.trim(),
+                        implantType: implantForm.implantType.trim() || undefined,
+                        manufacturer: implantForm.manufacturer.trim() || undefined,
+                        lotNumber: implantForm.lotNumber.trim() || undefined,
+                        serialNumber: implantForm.serialNumber.trim() || undefined,
+                        quantity: Number.isFinite(qty) && qty >= 1 ? qty : 1,
+                        notes: implantForm.notes.trim() || undefined,
+                      });
+                      setImplantForm({
+                        implantName: '',
+                        implantType: '',
+                        manufacturer: '',
+                        lotNumber: '',
+                        serialNumber: '',
+                        quantity: '1',
+                        notes: '',
+                      });
+                      showSuccess('Implant recorded.');
+                    } catch (e) {
+                      showError(e);
+                    }
+                  }}
+                >
+                  Add implant
+                </Button>
+              </Paper>
             </>
           ) : null}
 
@@ -396,6 +516,19 @@ export function OtProcedureDetailPage() {
                   <strong>{note.noteType}:</strong> {note.content}
                 </Typography>
               ))}
+              {(procedure.implants ?? []).length > 0 ? (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>Implants</Typography>
+                  {(procedure.implants ?? []).map((implant) => (
+                    <Typography key={implant.implantId} variant="body2" sx={{ mb: 0.5 }}>
+                      <strong>{implant.implantName}</strong>
+                      {implant.lotNumber ? ` · lot ${implant.lotNumber}` : ''}
+                      {implant.serialNumber ? ` · S/N ${implant.serialNumber}` : ''}
+                      {` · qty ${implant.quantity}`}
+                    </Typography>
+                  ))}
+                </Box>
+              ) : null}
             </Paper>
           ) : null}
         </Stack>

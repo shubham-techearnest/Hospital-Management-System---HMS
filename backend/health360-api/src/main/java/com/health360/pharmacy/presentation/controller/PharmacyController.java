@@ -3,6 +3,7 @@ package com.health360.pharmacy.presentation.controller;
 import com.health360.config.security.UserPrincipal;
 import com.health360.pharmacy.application.service.PharmacyCatalogService;
 import com.health360.pharmacy.application.service.PharmacyFulfillmentService;
+import com.health360.pharmacy.application.service.PharmacyInventoryService;
 import com.health360.pharmacy.application.service.PharmacyRequestService;
 import com.health360.pharmacy.presentation.dto.request.*;
 import com.health360.pharmacy.presentation.dto.response.*;
@@ -29,6 +30,7 @@ public class PharmacyController {
     private final PharmacyCatalogService catalogService;
     private final PharmacyFulfillmentService fulfillmentService;
     private final PharmacyRequestService requestService;
+    private final PharmacyInventoryService inventoryService;
 
     @PostMapping("/medicines")
     @PreAuthorize("hasAuthority('pharmacy:medicine:write')")
@@ -208,5 +210,22 @@ public class PharmacyController {
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable UUID requestId) {
         return ResponseEntity.ok(ApiResponse.ok(requestService.dispense(principal, requestId)));
+    }
+
+    @PostMapping("/stock/receive")
+    @PreAuthorize("hasAnyAuthority('pharmacy:stock:write', 'pharmacy:medicine:write')")
+    public ResponseEntity<ApiResponse<MedicineBatchResponse>> receiveStock(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody ReceiveStockRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                ApiResponse.ok(inventoryService.receiveStock(principal, request)));
+    }
+
+    @GetMapping("/stock/medicines/{medicineId}")
+    @PreAuthorize("hasAnyAuthority('pharmacy:stock:read', 'pharmacy:medicine:read')")
+    public ResponseEntity<ApiResponse<MedicineStockSummaryResponse>> getMedicineStock(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID medicineId) {
+        return ResponseEntity.ok(ApiResponse.ok(inventoryService.getStock(principal, medicineId)));
     }
 }

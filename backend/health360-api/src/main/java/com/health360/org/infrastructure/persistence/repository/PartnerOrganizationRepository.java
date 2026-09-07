@@ -11,6 +11,11 @@ public interface PartnerOrganizationRepository extends JpaRepository<PartnerOrga
 
     Optional<PartnerOrganizationEntity> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
 
+    List<PartnerOrganizationEntity> findByTenantIdAndDeletedAtIsNullOrderByNameAsc(UUID tenantId);
+
+    List<PartnerOrganizationEntity> findByTenantIdAndOrgTypeAndDeletedAtIsNullOrderByNameAsc(
+            UUID tenantId, String orgType);
+
     List<PartnerOrganizationEntity> findByTenantIdAndOrgTypeAndStatusAndDeletedAtIsNull(
             UUID tenantId, String orgType, String status);
 }

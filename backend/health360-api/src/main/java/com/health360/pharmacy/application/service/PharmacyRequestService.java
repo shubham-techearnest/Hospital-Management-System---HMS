@@ -46,6 +46,7 @@ public class PharmacyRequestService {
     private final PrescriptionItemRepository prescriptionItemRepository;
     private final PatientProfileRepository patientProfileRepository;
     private final PharmacyAccessService accessService;
+    private final PharmacyInventoryService inventoryService;
     private final AuditLogService auditLogService;
     private final TransactionalNotificationService notificationService;
     private final PartnerNearbySearchService partnerNearbySearchService;
@@ -214,11 +215,19 @@ public class PharmacyRequestService {
 
     @Transactional
     public PharmacyRequestResponse dispense(UserPrincipal principal, UUID requestId) {
-        return transition(principal, requestId, PharmacyRequestStatus.READY, PharmacyRequestStatus.DISPENSED, (req, now) -> {
-            req.setDispensedAt(now);
-            req.setDispensedBy(principal.getUserId());
-            markItemsDispensed(req.getId(), principal.getUserId());
-        });
+        PharmacyRequestResponse response = transition(
+                principal, requestId, PharmacyRequestStatus.READY, PharmacyRequestStatus.DISPENSED, (req, now) -> {
+                    req.setDispensedAt(now);
+                    req.setDispensedBy(principal.getUserId());
+                    markItemsDispensed(req.getId(), principal.getUserId());
+                });
+        PharmacyRequestEntity saved = requestRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(requestId, principal.getTenantId())
+                .orElse(null);
+        if (saved != null) {
+            inventoryService.decrementForDispense(principal, saved);
+        }
+        return response;
     }
 
     private PharmacyRequestResponse transition(

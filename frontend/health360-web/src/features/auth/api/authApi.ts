@@ -92,3 +92,17 @@ export async function logout(accessToken: string, refreshTokenValue?: string) {
     },
   );
 }
+
+export async function forgotPassword(email: string): Promise<string> {
+  const { data } = await apiClient.post<ApiEnvelope<void>>('/auth/forgot-password', { email });
+  return data.message ?? 'If an account exists for that email, a reset link has been sent.';
+}
+
+export async function resetPassword(payload: {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<string> {
+  const { data } = await apiClient.post<ApiEnvelope<void>>('/auth/reset-password', payload);
+  return data.message ?? 'Password updated.';
+}

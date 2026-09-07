@@ -24,6 +24,18 @@ public class LocalEmailNotificationService implements EmailNotificationService {
     }
 
     @Override
+    public void sendPasswordResetEmail(String email, String firstName, String rawToken) {
+        String link = appBaseUrl + "/reset-password?token=" + rawToken;
+        log.info("""
+                ===== PASSWORD RESET EMAIL (local dev) =====
+                To: {}
+                Hi {},
+                Reset your password: {}
+                ============================================
+                """, email, firstName, link);
+    }
+
+    @Override
     public void sendTransactionalEmail(String email, String subject, String body) {
         log.info("""
                 ===== TRANSACTIONAL EMAIL (local dev) =====

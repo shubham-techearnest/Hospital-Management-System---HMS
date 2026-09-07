@@ -50,6 +50,19 @@ export interface OtNote {
   recordedBy?: string;
 }
 
+export interface OtImplant {
+  implantId: string;
+  procedureId: string;
+  implantName: string;
+  implantType?: string;
+  manufacturer?: string;
+  lotNumber?: string;
+  serialNumber?: string;
+  quantity: number;
+  implantedAt: string;
+  notes?: string;
+}
+
 export interface OtProcedure {
   procedureId: string;
   clinicalOrderItemId: string;
@@ -71,6 +84,7 @@ export interface OtProcedure {
   schedule?: OtSchedule;
   teamMembers: OtTeamMember[];
   notes: OtNote[];
+  implants: OtImplant[];
 }
 
 function unwrap<T>(envelope: ApiEnvelope<T>): T {
@@ -163,6 +177,25 @@ export async function addOtNote(
   return unwrap(data);
 }
 
+export async function addOtImplant(
+  procedureId: string,
+  payload: {
+    implantName: string;
+    implantType?: string;
+    manufacturer?: string;
+    lotNumber?: string;
+    serialNumber?: string;
+    quantity?: number;
+    notes?: string;
+  },
+): Promise<OtImplant> {
+  const { data } = await apiClient.post<ApiEnvelope<OtImplant>>(
+    `/ot/procedures/${procedureId}/implants`,
+    payload,
+  );
+  return unwrap(data);
+}
+
 export async function startOtProcedure(procedureId: string): Promise<OtProcedure> {
   const { data } = await apiClient.post<ApiEnvelope<OtProcedure>>(`/ot/procedures/${procedureId}/start`, {});
   return unwrap(data);
@@ -170,7 +203,7 @@ export async function startOtProcedure(procedureId: string): Promise<OtProcedure
 
 export async function completeOtProcedure(
   procedureId: string,
-  payload: { completionSummary?: string },
+  payload: { summaryText?: string },
 ): Promise<OtProcedure> {
   const { data } = await apiClient.post<ApiEnvelope<OtProcedure>>(
     `/ot/procedures/${procedureId}/complete`,

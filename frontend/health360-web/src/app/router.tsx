@@ -2,6 +2,8 @@ import { lazy, Suspense, type PropsWithChildren } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { LandingPage } from '@/features/public/pages/LandingPage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
+import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
 import { VerifyEmailPage } from '@/features/auth/pages/VerifyEmailPage';
 import { GuestOnlyRoute } from '@/features/auth/components/GuestOnlyRoute';
@@ -252,6 +254,12 @@ const AdminHospitalsPage = lazy(() =>
 const AdminHospitalDetailPage = lazy(() =>
   import('@/features/admin/pages/AdminHospitalDetailPage').then((m) => ({ default: m.AdminHospitalDetailPage })),
 );
+const AdminPartnersPage = lazy(() =>
+  import('@/features/admin/pages/AdminPartnersPage').then((m) => ({ default: m.AdminPartnersPage })),
+);
+const AdminPartnerDetailPage = lazy(() =>
+  import('@/features/admin/pages/AdminPartnerDetailPage').then((m) => ({ default: m.AdminPartnerDetailPage })),
+);
 const AdminPlansPage = lazy(() =>
   import('@/features/admin/pages/AdminPlansPage').then((m) => ({ default: m.AdminPlansPage })),
 );
@@ -310,6 +318,8 @@ export function AppRouter() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/brand" element={<BrandIdentityPage />} />
         <Route path="/login" element={<GuestOnlyRoute><LoginPage /></GuestOnlyRoute>} />
+        <Route path="/forgot-password" element={<GuestOnlyRoute><ForgotPasswordPage /></GuestOnlyRoute>} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/register" element={<GuestOnlyRoute><RegisterPage /></GuestOnlyRoute>} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/complete-patient-account" element={<CompletePatientAccountPage />} />
@@ -502,6 +512,8 @@ export function AppRouter() {
           <Route path="users" element={<LazyPage><AdminUsersPage /></LazyPage>} />
           <Route path="hospitals" element={<LazyPage><AdminHospitalsPage /></LazyPage>} />
           <Route path="hospitals/:hospitalId" element={<LazyPage><AdminHospitalDetailPage /></LazyPage>} />
+          <Route path="partners" element={<LazyPage><AdminPartnersPage /></LazyPage>} />
+          <Route path="partners/:partnerOrgId" element={<LazyPage><AdminPartnerDetailPage /></LazyPage>} />
           <Route path="plans" element={<LazyPage><AdminPlansPage /></LazyPage>} />
           <Route path="audit-logs" element={<LazyPage><AdminAuditLogsPage /></LazyPage>} />
           <Route path="reviews" element={<LazyPage><AdminReviewModerationPage /></LazyPage>} />

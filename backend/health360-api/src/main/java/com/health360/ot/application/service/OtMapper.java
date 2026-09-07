@@ -52,12 +52,28 @@ public class OtMapper {
                 .build();
     }
 
+    public OtImplantResponse toImplantResponse(OtImplantEntity entity) {
+        return OtImplantResponse.builder()
+                .implantId(entity.getId())
+                .procedureId(entity.getProcedureId())
+                .implantName(entity.getImplantName())
+                .implantType(entity.getImplantType())
+                .manufacturer(entity.getManufacturer())
+                .lotNumber(entity.getLotNumber())
+                .serialNumber(entity.getSerialNumber())
+                .quantity(entity.getQuantity())
+                .implantedAt(entity.getImplantedAt())
+                .notes(entity.getNotes())
+                .build();
+    }
+
     public OtProcedureResponse toProcedureResponse(
             OtProcedureEntity procedure,
             OperationTheatreEntity theatre,
             OtScheduleEntity schedule,
             List<OtTeamMemberEntity> teamMembers,
             List<OtNoteEntity> notes,
+            List<OtImplantEntity> implants,
             String patientName,
             String uhid) {
         return OtProcedureResponse.builder()
@@ -81,6 +97,7 @@ public class OtMapper {
                 .schedule(schedule != null ? toScheduleResponse(schedule) : null)
                 .teamMembers(teamMembers.stream().map(this::toTeamMemberResponse).toList())
                 .notes(notes.stream().map(this::toNoteResponse).toList())
+                .implants(implants.stream().map(this::toImplantResponse).toList())
                 .build();
     }
 }

@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -99,6 +100,18 @@ public class DashboardService {
         long staff = staffRepository.countByTenantIdAndHospitalIdAndEmploymentStatusAndDeletedAtIsNull(
                 tenantId, scope.hospitalId(), "ACTIVE");
 
+        List<OpsTrendDayResponse> trend = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDate day = today.minusDays(i);
+            trend.add(OpsTrendDayResponse.builder()
+                    .date(day)
+                    .opdWaiting(countOpdQueue(tenantId, scope, day, "WAITING"))
+                    .opdCompleted(countOpdQueue(tenantId, scope, day, "COMPLETED"))
+                    .opdInProgress(countOpdQueue(tenantId, scope, day, "IN_SERVICE")
+                            + countOpdQueue(tenantId, scope, day, "CALLED"))
+                    .build());
+        }
+
         return HospitalDashboardResponse.builder()
                 .hospitalId(scope.hospitalId())
                 .branchId(scope.branchId())
@@ -119,6 +132,7 @@ public class DashboardService {
                 .pendingRadiologyOrders(imagingOrderRepository.findPendingImagingItems(tenantId, scope.hospitalId(), scope.branchId()).size())
                 .pendingPharmacyOrders(medicationOrderRepository.findPendingMedicationOrders(tenantId, scope.hospitalId(), scope.branchId()).size())
                 .pendingOtProcedures(otProcedureRepository.findPendingProcedureItems(tenantId, scope.hospitalId(), scope.branchId()).size())
+                .opsTrend7d(trend)
                 .build();
     }
 

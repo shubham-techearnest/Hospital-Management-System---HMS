@@ -76,6 +76,16 @@ export function usePatientDeepLinks(
 
       if (path === 'patient/labs' || path === 'labs') {
         navigation.navigate('Dashboard', { screen: 'LabValues' });
+        return;
+      }
+
+      // G2: health360://appointments/{id}/check-in or patient/appointments/{id}/check-in
+      const checkInMatch = path.match(/^(?:patient\/)?appointments\/([^/]+)\/check-in$/);
+      if (checkInMatch?.[1]) {
+        navigation.navigate('Appointments', {
+          screen: 'AppointmentDetail',
+          params: { appointmentId: checkInMatch[1] },
+        });
       }
     };
 

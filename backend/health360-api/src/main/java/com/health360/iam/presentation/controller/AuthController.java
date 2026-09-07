@@ -5,12 +5,15 @@ import com.health360.config.security.UserPrincipal;
 import com.health360.iam.application.service.AuthenticationService;
 import com.health360.iam.application.service.EmailVerificationService;
 import com.health360.iam.application.service.PasswordChangeService;
+import com.health360.iam.application.service.PasswordResetService;
 import com.health360.iam.application.service.RegistrationService;
 import com.health360.iam.presentation.dto.request.ChangePasswordRequest;
+import com.health360.iam.presentation.dto.request.ForgotPasswordRequest;
 import com.health360.iam.presentation.dto.request.LoginRequest;
 import com.health360.iam.presentation.dto.request.RefreshTokenRequest;
 import com.health360.iam.presentation.dto.request.RegisterRequest;
 import com.health360.iam.presentation.dto.request.ResendVerificationRequest;
+import com.health360.iam.presentation.dto.request.ResetPasswordRequest;
 import com.health360.patient.application.service.PatientPortalInviteService;
 import com.health360.patient.presentation.dto.request.CompletePortalAccountRequest;
 import com.health360.shared.dto.ApiResponse;
@@ -37,6 +40,7 @@ public class AuthController {
     private final AuthenticationService authenticationService;
     private final EmailVerificationService emailVerificationService;
     private final PasswordChangeService passwordChangeService;
+    private final PasswordResetService passwordResetService;
     private final Health360Properties properties;
     private final PatientPortalInviteService patientPortalInviteService;
 
@@ -88,6 +92,21 @@ public class AuthController {
                 remainingTtl,
                 refreshToken);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.getEmail(), properties.getDefaultTenantId());
+        return ResponseEntity.ok(ApiResponse.message(
+                "If an account exists for that email, a reset link has been sent."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.message("Password updated. You can now sign in."));
     }
 
     @PutMapping("/password")

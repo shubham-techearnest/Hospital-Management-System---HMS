@@ -117,6 +117,16 @@ public class OtController {
                 procedureService.addNote(principal, procedureId, request)));
     }
 
+    @PostMapping("/procedures/{procedureId}/implants")
+    @PreAuthorize("hasAuthority('ot:procedure:write')")
+    public ResponseEntity<ApiResponse<OtImplantResponse>> addImplant(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID procedureId,
+            @Valid @RequestBody AddOtImplantRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
+                procedureService.addImplant(principal, procedureId, request)));
+    }
+
     @PostMapping("/procedures/{procedureId}/start")
     @PreAuthorize("hasAuthority('ot:procedure:write')")
     public ResponseEntity<ApiResponse<OtProcedureResponse>> startProcedure(

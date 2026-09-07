@@ -64,6 +64,20 @@ public class PharmacyAccessService {
         }
     }
 
+    public void assertCanReadStock(UserPrincipal principal) {
+        if (!principal.hasPermission("pharmacy:stock:read")
+                && !principal.hasPermission("pharmacy:medicine:read")) {
+            throw forbidden();
+        }
+    }
+
+    public void assertCanWriteStock(UserPrincipal principal) {
+        if (!principal.hasPermission("pharmacy:stock:write")
+                && !principal.hasPermission("pharmacy:medicine:write")) {
+            throw forbidden();
+        }
+    }
+
     public void assertHospitalScope(UserPrincipal principal, UUID hospitalId) {
         hospitalScopeService.assertHospitalScope(principal, hospitalId);
     }

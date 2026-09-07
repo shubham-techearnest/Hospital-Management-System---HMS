@@ -3,6 +3,7 @@ package com.health360.dashboard.presentation.dto.response;
 import lombok.Builder;
 import lombok.Value;
 
+import java.util.List;
 import java.util.UUID;
 
 @Value
@@ -25,4 +26,6 @@ public class HospitalDashboardResponse {
     long pendingRadiologyOrders;
     long pendingPharmacyOrders;
     long pendingOtProcedures;
+    /** Last 7 days inclusive (G9). */
+    List<OpsTrendDayResponse> opsTrend7d;
 }

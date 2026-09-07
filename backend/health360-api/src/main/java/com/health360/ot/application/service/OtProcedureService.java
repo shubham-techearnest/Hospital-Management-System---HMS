@@ -40,6 +40,7 @@ public class OtProcedureService {
     private final OtScheduleRepository scheduleRepository;
     private final OtTeamMemberRepository teamMemberRepository;
     private final OtNoteRepository noteRepository;
+    private final OtImplantRepository implantRepository;
     private final OperationTheatreRepository theatreRepository;
     private final ClinicalOrderRepository clinicalOrderRepository;
     private final ClinicalOrderItemRepository clinicalOrderItemRepository;
@@ -289,6 +290,41 @@ public class OtProcedureService {
     }
 
     @Transactional
+    public OtImplantResponse addImplant(UserPrincipal principal, UUID procedureId, AddOtImplantRequest request) {
+        accessService.assertCanManageProcedures(principal);
+        UUID tenantId = principal.getTenantId();
+        OtProcedureEntity procedure = requireProcedure(tenantId, procedureId);
+        accessService.assertHospitalScope(principal, procedure.getHospitalId());
+
+        if (OtProcedureStatus.CANCELLED.name().equals(procedure.getStatus())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Cannot add implants to a cancelled procedure");
+        }
+
+        int quantity = request.getQuantity() != null ? request.getQuantity() : 1;
+        if (quantity < 1) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "quantity must be at least 1");
+        }
+
+        OtImplantEntity implant = new OtImplantEntity();
+        implant.setTenantId(tenantId);
+        implant.setProcedureId(procedureId);
+        implant.setImplantName(request.getImplantName().trim());
+        implant.setImplantType(trimToNull(request.getImplantType()));
+        implant.setManufacturer(trimToNull(request.getManufacturer()));
+        implant.setLotNumber(trimToNull(request.getLotNumber()));
+        implant.setSerialNumber(trimToNull(request.getSerialNumber()));
+        implant.setQuantity(quantity);
+        implant.setImplantedAt(Instant.now());
+        implant.setNotes(trimToNull(request.getNotes()));
+        implant.setCreatedBy(principal.getUserId());
+        implant.setUpdatedBy(principal.getUserId());
+
+        return mapper.toImplantResponse(implantRepository.save(implant));
+    }
+
+    @Transactional
     public OtProcedureResponse startProcedure(UserPrincipal principal, UUID procedureId) {
         accessService.assertCanManageProcedures(principal);
         UUID tenantId = principal.getTenantId();
@@ -438,6 +474,8 @@ public class OtProcedureService {
                 .findByProcedureIdAndDeletedAtIsNullOrderByCreatedAtAsc(procedure.getId());
         List<OtNoteEntity> notes = noteRepository
                 .findByProcedureIdAndDeletedAtIsNullOrderByRecordedAtAsc(procedure.getId());
+        List<OtImplantEntity> implants = implantRepository
+                .findByProcedureIdAndDeletedAtIsNullOrderByImplantedAtAsc(procedure.getId());
         PatientProfileEntity patient = patientProfileRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(procedure.getPatientId(), tenantId)
                 .orElse(null);
@@ -447,6 +485,7 @@ public class OtProcedureService {
                 schedule,
                 team,
                 notes,
+                implants,
                 patientDisplayNameResolver.resolve(patient),
                 patient != null ? patient.getUhid() : null);
     }

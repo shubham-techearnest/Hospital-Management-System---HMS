@@ -46,6 +46,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OpdQueueService {
 
+    private static final int APPROACHING_THRESHOLD = 3;
+
     private final OpdQueueEntryRepository queueEntryRepository;
     private final EncounterRepository encounterRepository;
     private final EncounterService encounterService;
@@ -288,6 +290,7 @@ public class OpdQueueService {
                     "OPD_QUEUE_" + targetStatus.name(), "OpdQueueEntry", entry.getId(),
                     Map.of("encounterStatus", updated.getStatus()));
             notifyPatientQueueStatus(principal.getTenantId(), encounter, targetStatus);
+            maybeNotifyApproachingPatients(principal.getTenantId(), entry);
             return toQueueResponse(principal.getTenantId(), entry, encounter);
         }
 
@@ -295,6 +298,8 @@ public class OpdQueueService {
                 "OPD_QUEUE_" + targetStatus.name(), "OpdQueueEntry", entry.getId(), Map.of());
 
         notifyPatientQueueStatus(principal.getTenantId(), encounter, targetStatus);
+
+        maybeNotifyApproachingPatients(principal.getTenantId(), entry);
 
         return toQueueResponse(principal.getTenantId(), entry, encounter);
     }
@@ -360,6 +365,57 @@ public class OpdQueueService {
                                 "OpdQueueEntry", encounter.getId());
                     }
                 });
+    }
+
+    /**
+     * G3: notify WAITING patients whose position is within threshold (once per token day).
+     */
+    private void maybeNotifyApproachingPatients(UUID tenantId, OpdQueueEntryEntity changedEntry) {
+        List<OpdQueueEntryEntity> waiting = queueEntryRepository.findQueue(
+                tenantId,
+                changedEntry.getHospitalId(),
+                changedEntry.getBranchId(),
+                changedEntry.getQueueDate(),
+                QueueEntryStatus.WAITING.name(),
+                null);
+        for (OpdQueueEntryEntity waitingEntry : waiting) {
+            if (waitingEntry.getApproachingNotifiedAt() != null) {
+                continue;
+            }
+            long ahead = queueEntryRepository.countWaitingAhead(
+                    tenantId,
+                    waitingEntry.getHospitalId(),
+                    waitingEntry.getBranchId(),
+                    waitingEntry.getQueueDate(),
+                    waitingEntry.getTokenNumber());
+            long position = ahead + 1;
+            if (position > APPROACHING_THRESHOLD) {
+                continue;
+            }
+            EncounterEntity encounter = encounterRepository
+                    .findByIdAndTenantIdAndDeletedAtIsNull(waitingEntry.getEncounterId(), tenantId)
+                    .orElse(null);
+            if (encounter == null) {
+                continue;
+            }
+            patientProfileRepository
+                    .findByIdAndTenantIdAndDeletedAtIsNull(encounter.getPatientId(), tenantId)
+                    .ifPresent(patient -> {
+                        if (patient.getUserId() == null) {
+                            return;
+                        }
+                        notificationService.send(
+                                tenantId,
+                                patient.getUserId(),
+                                NotificationType.OPD_APPROACHING,
+                                "Your turn is approaching",
+                                "You are number " + position + " in the OPD queue. Please stay nearby.",
+                                "OpdQueueEntry",
+                                waitingEntry.getId());
+                        waitingEntry.setApproachingNotifiedAt(Instant.now());
+                        queueEntryRepository.save(waitingEntry);
+                    });
+        }
     }
 
     private OpdQueueEntryEntity requireQueueEntry(UserPrincipal principal, UUID queueEntryId) {

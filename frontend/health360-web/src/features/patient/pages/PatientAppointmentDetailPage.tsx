@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react';
-import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Alert,
+  Box,
   Button,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Paper,
   Skeleton,
   Stack,
   TextField,
@@ -30,6 +32,7 @@ const SELF_CHECK_IN_STATUSES = new Set(['PENDING', 'CONFIRMED', 'POSTPONED']);
 
 export function PatientAppointmentDetailPage() {
   const { appointmentId = '' } = useParams<{ appointmentId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { data: appointment, isLoading, error } = useMyAppointment(appointmentId);
   const cancelMutation = useCancelMyAppointment();
@@ -43,6 +46,7 @@ export function PatientAppointmentDetailPage() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [autoCheckInAttempted, setAutoCheckInAttempted] = useState(false);
 
   const { data: availability, isLoading: slotsLoading } = useDoctorAvailability(
     appointment?.doctor.id ?? '',
@@ -71,6 +75,37 @@ export function PatientAppointmentDetailPage() {
       && scheduled.getUTCDate() === now.getUTCDate()
     );
   }, [appointment?.scheduledAt]);
+
+  useEffect(() => {
+    if (autoCheckInAttempted || isLoading || !appointment) return;
+    if (searchParams.get('checkIn') !== '1') return;
+    const eligible = SELF_CHECK_IN_STATUSES.has(appointment.status) && isTodayAppointment;
+    setAutoCheckInAttempted(true);
+    setSearchParams({}, { replace: true });
+    if (!eligible) return;
+    void (async () => {
+      setActionError(null);
+      try {
+        const result = await selfCheckInMutation.mutateAsync(appointmentId);
+        const token = result?.queueEntry?.tokenDisplay;
+        setSuccess(token
+          ? `Checked in via QR. Your token is ${token}.`
+          : 'Checked in via QR successfully.');
+      } catch (e: unknown) {
+        const err = e as { response?: { data?: { error?: { message?: string } } } };
+        setActionError(err.response?.data?.error?.message ?? 'Self check-in failed.');
+      }
+    })();
+  }, [
+    appointment,
+    appointmentId,
+    autoCheckInAttempted,
+    isLoading,
+    isTodayAppointment,
+    searchParams,
+    selfCheckInMutation,
+    setSearchParams,
+  ]);
 
   if (isLoading) {
     return (
@@ -164,6 +199,28 @@ export function PatientAppointmentDetailPage() {
           <Typography color="error"><strong>Cancellation reason:</strong> {appointment.cancellationReason}</Typography>
         ) : null}
       </Stack>
+
+      {canSelfCheckIn || appointment.status === 'CONFIRMED' || appointment.status === 'PENDING' ? (
+        <Paper variant="outlined" sx={{ p: 2, mb: 3, maxWidth: 360 }}>
+          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            Check-in QR / deep link
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            Scan or open this link on your phone to jump to this appointment and check in.
+          </Typography>
+          <Box
+            component="img"
+            alt="Self check-in QR"
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+              `${typeof window !== 'undefined' ? window.location.origin : ''}/patient/appointments/${appointmentId}?checkIn=1`,
+            )}`}
+            sx={{ width: 160, height: 160, display: 'block', mb: 1, bgcolor: '#fff' }}
+          />
+          <Typography variant="caption" sx={{ wordBreak: 'break-all', display: 'block' }}>
+            health360://appointments/{appointmentId}/check-in
+          </Typography>
+        </Paper>
+      ) : null}
 
       <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
         {canSelfCheckIn ? (

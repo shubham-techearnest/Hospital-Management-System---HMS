@@ -2,6 +2,7 @@ package com.health360.iam.presentation.validation;
 
 import com.health360.iam.presentation.dto.request.ChangePasswordRequest;
 import com.health360.iam.presentation.dto.request.RegisterRequest;
+import com.health360.iam.presentation.dto.request.ResetPasswordRequest;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
@@ -14,6 +15,9 @@ public class PasswordMatchesValidator implements ConstraintValidator<PasswordMat
         }
         if (request instanceof ChangePasswordRequest changePasswordRequest) {
             return passwordsMatch(changePasswordRequest.getNewPassword(), changePasswordRequest.getConfirmPassword());
+        }
+        if (request instanceof ResetPasswordRequest resetPasswordRequest) {
+            return passwordsMatch(resetPasswordRequest.getNewPassword(), resetPasswordRequest.getConfirmPassword());
         }
         return true;
     }

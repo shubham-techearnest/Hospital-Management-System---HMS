@@ -1,5 +1,5 @@
 import { Link as RouterLink } from 'react-router-dom';
-import { Button, Chip, Grid, Stack, Typography } from '@mui/material';
+import { Box, Button, Chip, Grid, Stack, Typography } from '@mui/material';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
@@ -47,6 +47,23 @@ export function HospitalDashboardPage() {
           { label: 'Active staff', value: dashboard?.activeStaffCount ?? 0, icon: <BadgeIcon />, to: '/hospital/staff' },
         ]}
       />
+
+      {dashboard?.opsTrend7d && dashboard.opsTrend7d.length > 0 ? (
+        <Box sx={{ mb: 3 }}>
+          <DashboardSection title="OPD trend (7 days)">
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              {dashboard.opsTrend7d.map((day) => (
+                <Chip
+                  key={day.date}
+                  variant="outlined"
+                  label={`${day.date.slice(5)} · wait ${day.opdWaiting} · done ${day.opdCompleted}`}
+                  size="small"
+                />
+              ))}
+            </Stack>
+          </DashboardSection>
+        </Box>
+      ) : null}
 
       <Grid container spacing={{ xs: 2, md: 3 }}>
         <Grid item xs={12} md={8}>
