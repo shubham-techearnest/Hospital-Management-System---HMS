@@ -23,6 +23,12 @@ import {
   updateProfile,
 } from '../api/userApi';
 import {
+  disableMfa,
+  enableMfa,
+  getMfaStatus,
+  setupMfa,
+} from '@/features/auth/api/authApi';
+import {
   changePasswordSchema,
   profileSchema,
   type ChangePasswordForm,
@@ -35,6 +41,7 @@ import { TimezoneField } from '@/shared/timezone/TimezoneField';
 import { LocaleField } from '@/shared/locale/LocaleField';
 import { detectLocale } from '@/shared/timezone/timezones';
 import { detectTimezone } from '@/shared/timezone/timezones';
+import { PasswordField } from '@/shared/ui/PasswordField';
 
 const profileDefaults: ProfileForm = {
   firstName: '',
@@ -74,6 +81,16 @@ export function AccountSettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [email, setEmail] = useState(authUser?.email ?? '');
   const [profileLoading, setProfileLoading] = useState(!authUser);
+  const [mfaEnabled, setMfaEnabled] = useState(Boolean(authUser?.mfaEnabled));
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const [mfaMessage, setMfaMessage] = useState<string | null>(null);
+  const [mfaSecret, setMfaSecret] = useState<string | null>(null);
+  const [mfaOtpUri, setMfaOtpUri] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
+  const [disablePassword, setDisablePassword] = useState('');
+  const [disableCode, setDisableCode] = useState('');
+  const [mfaBusy, setMfaBusy] = useState(false);
 
   const profileForm = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -134,8 +151,10 @@ export function AccountSettingsPage() {
             permissions: profile.permissions,
             status: profile.status,
             emailVerified: profile.emailVerified,
+            mfaEnabled: profile.mfaEnabled,
           }),
         );
+        setMfaEnabled(Boolean(profile.mfaEnabled));
       })
       .catch((error: unknown) => {
         if (cancelled) {
@@ -151,6 +170,16 @@ export function AccountSettingsPage() {
         if (!cancelled) {
           setProfileLoading(false);
         }
+      });
+
+    getMfaStatus()
+      .then((status) => {
+        if (!cancelled) {
+          setMfaEnabled(status.enabled);
+        }
+      })
+      .catch(() => {
+        /* optional — profile mfaEnabled may already be set */
       });
 
     return () => {
@@ -387,6 +416,153 @@ export function AccountSettingsPage() {
                   Change password
                 </Button>
               </Stack>
+            </Box>
+
+            <Divider />
+
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Two-factor authentication (TOTP)
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Protect your account with an authenticator app (Google Authenticator, Authy, etc.).
+              </Typography>
+              {mfaError && (
+                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setMfaError(null)}>
+                  {mfaError}
+                </Alert>
+              )}
+              {mfaMessage && (
+                <Alert severity="success" sx={{ mb: 2 }} onClose={() => setMfaMessage(null)}>
+                  {mfaMessage}
+                </Alert>
+              )}
+              {backupCodes && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  Save these backup codes now — they are shown only once:
+                  <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                    {backupCodes.map((c) => (
+                      <li key={c}><code>{c}</code></li>
+                    ))}
+                  </Box>
+                </Alert>
+              )}
+              {mfaEnabled ? (
+                <Stack spacing={2} maxWidth={420}>
+                  <Alert severity="info">MFA is enabled on this account.</Alert>
+                  <PasswordField
+                    label="Current password"
+                    value={disablePassword}
+                    onChange={(e) => setDisablePassword(e.target.value)}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Authenticator or backup code"
+                    value={disableCode}
+                    onChange={(e) => setDisableCode(e.target.value)}
+                    fullWidth
+                  />
+                  <Button
+                    color="warning"
+                    variant="outlined"
+                    disabled={mfaBusy || !disablePassword || !disableCode.trim()}
+                    onClick={async () => {
+                      setMfaError(null);
+                      setMfaMessage(null);
+                      setMfaBusy(true);
+                      try {
+                        const msg = await disableMfa({
+                          password: disablePassword,
+                          code: disableCode.trim(),
+                        });
+                        setMfaEnabled(false);
+                        setDisablePassword('');
+                        setDisableCode('');
+                        setBackupCodes(null);
+                        dispatch(updateUser({ mfaEnabled: false }));
+                        setMfaMessage(msg);
+                      } catch (e: unknown) {
+                        const err = e as { response?: { data?: { error?: { message?: string } } } };
+                        setMfaError(err.response?.data?.error?.message ?? 'Failed to disable MFA');
+                      } finally {
+                        setMfaBusy(false);
+                      }
+                    }}
+                  >
+                    Disable MFA
+                  </Button>
+                </Stack>
+              ) : (
+                <Stack spacing={2} maxWidth={480}>
+                  {!mfaSecret ? (
+                    <Button
+                      variant="contained"
+                      disabled={mfaBusy}
+                      onClick={async () => {
+                        setMfaError(null);
+                        setMfaBusy(true);
+                        try {
+                          const setup = await setupMfa();
+                          setMfaSecret(setup.secret);
+                          setMfaOtpUri(setup.otpAuthUri);
+                        } catch (e: unknown) {
+                          const err = e as { response?: { data?: { error?: { message?: string } } } };
+                          setMfaError(err.response?.data?.error?.message ?? 'Failed to start MFA setup');
+                        } finally {
+                          setMfaBusy(false);
+                        }
+                      }}
+                    >
+                      Set up authenticator
+                    </Button>
+                  ) : (
+                    <>
+                      <Typography variant="body2">
+                        Add this secret in your authenticator app, then enter a code to confirm.
+                      </Typography>
+                      <TextField
+                        label="Secret key"
+                        value={mfaSecret}
+                        fullWidth
+                        InputProps={{ readOnly: true }}
+                        helperText={mfaOtpUri ? 'Or scan via otpauth URI from your app' : undefined}
+                      />
+                      <TextField
+                        label="6-digit code"
+                        value={mfaCode}
+                        onChange={(e) => setMfaCode(e.target.value)}
+                        fullWidth
+                        inputProps={{ inputMode: 'numeric', maxLength: 6 }}
+                      />
+                      <Button
+                        variant="contained"
+                        disabled={mfaBusy || mfaCode.trim().length < 6}
+                        onClick={async () => {
+                          setMfaError(null);
+                          setMfaBusy(true);
+                          try {
+                            const result = await enableMfa(mfaCode.trim());
+                            setMfaEnabled(true);
+                            setBackupCodes(result.backupCodes);
+                            setMfaSecret(null);
+                            setMfaOtpUri(null);
+                            setMfaCode('');
+                            dispatch(updateUser({ mfaEnabled: true }));
+                            setMfaMessage('Two-factor authentication enabled.');
+                          } catch (e: unknown) {
+                            const err = e as { response?: { data?: { error?: { message?: string } } } };
+                            setMfaError(err.response?.data?.error?.message ?? 'Invalid code');
+                          } finally {
+                            setMfaBusy(false);
+                          }
+                        }}
+                      >
+                        Enable MFA
+                      </Button>
+                    </>
+                  )}
+                </Stack>
+              )}
             </Box>
 
             <Typography textAlign="center">

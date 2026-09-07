@@ -21,6 +21,7 @@ public class Health360Properties {
     private Storage storage = new Storage();
     private Push push = new Push();
     private Payments payments = new Payments();
+    private Sms sms = new Sms();
 
     @Getter
     @Setter
@@ -77,5 +78,21 @@ public class Health360Properties {
         private String keySecret = "";
         private String webhookSecret = "";
         private String apiBaseUrl = "https://api.razorpay.com/v1";
+    }
+
+    @Getter
+    @Setter
+    public static class Sms {
+        /** When false, SMS channel is skipped even if user prefers SMS. */
+        private boolean enabled = true;
+        /** log (default stub) | msg91 (HTTP when auth-key set) */
+        private String provider = "log";
+        private String authKey = "";
+        private String senderId = "H360AI";
+        private String templateId = "";
+        /** MSG91 Flow API base (v5). */
+        private String apiBaseUrl = "https://control.msg91.com/api/v5";
+        /** Legacy sendhttp endpoint when template-id is blank. */
+        private String sendHttpUrl = "https://api.msg91.com/api/sendhttp.php";
     }
 }

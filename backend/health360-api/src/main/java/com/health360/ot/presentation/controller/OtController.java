@@ -127,6 +127,26 @@ public class OtController {
                 procedureService.addImplant(principal, procedureId, request)));
     }
 
+    @PutMapping("/procedures/{procedureId}/anesthesia")
+    @PreAuthorize("hasAuthority('ot:procedure:write')")
+    public ResponseEntity<ApiResponse<OtAnesthesiaChartResponse>> upsertAnesthesiaChart(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID procedureId,
+            @Valid @RequestBody UpsertOtAnesthesiaChartRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                procedureService.upsertAnesthesiaChart(principal, procedureId, request)));
+    }
+
+    @PostMapping("/procedures/{procedureId}/anesthesia/events")
+    @PreAuthorize("hasAuthority('ot:procedure:write')")
+    public ResponseEntity<ApiResponse<OtAnesthesiaEventResponse>> addAnesthesiaEvent(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID procedureId,
+            @Valid @RequestBody AddOtAnesthesiaEventRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
+                procedureService.addAnesthesiaEvent(principal, procedureId, request)));
+    }
+
     @PostMapping("/procedures/{procedureId}/start")
     @PreAuthorize("hasAuthority('ot:procedure:write')")
     public ResponseEntity<ApiResponse<OtProcedureResponse>> startProcedure(

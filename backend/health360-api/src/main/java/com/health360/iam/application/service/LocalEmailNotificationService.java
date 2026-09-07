@@ -26,13 +26,15 @@ public class LocalEmailNotificationService implements EmailNotificationService {
     @Override
     public void sendPasswordResetEmail(String email, String firstName, String rawToken) {
         String link = appBaseUrl + "/reset-password?token=" + rawToken;
+        String mobileLink = "health360://reset-password?token=" + rawToken;
         log.info("""
                 ===== PASSWORD RESET EMAIL (local dev) =====
                 To: {}
                 Hi {},
-                Reset your password: {}
+                Reset your password (web): {}
+                Reset your password (mobile): {}
                 ============================================
-                """, email, firstName, link);
+                """, email, firstName, link, mobileLink);
     }
 
     @Override

@@ -273,3 +273,40 @@ export async function dispensePharmacyRequest(requestId: string): Promise<Pharma
   const { data } = await apiClient.post<ApiEnvelope<PharmacyRequest>>(`/pharmacy/requests/${requestId}/dispense`, {});
   return unwrap(data);
 }
+
+export interface MedicineBatch {
+  batchId: string;
+  medicineId: string;
+  medicineName?: string;
+  batchNumber: string;
+  expiryDate?: string;
+  quantityOnHand: number;
+  unitCost?: number;
+  receivedAt: string;
+}
+
+export interface MedicineStockSummary {
+  medicineId: string;
+  medicineName: string;
+  quantityOnHand: number;
+  batches: MedicineBatch[];
+}
+
+export async function receiveMedicineStock(payload: {
+  medicineId: string;
+  batchNumber: string;
+  quantity: number;
+  expiryDate?: string;
+  unitCost?: number;
+  notes?: string;
+}): Promise<MedicineBatch> {
+  const { data } = await apiClient.post<ApiEnvelope<MedicineBatch>>('/pharmacy/stock/receive', payload);
+  return unwrap(data);
+}
+
+export async function getMedicineStock(medicineId: string): Promise<MedicineStockSummary> {
+  const { data } = await apiClient.get<ApiEnvelope<MedicineStockSummary>>(
+    `/pharmacy/stock/medicines/${medicineId}`,
+  );
+  return unwrap(data);
+}

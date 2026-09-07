@@ -16,6 +16,7 @@ import {
   markPharmacyRequestReady,
   planMedicationOrderItem,
   receivePharmacyRequest,
+  receiveMedicineStock,
   reviewPharmacyRequest,
   sendPrescriptionToHospitalPharmacy,
   sendPrescriptionToPartnerPharmacy,
@@ -25,6 +26,7 @@ import {
 export const pharmacyKeys = {
   medicines: (hospitalId: string, branchId: string) =>
     ['pharmacy', 'medicines', hospitalId, branchId] as const,
+  stock: (medicineId: string) => ['pharmacy', 'stock', medicineId] as const,
   worklist: (hospitalId: string, branchId: string) =>
     ['pharmacy', 'worklist', hospitalId, branchId] as const,
   orders: (hospitalId: string, branchId: string, page: number, status?: string) =>
@@ -107,6 +109,13 @@ export function usePharmacyMutations(hospitalId: string, branchId: string) {
     createMedicine: useMutation({
       mutationFn: createMedicine,
       onSuccess: invalidateScope,
+    }),
+    receiveStock: useMutation({
+      mutationFn: receiveMedicineStock,
+      onSuccess: (batch) => {
+        invalidateScope();
+        qc.invalidateQueries({ queryKey: pharmacyKeys.stock(batch.medicineId) });
+      },
     }),
     receiveOrder: useMutation({
       mutationFn: createMedicationOrder,

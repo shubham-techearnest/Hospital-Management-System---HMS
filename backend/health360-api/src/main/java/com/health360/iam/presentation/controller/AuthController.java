@@ -4,12 +4,16 @@ import com.health360.config.Health360Properties;
 import com.health360.config.security.UserPrincipal;
 import com.health360.iam.application.service.AuthenticationService;
 import com.health360.iam.application.service.EmailVerificationService;
+import com.health360.iam.application.service.MfaService;
 import com.health360.iam.application.service.PasswordChangeService;
 import com.health360.iam.application.service.PasswordResetService;
 import com.health360.iam.application.service.RegistrationService;
 import com.health360.iam.presentation.dto.request.ChangePasswordRequest;
 import com.health360.iam.presentation.dto.request.ForgotPasswordRequest;
 import com.health360.iam.presentation.dto.request.LoginRequest;
+import com.health360.iam.presentation.dto.request.MfaDisableRequest;
+import com.health360.iam.presentation.dto.request.MfaEnableRequest;
+import com.health360.iam.presentation.dto.request.MfaVerifyRequest;
 import com.health360.iam.presentation.dto.request.RefreshTokenRequest;
 import com.health360.iam.presentation.dto.request.RegisterRequest;
 import com.health360.iam.presentation.dto.request.ResendVerificationRequest;
@@ -41,6 +45,7 @@ public class AuthController {
     private final EmailVerificationService emailVerificationService;
     private final PasswordChangeService passwordChangeService;
     private final PasswordResetService passwordResetService;
+    private final MfaService mfaService;
     private final Health360Properties properties;
     private final PatientPortalInviteService patientPortalInviteService;
 
@@ -74,6 +79,36 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<?>> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(authenticationService.login(request)));
+    }
+
+    @PostMapping("/mfa/verify")
+    public ResponseEntity<ApiResponse<?>> verifyMfa(@Valid @RequestBody MfaVerifyRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(authenticationService.verifyMfa(request)));
+    }
+
+    @GetMapping("/mfa/status")
+    public ResponseEntity<ApiResponse<?>> mfaStatus(@AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.ok(mfaService.status(principal)));
+    }
+
+    @PostMapping("/mfa/setup")
+    public ResponseEntity<ApiResponse<?>> mfaSetup(@AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.ok(mfaService.setup(principal)));
+    }
+
+    @PostMapping("/mfa/enable")
+    public ResponseEntity<ApiResponse<?>> mfaEnable(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody MfaEnableRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(mfaService.enable(principal, request)));
+    }
+
+    @PostMapping("/mfa/disable")
+    public ResponseEntity<ApiResponse<?>> mfaDisable(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody MfaDisableRequest request) {
+        mfaService.disable(principal, request);
+        return ResponseEntity.ok(ApiResponse.message("Two-factor authentication disabled."));
     }
 
     @PostMapping("/refresh")

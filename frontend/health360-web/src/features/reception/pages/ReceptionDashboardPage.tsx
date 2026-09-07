@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Alert, Button, MenuItem, Snackbar, Stack, Tab, Tabs,
@@ -275,6 +276,18 @@ export function ReceptionDashboardPage() {
       )}
 
       <ReceptionOpdFlowBanner />
+
+      {scopeReady ? (
+        <Button
+          component={RouterLink}
+          to={`/reception/display?hospitalId=${encodeURIComponent(hospitalId)}&branchId=${encodeURIComponent(effectiveBranchId)}`}
+          variant="outlined"
+          size="small"
+          sx={{ alignSelf: 'flex-start', mb: 1 }}
+        >
+          Open waiting-room display
+        </Button>
+      ) : null}
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
         <Tab label={VISIT_FLOW.queue.short} />

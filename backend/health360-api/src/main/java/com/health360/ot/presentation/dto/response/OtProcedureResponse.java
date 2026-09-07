@@ -31,4 +31,5 @@ public class OtProcedureResponse {
     List<OtTeamMemberResponse> teamMembers;
     List<OtNoteResponse> notes;
     List<OtImplantResponse> implants;
+    OtAnesthesiaChartResponse anesthesiaChart;
 }

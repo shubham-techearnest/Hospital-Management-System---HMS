@@ -40,6 +40,16 @@ export interface AuthTokenData {
   user: AuthUser;
 }
 
+export interface LoginResult {
+  mfaRequired: boolean;
+  mfaToken?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  expiresIn?: number;
+  tokenType?: string;
+  user?: AuthUser;
+}
+
 export interface ApiEnvelope<T> {
   success: boolean;
   data: T;
@@ -53,8 +63,20 @@ export async function register(payload: RegisterPayload) {
   return data.data;
 }
 
-export async function login(payload: LoginPayload) {
-  const { data } = await apiClient.post<ApiEnvelope<AuthTokenData>>('/auth/login', {
+export async function login(payload: LoginPayload): Promise<LoginResult> {
+  const { data } = await apiClient.post<ApiEnvelope<LoginResult>>('/auth/login', {
+    ...payload,
+    deviceInfo: payload.deviceInfo ?? getDeviceInfo(),
+  });
+  return data.data;
+}
+
+export async function verifyMfa(payload: {
+  mfaToken: string;
+  code: string;
+  deviceInfo?: string;
+}): Promise<AuthTokenData> {
+  const { data } = await apiClient.post<ApiEnvelope<AuthTokenData>>('/auth/mfa/verify', {
     ...payload,
     deviceInfo: payload.deviceInfo ?? getDeviceInfo(),
   });
@@ -84,4 +106,18 @@ export async function logout(accessToken: string, refreshTokenValue?: string) {
       },
     },
   );
+}
+
+export async function forgotPassword(email: string): Promise<string> {
+  const { data } = await apiClient.post<ApiEnvelope<void>>('/auth/forgot-password', { email });
+  return data.message ?? 'If an account exists for that email, a reset link has been sent.';
+}
+
+export async function resetPassword(payload: {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<string> {
+  const { data } = await apiClient.post<ApiEnvelope<void>>('/auth/reset-password', payload);
+  return data.message ?? 'Password updated.';
 }

@@ -2,7 +2,7 @@
 
 | Document ID | PM-FEATURE-001 |
 | Status | DRAFT — updated each sprint |
-| Execution plan | [MODULE-DEVELOPMENT-PLAN.md](./MODULE-DEVELOPMENT-PLAN.md) (Phases A–G) |
+| Execution plan | [MODULE-DEVELOPMENT-PLAN.md](./MODULE-DEVELOPMENT-PLAN.md) (Phases A–H) |
 
 | Feature ID | Epic | Feature | Sprint | Doc | Approval | Impl | QA | Status |
 |------------|------|---------|--------|-----|----------|------|-----|--------|
@@ -19,6 +19,7 @@
 | P2-F8 | EPIC-05 | ICD + platform clinical catalogs (doctor dropdowns, no hospital entry) | 10 | [backlog](../hms/HOSPITAL-OPD-REALISM-BACKLOG.md) | APPROVED | DONE | IN QA | **IN QA** |
 | P2-F9 | EPIC-05 | Guided OPD visit checklist (vitals → bill) | 11 | [backlog](../hms/HOSPITAL-OPD-REALISM-BACKLOG.md) | APPROVED | DONE | IN QA | **IN QA** |
 | P2-F10 | EPIC-04 | Connected OPD visit status (patient / desk / doctor / hospital) | 12 | [P2-F10](../09-features/P2-opd/P2-F10/README.md) | APPROVED | DONE | IN QA | **IN QA** |
+| P2-F11 | EPIC-04 | OPD waiting-room display board (TV / kiosk) | H | [PHASE-H](./PHASE-H-NOTES.md) | APPROVED | DONE | IN QA | **IN QA** |
 | P2-B1 | EPIC-10 | Billing backend (V41) | — | [post-hms](../post-hms/P2-B1-BILLING-FLOW.md) | — | DONE | PARTIAL | **RELEASED (backend)** |
 | ECO-P0 | ECO | Ecosystem stabilize (status map + dashboard audit + OPD QA) | — | [ECO-P0](../09-features/ECO-P0/README.md) | APPROVED | DONE | IN QA | **IN QA** |
 | ECO-P1 | ECO | Patient/desk polish (UHID, book clarity, search, hospital filters) | — | [ECO-P1](../09-features/ECO-P1/README.md) | APPROVED | DONE | IN QA | **IN QA** |

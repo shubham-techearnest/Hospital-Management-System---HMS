@@ -56,6 +56,7 @@ public class SecurityConfig {
             "/api/v1/auth/complete-patient-account",
             "/api/v1/auth/forgot-password",
             "/api/v1/auth/reset-password",
+            "/api/v1/auth/mfa/verify",
             "/api/v1/doctors/*/public",
             "/api/v1/doctors/*/reviews",
             "/api/v1/hospitals/*/public",

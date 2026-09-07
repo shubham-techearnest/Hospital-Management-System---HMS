@@ -19,6 +19,7 @@ public class UserProfileResponse {
     List<String> permissions;
     String status;
     boolean emailVerified;
+    boolean mfaEnabled;
     String timezone;
     String locale;
 }

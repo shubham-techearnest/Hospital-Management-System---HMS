@@ -45,6 +45,14 @@ export function PharmacyCatalogPage() {
   const [medicineForm, setMedicineForm] = useState({
     code: '', name: '', form: 'TABLET', strength: '', defaultRoute: 'ORAL',
   });
+  const [stockForm, setStockForm] = useState({
+    medicineId: '',
+    batchNumber: '',
+    quantity: '10',
+    expiryDate: '',
+    unitCost: '',
+    notes: '',
+  });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   const showError = (e: unknown) =>
@@ -54,7 +62,7 @@ export function PharmacyCatalogPage() {
     <AnimatedPage>
       <DashboardPageHeader
         title="Medicine catalog"
-        subtitle="Medicines available for this branch"
+        subtitle="Medicines and stock batches for this branch"
       />
 
       {showStaffScope ? (
@@ -92,10 +100,9 @@ export function PharmacyCatalogPage() {
                 value={medicineForm.form}
                 onChange={(e) => setMedicineForm({ ...medicineForm, form: e.target.value })}
               >
-                <MenuItem value="TABLET">Tablet</MenuItem>
-                <MenuItem value="SYRUP">Syrup</MenuItem>
-                <MenuItem value="INJECTION">Injection</MenuItem>
-                <MenuItem value="CAPSULE">Capsule</MenuItem>
+                {['TABLET', 'CAPSULE', 'SYRUP', 'INJECTION', 'OTHER'].map((f) => (
+                  <MenuItem key={f} value={f}>{f}</MenuItem>
+                ))}
               </TextField>
               <TextField
                 label="Strength"
@@ -130,6 +137,89 @@ export function PharmacyCatalogPage() {
               }}
             >
               Add medicine
+            </Button>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>Receive stock (batch)</Typography>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 1 }} flexWrap="wrap">
+              <TextField
+                select
+                label="Medicine"
+                size="small"
+                sx={{ minWidth: 200 }}
+                value={stockForm.medicineId}
+                onChange={(e) => setStockForm({ ...stockForm, medicineId: e.target.value })}
+              >
+                {medicines.map((m) => (
+                  <MenuItem key={m.medicineId} value={m.medicineId}>
+                    {m.code} — {m.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                label="Batch #"
+                size="small"
+                value={stockForm.batchNumber}
+                onChange={(e) => setStockForm({ ...stockForm, batchNumber: e.target.value })}
+              />
+              <TextField
+                label="Qty"
+                size="small"
+                sx={{ width: 100 }}
+                value={stockForm.quantity}
+                onChange={(e) => setStockForm({ ...stockForm, quantity: e.target.value })}
+              />
+              <TextField
+                label="Expiry"
+                type="date"
+                size="small"
+                InputLabelProps={{ shrink: true }}
+                value={stockForm.expiryDate}
+                onChange={(e) => setStockForm({ ...stockForm, expiryDate: e.target.value })}
+              />
+              <TextField
+                label="Unit cost"
+                size="small"
+                sx={{ width: 110 }}
+                value={stockForm.unitCost}
+                onChange={(e) => setStockForm({ ...stockForm, unitCost: e.target.value })}
+              />
+            </Stack>
+            <Button
+              variant="outlined"
+              disabled={
+                mutations.receiveStock.isPending
+                || !stockForm.medicineId
+                || !stockForm.batchNumber.trim()
+                || !stockForm.quantity.trim()
+              }
+              onClick={async () => {
+                try {
+                  const qty = Number(stockForm.quantity);
+                  await mutations.receiveStock.mutateAsync({
+                    medicineId: stockForm.medicineId,
+                    batchNumber: stockForm.batchNumber.trim(),
+                    quantity: Number.isFinite(qty) && qty >= 1 ? qty : 1,
+                    expiryDate: stockForm.expiryDate || undefined,
+                    unitCost: stockForm.unitCost ? Number(stockForm.unitCost) : undefined,
+                    notes: stockForm.notes.trim() || undefined,
+                  });
+                  setStockForm({
+                    medicineId: stockForm.medicineId,
+                    batchNumber: '',
+                    quantity: '10',
+                    expiryDate: '',
+                    unitCost: '',
+                    notes: '',
+                  });
+                  setSnackbar({ open: true, message: 'Stock batch received.', severity: 'success' });
+                } catch (e) {
+                  showError(e);
+                }
+              }}
+            >
+              Receive stock
             </Button>
           </Paper>
 

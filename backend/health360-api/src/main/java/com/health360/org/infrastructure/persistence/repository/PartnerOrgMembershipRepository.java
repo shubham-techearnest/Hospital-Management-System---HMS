@@ -9,6 +9,11 @@ import java.util.UUID;
 
 public interface PartnerOrgMembershipRepository extends JpaRepository<PartnerOrgMembershipEntity, UUID> {
 
+    List<PartnerOrgMembershipEntity> findByTenantIdAndPartnerOrgIdAndDeletedAtIsNull(
+            UUID tenantId, UUID partnerOrgId);
+
+    Optional<PartnerOrgMembershipEntity> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
+
     Optional<PartnerOrgMembershipEntity> findByPartnerOrgIdAndUserIdAndDeletedAtIsNull(
             UUID partnerOrgId, UUID userId);
 

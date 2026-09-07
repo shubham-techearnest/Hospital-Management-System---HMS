@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import {
+  addOtAnesthesiaEvent,
   addOtImplant,
   addOtNote,
   addOtTeamMember,
@@ -14,6 +15,7 @@ import {
   listTheatres,
   scheduleOtProcedure,
   startOtProcedure,
+  upsertOtAnesthesiaChart,
 } from '../api/otApi';
 
 export const otKeys = {
@@ -165,6 +167,42 @@ export function useOtMutations(hospitalId: string, branchId: string) {
       }) => addOtImplant(procedureId, payload),
       onSuccess: (_, vars) => {
         invalidateScope();
+        qc.invalidateQueries({ queryKey: otKeys.procedure(vars.procedureId) });
+      },
+    }),
+    upsertAnesthesiaChart: useMutation({
+      mutationFn: ({
+        procedureId,
+        ...payload
+      }: {
+        procedureId: string;
+        asaClass?: string;
+        anesthesiaType: string;
+        inductionAgent?: string;
+        airwayDevice?: string;
+        startedAt?: string;
+        endedAt?: string;
+        complications?: string;
+        notes?: string;
+      }) => upsertOtAnesthesiaChart(procedureId, payload),
+      onSuccess: (_, vars) => {
+        qc.invalidateQueries({ queryKey: otKeys.procedure(vars.procedureId) });
+      },
+    }),
+    addAnesthesiaEvent: useMutation({
+      mutationFn: ({
+        procedureId,
+        ...payload
+      }: {
+        procedureId: string;
+        eventType: string;
+        systolicBp?: number;
+        diastolicBp?: number;
+        pulse?: number;
+        spo2?: number;
+        notes?: string;
+      }) => addOtAnesthesiaEvent(procedureId, payload),
+      onSuccess: (_, vars) => {
         qc.invalidateQueries({ queryKey: otKeys.procedure(vars.procedureId) });
       },
     }),

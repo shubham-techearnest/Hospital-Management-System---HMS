@@ -19,6 +19,13 @@ const linking: LinkingOptions<RootStackParamList> = {
           Welcome: '',
           Login: 'login',
           Register: 'register',
+          ForgotPassword: 'forgot-password',
+          ResetPassword: {
+            path: 'reset-password',
+            parse: {
+              token: (token: string) => token,
+            },
+          },
           VerifyEmail: {
             path: 'verify-email',
             parse: {

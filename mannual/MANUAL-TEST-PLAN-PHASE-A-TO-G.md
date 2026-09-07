@@ -79,10 +79,8 @@ Reference IDs (dev): Hospital `…000030`, Branch Main Campus `…000031`.
 
 ### Explicitly out of scope for this wave (do not Fail)
 
-- SMS / WhatsApp gateway (G1)  
-- PACS / DICOM (G4), LIS (G5)  
-- MFA / TOTP (G10 remaining)  
-- Full anesthesia chart (G7 remaining)  
+- SMS / WhatsApp **live** needs MSG91 keys (`SMS_PROVIDER=msg91` + `SMS_AUTH_KEY`) — HTTP path is implemented  
+- PACS / DICOM (G4), LIS (G5) — deferred on hospital contracts  
 - TV / display board (G11)  
 - Real Razorpay live keys (sandbox / blank keys is OK)
 
@@ -116,6 +114,10 @@ Reference IDs (dev): Hospital `…000030`, Branch Main Campus `…000031`.
 | AUTH-08 | Guest | Open reset link / `/reset-password?token=…` with valid token | Can set new password; old password fails; new works | |
 | AUTH-09 | Guest | Reset with expired/invalid token | Clear error | |
 | AUTH-10 | Any | Logged-in → Settings → change password | New password works next login | |
+| AUTH-11 | Any | Account settings → Set up authenticator → enter TOTP → Enable | MFA enabled; backup codes shown once | |
+| AUTH-12 | Any | Logout → login with password | Prompted for MFA code; valid code completes login | |
+| AUTH-13 | Any | Login MFA with backup code | Login succeeds; that backup code cannot be reused | |
+| AUTH-14 | Any | Account settings → Disable MFA (password + code) | MFA off; next login skips MFA | |
 
 **Notes for AUTH-07/08:** In local/dev, check API logs or local email service for the reset link if inbox is not configured.
 
@@ -276,6 +278,8 @@ Reference IDs (dev): Hospital `…000030`, Branch Main Campus `…000031`.
 | ADM-14 | Partner detail — Add location (name, address, lat/lng) | Location listed | |
 | ADM-15 | Partner detail — Link hospital (use hospital UUID `…000030`) | Link ACTIVE | |
 | ADM-16 | Suspend / Activate partner | Status chip updates | |
+| ADM-17 | Partner detail — Add membership (user UUID) | Member listed | |
+| ADM-18 | Deactivate / activate membership | Employment status updates | |
 
 ---
 
@@ -340,7 +344,7 @@ Prerequisite: Doctor placed a lab order (DOC-06).
 | PH-02 | Verify order → plan → complete items | Status updates | |
 | PH-03 | Pharmacy **requests** — receive → review → ready → dispense | Full request lifecycle | |
 | PH-04 | Catalog — list/create medicine | Medicine available for Rx | |
-| PH-05 | **Stock receive (G6)** — API or UI if present: `POST /pharmacy/stock/receive` with medicineId, batchNumber, expiry, qty | Batch created; `GET /pharmacy/stock/medicines/{id}` shows qty | |
+| PH-05 | **Stock receive** on Pharmacy Catalog — pick medicine, batch, qty, expiry | Success toast; batch stored | |
 | PH-06 | Dispense request after stock received | Stock on hand decreases (FEFO); dispense still allowed if no stock (legacy soft-fail) | |
 
 *PH-05 may be API-only (Swagger / Postman) if UI not yet wired — still in scope.*
@@ -361,6 +365,7 @@ Prerequisite: Doctor ordered OT procedure / clinical order item for OT.
 | OT-04 | Add team member | Listed on detail | |
 | OT-05 | Add PRE_OP note | Required before start | |
 | OT-06 | **Add implant** (G7) — name, type, manufacturer, lot, serial, qty | Implant listed on procedure | |
+| OT-06b | Save **anesthesia chart** + add VITALS event | Chart + event on procedure | |
 | OT-07 | Start procedure | IN_PROGRESS | |
 | OT-08 | Add INTRA_OP note; complete with summary | COMPLETED; implant still visible | |
 | OT-09 | Catalog / theatres | Create theatre if needed | |

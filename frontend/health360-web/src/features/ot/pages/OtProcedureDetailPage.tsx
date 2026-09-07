@@ -71,6 +71,22 @@ export function OtProcedureDetailPage() {
     quantity: '1',
     notes: '',
   });
+  const [anesthesiaForm, setAnesthesiaForm] = useState({
+    asaClass: 'II',
+    anesthesiaType: 'GENERAL',
+    inductionAgent: '',
+    airwayDevice: '',
+    notes: '',
+    complications: '',
+  });
+  const [anesthesiaEventForm, setAnesthesiaEventForm] = useState({
+    eventType: 'VITALS',
+    systolicBp: '',
+    diastolicBp: '',
+    pulse: '',
+    spo2: '',
+    notes: '',
+  });
   const [completionSummary, setCompletionSummary] = useState('');
 
   const showError = (e: unknown) =>
@@ -425,6 +441,182 @@ export function OtProcedureDetailPage() {
                   Add implant
                 </Button>
               </Paper>
+
+              <Paper variant="outlined" sx={{ p: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>Anesthesia chart</Typography>
+                {procedure.anesthesiaChart ? (
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    {procedure.anesthesiaChart.anesthesiaType}
+                    {procedure.anesthesiaChart.asaClass ? ` · ASA ${procedure.anesthesiaChart.asaClass}` : ''}
+                    {procedure.anesthesiaChart.inductionAgent ? ` · ${procedure.anesthesiaChart.inductionAgent}` : ''}
+                    {procedure.anesthesiaChart.airwayDevice ? ` · airway ${procedure.anesthesiaChart.airwayDevice}` : ''}
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    No anesthesia chart yet.
+                  </Typography>
+                )}
+                <Stack spacing={1} sx={{ mb: 1 }}>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                    <TextField
+                      select
+                      label="Type"
+                      size="small"
+                      sx={{ minWidth: 140 }}
+                      value={anesthesiaForm.anesthesiaType}
+                      onChange={(e) => setAnesthesiaForm({ ...anesthesiaForm, anesthesiaType: e.target.value })}
+                    >
+                      {['GENERAL', 'REGIONAL', 'LOCAL', 'SEDATION', 'COMBINED'].map((t) => (
+                        <MenuItem key={t} value={t}>{t}</MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      label="ASA class"
+                      size="small"
+                      value={anesthesiaForm.asaClass}
+                      onChange={(e) => setAnesthesiaForm({ ...anesthesiaForm, asaClass: e.target.value })}
+                    />
+                    <TextField
+                      label="Induction agent"
+                      size="small"
+                      fullWidth
+                      value={anesthesiaForm.inductionAgent}
+                      onChange={(e) => setAnesthesiaForm({ ...anesthesiaForm, inductionAgent: e.target.value })}
+                    />
+                    <TextField
+                      label="Airway"
+                      size="small"
+                      fullWidth
+                      value={anesthesiaForm.airwayDevice}
+                      onChange={(e) => setAnesthesiaForm({ ...anesthesiaForm, airwayDevice: e.target.value })}
+                    />
+                  </Stack>
+                  <TextField
+                    label="Notes"
+                    size="small"
+                    fullWidth
+                    value={anesthesiaForm.notes}
+                    onChange={(e) => setAnesthesiaForm({ ...anesthesiaForm, notes: e.target.value })}
+                  />
+                </Stack>
+                <Button
+                  variant="outlined"
+                  sx={{ mb: 2 }}
+                  disabled={mutations.upsertAnesthesiaChart.isPending}
+                  onClick={async () => {
+                    try {
+                      await mutations.upsertAnesthesiaChart.mutateAsync({
+                        procedureId: procedure.procedureId,
+                        anesthesiaType: anesthesiaForm.anesthesiaType,
+                        asaClass: anesthesiaForm.asaClass.trim() || undefined,
+                        inductionAgent: anesthesiaForm.inductionAgent.trim() || undefined,
+                        airwayDevice: anesthesiaForm.airwayDevice.trim() || undefined,
+                        notes: anesthesiaForm.notes.trim() || undefined,
+                        complications: anesthesiaForm.complications.trim() || undefined,
+                      });
+                      showSuccess('Anesthesia chart saved.');
+                    } catch (e) {
+                      showError(e);
+                    }
+                  }}
+                >
+                  Save anesthesia chart
+                </Button>
+
+                {(procedure.anesthesiaChart?.events ?? []).length > 0 ? (
+                  <Stack spacing={0.5} sx={{ mb: 1 }}>
+                    {procedure.anesthesiaChart!.events.map((ev) => (
+                      <Typography key={ev.eventId} variant="body2">
+                        <strong>{ev.eventType}</strong>
+                        {ev.systolicBp != null ? ` · BP ${ev.systolicBp}/${ev.diastolicBp ?? '—'}` : ''}
+                        {ev.pulse != null ? ` · HR ${ev.pulse}` : ''}
+                        {ev.spo2 != null ? ` · SpO₂ ${ev.spo2}%` : ''}
+                        {ev.notes ? ` · ${ev.notes}` : ''}
+                      </Typography>
+                    ))}
+                  </Stack>
+                ) : null}
+
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 1 }}>
+                  <TextField
+                    select
+                    label="Event"
+                    size="small"
+                    sx={{ minWidth: 140 }}
+                    value={anesthesiaEventForm.eventType}
+                    onChange={(e) => setAnesthesiaEventForm({ ...anesthesiaEventForm, eventType: e.target.value })}
+                  >
+                    {['VITALS', 'INDUCTION', 'INTUBATION', 'EXTUBATION', 'DRUG', 'OTHER'].map((t) => (
+                      <MenuItem key={t} value={t}>{t}</MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField
+                    label="Sys"
+                    size="small"
+                    sx={{ width: 80 }}
+                    value={anesthesiaEventForm.systolicBp}
+                    onChange={(e) => setAnesthesiaEventForm({ ...anesthesiaEventForm, systolicBp: e.target.value })}
+                  />
+                  <TextField
+                    label="Dia"
+                    size="small"
+                    sx={{ width: 80 }}
+                    value={anesthesiaEventForm.diastolicBp}
+                    onChange={(e) => setAnesthesiaEventForm({ ...anesthesiaEventForm, diastolicBp: e.target.value })}
+                  />
+                  <TextField
+                    label="HR"
+                    size="small"
+                    sx={{ width: 80 }}
+                    value={anesthesiaEventForm.pulse}
+                    onChange={(e) => setAnesthesiaEventForm({ ...anesthesiaEventForm, pulse: e.target.value })}
+                  />
+                  <TextField
+                    label="SpO₂"
+                    size="small"
+                    sx={{ width: 80 }}
+                    value={anesthesiaEventForm.spo2}
+                    onChange={(e) => setAnesthesiaEventForm({ ...anesthesiaEventForm, spo2: e.target.value })}
+                  />
+                  <TextField
+                    label="Notes"
+                    size="small"
+                    fullWidth
+                    value={anesthesiaEventForm.notes}
+                    onChange={(e) => setAnesthesiaEventForm({ ...anesthesiaEventForm, notes: e.target.value })}
+                  />
+                </Stack>
+                <Button
+                  variant="outlined"
+                  disabled={mutations.addAnesthesiaEvent.isPending}
+                  onClick={async () => {
+                    try {
+                      await mutations.addAnesthesiaEvent.mutateAsync({
+                        procedureId: procedure.procedureId,
+                        eventType: anesthesiaEventForm.eventType,
+                        systolicBp: anesthesiaEventForm.systolicBp ? Number(anesthesiaEventForm.systolicBp) : undefined,
+                        diastolicBp: anesthesiaEventForm.diastolicBp ? Number(anesthesiaEventForm.diastolicBp) : undefined,
+                        pulse: anesthesiaEventForm.pulse ? Number(anesthesiaEventForm.pulse) : undefined,
+                        spo2: anesthesiaEventForm.spo2 ? Number(anesthesiaEventForm.spo2) : undefined,
+                        notes: anesthesiaEventForm.notes.trim() || undefined,
+                      });
+                      setAnesthesiaEventForm({
+                        eventType: 'VITALS',
+                        systolicBp: '',
+                        diastolicBp: '',
+                        pulse: '',
+                        spo2: '',
+                        notes: '',
+                      });
+                      showSuccess('Anesthesia event recorded.');
+                    } catch (e) {
+                      showError(e);
+                    }
+                  }}
+                >
+                  Add event
+                </Button>
+              </Paper>
             </>
           ) : null}
 
@@ -525,6 +717,22 @@ export function OtProcedureDetailPage() {
                       {implant.lotNumber ? ` · lot ${implant.lotNumber}` : ''}
                       {implant.serialNumber ? ` · S/N ${implant.serialNumber}` : ''}
                       {` · qty ${implant.quantity}`}
+                    </Typography>
+                  ))}
+                </Box>
+              ) : null}
+              {procedure.anesthesiaChart ? (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>Anesthesia</Typography>
+                  <Typography variant="body2">
+                    {procedure.anesthesiaChart.anesthesiaType}
+                    {procedure.anesthesiaChart.asaClass ? ` · ASA ${procedure.anesthesiaChart.asaClass}` : ''}
+                  </Typography>
+                  {(procedure.anesthesiaChart.events ?? []).map((ev) => (
+                    <Typography key={ev.eventId} variant="body2" sx={{ mb: 0.5 }}>
+                      {ev.eventType}
+                      {ev.pulse != null ? ` · HR ${ev.pulse}` : ''}
+                      {ev.spo2 != null ? ` · SpO₂ ${ev.spo2}%` : ''}
                     </Typography>
                   ))}
                 </Box>

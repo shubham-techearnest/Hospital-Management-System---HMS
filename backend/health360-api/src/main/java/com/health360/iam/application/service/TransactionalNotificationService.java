@@ -34,6 +34,7 @@ public class TransactionalNotificationService {
     private final UserRepository userRepository;
     private final EmailNotificationService emailNotificationService;
     private final PushNotificationService pushNotificationService;
+    private final SmsNotificationGateway smsNotificationGateway;
 
     @Transactional
     public void send(
@@ -75,7 +76,8 @@ public class TransactionalNotificationService {
                     emailNotificationService.sendTransactionalEmail(user.getEmail(), title, message);
                 }
                 if (smsEnabled) {
-                    log.info("SMS notification [{}] to user {}: {}", type, userId, message);
+                    String body = title == null || title.isBlank() ? message : title + ": " + message;
+                    smsNotificationGateway.send(user.getPhone(), body);
                 }
             });
         }

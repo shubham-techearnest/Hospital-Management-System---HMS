@@ -41,6 +41,8 @@ public class OtProcedureService {
     private final OtTeamMemberRepository teamMemberRepository;
     private final OtNoteRepository noteRepository;
     private final OtImplantRepository implantRepository;
+    private final OtAnesthesiaChartRepository anesthesiaChartRepository;
+    private final OtAnesthesiaEventRepository anesthesiaEventRepository;
     private final OperationTheatreRepository theatreRepository;
     private final ClinicalOrderRepository clinicalOrderRepository;
     private final ClinicalOrderItemRepository clinicalOrderItemRepository;
@@ -325,6 +327,84 @@ public class OtProcedureService {
     }
 
     @Transactional
+    public OtAnesthesiaChartResponse upsertAnesthesiaChart(
+            UserPrincipal principal, UUID procedureId, UpsertOtAnesthesiaChartRequest request) {
+        accessService.assertCanManageProcedures(principal);
+        UUID tenantId = principal.getTenantId();
+        OtProcedureEntity procedure = requireProcedure(tenantId, procedureId);
+        accessService.assertHospitalScope(principal, procedure.getHospitalId());
+
+        if (OtProcedureStatus.CANCELLED.name().equals(procedure.getStatus())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Cannot update anesthesia chart on a cancelled procedure");
+        }
+
+        String type = request.getAnesthesiaType().trim().toUpperCase();
+        if (!List.of("GENERAL", "REGIONAL", "LOCAL", "SEDATION", "COMBINED").contains(type)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Invalid anesthesia type");
+        }
+
+        OtAnesthesiaChartEntity chart = anesthesiaChartRepository
+                .findByProcedureIdAndDeletedAtIsNull(procedureId)
+                .orElseGet(OtAnesthesiaChartEntity::new);
+        if (chart.getId() == null) {
+            chart.setTenantId(tenantId);
+            chart.setProcedureId(procedureId);
+            chart.setCreatedBy(principal.getUserId());
+        }
+        chart.setAsaClass(trimToNull(request.getAsaClass()));
+        chart.setAnesthesiaType(type);
+        chart.setInductionAgent(trimToNull(request.getInductionAgent()));
+        chart.setAirwayDevice(trimToNull(request.getAirwayDevice()));
+        chart.setStartedAt(request.getStartedAt());
+        chart.setEndedAt(request.getEndedAt());
+        chart.setComplications(trimToNull(request.getComplications()));
+        chart.setNotes(trimToNull(request.getNotes()));
+        chart.setUpdatedBy(principal.getUserId());
+        chart.touch();
+        chart = anesthesiaChartRepository.save(chart);
+
+        List<OtAnesthesiaEventEntity> events = anesthesiaEventRepository
+                .findByProcedureIdAndDeletedAtIsNullOrderByRecordedAtAsc(procedureId);
+        return mapper.toAnesthesiaChartResponse(chart, events);
+    }
+
+    @Transactional
+    public OtAnesthesiaEventResponse addAnesthesiaEvent(
+            UserPrincipal principal, UUID procedureId, AddOtAnesthesiaEventRequest request) {
+        accessService.assertCanManageProcedures(principal);
+        UUID tenantId = principal.getTenantId();
+        OtProcedureEntity procedure = requireProcedure(tenantId, procedureId);
+        accessService.assertHospitalScope(principal, procedure.getHospitalId());
+
+        OtAnesthesiaChartEntity chart = anesthesiaChartRepository.findByProcedureIdAndDeletedAtIsNull(procedureId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                        "Save the anesthesia chart before adding events"));
+
+        String eventType = request.getEventType().trim().toUpperCase();
+        if (!List.of("VITALS", "INDUCTION", "INTUBATION", "EXTUBATION", "DRUG", "OTHER").contains(eventType)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Invalid anesthesia event type");
+        }
+
+        OtAnesthesiaEventEntity event = new OtAnesthesiaEventEntity();
+        event.setTenantId(tenantId);
+        event.setProcedureId(procedureId);
+        event.setChartId(chart.getId());
+        event.setEventType(eventType);
+        event.setRecordedAt(Instant.now());
+        event.setSystolicBp(request.getSystolicBp());
+        event.setDiastolicBp(request.getDiastolicBp());
+        event.setPulse(request.getPulse());
+        event.setSpo2(request.getSpo2());
+        event.setNotes(trimToNull(request.getNotes()));
+        event.setCreatedBy(principal.getUserId());
+        event.setUpdatedBy(principal.getUserId());
+        return mapper.toAnesthesiaEventResponse(anesthesiaEventRepository.save(event));
+    }
+
+    @Transactional
     public OtProcedureResponse startProcedure(UserPrincipal principal, UUID procedureId) {
         accessService.assertCanManageProcedures(principal);
         UUID tenantId = principal.getTenantId();
@@ -476,6 +556,11 @@ public class OtProcedureService {
                 .findByProcedureIdAndDeletedAtIsNullOrderByRecordedAtAsc(procedure.getId());
         List<OtImplantEntity> implants = implantRepository
                 .findByProcedureIdAndDeletedAtIsNullOrderByImplantedAtAsc(procedure.getId());
+        OtAnesthesiaChartEntity anesthesiaChart = anesthesiaChartRepository
+                .findByProcedureIdAndDeletedAtIsNull(procedure.getId())
+                .orElse(null);
+        List<OtAnesthesiaEventEntity> anesthesiaEvents = anesthesiaEventRepository
+                .findByProcedureIdAndDeletedAtIsNullOrderByRecordedAtAsc(procedure.getId());
         PatientProfileEntity patient = patientProfileRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(procedure.getPatientId(), tenantId)
                 .orElse(null);
@@ -486,6 +571,8 @@ public class OtProcedureService {
                 team,
                 notes,
                 implants,
+                anesthesiaChart,
+                anesthesiaEvents,
                 patientDisplayNameResolver.resolve(patient),
                 patient != null ? patient.getUhid() : null);
     }

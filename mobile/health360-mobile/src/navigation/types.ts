@@ -7,6 +7,8 @@ export type AuthStackParamList = {
   Welcome: undefined;
   Login: { message?: string } | undefined;
   Register: undefined;
+  ForgotPassword: undefined;
+  ResetPassword: { token?: string } | undefined;
   VerifyEmail: { token?: string };
   CompletePatientAccount: { token?: string } | undefined;
 };

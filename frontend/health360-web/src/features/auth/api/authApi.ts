@@ -27,6 +27,7 @@ export interface AuthUser {
   permissions: string[];
   status: string;
   emailVerified: boolean;
+  mfaEnabled?: boolean;
   timezone?: string;
   locale?: string;
 }
@@ -37,6 +38,16 @@ export interface AuthTokenData {
   expiresIn: number;
   tokenType: string;
   user: AuthUser;
+}
+
+export interface LoginResult {
+  mfaRequired: boolean;
+  mfaToken?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  expiresIn?: number;
+  tokenType?: string;
+  user?: AuthUser;
 }
 
 export interface ApiEnvelope<T> {
@@ -60,12 +71,52 @@ export async function register(payload: RegisterPayload) {
   return data.data;
 }
 
-export async function login(payload: LoginPayload) {
-  const { data } = await apiClient.post<ApiEnvelope<AuthTokenData>>('/auth/login', {
+export async function login(payload: LoginPayload): Promise<LoginResult> {
+  const { data } = await apiClient.post<ApiEnvelope<LoginResult>>('/auth/login', {
     ...payload,
     deviceInfo: payload.deviceInfo ?? navigator.userAgent,
   });
   return data.data;
+}
+
+export async function verifyMfa(payload: {
+  mfaToken: string;
+  code: string;
+  deviceInfo?: string;
+}): Promise<AuthTokenData> {
+  const { data } = await apiClient.post<ApiEnvelope<AuthTokenData>>('/auth/mfa/verify', {
+    ...payload,
+    deviceInfo: payload.deviceInfo ?? navigator.userAgent,
+  });
+  return data.data;
+}
+
+export async function getMfaStatus(): Promise<{ enabled: boolean; setupPending: boolean }> {
+  const { data } = await apiClient.get<ApiEnvelope<{ enabled: boolean; setupPending: boolean }>>(
+    '/auth/mfa/status',
+  );
+  return data.data;
+}
+
+export async function setupMfa(): Promise<{ secret: string; otpAuthUri: string; issuer: string }> {
+  const { data } = await apiClient.post<ApiEnvelope<{ secret: string; otpAuthUri: string; issuer: string }>>(
+    '/auth/mfa/setup',
+    {},
+  );
+  return data.data;
+}
+
+export async function enableMfa(code: string): Promise<{ enabled: boolean; backupCodes: string[] }> {
+  const { data } = await apiClient.post<ApiEnvelope<{ enabled: boolean; backupCodes: string[] }>>(
+    '/auth/mfa/enable',
+    { code },
+  );
+  return data.data;
+}
+
+export async function disableMfa(payload: { password: string; code: string }): Promise<string> {
+  const { data } = await apiClient.post<ApiEnvelope<void>>('/auth/mfa/disable', payload);
+  return data.message ?? 'Two-factor authentication disabled.';
 }
 
 export async function verifyEmail(token: string) {

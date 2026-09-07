@@ -67,6 +67,41 @@ public class OtMapper {
                 .build();
     }
 
+    public OtAnesthesiaEventResponse toAnesthesiaEventResponse(OtAnesthesiaEventEntity entity) {
+        return OtAnesthesiaEventResponse.builder()
+                .eventId(entity.getId())
+                .procedureId(entity.getProcedureId())
+                .chartId(entity.getChartId())
+                .eventType(entity.getEventType())
+                .recordedAt(entity.getRecordedAt())
+                .systolicBp(entity.getSystolicBp())
+                .diastolicBp(entity.getDiastolicBp())
+                .pulse(entity.getPulse())
+                .spo2(entity.getSpo2())
+                .notes(entity.getNotes())
+                .build();
+    }
+
+    public OtAnesthesiaChartResponse toAnesthesiaChartResponse(
+            OtAnesthesiaChartEntity chart, List<OtAnesthesiaEventEntity> events) {
+        if (chart == null) {
+            return null;
+        }
+        return OtAnesthesiaChartResponse.builder()
+                .chartId(chart.getId())
+                .procedureId(chart.getProcedureId())
+                .asaClass(chart.getAsaClass())
+                .anesthesiaType(chart.getAnesthesiaType())
+                .inductionAgent(chart.getInductionAgent())
+                .airwayDevice(chart.getAirwayDevice())
+                .startedAt(chart.getStartedAt())
+                .endedAt(chart.getEndedAt())
+                .complications(chart.getComplications())
+                .notes(chart.getNotes())
+                .events(events.stream().map(this::toAnesthesiaEventResponse).toList())
+                .build();
+    }
+
     public OtProcedureResponse toProcedureResponse(
             OtProcedureEntity procedure,
             OperationTheatreEntity theatre,
@@ -74,6 +109,8 @@ public class OtMapper {
             List<OtTeamMemberEntity> teamMembers,
             List<OtNoteEntity> notes,
             List<OtImplantEntity> implants,
+            OtAnesthesiaChartEntity anesthesiaChart,
+            List<OtAnesthesiaEventEntity> anesthesiaEvents,
             String patientName,
             String uhid) {
         return OtProcedureResponse.builder()
@@ -98,6 +135,7 @@ public class OtMapper {
                 .teamMembers(teamMembers.stream().map(this::toTeamMemberResponse).toList())
                 .notes(notes.stream().map(this::toNoteResponse).toList())
                 .implants(implants.stream().map(this::toImplantResponse).toList())
+                .anesthesiaChart(toAnesthesiaChartResponse(anesthesiaChart, anesthesiaEvents))
                 .build();
     }
 }

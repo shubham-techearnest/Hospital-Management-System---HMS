@@ -53,4 +53,16 @@ public class UserEntity extends BaseAuditableEntity {
 
     @Column(nullable = false, length = 10)
     private String locale = "en-IN";
+
+    @Column(name = "mfa_enabled", nullable = false)
+    private boolean mfaEnabled;
+
+    @Column(name = "mfa_secret", length = 64)
+    private String mfaSecret;
+
+    @Column(name = "mfa_pending_secret", length = 64)
+    private String mfaPendingSecret;
+
+    @Column(name = "mfa_enabled_at")
+    private Instant mfaEnabledAt;
 }

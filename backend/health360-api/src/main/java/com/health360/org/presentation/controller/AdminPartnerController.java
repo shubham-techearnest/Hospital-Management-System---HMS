@@ -2,12 +2,15 @@ package com.health360.org.presentation.controller;
 
 import com.health360.config.security.UserPrincipal;
 import com.health360.org.application.service.PartnerAdminService;
+import com.health360.org.presentation.dto.request.AddPartnerMembershipRequest;
 import com.health360.org.presentation.dto.request.CreatePartnerLocationRequest;
 import com.health360.org.presentation.dto.request.CreatePartnerOrgRequest;
 import com.health360.org.presentation.dto.request.LinkHospitalPartnerRequest;
+import com.health360.org.presentation.dto.request.UpdatePartnerMembershipRequest;
 import com.health360.org.presentation.dto.request.UpdatePartnerOrgRequest;
 import com.health360.org.presentation.dto.response.HospitalPartnerLinkResponse;
 import com.health360.org.presentation.dto.response.PartnerLocationResponse;
+import com.health360.org.presentation.dto.response.PartnerMembershipResponse;
 import com.health360.org.presentation.dto.response.PartnerOrgResponse;
 import com.health360.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
@@ -90,5 +93,35 @@ public class AdminPartnerController {
             @PathVariable UUID partnerOrgId) {
         return ResponseEntity.ok(ApiResponse.ok(
                 partnerAdminService.listLinks(principal, partnerOrgId)));
+    }
+
+    @GetMapping("/{partnerOrgId}/memberships")
+    @PreAuthorize("hasAuthority('partner:org:read')")
+    public ResponseEntity<ApiResponse<List<PartnerMembershipResponse>>> listMemberships(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID partnerOrgId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                partnerAdminService.listMemberships(principal, partnerOrgId)));
+    }
+
+    @PostMapping("/{partnerOrgId}/memberships")
+    @PreAuthorize("hasAuthority('partner:org:write')")
+    public ResponseEntity<ApiResponse<PartnerMembershipResponse>> addMembership(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID partnerOrgId,
+            @Valid @RequestBody AddPartnerMembershipRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(
+                partnerAdminService.addMembership(principal, partnerOrgId, request)));
+    }
+
+    @PatchMapping("/{partnerOrgId}/memberships/{membershipId}")
+    @PreAuthorize("hasAuthority('partner:org:write')")
+    public ResponseEntity<ApiResponse<PartnerMembershipResponse>> updateMembership(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID partnerOrgId,
+            @PathVariable UUID membershipId,
+            @Valid @RequestBody UpdatePartnerMembershipRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                partnerAdminService.updateMembership(principal, partnerOrgId, membershipId, request)));
     }
 }

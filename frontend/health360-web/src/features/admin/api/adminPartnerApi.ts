@@ -115,3 +115,45 @@ export async function listAdminPartnerLinks(partnerOrgId: string): Promise<Hospi
   );
   return unwrap(data) ?? [];
 }
+
+export interface PartnerMembership {
+  membershipId: string;
+  partnerOrgId: string;
+  userId: string;
+  userEmail?: string;
+  userName?: string;
+  locationId?: string;
+  jobTitle?: string;
+  employmentStatus: string;
+  hiredAt?: string;
+}
+
+export async function listAdminPartnerMemberships(partnerOrgId: string): Promise<PartnerMembership[]> {
+  const { data } = await apiClient.get<ApiEnvelope<PartnerMembership[]>>(
+    `/admin/partners/${partnerOrgId}/memberships`,
+  );
+  return unwrap(data) ?? [];
+}
+
+export async function addAdminPartnerMembership(
+  partnerOrgId: string,
+  payload: { userId: string; locationId?: string; jobTitle?: string; employmentStatus?: string },
+): Promise<PartnerMembership> {
+  const { data } = await apiClient.post<ApiEnvelope<PartnerMembership>>(
+    `/admin/partners/${partnerOrgId}/memberships`,
+    payload,
+  );
+  return unwrap(data);
+}
+
+export async function updateAdminPartnerMembership(
+  partnerOrgId: string,
+  membershipId: string,
+  payload: { locationId?: string; jobTitle?: string; employmentStatus?: string },
+): Promise<PartnerMembership> {
+  const { data } = await apiClient.patch<ApiEnvelope<PartnerMembership>>(
+    `/admin/partners/${partnerOrgId}/memberships/${membershipId}`,
+    payload,
+  );
+  return unwrap(data);
+}

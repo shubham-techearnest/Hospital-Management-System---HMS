@@ -12,6 +12,7 @@ export interface UserProfile {
   permissions: string[];
   status: string;
   emailVerified: boolean;
+  mfaEnabled?: boolean;
   timezone: string;
   locale: string;
 }

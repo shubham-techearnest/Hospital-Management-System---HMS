@@ -191,6 +191,9 @@ const HospitalClinicalCatalogsPage = lazy(() =>
 const ReceptionDashboardPage = lazy(() =>
   import('@/features/reception/pages/ReceptionDashboardPage').then((m) => ({ default: m.ReceptionDashboardPage })),
 );
+const OpdDisplayBoardPage = lazy(() =>
+  import('@/features/reception/pages/OpdDisplayBoardPage').then((m) => ({ default: m.OpdDisplayBoardPage })),
+);
 const ReceptionCheckoutPage = lazy(() =>
   import('@/features/billing/pages/ReceptionCheckoutPage').then((m) => ({ default: m.ReceptionCheckoutPage })),
 );
@@ -553,6 +556,18 @@ export function AppRouter() {
           <Route path="catalog" element={<LazyPage><PharmacyCatalogPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
         </Route>
+        <Route
+          path="/reception/display"
+          element={
+            <ProtectedRoute>
+              <RoleRoute role="RECEPTIONIST">
+                <LazyPage>
+                  <OpdDisplayBoardPage />
+                </LazyPage>
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
         <Route path="/reception" element={<ProtectedRoute><RoleRoute role="RECEPTIONIST"><ReceptionPortalLayout /></RoleRoute></ProtectedRoute>}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<LazyPage><ReceptionDashboardPage /></LazyPage>} />

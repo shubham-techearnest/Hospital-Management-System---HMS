@@ -63,6 +63,33 @@ export interface OtImplant {
   notes?: string;
 }
 
+export interface OtAnesthesiaEvent {
+  eventId: string;
+  procedureId: string;
+  chartId: string;
+  eventType: string;
+  recordedAt: string;
+  systolicBp?: number;
+  diastolicBp?: number;
+  pulse?: number;
+  spo2?: number;
+  notes?: string;
+}
+
+export interface OtAnesthesiaChart {
+  chartId: string;
+  procedureId: string;
+  asaClass?: string;
+  anesthesiaType: string;
+  inductionAgent?: string;
+  airwayDevice?: string;
+  startedAt?: string;
+  endedAt?: string;
+  complications?: string;
+  notes?: string;
+  events: OtAnesthesiaEvent[];
+}
+
 export interface OtProcedure {
   procedureId: string;
   clinicalOrderItemId: string;
@@ -85,6 +112,7 @@ export interface OtProcedure {
   teamMembers: OtTeamMember[];
   notes: OtNote[];
   implants: OtImplant[];
+  anesthesiaChart?: OtAnesthesiaChart | null;
 }
 
 function unwrap<T>(envelope: ApiEnvelope<T>): T {
@@ -191,6 +219,44 @@ export async function addOtImplant(
 ): Promise<OtImplant> {
   const { data } = await apiClient.post<ApiEnvelope<OtImplant>>(
     `/ot/procedures/${procedureId}/implants`,
+    payload,
+  );
+  return unwrap(data);
+}
+
+export async function upsertOtAnesthesiaChart(
+  procedureId: string,
+  payload: {
+    asaClass?: string;
+    anesthesiaType: string;
+    inductionAgent?: string;
+    airwayDevice?: string;
+    startedAt?: string;
+    endedAt?: string;
+    complications?: string;
+    notes?: string;
+  },
+): Promise<OtAnesthesiaChart> {
+  const { data } = await apiClient.put<ApiEnvelope<OtAnesthesiaChart>>(
+    `/ot/procedures/${procedureId}/anesthesia`,
+    payload,
+  );
+  return unwrap(data);
+}
+
+export async function addOtAnesthesiaEvent(
+  procedureId: string,
+  payload: {
+    eventType: string;
+    systolicBp?: number;
+    diastolicBp?: number;
+    pulse?: number;
+    spo2?: number;
+    notes?: string;
+  },
+): Promise<OtAnesthesiaEvent> {
+  const { data } = await apiClient.post<ApiEnvelope<OtAnesthesiaEvent>>(
+    `/ot/procedures/${procedureId}/anesthesia/events`,
     payload,
   );
   return unwrap(data);

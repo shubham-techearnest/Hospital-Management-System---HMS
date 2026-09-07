@@ -9,23 +9,30 @@ import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { parseApiError } from '@/shared/api/errorUtils';
 import {
   useAddAdminPartnerLocation,
+  useAddAdminPartnerMembership,
   useAdminPartner,
   useAdminPartnerLinks,
+  useAdminPartnerMemberships,
   useLinkAdminPartnerHospital,
   useUpdateAdminPartner,
+  useUpdateAdminPartnerMembership,
 } from '../hooks/useAdminPartnerQueries';
 
 export function AdminPartnerDetailPage() {
   const { partnerOrgId = '' } = useParams();
   const { data: partner, isError, error, isLoading } = useAdminPartner(partnerOrgId);
   const { data: links = [] } = useAdminPartnerLinks(partnerOrgId);
+  const { data: memberships = [] } = useAdminPartnerMemberships(partnerOrgId);
   const updatePartner = useUpdateAdminPartner();
   const addLocation = useAddAdminPartnerLocation();
   const linkHospital = useLinkAdminPartnerHospital();
+  const addMembership = useAddAdminPartnerMembership();
+  const updateMembership = useUpdateAdminPartnerMembership();
 
   const [message, setMessage] = useState<string | null>(null);
   const [locationOpen, setLocationOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
+  const [memberOpen, setMemberOpen] = useState(false);
   const [locationForm, setLocationForm] = useState({
     name: '',
     addressLine1: '',
@@ -39,6 +46,7 @@ export function AdminPartnerDetailPage() {
     primaryLocation: true,
   });
   const [linkForm, setLinkForm] = useState({ hospitalId: '', linkType: 'IN_NETWORK' });
+  const [memberForm, setMemberForm] = useState({ userId: '', jobTitle: '', employmentStatus: 'ACTIVE' });
 
   const loadError = isError ? parseApiError(error) : null;
 
@@ -102,6 +110,27 @@ export function AdminPartnerDetailPage() {
       setLinkOpen(false);
       setLinkForm({ hospitalId: '', linkType: 'IN_NETWORK' });
       setMessage('Hospital linked.');
+    } catch (e) {
+      setMessage(parseApiError(e).message);
+    }
+  };
+
+  const handleAddMembership = async () => {
+    setMessage(null);
+    if (!memberForm.userId.trim()) {
+      setMessage('User ID is required.');
+      return;
+    }
+    try {
+      await addMembership.mutateAsync({
+        partnerOrgId,
+        userId: memberForm.userId.trim(),
+        jobTitle: memberForm.jobTitle.trim() || undefined,
+        employmentStatus: memberForm.employmentStatus,
+      });
+      setMemberOpen(false);
+      setMemberForm({ userId: '', jobTitle: '', employmentStatus: 'ACTIVE' });
+      setMessage('Membership added.');
     } catch (e) {
       setMessage(parseApiError(e).message);
     }
@@ -215,6 +244,81 @@ export function AdminPartnerDetailPage() {
               </Table>
             </TableContainer>
           </Paper>
+
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+              <Typography variant="subtitle1" fontWeight={600}>Memberships</Typography>
+              <Button size="small" variant="contained" onClick={() => setMemberOpen(true)}>Add member</Button>
+            </Stack>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>User</TableCell>
+                    <TableCell>Job title</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell />
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {memberships.length === 0 && (
+                    <TableRow><TableCell colSpan={4}>No members yet.</TableCell></TableRow>
+                  )}
+                  {memberships.map((m) => (
+                    <TableRow key={m.membershipId}>
+                      <TableCell>
+                        <Typography variant="body2">{m.userName ?? m.userId}</Typography>
+                        <Typography variant="caption" color="text.secondary">{m.userEmail ?? m.userId}</Typography>
+                      </TableCell>
+                      <TableCell>{m.jobTitle ?? '—'}</TableCell>
+                      <TableCell>{m.employmentStatus}</TableCell>
+                      <TableCell align="right">
+                        {m.employmentStatus === 'ACTIVE' ? (
+                          <Button
+                            size="small"
+                            disabled={updateMembership.isPending}
+                            onClick={async () => {
+                              try {
+                                await updateMembership.mutateAsync({
+                                  partnerOrgId,
+                                  membershipId: m.membershipId,
+                                  employmentStatus: 'INACTIVE',
+                                });
+                                setMessage('Member deactivated.');
+                              } catch (e) {
+                                setMessage(parseApiError(e).message);
+                              }
+                            }}
+                          >
+                            Deactivate
+                          </Button>
+                        ) : (
+                          <Button
+                            size="small"
+                            disabled={updateMembership.isPending}
+                            onClick={async () => {
+                              try {
+                                await updateMembership.mutateAsync({
+                                  partnerOrgId,
+                                  membershipId: m.membershipId,
+                                  employmentStatus: 'ACTIVE',
+                                });
+                                setMessage('Member activated.');
+                              } catch (e) {
+                                setMessage(parseApiError(e).message);
+                              }
+                            }}
+                          >
+                            Activate
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
         </Stack>
       ) : null}
 
@@ -282,6 +386,44 @@ export function AdminPartnerDetailPage() {
         <DialogActions>
           <Button onClick={() => setLinkOpen(false)}>Cancel</Button>
           <Button variant="contained" onClick={handleLinkHospital} disabled={linkHospital.isPending}>Link</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={memberOpen} onClose={() => setMemberOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Add member</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="User ID"
+              required
+              fullWidth
+              value={memberForm.userId}
+              onChange={(e) => setMemberForm({ ...memberForm, userId: e.target.value })}
+              helperText="UUID from Users directory"
+            />
+            <TextField
+              label="Job title"
+              fullWidth
+              value={memberForm.jobTitle}
+              onChange={(e) => setMemberForm({ ...memberForm, jobTitle: e.target.value })}
+            />
+            <FormControl fullWidth size="small">
+              <InputLabel>Status</InputLabel>
+              <Select
+                label="Status"
+                value={memberForm.employmentStatus}
+                onChange={(e) => setMemberForm({ ...memberForm, employmentStatus: e.target.value })}
+              >
+                <MenuItem value="ACTIVE">ACTIVE</MenuItem>
+                <MenuItem value="INACTIVE">INACTIVE</MenuItem>
+                <MenuItem value="TERMINATED">TERMINATED</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMemberOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleAddMembership} disabled={addMembership.isPending}>Add</Button>
         </DialogActions>
       </Dialog>
     </AnimatedPage>

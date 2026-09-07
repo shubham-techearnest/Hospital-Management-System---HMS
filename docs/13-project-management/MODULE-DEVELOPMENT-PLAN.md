@@ -3,11 +3,11 @@
 | Attribute | Value |
 |-----------|-------|
 | **Document ID** | PM-MODULE-PLAN-001 |
-| **Status** | ACTIVE — Phase A COMPLETE; Phase F COMPLETE (code); Phase G IN PROGRESS |
+| **Status** | ACTIVE — Phase A–G COMPLETE (code); Phase H IN PROGRESS; G4/G5 deferred on hospital contracts |
 | **Created** | 2026-09-03 |
 | **Last Updated** | 2026-09-07 |
 | **Owner** | Engineering |
-| **Related** | [feature-status-board.md](./feature-status-board.md), [PHASE-A-OPS-CHECKLIST.md](./PHASE-A-OPS-CHECKLIST.md), [HMS-ROADMAP.md](../hms/HMS-ROADMAP.md), [HOSPITAL-OPD-REALISM-BACKLOG.md](../hms/HOSPITAL-OPD-REALISM-BACKLOG.md) |
+| **Related** | [feature-status-board.md](./feature-status-board.md), [PHASE-A-OPS-CHECKLIST.md](./PHASE-A-OPS-CHECKLIST.md), [PHASE-G-NOTES.md](./PHASE-G-NOTES.md), [PHASE-H-NOTES.md](./PHASE-H-NOTES.md), [HMS-ROADMAP.md](../hms/HMS-ROADMAP.md), [HOSPITAL-OPD-REALISM-BACKLOG.md](../hms/HOSPITAL-OPD-REALISM-BACKLOG.md) |
 
 ---
 
@@ -127,7 +127,8 @@ flowchart TB
 | **D** | IPD depth | 3–4 weeks | **COMPLETE** | D1–D6 done |
 | **E** | Staff portals depth | 3–4 weeks | **COMPLETE** | E1–E6 done (web + mobile light) |
 | **F** | Payments & SaaS | Phase 2 | **COMPLETE** (code) | Razorpay sandbox + patient/SaaS pay (keys optional) |
-| **G** | Advanced / integrations | Ongoing | **IN PROGRESS** | G2/G3/G6/G9/G10 MVPs |
+| **G** | Advanced / integrations | Ongoing | **COMPLETE** (code) | G1 stub+MSG91 HTTP; G2–G3; G6–G10; G4/G5 deferred |
+| **H** | Experience polish / parity | Ongoing | **IN PROGRESS** | H1 display board; H3 mobile password reset |
 
 ---
 
@@ -314,22 +315,39 @@ Patient requests OPD (or reception walk-in)
 
 | Attribute | Value |
 |-----------|-------|
-| **Status** | **IN PROGRESS** |
+| **Status** | **COMPLETE** (code) |
 | **Started** | 2026-09-07 |
+| **Code complete** | 2026-09-07 |
 
 | ID | Item | Notes | Done |
 |----|------|-------|------|
-| G1 | SMS / WhatsApp gateway | Needs vendor keys — stub interface later | [ ] |
+| G1 | SMS / WhatsApp gateway | Log stub + MSG91 HTTP when keys set | [x] |
 | G2 | QR deep-link self check-in packaging | Web QR + mobile deep-link path | [x] |
 | G3 | OPD_APPROACHING queue-position alerts | Position ≤ 3, once | [x] |
-| G4 | PACS / DICOM | Needs hospital PACS contract | [ ] |
-| G5 | LIS integration | Needs external LIS | [ ] |
-| G6 | Pharmacy inventory / stock | Batches + ledger + dispense decrement | [x] |
-| G7 | Anesthesia / implant tracking | Implant tracking MVP (anesthesia chart later) | [x] implants |
-| G8 | Partner admin portal | Org / location / hospital-link CRUD | [x] |
+| G4 | PACS / DICOM | Needs hospital PACS contract | [-] deferred |
+| G5 | LIS integration | Needs external LIS | [-] deferred |
+| G6 | Pharmacy inventory / stock | Batches + ledger + dispense + catalog receive UI | [x] |
+| G7 | Anesthesia / implant tracking | Implants + anesthesia chart MVP | [x] |
+| G8 | Partner admin portal | Org / location / hospital-link / membership CRUD | [x] |
 | G9 | Hospital / platform ops analytics | 7-day trend on hospital dashboard | [x] |
-| G10 | MFA / password reset | Forgot + reset email done; MFA later | [x] password reset; MFA [ ] |
-| G11 | TV / display board | Non-goal unless requested | [-] |
+| G10 | MFA / password reset | Forgot + reset + TOTP MFA | [x] |
+| G11 | TV / display board | Delivered as Phase H **H1** (`/reception/display`) | [x] |
+
+---
+
+## 10b. Phase H — Experience polish / parity
+
+| Attribute | Value |
+|-----------|-------|
+| **Status** | **IN PROGRESS** (code) |
+| **Started** | 2026-09-07 |
+| **Notes** | [PHASE-H-NOTES.md](./PHASE-H-NOTES.md) |
+
+| ID | Task | Modules | Done |
+|----|------|---------|------|
+| H1 | OPD waiting-room display board | OPD, Reception web | [x] |
+| H2 | Plan + feature board sync | Docs | [x] |
+| H3 | Mobile forgot / reset password | IAM, Mobile | [x] |
 
 ---
 
@@ -449,6 +467,9 @@ Deepen or wire — do not recreate:
 | 2026-09-04 | Phase F started: F1–F3 Razorpay sandbox, patient pay + webhook, SaaS renew (V73) |
 | 2026-09-07 | Phase A production QA signed off COMPLETE; Phase F COMPLETE (code); Phase G started (G2/G3/G6/G9/G10) |
 | 2026-09-07 | Phase G: G7 implant tracking + G8 partner admin CRUD (V76); V75 SaaS sequence version fix |
+| 2026-09-07 | Phase G: G10 TOTP MFA (V77) + G8 partner memberships |
+| 2026-09-07 | Phase G: G7 anesthesia chart (V78), G1 SMS stub, G6 stock receive UI |
+| 2026-09-07 | Phase G COMPLETE (code): MSG91 HTTP SMS; QA credentials refreshed; G4/G5 deferred |
 
 ---
 

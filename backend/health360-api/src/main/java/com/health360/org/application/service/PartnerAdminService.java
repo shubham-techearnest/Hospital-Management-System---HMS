@@ -5,17 +5,23 @@ import com.health360.hospital.infrastructure.persistence.repository.HospitalRepo
 import com.health360.org.domain.PartnerOrgType;
 import com.health360.org.infrastructure.persistence.entity.HospitalPartnerLinkEntity;
 import com.health360.org.infrastructure.persistence.entity.PartnerOrgLocationEntity;
+import com.health360.org.infrastructure.persistence.entity.PartnerOrgMembershipEntity;
 import com.health360.org.infrastructure.persistence.entity.PartnerOrganizationEntity;
 import com.health360.org.infrastructure.persistence.repository.HospitalPartnerLinkRepository;
 import com.health360.org.infrastructure.persistence.repository.PartnerOrgLocationRepository;
+import com.health360.org.infrastructure.persistence.repository.PartnerOrgMembershipRepository;
 import com.health360.org.infrastructure.persistence.repository.PartnerOrganizationRepository;
+import com.health360.org.presentation.dto.request.AddPartnerMembershipRequest;
 import com.health360.org.presentation.dto.request.CreatePartnerLocationRequest;
 import com.health360.org.presentation.dto.request.CreatePartnerOrgRequest;
 import com.health360.org.presentation.dto.request.LinkHospitalPartnerRequest;
+import com.health360.org.presentation.dto.request.UpdatePartnerMembershipRequest;
 import com.health360.org.presentation.dto.request.UpdatePartnerOrgRequest;
 import com.health360.org.presentation.dto.response.HospitalPartnerLinkResponse;
 import com.health360.org.presentation.dto.response.PartnerLocationResponse;
+import com.health360.org.presentation.dto.response.PartnerMembershipResponse;
 import com.health360.org.presentation.dto.response.PartnerOrgResponse;
+import com.health360.iam.infrastructure.persistence.repository.UserRepository;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -36,7 +42,9 @@ public class PartnerAdminService {
     private final PartnerOrganizationRepository organizationRepository;
     private final PartnerOrgLocationRepository locationRepository;
     private final HospitalPartnerLinkRepository linkRepository;
+    private final PartnerOrgMembershipRepository membershipRepository;
     private final HospitalRepository hospitalRepository;
+    private final UserRepository userRepository;
     private final PartnerOrgScopeService scopeService;
     private final AuditLogService auditLogService;
 
@@ -192,6 +200,116 @@ public class PartnerAdminService {
                         .status(l.getStatus())
                         .build())
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PartnerMembershipResponse> listMemberships(UserPrincipal principal, UUID partnerOrgId) {
+        scopeService.assertCanReadPartners(principal);
+        requireOrg(principal.getTenantId(), partnerOrgId);
+        return membershipRepository
+                .findByTenantIdAndPartnerOrgIdAndDeletedAtIsNull(principal.getTenantId(), partnerOrgId)
+                .stream()
+                .map(this::toMembershipResponse)
+                .toList();
+    }
+
+    @Transactional
+    public PartnerMembershipResponse addMembership(
+            UserPrincipal principal, UUID partnerOrgId, AddPartnerMembershipRequest request) {
+        scopeService.assertCanWritePartners(principal);
+        requireOrg(principal.getTenantId(), partnerOrgId);
+
+        var user = userRepository.findById(request.getUserId())
+                .filter(u -> u.getTenantId().equals(principal.getTenantId()) && u.getDeletedAt() == null)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "User not found"));
+
+        if (membershipRepository.findByPartnerOrgIdAndUserIdAndDeletedAtIsNull(partnerOrgId, user.getId())
+                .isPresent()) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                    "User is already a member of this partner organization");
+        }
+
+        if (request.getLocationId() != null) {
+            locationRepository.findById(request.getLocationId())
+                    .filter(l -> l.getPartnerOrgId().equals(partnerOrgId)
+                            && l.getTenantId().equals(principal.getTenantId())
+                            && l.getDeletedAt() == null)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                            "Partner location not found"));
+        }
+
+        String status = request.getEmploymentStatus() != null && !request.getEmploymentStatus().isBlank()
+                ? request.getEmploymentStatus().trim().toUpperCase(Locale.ROOT) : "ACTIVE";
+        if (!List.of("ACTIVE", "INACTIVE", "TERMINATED").contains(status)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Invalid employment status");
+        }
+
+        PartnerOrgMembershipEntity membership = new PartnerOrgMembershipEntity();
+        membership.setTenantId(principal.getTenantId());
+        membership.setPartnerOrgId(partnerOrgId);
+        membership.setUserId(user.getId());
+        membership.setLocationId(request.getLocationId());
+        membership.setJobTitle(blankToNull(request.getJobTitle()));
+        membership.setEmploymentStatus(status);
+        membership.setHiredAt(java.time.Instant.now());
+        membership.setCreatedBy(principal.getUserId());
+        membership.setUpdatedBy(principal.getUserId());
+        membership = membershipRepository.saveAndFlush(membership);
+
+        return toMembershipResponse(membership);
+    }
+
+    @Transactional
+    public PartnerMembershipResponse updateMembership(
+            UserPrincipal principal, UUID partnerOrgId, UUID membershipId, UpdatePartnerMembershipRequest request) {
+        scopeService.assertCanWritePartners(principal);
+        requireOrg(principal.getTenantId(), partnerOrgId);
+
+        PartnerOrgMembershipEntity membership = membershipRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(membershipId, principal.getTenantId())
+                .filter(m -> m.getPartnerOrgId().equals(partnerOrgId))
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Membership not found"));
+
+        if (request.getJobTitle() != null) {
+            membership.setJobTitle(blankToNull(request.getJobTitle()));
+        }
+        if (request.getLocationId() != null) {
+            locationRepository.findById(request.getLocationId())
+                    .filter(l -> l.getPartnerOrgId().equals(partnerOrgId) && l.getDeletedAt() == null)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                            "Partner location not found"));
+            membership.setLocationId(request.getLocationId());
+        }
+        if (request.getEmploymentStatus() != null && !request.getEmploymentStatus().isBlank()) {
+            String status = request.getEmploymentStatus().trim().toUpperCase(Locale.ROOT);
+            if (!List.of("ACTIVE", "INACTIVE", "TERMINATED").contains(status)) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                        "Invalid employment status");
+            }
+            membership.setEmploymentStatus(status);
+        }
+        membership.setUpdatedBy(principal.getUserId());
+        membership.touch();
+        return toMembershipResponse(membershipRepository.save(membership));
+    }
+
+    private PartnerMembershipResponse toMembershipResponse(PartnerOrgMembershipEntity membership) {
+        var user = userRepository.findById(membership.getUserId()).orElse(null);
+        String name = user == null ? null : (user.getFirstName() + " " + user.getLastName()).trim();
+        return PartnerMembershipResponse.builder()
+                .membershipId(membership.getId())
+                .partnerOrgId(membership.getPartnerOrgId())
+                .userId(membership.getUserId())
+                .userEmail(user != null ? user.getEmail() : null)
+                .userName(name)
+                .locationId(membership.getLocationId())
+                .jobTitle(membership.getJobTitle())
+                .employmentStatus(membership.getEmploymentStatus())
+                .hiredAt(membership.getHiredAt())
+                .build();
     }
 
     private PartnerOrganizationEntity requireOrg(UUID tenantId, UUID partnerOrgId) {

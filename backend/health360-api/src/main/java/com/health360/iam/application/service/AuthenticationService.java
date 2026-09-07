@@ -10,7 +10,9 @@ import com.health360.iam.infrastructure.persistence.repository.RefreshTokenRepos
 import com.health360.iam.infrastructure.persistence.repository.UserRepository;
 import com.health360.iam.infrastructure.persistence.repository.UserRoleRepository;
 import com.health360.iam.presentation.dto.request.LoginRequest;
+import com.health360.iam.presentation.dto.request.MfaVerifyRequest;
 import com.health360.iam.presentation.dto.response.AuthTokenResponse;
+import com.health360.iam.presentation.dto.response.LoginResponse;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -42,9 +44,11 @@ public class AuthenticationService {
     private final UserProfileMapper userProfileMapper;
     private final Health360Properties properties;
     private final HospitalRepository hospitalRepository;
+    private final MfaPendingTokenService mfaPendingTokenService;
+    private final MfaService mfaService;
 
     @Transactional
-    public AuthTokenResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
         UUID tenantId = properties.getDefaultTenantId();
         UserEntity user = userRepository.findByTenantIdAndEmailIgnoreCase(tenantId, request.getEmail().trim())
                 .orElseThrow(() -> invalidCredentials());
@@ -76,7 +80,44 @@ public class AuthenticationService {
         user.touch();
         userRepository.save(user);
 
-        return issueTokenPair(user, request.getDeviceInfo());
+        if (user.isMfaEnabled()) {
+            String mfaToken = mfaPendingTokenService.issue(user.getId(), request.getDeviceInfo());
+            return LoginResponse.mfaChallenge(mfaToken);
+        }
+
+        return LoginResponse.tokens(issueTokenPair(user, request.getDeviceInfo()));
+    }
+
+    @Transactional
+    public AuthTokenResponse verifyMfa(MfaVerifyRequest request) {
+        MfaPendingTokenService.PendingMfa pending = mfaPendingTokenService.consume(request.getMfaToken());
+        if (pending == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, HttpStatus.UNAUTHORIZED,
+                    "MFA challenge expired or invalid. Sign in again.");
+        }
+
+        UserEntity user = userRepository.findById(pending.userId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, HttpStatus.UNAUTHORIZED,
+                        "User not found"));
+
+        if (!user.isMfaEnabled() || user.getDeletedAt() != null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, HttpStatus.UNAUTHORIZED,
+                    "MFA is not enabled for this account");
+        }
+
+        if (!mfaService.verifyTotpOrBackup(user, request.getCode())) {
+            registerFailedAttempt(user);
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED,
+                    "Invalid authenticator or backup code");
+        }
+
+        user.setFailedLoginAttempts(0);
+        user.setLockedUntil(null);
+        user.touch();
+        userRepository.save(user);
+
+        String deviceInfo = request.getDeviceInfo() != null ? request.getDeviceInfo() : pending.deviceInfo();
+        return issueTokenPair(user, deviceInfo);
     }
 
     @Transactional

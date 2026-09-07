@@ -21,6 +21,7 @@ public class UserProfileMapper {
                 .permissions(permissions)
                 .status(user.getStatus())
                 .emailVerified(user.isEmailVerified())
+                .mfaEnabled(user.isMfaEnabled())
                 .timezone(user.getTimezone())
                 .locale(user.getLocale())
                 .build();
