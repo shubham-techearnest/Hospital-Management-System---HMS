@@ -35,7 +35,7 @@ public class IcuFacilityService {
     @Transactional
     public IcuUnitResponse createUnit(UserPrincipal principal, CreateIcuUnitRequest request) {
         accessService.assertCanManageUnits(principal);
-        accessService.assertHospitalScope(principal, request.getHospitalId());
+        accessService.assertIcuModuleEnabled(principal, request.getHospitalId());
 
         if (unitRepository.existsByHospitalIdAndBranchIdAndCodeAndDeletedAtIsNull(
                 request.getHospitalId(), request.getBranchId(), request.getCode().trim())) {

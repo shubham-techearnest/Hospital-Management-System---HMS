@@ -33,6 +33,9 @@ export interface MedicationAdministration {
   patientId: string;
   medicineName: string;
   doseGiven: string;
+  outcome?: string;
+  reasonCode?: string;
+  reasonText?: string;
   route?: string;
   administeredAt: string;
   administeredBy: string;
@@ -154,7 +157,14 @@ export async function planMedicationOrderItem(
 
 export async function administerMedication(
   orderItemId: string,
-  payload: { doseGiven: string; route?: string; notes?: string },
+  payload: {
+    doseGiven?: string;
+    outcome?: string;
+    reasonCode?: string;
+    reasonText?: string;
+    route?: string;
+    notes?: string;
+  },
 ): Promise<MedicationAdministration> {
   const { data } = await apiClient.post<ApiEnvelope<MedicationAdministration>>(
     `/pharmacy/order-items/${orderItemId}/administer`,

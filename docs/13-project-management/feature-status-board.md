@@ -2,7 +2,7 @@
 
 | Document ID | PM-FEATURE-001 |
 | Status | DRAFT — updated each sprint |
-| Execution plan | [MODULE-DEVELOPMENT-PLAN.md](./MODULE-DEVELOPMENT-PLAN.md) (Phases A–H) |
+| Execution plan | [MODULE-DEVELOPMENT-PLAN.md](./MODULE-DEVELOPMENT-PLAN.md) (Phases A–I) |
 
 | Feature ID | Epic | Feature | Sprint | Doc | Approval | Impl | QA | Status |
 |------------|------|---------|--------|-----|----------|------|-----|--------|
@@ -20,6 +20,16 @@
 | P2-F9 | EPIC-05 | Guided OPD visit checklist (vitals → bill) | 11 | [backlog](../hms/HOSPITAL-OPD-REALISM-BACKLOG.md) | APPROVED | DONE | IN QA | **IN QA** |
 | P2-F10 | EPIC-04 | Connected OPD visit status (patient / desk / doctor / hospital) | 12 | [P2-F10](../09-features/P2-opd/P2-F10/README.md) | APPROVED | DONE | IN QA | **IN QA** |
 | P2-F11 | EPIC-04 | OPD waiting-room display board (TV / kiosk) | H | [PHASE-H](./PHASE-H-NOTES.md) | APPROVED | DONE | IN QA | **IN QA** |
+| IPD-E0 | EPIC-12 | Hospital IPD service catalog + FEATURE_IPD | I0 | [PHASE-I](./PHASE-I-IPD-ENTERPRISE-PLAN.md) | APPROVED | DONE | IN QA | **IN QA** |
+| IPD-E1 | EPIC-12 | Admission request + OPD→IPD | I1 | [PHASE-I](./PHASE-I-IPD-ENTERPRISE-PLAN.md) | APPROVED | DONE | IN QA | **IN QA** |
+| IPD-E2 | EPIC-12 | Enterprise bed map / reserve / cleaning | I2 | [PHASE-I](./PHASE-I-IPD-ENTERPRISE-PLAN.md) | APPROVED | DONE | IN QA | **IN QA** |
+| IPD-E3 | EPIC-12/13 | Unified IPD chart + assessments + consults | I3 | [PHASE-I](./PHASE-I-IPD-ENTERPRISE-PLAN.md) | APPROVED | DONE | IN QA | **IN QA** |
+| IPD-E4 | EPIC-09/07 | Med recon + diagnostics from IPD chart | I4 | [PHASE-I](./PHASE-I-IPD-ENTERPRISE-PLAN.md) | APPROVED | DONE | IN QA | **IN QA** |
+| IPD-E5 | EPIC-12 | ICU/OT/isolation escalation | I5 | [PHASE-I](./PHASE-I-IPD-ENTERPRISE-PLAN.md) | APPROVED | — | — | **DONE** |
+| IPD-E6 | EPIC-10/16 | IPD charges + payer/TPA clearance | I6 | [PHASE-I](./PHASE-I-IPD-ENTERPRISE-PLAN.md) | APPROVED | — | — | **DONE** |
+| IPD-E7 | EPIC-12/17 | Discharge / LAMA / death / bed turnaround | I7 | [PHASE-I](./PHASE-I-IPD-ENTERPRISE-PLAN.md) | APPROVED | — | — | **DONE** |
+| IPD-E8 | EPIC-12 | Follow-up + readmission | I8 | [PHASE-I](./PHASE-I-IPD-ENTERPRISE-PLAN.md) | APPROVED | — | — | **DONE** |
+| IPD-E9 | EPIC-19/21 | IPD dashboards + mobile nursing | I9 | [PHASE-I](./PHASE-I-IPD-ENTERPRISE-PLAN.md) | APPROVED | — | — | **DONE** |
 | P2-B1 | EPIC-10 | Billing backend (V41) | — | [post-hms](../post-hms/P2-B1-BILLING-FLOW.md) | — | DONE | PARTIAL | **RELEASED (backend)** |
 | ECO-P0 | ECO | Ecosystem stabilize (status map + dashboard audit + OPD QA) | — | [ECO-P0](../09-features/ECO-P0/README.md) | APPROVED | DONE | IN QA | **IN QA** |
 | ECO-P1 | ECO | Patient/desk polish (UHID, book clarity, search, hospital filters) | — | [ECO-P1](../09-features/ECO-P1/README.md) | APPROVED | DONE | IN QA | **IN QA** |

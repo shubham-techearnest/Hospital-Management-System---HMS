@@ -501,6 +501,12 @@ public class OtProcedureService {
     @Transactional(readOnly = true)
     public List<OtProcedureResponse> listCompletedProceduresForEncounter(
             UserPrincipal principal, UUID encounterId) {
+        return listProceduresForEncounter(principal, encounterId, true);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OtProcedureResponse> listProceduresForEncounter(
+            UserPrincipal principal, UUID encounterId, boolean completedOnly) {
         UUID tenantId = principal.getTenantId();
         EncounterEntity encounter = encounterRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(encounterId, tenantId)
@@ -508,10 +514,13 @@ public class OtProcedureService {
                         "Encounter not found"));
         encounterAccessService.assertCanReadEncounter(principal, encounter);
 
-        return procedureRepository
-                .findByTenantIdAndEncounterIdAndStatusAndDeletedAtIsNullOrderByCompletedAtDesc(
+        List<OtProcedureEntity> procedures = completedOnly
+                ? procedureRepository.findByTenantIdAndEncounterIdAndStatusAndDeletedAtIsNullOrderByCompletedAtDesc(
                         tenantId, encounterId, OtProcedureStatus.COMPLETED.name())
-                .stream()
+                : procedureRepository.findByTenantIdAndEncounterIdAndDeletedAtIsNullOrderByReceivedAtDesc(
+                        tenantId, encounterId);
+
+        return procedures.stream()
                 .map(p -> buildProcedureResponse(tenantId, p))
                 .toList();
     }

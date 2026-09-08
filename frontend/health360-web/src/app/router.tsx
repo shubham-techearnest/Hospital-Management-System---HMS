@@ -120,6 +120,12 @@ const HospitalOpdPage = lazy(() =>
 const HospitalIpdPage = lazy(() =>
   import('@/features/hospital/pages/HospitalIpdPage').then((m) => ({ default: m.HospitalIpdPage })),
 );
+const HospitalIpdAdmissionPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalIpdAdmissionPage').then((m) => ({ default: m.HospitalIpdAdmissionPage })),
+);
+const HospitalIpdServicesPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalIpdServicesPage').then((m) => ({ default: m.HospitalIpdServicesPage })),
+);
 const HospitalIcuPage = lazy(() =>
   import('@/features/hospital/pages/HospitalIcuPage').then((m) => ({ default: m.HospitalIcuPage })),
 );
@@ -290,6 +296,9 @@ const PatientEncountersPage = lazy(() =>
 const PatientEncounterDetailPage = lazy(() =>
   import('@/features/patient/pages/PatientEncounterDetailPage').then((m) => ({ default: m.PatientEncounterDetailPage })),
 );
+const PatientIpdStaysPage = lazy(() =>
+  import('@/features/patient/pages/PatientIpdStaysPage').then((m) => ({ default: m.PatientIpdStaysPage })),
+);
 
 function PageLoader() {
   return <LogoLoader label="Loading page" size={72} />;
@@ -427,6 +436,8 @@ export function AppRouter() {
           <Route path="appointments/:appointmentId" element={<Navigate to="/patient/opd" replace />} />
           <Route path="encounters" element={<LazyPage><PatientEncountersPage /></LazyPage>} />
           <Route path="encounters/:encounterId" element={<LazyPage><PatientEncounterDetailPage /></LazyPage>} />
+          <Route path="ipd" element={<LazyPage><PatientIpdStaysPage /></LazyPage>} />
+          <Route path="ipd/:admissionId" element={<LazyPage><PatientIpdStaysPage /></LazyPage>} />
         </Route>
         <Route
           path="/doctor"
@@ -492,6 +503,8 @@ export function AppRouter() {
           <Route path="billing/invoices/:invoiceId" element={<LazyPage><HospitalInvoiceDetailPage /></LazyPage>} />
           <Route path="billing/checkout/:encounterId" element={<LazyPage><ReceptionCheckoutPage /></LazyPage>} />
           <Route path="ipd" element={<LazyPage><HospitalIpdPage /></LazyPage>} />
+          <Route path="ipd/admissions/:admissionId" element={<LazyPage><HospitalIpdAdmissionPage /></LazyPage>} />
+          <Route path="ipd-services" element={<LazyPage><HospitalIpdServicesPage /></LazyPage>} />
           <Route path="icu" element={<LazyPage><HospitalIcuPage /></LazyPage>} />
           <Route path="lab" element={<LazyPage><LabDashboardPage /></LazyPage>} />
           <Route path="lab/dashboard" element={<LazyPage><LabDashboardPage /></LazyPage>} />

@@ -23,4 +23,11 @@ public class CreateIpdAdmissionRequest {
     private UUID primaryDoctorId;
 
     private String admissionReason;
+
+    /** When set, admit from an APPROVED/SCHEDULED admission request. */
+    private UUID admissionRequestId;
+
+    private String admissionSource;
+
+    private String admissionType;
 }

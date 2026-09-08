@@ -41,6 +41,9 @@ public class IpdMapper {
                 .roomCode(room.getCode())
                 .bedNumber(bed.getBedNumber())
                 .status(bed.getStatus())
+                .cleaningStartedAt(bed.getCleaningStartedAt())
+                .cleanedAt(bed.getCleanedAt())
+                .cleanedBy(bed.getCleanedBy())
                 .build();
     }
 
@@ -83,6 +86,15 @@ public class IpdMapper {
                 .encounterStatus(encounter.getStatus())
                 .admittedAt(admission.getAdmittedAt())
                 .dischargedAt(admission.getDischargedAt())
+                .isolationRequired(admission.isIsolationRequired())
+                .careLevel(admission.getCareLevel())
+                .activeIcuStayId(admission.getActiveIcuStayId())
+                .admissionSource(admission.getAdmissionSource())
+                .admissionType(admission.getAdmissionType())
+                .followUpAppointmentId(admission.getFollowUpAppointmentId())
+                .closedAt(admission.getClosedAt())
+                .closedBy(admission.getClosedBy())
+                .readmittedFromAdmissionId(admission.getReadmittedFromAdmissionId())
                 .build();
     }
 
@@ -111,6 +123,11 @@ public class IpdMapper {
                 .dischargedAt(summary.getDischargedAt())
                 .admissionStatus(admission.getStatus())
                 .encounterStatus(encounter.getStatus())
+                .dischargeType(summary.getDischargeType())
+                .versionNo(summary.getVersionNo())
+                .diagnosisText(summary.getDiagnosisText())
+                .medicationsText(summary.getMedicationsText())
+                .adviceText(summary.getAdviceText())
                 .build();
     }
 }

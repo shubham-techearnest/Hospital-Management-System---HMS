@@ -26,8 +26,17 @@ public interface InvoiceRepository extends JpaRepository<InvoiceEntity, UUID> {
     boolean existsByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNot(
             UUID tenantId, UUID encounterId, String status);
 
+    boolean existsByTenantIdAndEncounterIdAndInvoiceKindInAndDeletedAtIsNullAndStatusNot(
+            UUID tenantId, UUID encounterId, Collection<String> invoiceKinds, String status);
+
     Optional<InvoiceEntity> findFirstByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNotOrderByIssuedAtDesc(
             UUID tenantId, UUID encounterId, String status);
+
+    Optional<InvoiceEntity> findFirstByTenantIdAndEncounterIdAndInvoiceKindInAndDeletedAtIsNullAndStatusNotOrderByIssuedAtDesc(
+            UUID tenantId, UUID encounterId, Collection<String> invoiceKinds, String status);
+
+    List<InvoiceEntity> findByTenantIdAndEncounterIdAndDeletedAtIsNullOrderByIssuedAtDesc(
+            UUID tenantId, UUID encounterId);
 
     @Query("""
             SELECT i FROM InvoiceEntity i

@@ -74,6 +74,10 @@ export interface LabReport {
   testCode: string;
   summaryText?: string;
   releasedAt: string;
+  critical?: boolean;
+  criticalAcknowledgedAt?: string;
+  criticalAcknowledgedBy?: string;
+  criticalAckNote?: string;
   results: LabResult[];
 }
 
@@ -231,10 +235,22 @@ export async function verifyLabResults(labOrderId: string): Promise<LabOrder> {
   return unwrap(data);
 }
 
-export async function releaseLabReport(labOrderId: string, summaryText?: string): Promise<LabReport> {
-  const { data } = await apiClient.post<ApiEnvelope<LabReport>>(`/lab/orders/${labOrderId}/release`, {
-    summaryText,
-  });
+export async function releaseLabReport(
+  labOrderId: string,
+  payload?: { summaryText?: string; critical?: boolean },
+): Promise<LabReport> {
+  const { data } = await apiClient.post<ApiEnvelope<LabReport>>(`/lab/orders/${labOrderId}/release`, payload ?? {});
+  return unwrap(data);
+}
+
+export async function acknowledgeCriticalLabReport(
+  reportId: string,
+  payload?: { note?: string },
+): Promise<LabReport> {
+  const { data } = await apiClient.post<ApiEnvelope<LabReport>>(
+    `/lab/reports/${reportId}/acknowledge-critical`,
+    payload ?? {},
+  );
   return unwrap(data);
 }
 

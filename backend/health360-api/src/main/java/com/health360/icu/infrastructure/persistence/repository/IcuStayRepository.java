@@ -22,4 +22,7 @@ public interface IcuStayRepository extends JpaRepository<IcuStayEntity, UUID> {
 
     long countByTenantIdAndHospitalIdAndBranchIdAndStatusAndDeletedAtIsNull(
             UUID tenantId, UUID hospitalId, UUID branchId, String status);
+
+    Optional<IcuStayEntity> findByIpdAdmissionIdAndStatusAndDeletedAtIsNull(
+            UUID ipdAdmissionId, String status);
 }

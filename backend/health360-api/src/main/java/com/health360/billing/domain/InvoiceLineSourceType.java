@@ -4,5 +4,10 @@ public enum InvoiceLineSourceType {
     ENCOUNTER,
     LAB_ORDER,
     MEDICATION_ORDER,
-    MANUAL
+    MANUAL,
+    IPD_CHARGE,
+    BED_DAY,
+    NURSING,
+    PROCEDURE,
+    DEPOSIT
 }

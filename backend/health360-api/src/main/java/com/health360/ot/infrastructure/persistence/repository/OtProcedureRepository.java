@@ -29,6 +29,9 @@ public interface OtProcedureRepository extends JpaRepository<OtProcedureEntity, 
     List<OtProcedureEntity> findByTenantIdAndEncounterIdAndStatusAndDeletedAtIsNullOrderByCompletedAtDesc(
             UUID tenantId, UUID encounterId, String status);
 
+    List<OtProcedureEntity> findByTenantIdAndEncounterIdAndDeletedAtIsNullOrderByReceivedAtDesc(
+            UUID tenantId, UUID encounterId);
+
     @Query("""
             SELECT i FROM ClinicalOrderItemEntity i
             JOIN ClinicalOrderEntity o ON o.id = i.orderId

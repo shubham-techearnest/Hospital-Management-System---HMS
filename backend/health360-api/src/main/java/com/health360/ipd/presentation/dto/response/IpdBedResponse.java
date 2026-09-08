@@ -15,4 +15,7 @@ public class IpdBedResponse {
     String roomCode;
     String bedNumber;
     String status;
+    java.time.Instant cleaningStartedAt;
+    java.time.Instant cleanedAt;
+    UUID cleanedBy;
 }

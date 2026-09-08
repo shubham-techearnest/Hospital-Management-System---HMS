@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -289,13 +290,42 @@ public class PharmacyFulfillmentService {
                     "Order item must be READY before administration");
         }
 
+        String outcome = request.getOutcome() != null && !request.getOutcome().isBlank()
+                ? request.getOutcome().trim().toUpperCase()
+                : "GIVEN";
+        if (!Set.of("GIVEN", "OMITTED", "REFUSED").contains(outcome)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "outcome must be GIVEN, OMITTED, or REFUSED");
+        }
+
+        String doseGiven;
+        String reasonText = request.getReasonText() != null ? request.getReasonText().trim() : null;
+        if ("GIVEN".equals(outcome)) {
+            if (request.getDoseGiven() == null || request.getDoseGiven().isBlank()) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                        "doseGiven is required when outcome is GIVEN");
+            }
+            doseGiven = request.getDoseGiven().trim();
+        } else {
+            if (reasonText == null || reasonText.isBlank()) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                        "reasonText is required when medication is omitted or refused");
+            }
+            doseGiven = request.getDoseGiven() != null && !request.getDoseGiven().isBlank()
+                    ? request.getDoseGiven().trim()
+                    : outcome;
+        }
+
         MedicationAdministrationEntity administration = new MedicationAdministrationEntity();
         administration.setTenantId(tenantId);
         administration.setMedicationOrderItemId(item.getId());
         administration.setMedicationOrderId(order.getId());
         administration.setEncounterId(order.getEncounterId());
         administration.setPatientId(order.getPatientId());
-        administration.setDoseGiven(request.getDoseGiven().trim());
+        administration.setDoseGiven(doseGiven);
+        administration.setOutcome(outcome);
+        administration.setReasonCode(request.getReasonCode() != null ? request.getReasonCode().trim() : null);
+        administration.setReasonText(reasonText);
         administration.setRoute(request.getRoute() != null ? request.getRoute() : item.getRoute());
         administration.setAdministeredAt(Instant.now());
         administration.setAdministeredBy(principal.getUserId());
@@ -314,7 +344,8 @@ public class PharmacyFulfillmentService {
         auditLogService.record(tenantId, principal.getUserId(), "MEDICATION_ADMINISTERED",
                 "MedicationAdministration", saved.getId(),
                 Map.of("medicationOrderItemId", item.getId().toString(),
-                        "encounterId", order.getEncounterId().toString()));
+                        "encounterId", order.getEncounterId().toString(),
+                        "outcome", outcome));
 
         return mapper.toAdministrationResponse(saved, item.getMedicineName());
     }

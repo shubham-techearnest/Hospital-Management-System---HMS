@@ -30,4 +30,16 @@ public class LabReportEntity extends BaseAuditableEntity {
 
     @Column(name = "released_by")
     private UUID releasedBy;
+
+    @Column(nullable = false)
+    private boolean critical;
+
+    @Column(name = "critical_acknowledged_at")
+    private Instant criticalAcknowledgedAt;
+
+    @Column(name = "critical_acknowledged_by")
+    private UUID criticalAcknowledgedBy;
+
+    @Column(name = "critical_ack_note", columnDefinition = "TEXT")
+    private String criticalAckNote;
 }

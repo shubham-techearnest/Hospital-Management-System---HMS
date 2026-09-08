@@ -28,4 +28,13 @@ public class IpdAdmissionResponse {
     String encounterStatus;
     Instant admittedAt;
     Instant dischargedAt;
+    boolean isolationRequired;
+    String careLevel;
+    UUID activeIcuStayId;
+    String admissionSource;
+    String admissionType;
+    UUID followUpAppointmentId;
+    Instant closedAt;
+    UUID closedBy;
+    UUID readmittedFromAdmissionId;
 }

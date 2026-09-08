@@ -58,4 +58,10 @@ public class InvoiceEntity extends BaseAuditableEntity {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    @Column(name = "invoice_kind", nullable = false, length = 20)
+    private String invoiceKind = "STANDARD";
+
+    @Column(name = "admission_id")
+    private UUID admissionId;
 }

@@ -4,7 +4,9 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
+  FormControlLabel,
   MenuItem,
   Paper,
   Snackbar,
@@ -52,6 +54,7 @@ export function LabOrderDetailPage() {
   const [sampleForm, setSampleForm] = useState({ specimenId: '', notes: '' });
   const [resultValues, setResultValues] = useState<Record<string, string>>({});
   const [releaseSummary, setReleaseSummary] = useState('');
+  const [releaseCritical, setReleaseCritical] = useState(false);
   const [paramForm, setParamForm] = useState({ code: '', name: '', unit: '', referenceRange: '' });
   const [setupForm, setSetupForm] = useState({ labName: '', labCode: '', testCode: '', testName: '', laboratoryId: '' });
 
@@ -234,6 +237,16 @@ export function LabOrderDetailPage() {
                 value={releaseSummary}
                 onChange={(e) => setReleaseSummary(e.target.value)}
               />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={releaseCritical}
+                    onChange={(e) => setReleaseCritical(e.target.checked)}
+                  />
+                }
+                label="Mark as critical (requires clinician acknowledgement on IPD chart)"
+                sx={{ mb: 1 }}
+              />
               <Button
                 variant="contained"
                 color="success"
@@ -243,8 +256,11 @@ export function LabOrderDetailPage() {
                     await mutations.releaseReport.mutateAsync({
                       labOrderId: order.labOrderId,
                       summaryText: releaseSummary || undefined,
+                      critical: releaseCritical,
                     });
-                    showSuccess('Report released to patient record.');
+                    showSuccess(releaseCritical
+                      ? 'Critical report released — acknowledge on IPD chart.'
+                      : 'Report released to patient record.');
                   } catch (e) {
                     showError(e);
                   }

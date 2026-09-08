@@ -16,6 +16,9 @@ public class MedicationAdministrationResponse {
     UUID patientId;
     String medicineName;
     String doseGiven;
+    String outcome;
+    String reasonCode;
+    String reasonText;
     String route;
     Instant administeredAt;
     UUID administeredBy;

@@ -30,6 +30,8 @@ public class BillingMapper {
                 .issuedAt(invoice.getIssuedAt())
                 .paidAt(invoice.getPaidAt())
                 .notes(invoice.getNotes())
+                .invoiceKind(invoice.getInvoiceKind())
+                .admissionId(invoice.getAdmissionId())
                 .lineItems(lineItems.stream().map(this::toLineItemResponse).toList())
                 .build();
     }

@@ -30,4 +30,25 @@ public class IpdDischargeSummaryEntity extends BaseAuditableEntity {
 
     @Column(name = "discharged_at", nullable = false)
     private Instant dischargedAt = Instant.now();
+
+    @Column(name = "discharge_type", nullable = false, length = 30)
+    private String dischargeType = "ROUTINE";
+
+    @Column(name = "version_no", nullable = false)
+    private int versionNo = 1;
+
+    @Column(name = "summary_status", nullable = false, length = 20)
+    private String summaryStatus = "FINAL";
+
+    @Column(name = "diagnosis_text", columnDefinition = "TEXT")
+    private String diagnosisText;
+
+    @Column(name = "medications_text", columnDefinition = "TEXT")
+    private String medicationsText;
+
+    @Column(name = "advice_text", columnDefinition = "TEXT")
+    private String adviceText;
+
+    @Column(name = "structured_json", columnDefinition = "TEXT")
+    private String structuredJson;
 }

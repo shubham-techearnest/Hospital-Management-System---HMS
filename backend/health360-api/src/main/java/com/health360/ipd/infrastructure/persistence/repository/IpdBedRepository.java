@@ -49,4 +49,24 @@ public interface IpdBedRepository extends JpaRepository<IpdBedEntity, UUID> {
             @Param("hospitalId") UUID hospitalId,
             @Param("branchId") UUID branchId,
             @Param("status") String status);
+
+    @Query("""
+            SELECT b FROM IpdBedEntity b
+            JOIN IpdRoomEntity r ON r.id = b.roomId
+            JOIN IpdWardEntity w ON w.id = r.wardId
+            WHERE b.tenantId = :tenantId
+              AND w.hospitalId = :hospitalId
+              AND w.branchId = :branchId
+              AND b.cleanedAt IS NOT NULL
+              AND b.cleaningStartedAt IS NOT NULL
+              AND b.cleanedAt >= :from
+              AND b.cleanedAt < :to
+              AND b.deletedAt IS NULL
+            """)
+    List<IpdBedEntity> findCompletedCleaningsInRange(
+            @Param("tenantId") UUID tenantId,
+            @Param("hospitalId") UUID hospitalId,
+            @Param("branchId") UUID branchId,
+            @Param("from") java.time.Instant from,
+            @Param("to") java.time.Instant to);
 }

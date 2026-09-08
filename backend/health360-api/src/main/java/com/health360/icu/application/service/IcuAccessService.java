@@ -6,6 +6,8 @@ import com.health360.icu.infrastructure.persistence.entity.IcuStayEntity;
 import com.health360.icu.infrastructure.persistence.entity.IcuUnitEntity;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
+import com.health360.subscription.application.service.FeatureAccessService;
+import com.health360.subscription.domain.PlanFeatureKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -17,6 +19,7 @@ import java.util.UUID;
 public class IcuAccessService {
 
     private final HospitalScopeService hospitalScopeService;
+    private final FeatureAccessService featureAccessService;
 
     public void assertCanReadUnits(UserPrincipal principal) {
         if (!principal.hasPermission("icu:unit:read")) {
@@ -54,14 +57,14 @@ public class IcuAccessService {
         }
     }
 
-    public void assertCanReadMonitoring(UserPrincipal principal) {
-        if (!principal.hasPermission("icu:monitoring:read")) {
+    public void assertCanWriteMonitoring(UserPrincipal principal) {
+        if (!principal.hasPermission("icu:monitoring:write")) {
             throw forbidden();
         }
     }
 
-    public void assertCanWriteMonitoring(UserPrincipal principal) {
-        if (!principal.hasPermission("icu:monitoring:write")) {
+    public void assertCanReadMonitoring(UserPrincipal principal) {
+        if (!principal.hasPermission("icu:monitoring:read")) {
             throw forbidden();
         }
     }
@@ -76,6 +79,15 @@ public class IcuAccessService {
 
     public void assertStayScope(UserPrincipal principal, IcuStayEntity stay) {
         assertHospitalScope(principal, stay.getHospitalId());
+    }
+
+    public void assertIcuModuleEnabled(UserPrincipal principal, UUID hospitalId) {
+        assertHospitalScope(principal, hospitalId);
+        featureAccessService.assertHasFeature(
+                hospitalId,
+                principal.getTenantId(),
+                PlanFeatureKeys.FEATURE_ICU,
+                "ICU is not included in this hospital's subscription plan");
     }
 
     private BusinessException forbidden() {

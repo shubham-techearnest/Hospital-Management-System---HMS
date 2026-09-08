@@ -11,8 +11,14 @@ import com.health360.hospital.infrastructure.persistence.repository.*;
 import com.health360.iam.infrastructure.persistence.repository.UserRepository;
 import com.health360.icu.infrastructure.persistence.repository.IcuBedRepository;
 import com.health360.icu.infrastructure.persistence.repository.IcuStayRepository;
+import com.health360.ipd.infrastructure.persistence.entity.IpdAdmissionEntity;
+import com.health360.ipd.infrastructure.persistence.entity.IpdBedEntity;
+import com.health360.ipd.infrastructure.persistence.entity.IpdPayerAuthorizationEntity;
 import com.health360.ipd.infrastructure.persistence.repository.IpdAdmissionRepository;
+import com.health360.ipd.infrastructure.persistence.repository.IpdAdmissionRequestRepository;
 import com.health360.ipd.infrastructure.persistence.repository.IpdBedRepository;
+import com.health360.ipd.infrastructure.persistence.repository.IpdDischargeOrderRepository;
+import com.health360.ipd.infrastructure.persistence.repository.IpdPayerAuthorizationRepository;
 import com.health360.laboratory.infrastructure.persistence.repository.LabOrderRepository;
 import com.health360.opd.infrastructure.persistence.repository.OpdDeskRepository;
 import com.health360.opd.infrastructure.persistence.repository.OpdQueueEntryRepository;
@@ -34,9 +40,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +61,10 @@ public class DashboardService {
     private final OpdQueueEntryRepository opdQueueEntryRepository;
     private final OpdDeskRepository opdDeskRepository;
     private final IpdAdmissionRepository ipdAdmissionRepository;
+    private final IpdAdmissionRequestRepository ipdAdmissionRequestRepository;
     private final IpdBedRepository ipdBedRepository;
+    private final IpdDischargeOrderRepository ipdDischargeOrderRepository;
+    private final IpdPayerAuthorizationRepository ipdPayerAuthorizationRepository;
     private final IcuStayRepository icuStayRepository;
     private final IcuBedRepository icuBedRepository;
     private final LabOrderRepository labOrderRepository;
@@ -162,10 +175,63 @@ public class DashboardService {
     public IpdDashboardResponse getIpdDashboard(UserPrincipal principal, UUID hospitalId, UUID branchId) {
         DashboardScope scope = dashboardScopeService.resolve(principal, hospitalId, branchId);
         UUID tenantId = principal.getTenantId();
+        int windowDays = 30;
+        Instant to = Instant.now().plus(1, ChronoUnit.DAYS);
+        Instant from = Instant.now().minus(windowDays, ChronoUnit.DAYS);
 
         long total = ipdBedRepository.countByHospitalBranch(tenantId, scope.hospitalId(), scope.branchId(), null);
         long available = ipdBedRepository.countByHospitalBranch(tenantId, scope.hospitalId(), scope.branchId(), "AVAILABLE");
         long occupied = ipdBedRepository.countByHospitalBranch(tenantId, scope.hospitalId(), scope.branchId(), "OCCUPIED");
+        long cleaning = ipdBedRepository.countByHospitalBranch(tenantId, scope.hospitalId(), scope.branchId(), "CLEANING");
+        long reserved = ipdBedRepository.countByHospitalBranch(tenantId, scope.hospitalId(), scope.branchId(), "RESERVED");
+
+        List<IpdAdmissionEntity> discharges = ipdAdmissionRepository.findDischargesInRange(
+                tenantId, scope.hospitalId(), scope.branchId(), from, to);
+        Double avgLos = averageHours(discharges.stream()
+                .filter(a -> a.getAdmittedAt() != null && a.getDischargedAt() != null)
+                .map(a -> hoursBetween(a.getAdmittedAt(), a.getDischargedAt()))
+                .toList());
+
+        List<IpdBedEntity> cleanings = ipdBedRepository.findCompletedCleaningsInRange(
+                tenantId, scope.hospitalId(), scope.branchId(), from, to);
+        Double avgTurnaround = averageHours(cleanings.stream()
+                .map(b -> hoursBetween(b.getCleaningStartedAt(), b.getCleanedAt()))
+                .toList());
+
+        Map<UUID, Instant> dischargedAtByAdmission = discharges.stream()
+                .collect(Collectors.toMap(IpdAdmissionEntity::getId, IpdAdmissionEntity::getDischargedAt, (a, b) -> a));
+        Set<UUID> dischargeIds = dischargedAtByAdmission.keySet();
+        Double avgDischargeDelay = null;
+        if (!dischargeIds.isEmpty()) {
+            List<Double> delays = ipdDischargeOrderRepository.findOrdersInRange(
+                            tenantId, scope.hospitalId(), from, to)
+                    .stream()
+                    .filter(o -> dischargeIds.contains(o.getAdmissionId()))
+                    .filter(o -> dischargedAtByAdmission.get(o.getAdmissionId()) != null)
+                    .map(o -> hoursBetween(o.getOrderedAt(), dischargedAtByAdmission.get(o.getAdmissionId())))
+                    .filter(h -> h >= 0)
+                    .toList();
+            avgDischargeDelay = averageHours(delays);
+        }
+
+        List<IpdPayerAuthorizationEntity> auths = ipdPayerAuthorizationRepository.findDecidedInRange(
+                tenantId, scope.hospitalId(), from, to);
+        Double avgAuthDelay = averageHours(auths.stream()
+                .map(a -> hoursBetween(a.getRequestedAt(), a.getDecidedAt()))
+                .filter(h -> h >= 0)
+                .toList());
+
+        long openRequests = ipdAdmissionRequestRepository
+                .countByTenantIdAndHospitalIdAndBranchIdAndStatusInAndDeletedAtIsNull(
+                        tenantId, scope.hospitalId(), scope.branchId(),
+                        List.of("REQUESTED", "UNDER_REVIEW", "APPROVED", "SCHEDULED"));
+        long activeOrders = ipdDischargeOrderRepository
+                .countByTenantIdAndHospitalIdAndStatusAndDeletedAtIsNull(
+                        tenantId, scope.hospitalId(), "ACTIVE");
+        long readmissions = ipdAdmissionRepository.findReadmissionsInRange(
+                tenantId, scope.hospitalId(), from, to).size();
+
+        double occupancy = total <= 0 ? 0d : Math.round((occupied * 1000.0) / total) / 10.0;
 
         return IpdDashboardResponse.builder()
                 .hospitalId(scope.hospitalId())
@@ -175,8 +241,38 @@ public class DashboardService {
                 .activeAdmissions(countIpd(tenantId, scope, "ADMITTED"))
                 .availableBeds(available)
                 .occupiedBeds(occupied)
+                .cleaningBeds(cleaning)
+                .reservedBeds(reserved)
                 .totalBeds(total)
+                .occupancyPercent(occupancy)
+                .openAdmissionRequests(openRequests)
+                .activeDischargeOrders(activeOrders)
+                .averageLosHours(avgLos)
+                .averageTurnaroundHours(avgTurnaround)
+                .averageDischargeDelayHours(avgDischargeDelay)
+                .averageAuthDelayHours(avgAuthDelay)
+                .metricsWindowDays(windowDays)
+                .dischargesInWindow(discharges.size())
+                .readmissionsInWindow(readmissions)
                 .build();
+    }
+
+    private static double hoursBetween(Instant start, Instant end) {
+        if (start == null || end == null) {
+            return 0d;
+        }
+        return ChronoUnit.SECONDS.between(start, end) / 3600.0;
+    }
+
+    private static Double averageHours(List<Double> values) {
+        if (values == null || values.isEmpty()) {
+            return null;
+        }
+        double sum = 0;
+        for (Double v : values) {
+            sum += v;
+        }
+        return Math.round((sum / values.size()) * 10.0) / 10.0;
     }
 
     @Transactional(readOnly = true)

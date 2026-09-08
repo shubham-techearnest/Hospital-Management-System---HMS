@@ -151,7 +151,10 @@ export function usePharmacyMutations(hospitalId: string, branchId: string) {
         ...payload
       }: {
         orderItemId: string;
-        doseGiven: string;
+        doseGiven?: string;
+        outcome?: string;
+        reasonCode?: string;
+        reasonText?: string;
         route?: string;
         notes?: string;
       }) => administerMedication(orderItemId, payload),

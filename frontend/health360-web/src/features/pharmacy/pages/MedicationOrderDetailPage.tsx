@@ -53,7 +53,12 @@ export function MedicationOrderDetailPage() {
   const [planForm, setPlanForm] = useState({
     orderItemId: '', doseText: '', route: 'ORAL', frequency: '', durationDays: '',
   });
-  const [administerForm, setAdministerForm] = useState({ doseGiven: '', notes: '' });
+  const [administerForm, setAdministerForm] = useState({
+    outcome: 'GIVEN',
+    doseGiven: '',
+    reasonText: '',
+    notes: '',
+  });
 
   const showError = (e: unknown) =>
     setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
@@ -214,11 +219,33 @@ export function MedicationOrderDetailPage() {
                   <Typography variant="subtitle2">Record administration (MAR)</Typography>
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                     <TextField
-                      label="Dose given"
+                      select
+                      label="Outcome"
                       size="small"
-                      value={administerForm.doseGiven}
-                      onChange={(e) => setAdministerForm({ ...administerForm, doseGiven: e.target.value })}
-                    />
+                      sx={{ minWidth: 140 }}
+                      value={administerForm.outcome}
+                      onChange={(e) => setAdministerForm({ ...administerForm, outcome: e.target.value })}
+                    >
+                      <MenuItem value="GIVEN">Given</MenuItem>
+                      <MenuItem value="OMITTED">Omitted</MenuItem>
+                      <MenuItem value="REFUSED">Refused</MenuItem>
+                    </TextField>
+                    {administerForm.outcome === 'GIVEN' ? (
+                      <TextField
+                        label="Dose given"
+                        size="small"
+                        value={administerForm.doseGiven}
+                        onChange={(e) => setAdministerForm({ ...administerForm, doseGiven: e.target.value })}
+                      />
+                    ) : (
+                      <TextField
+                        label="Reason"
+                        size="small"
+                        fullWidth
+                        value={administerForm.reasonText}
+                        onChange={(e) => setAdministerForm({ ...administerForm, reasonText: e.target.value })}
+                      />
+                    )}
                     <TextField
                       label="Notes"
                       size="small"
@@ -231,17 +258,28 @@ export function MedicationOrderDetailPage() {
                     <Button
                       variant="contained"
                       size="small"
-                      disabled={!administerForm.doseGiven.trim() || mutations.administer.isPending}
+                      disabled={
+                        mutations.administer.isPending
+                        || (administerForm.outcome === 'GIVEN'
+                          ? !administerForm.doseGiven.trim()
+                          : !administerForm.reasonText.trim())
+                      }
                       onClick={async () => {
                         try {
                           await mutations.administer.mutateAsync({
                             orderItemId: item.orderItemId,
-                            doseGiven: administerForm.doseGiven.trim(),
+                            outcome: administerForm.outcome,
+                            doseGiven: administerForm.outcome === 'GIVEN'
+                              ? administerForm.doseGiven.trim()
+                              : undefined,
+                            reasonText: administerForm.outcome !== 'GIVEN'
+                              ? administerForm.reasonText.trim()
+                              : undefined,
                             route: item.route,
                             notes: administerForm.notes || undefined,
                           });
-                          setAdministerForm({ doseGiven: '', notes: '' });
-                          showSuccess('Dose administered and recorded.');
+                          setAdministerForm({ outcome: 'GIVEN', doseGiven: '', reasonText: '', notes: '' });
+                          showSuccess('MAR event recorded.');
                         } catch (e) {
                           showError(e);
                         }
@@ -273,7 +311,11 @@ export function MedicationOrderDetailPage() {
                   <Typography variant="subtitle2">Administration history</Typography>
                   {item.administrations.map((admin) => (
                     <Typography key={admin.administrationId} variant="body2" color="text.secondary">
-                      {admin.doseGiven} — {new Date(admin.administeredAt).toLocaleString()}
+                      {admin.outcome && admin.outcome !== 'GIVEN' ? `${admin.outcome}: ` : ''}
+                      {admin.doseGiven}
+                      {admin.reasonText ? ` — ${admin.reasonText}` : ''}
+                      {' — '}
+                      {new Date(admin.administeredAt).toLocaleString()}
                       {admin.notes ? ` · ${admin.notes}` : ''}
                     </Typography>
                   ))}

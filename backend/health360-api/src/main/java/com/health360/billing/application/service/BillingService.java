@@ -1,5 +1,6 @@
 package com.health360.billing.application.service;
 
+import com.health360.billing.domain.InvoiceKind;
 import com.health360.billing.domain.InvoiceLineSourceType;
 import com.health360.billing.domain.InvoiceStatus;
 import com.health360.billing.domain.PaymentGateway;
@@ -76,10 +77,14 @@ public class BillingService {
                 "Billing is not available on this hospital's current plan.");
         checkoutGateService.assertReadyForCheckout(encounter.getId());
 
-        if (invoiceRepository.existsByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNot(
-                tenantId, encounter.getId(), InvoiceStatus.CANCELLED.name())) {
+        String invoiceKind = InvoiceKind.STANDARD.name();
+        if (invoiceRepository.existsByTenantIdAndEncounterIdAndInvoiceKindInAndDeletedAtIsNullAndStatusNot(
+                tenantId,
+                encounter.getId(),
+                List.of(InvoiceKind.STANDARD.name(), InvoiceKind.FINAL.name()),
+                InvoiceStatus.CANCELLED.name())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
-                    "Active invoice already exists for this encounter");
+                    "Active standard/final invoice already exists for this encounter");
         }
 
         BigDecimal subtotal = BigDecimal.ZERO;
@@ -100,6 +105,7 @@ public class BillingService {
         invoice.setHospitalId(encounter.getHospitalId());
         invoice.setBranchId(encounter.getBranchId());
         invoice.setStatus(InvoiceStatus.ISSUED.name());
+        invoice.setInvoiceKind(invoiceKind);
         invoice.setSubtotalAmount(subtotal);
         invoice.setTaxAmount(taxAmount);
         invoice.setTotalAmount(totalAmount);
@@ -148,8 +154,14 @@ public class BillingService {
                 principal, encounter.getHospitalId(), encounter.getBranchId());
 
         InvoiceEntity invoice = invoiceRepository
-                .findFirstByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNotOrderByIssuedAtDesc(
-                        tenantId, encounterId, InvoiceStatus.CANCELLED.name())
+                .findFirstByTenantIdAndEncounterIdAndInvoiceKindInAndDeletedAtIsNullAndStatusNotOrderByIssuedAtDesc(
+                        tenantId,
+                        encounterId,
+                        List.of(InvoiceKind.STANDARD.name(), InvoiceKind.FINAL.name()),
+                        InvoiceStatus.CANCELLED.name())
+                .or(() -> invoiceRepository
+                        .findFirstByTenantIdAndEncounterIdAndDeletedAtIsNullAndStatusNotOrderByIssuedAtDesc(
+                                tenantId, encounterId, InvoiceStatus.CANCELLED.name()))
                 .orElseThrow(() -> notFound("Invoice not found for encounter"));
 
         return loadInvoiceResponse(invoice);
@@ -244,6 +256,159 @@ public class BillingService {
                 "billing.payment", payment.getId(), Map.of("invoiceId", invoice.getId(), "amount", amount));
 
         return mapper.toPaymentResponse(payment);
+    }
+
+    /**
+     * Create deposit/interim/final invoice without the OPD one-invoice lock.
+     * FINAL and STANDARD still require checkout readiness; DEPOSIT/INTERIM skip it.
+     */
+    @Transactional
+    public InvoiceResponse createKindedInvoice(
+            UserPrincipal principal,
+            UUID encounterId,
+            UUID admissionId,
+            InvoiceKind kind,
+            String notes,
+            List<CreateInvoiceLineItemRequest> lineItems,
+            boolean requireCheckoutGate) {
+        accessService.assertCanWriteInvoices(principal);
+        UUID tenantId = principal.getTenantId();
+
+        EncounterEntity encounter = encounterRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(encounterId, tenantId)
+                .orElseThrow(() -> notFound("Encounter not found"));
+
+        hospitalScopeService.assertHospitalScope(
+                principal, encounter.getHospitalId(), encounter.getBranchId());
+        featureAccessService.assertHasFeature(
+                encounter.getHospitalId(),
+                tenantId,
+                PlanFeatureKeys.FEATURE_BILLING,
+                "Billing is not available on this hospital's current plan.");
+
+        if (requireCheckoutGate) {
+            checkoutGateService.assertReadyForCheckout(encounter.getId());
+        }
+
+        if (kind == InvoiceKind.STANDARD || kind == InvoiceKind.FINAL) {
+            if (invoiceRepository.existsByTenantIdAndEncounterIdAndInvoiceKindInAndDeletedAtIsNullAndStatusNot(
+                    tenantId,
+                    encounter.getId(),
+                    List.of(InvoiceKind.STANDARD.name(), InvoiceKind.FINAL.name()),
+                    InvoiceStatus.CANCELLED.name())) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                        "Active standard/final invoice already exists for this encounter");
+            }
+        }
+
+        List<CreateInvoiceLineItemRequest> lines = lineItems != null ? lineItems : List.of();
+        BigDecimal subtotal = BigDecimal.ZERO;
+        for (CreateInvoiceLineItemRequest line : lines) {
+            subtotal = subtotal.add(line.getQuantity().multiply(line.getUnitPrice()));
+        }
+        subtotal = subtotal.setScale(2, RoundingMode.HALF_UP);
+
+        InvoiceEntity invoice = new InvoiceEntity();
+        invoice.setTenantId(tenantId);
+        invoice.setInvoiceNumber(invoiceNumberService.allocateInvoiceNumber(tenantId, encounter.getHospitalId()));
+        invoice.setEncounterId(encounter.getId());
+        invoice.setPatientId(encounter.getPatientId());
+        invoice.setHospitalId(encounter.getHospitalId());
+        invoice.setBranchId(encounter.getBranchId());
+        invoice.setAdmissionId(admissionId);
+        invoice.setInvoiceKind(kind.name());
+        invoice.setStatus(InvoiceStatus.ISSUED.name());
+        invoice.setSubtotalAmount(subtotal);
+        invoice.setTaxAmount(BigDecimal.ZERO);
+        invoice.setTotalAmount(subtotal);
+        invoice.setNotes(notes);
+        invoice.setCreatedBy(principal.getUserId());
+        invoice.setUpdatedBy(principal.getUserId());
+        invoice = invoiceRepository.saveAndFlush(invoice);
+
+        for (CreateInvoiceLineItemRequest lineRequest : lines) {
+            appendLineInternal(principal, invoice, encounter, lineRequest);
+        }
+
+        auditLogService.record(tenantId, principal.getUserId(), "INVOICE_CREATED",
+                "billing.invoice", invoice.getId(),
+                Map.of("invoiceNumber", invoice.getInvoiceNumber(), "kind", kind.name()));
+
+        return loadInvoiceResponse(invoice);
+    }
+
+    @Transactional
+    public InvoiceResponse appendLines(
+            UserPrincipal principal, UUID invoiceId, List<CreateInvoiceLineItemRequest> lineItems) {
+        accessService.assertCanWriteInvoices(principal);
+        InvoiceEntity invoice = requireInvoice(principal.getTenantId(), invoiceId);
+        accessService.assertCanWriteInvoice(principal, invoice);
+
+        if (InvoiceStatus.CANCELLED.name().equals(invoice.getStatus())
+                || InvoiceStatus.PAID.name().equals(invoice.getStatus())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Cannot add lines to a paid or cancelled invoice");
+        }
+
+        EncounterEntity encounter = encounterRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(invoice.getEncounterId(), principal.getTenantId())
+                .orElseThrow(() -> notFound("Encounter not found"));
+
+        BigDecimal added = BigDecimal.ZERO;
+        for (CreateInvoiceLineItemRequest lineRequest : lineItems) {
+            InvoiceLineItemEntity saved = appendLineInternal(principal, invoice, encounter, lineRequest);
+            added = added.add(saved.getLineTotal());
+        }
+        invoice.setSubtotalAmount(invoice.getSubtotalAmount().add(added).setScale(2, RoundingMode.HALF_UP));
+        invoice.setTotalAmount(invoice.getSubtotalAmount().add(invoice.getTaxAmount()).setScale(2, RoundingMode.HALF_UP));
+        invoice.setUpdatedBy(principal.getUserId());
+        invoice.touch();
+        invoiceRepository.save(invoice);
+
+        return loadInvoiceResponse(invoice);
+    }
+
+    @Transactional(readOnly = true)
+    public List<InvoiceResponse> listInvoicesByEncounter(UserPrincipal principal, UUID encounterId) {
+        accessService.assertCanReadInvoices(principal);
+        UUID tenantId = principal.getTenantId();
+        EncounterEntity encounter = encounterRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(encounterId, tenantId)
+                .orElseThrow(() -> notFound("Encounter not found"));
+        hospitalScopeService.assertHospitalScope(
+                principal, encounter.getHospitalId(), encounter.getBranchId());
+
+        return invoiceRepository
+                .findByTenantIdAndEncounterIdAndDeletedAtIsNullOrderByIssuedAtDesc(tenantId, encounterId)
+                .stream()
+                .map(this::loadInvoiceResponse)
+                .toList();
+    }
+
+    private InvoiceLineItemEntity appendLineInternal(
+            UserPrincipal principal,
+            InvoiceEntity invoice,
+            EncounterEntity encounter,
+            CreateInvoiceLineItemRequest lineRequest) {
+        InvoiceLineItemEntity lineItem = new InvoiceLineItemEntity();
+        lineItem.setTenantId(principal.getTenantId());
+        lineItem.setInvoiceId(invoice.getId());
+        lineItem.setDescription(lineRequest.getDescription());
+        lineItem.setQuantity(lineRequest.getQuantity().setScale(2, RoundingMode.HALF_UP));
+        lineItem.setUnitPrice(lineRequest.getUnitPrice().setScale(2, RoundingMode.HALF_UP));
+        lineItem.setLineTotal(lineRequest.getQuantity()
+                .multiply(lineRequest.getUnitPrice())
+                .setScale(2, RoundingMode.HALF_UP));
+        String sourceType = resolveSourceType(lineRequest.getSourceType());
+        lineItem.setSourceType(sourceType);
+        lineItem.setSourceId(lineRequest.getSourceId() != null
+                ? lineRequest.getSourceId()
+                : InvoiceLineSourceType.ENCOUNTER.name().equals(sourceType)
+                        ? encounter.getId()
+                        : null);
+        lineItem.setCreatedBy(principal.getUserId());
+        lineItem.setUpdatedBy(principal.getUserId());
+        return lineItemRepository.save(lineItem);
     }
 
     private InvoiceResponse loadInvoiceResponse(InvoiceEntity invoice) {

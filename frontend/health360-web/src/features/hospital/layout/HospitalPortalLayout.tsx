@@ -9,6 +9,7 @@ import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
 import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined';
 import QueueOutlinedIcon from '@mui/icons-material/QueueOutlined';
 import HotelOutlinedIcon from '@mui/icons-material/HotelOutlined';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import MonitorHeartOutlinedIcon from '@mui/icons-material/MonitorHeartOutlined';
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 import MedicalInformationOutlinedIcon from '@mui/icons-material/MedicalInformationOutlined';
@@ -24,6 +25,7 @@ const navItems: PortalNavItem[] = [
   { label: 'Overview', path: '/hospital/dashboard', icon: <DashboardOutlinedIcon /> },
   { section: 'Clinical', label: 'OPD', path: '/hospital/opd', icon: <QueueOutlinedIcon /> },
   { section: 'Clinical', label: 'IPD', path: '/hospital/ipd', icon: <HotelOutlinedIcon /> },
+  { section: 'Clinical', label: 'IPD services', path: '/hospital/ipd-services', icon: <TuneOutlinedIcon /> },
   { section: 'Clinical', label: 'ICU', path: '/hospital/icu', icon: <MonitorHeartOutlinedIcon /> },
   { section: 'Clinical', label: 'Laboratory', path: '/hospital/lab', icon: <ScienceOutlinedIcon /> },
   { section: 'Clinical', label: 'Radiology', path: '/hospital/radiology', icon: <MedicalInformationOutlinedIcon /> },

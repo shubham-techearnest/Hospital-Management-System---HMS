@@ -54,7 +54,24 @@ public class IcuStayService {
     @Transactional
     public IcuStayResponse admitToIcu(UserPrincipal principal, CreateIcuStayRequest request) {
         accessService.assertCanManageStays(principal);
-        accessService.assertHospitalScope(principal, request.getHospitalId());
+        return doAdmitToIcu(principal, request);
+    }
+
+    /**
+     * IPD escalate path — caller must already enforce IPD admission manage + IPD_ICU_ESCALATION.
+     * Still requires ICU plan feature for the hospital.
+     */
+    @Transactional
+    public IcuStayResponse admitToIcuFromIpdEscalation(UserPrincipal principal, CreateIcuStayRequest request) {
+        if (request.getIpdAdmissionId() == null) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "ipdAdmissionId is required for IPD escalation");
+        }
+        return doAdmitToIcu(principal, request);
+    }
+
+    private IcuStayResponse doAdmitToIcu(UserPrincipal principal, CreateIcuStayRequest request) {
+        accessService.assertIcuModuleEnabled(principal, request.getHospitalId());
 
         IcuBedEntity bed = facilityService.requireAvailableBed(principal.getTenantId(), request.getBedId());
         IcuUnitEntity unit = facilityService.requireUnit(principal.getTenantId(), bed.getUnitId());
@@ -245,6 +262,59 @@ public class IcuStayService {
 
         return mapper.toDischargeResponse(
                 stay, encounter, request.getSummaryText().trim(), trimToNull(request.getFollowUpPlan()));
+    }
+
+    /**
+     * Step-down / escalate companion: release ICU bed and mark stay TRANSFERRED
+     * without requiring a full clinical discharge summary (ward episode continues).
+     */
+    @Transactional
+    public IcuStayEntity transferOutOfIcu(UserPrincipal principal, UUID stayId) {
+        accessService.assertCanManageStays(principal);
+        return doTransferOutOfIcu(principal, stayId);
+    }
+
+    /** IPD step-down path — caller must already enforce IPD admission manage + IPD_ICU_ESCALATION. */
+    @Transactional
+    public IcuStayEntity transferOutOfIcuFromIpdStepDown(UserPrincipal principal, UUID stayId) {
+        return doTransferOutOfIcu(principal, stayId);
+    }
+
+    private IcuStayEntity doTransferOutOfIcu(UserPrincipal principal, UUID stayId) {
+        UUID tenantId = principal.getTenantId();
+        IcuStayEntity stay = requireStay(tenantId, stayId);
+        accessService.assertStayScope(principal, stay);
+
+        if (!IcuStayStatus.ACTIVE.name().equals(stay.getStatus())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "ICU stay is not active");
+        }
+
+        IcuBedAssignmentEntity assignment = bedAssignmentRepository
+                .findByStayIdAndActiveTrueAndDeletedAtIsNull(stayId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Active bed assignment not found"));
+
+        IcuBedEntity bed = facilityService.requireBed(tenantId, assignment.getBedId());
+        Instant now = Instant.now();
+        assignment.setActive(false);
+        assignment.setReleasedAt(now);
+        assignment.setUpdatedBy(principal.getUserId());
+        bedAssignmentRepository.save(assignment);
+        facilityService.releaseBed(bed, principal.getUserId());
+
+        stay.setStatus(IcuStayStatus.TRANSFERRED.name());
+        stay.setDischargedAt(now);
+        stay.setUpdatedBy(principal.getUserId());
+        stayRepository.save(stay);
+
+        UpdateEncounterStatusRequest completed = new UpdateEncounterStatusRequest();
+        completed.setStatus(EncounterStatus.COMPLETED.name());
+        encounterService.updateEncounterStatus(principal, stay.getEncounterId(), completed);
+
+        auditLogService.record(tenantId, principal.getUserId(), "ICU_PATIENT_TRANSFERRED",
+                "IcuStay", stayId, Map.of());
+        return stay;
     }
 
     private IcuStayResponse toEnrichedStayResponse(UUID tenantId, IcuStayEntity stay) {

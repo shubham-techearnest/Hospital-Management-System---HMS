@@ -11,4 +11,6 @@ public final class PlanFeatureKeys {
     public static final String FEATURE_TELEMEDICINE = "FEATURE_TELEMEDICINE";
     public static final String FEATURE_BILLING = "FEATURE_BILLING";
     public static final String FEATURE_API_ACCESS = "FEATURE_API_ACCESS";
+    public static final String FEATURE_IPD = "FEATURE_IPD";
+    public static final String FEATURE_ICU = "FEATURE_ICU";
 }

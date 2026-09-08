@@ -26,5 +26,7 @@ public class InvoiceResponse {
     Instant issuedAt;
     Instant paidAt;
     String notes;
+    String invoiceKind;
+    UUID admissionId;
     List<InvoiceLineItemResponse> lineItems;
 }

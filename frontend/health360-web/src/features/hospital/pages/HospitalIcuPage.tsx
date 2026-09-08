@@ -210,7 +210,7 @@ export function HospitalIcuPage() {
               {!selectedPatient && patientMatches.length > 1 ? (
                 <PatientSearchMatchList
                   patients={patientMatches}
-                  selectedPatientId={selectedPatient?.patientId}
+                  selectedPatientId={undefined}
                   onSelect={setSelectedPatient}
                 />
               ) : null}

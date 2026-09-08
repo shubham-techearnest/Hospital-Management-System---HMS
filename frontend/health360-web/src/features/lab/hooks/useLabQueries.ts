@@ -204,8 +204,15 @@ export function useLabMutations(hospitalId: string, branchId: string) {
       },
     }),
     releaseReport: useMutation({
-      mutationFn: ({ labOrderId, summaryText }: { labOrderId: string; summaryText?: string }) =>
-        releaseLabReport(labOrderId, summaryText),
+      mutationFn: ({
+        labOrderId,
+        summaryText,
+        critical,
+      }: {
+        labOrderId: string;
+        summaryText?: string;
+        critical?: boolean;
+      }) => releaseLabReport(labOrderId, { summaryText, critical }),
       onSuccess: (report) => {
         invalidateScope();
         qc.invalidateQueries({ queryKey: labKeys.order(report.labOrderId ?? '') });

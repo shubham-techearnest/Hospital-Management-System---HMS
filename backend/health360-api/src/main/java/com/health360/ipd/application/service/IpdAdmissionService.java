@@ -43,11 +43,13 @@ public class IpdAdmissionService {
     private final IpdAdmissionRepository admissionRepository;
     private final IpdBedAssignmentRepository bedAssignmentRepository;
     private final IpdRoundRepository roundRepository;
-    private final IpdDischargeSummaryRepository dischargeSummaryRepository;
     private final EncounterRepository encounterRepository;
     private final EncounterService encounterService;
     private final IpdFacilityService facilityService;
     private final IpdAccessService accessService;
+    private final IpdAdmissionRequestService admissionRequestService;
+    private final IpdDischargeService dischargeService;
+    private final IpdPostDischargeService postDischargeService;
     private final IpdMapper mapper;
     private final PatientProfileRepository patientProfileRepository;
     private final AuditLogService auditLogService;
@@ -55,9 +57,45 @@ public class IpdAdmissionService {
     @Transactional
     public IpdAdmissionResponse admitPatient(UserPrincipal principal, CreateIpdAdmissionRequest request) {
         accessService.assertCanManageAdmissions(principal);
-        accessService.assertHospitalScope(principal, request.getHospitalId());
+        accessService.assertIpdModuleEnabled(principal, request.getHospitalId());
 
-        IpdBedEntity bed = facilityService.requireAvailableBed(principal.getTenantId(), request.getBedId());
+        IpdAdmissionRequestEntity linkedRequest = null;
+        if (request.getAdmissionRequestId() != null) {
+            linkedRequest = admissionRequestService.require(principal.getTenantId(), request.getAdmissionRequestId());
+            if (!linkedRequest.getHospitalId().equals(request.getHospitalId())
+                    || !linkedRequest.getBranchId().equals(request.getBranchId())) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                        "Admission request does not match hospital/branch");
+            }
+            if (!linkedRequest.getPatientId().equals(request.getPatientId())) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                        "Admission request patient mismatch");
+            }
+            String reqStatus = linkedRequest.getStatus();
+            if (!"APPROVED".equals(reqStatus) && !"SCHEDULED".equals(reqStatus)) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                        "Admission request must be APPROVED or SCHEDULED before bed allocation");
+            }
+            if (request.getPrimaryDoctorId() == null && linkedRequest.getAttendingDoctorId() != null) {
+                request.setPrimaryDoctorId(linkedRequest.getAttendingDoctorId());
+            }
+            if (request.getAdmissionReason() == null || request.getAdmissionReason().isBlank()) {
+                request.setAdmissionReason(linkedRequest.getReasonForAdmission());
+            }
+            if (request.getAdmissionSource() == null) {
+                request.setAdmissionSource(linkedRequest.getAdmissionSource());
+            }
+            if (request.getAdmissionType() == null) {
+                request.setAdmissionType(linkedRequest.getAdmissionType());
+            }
+        }
+
+        UUID reservedBedId = linkedRequest != null ? linkedRequest.getReservedBedId() : null;
+        IpdBedEntity bed = facilityService.requireAdmitableBed(
+                principal.getTenantId(),
+                request.getBedId(),
+                request.getAdmissionRequestId(),
+                reservedBedId);
         IpdRoomEntity room = facilityService.requireRoom(principal.getTenantId(), bed.getRoomId());
         IpdWardEntity ward = facilityService.requireWard(principal.getTenantId(), room.getWardId());
 
@@ -98,12 +136,32 @@ public class IpdAdmissionService {
                 ? request.getPrimaryDoctorId() : encounter.getPrimaryDoctorId());
         admission.setAdmissionNumber(encounter.getEncounterNumber());
         admission.setAdmissionReason(trimToNull(request.getAdmissionReason()));
+        admission.setAdmissionRequestId(request.getAdmissionRequestId());
+        admission.setAdmissionSource(trimToNull(request.getAdmissionSource()) != null
+                ? request.getAdmissionSource().trim().toUpperCase()
+                : (linkedRequest != null ? linkedRequest.getAdmissionSource() : "DIRECT"));
+        admission.setAdmissionType(trimToNull(request.getAdmissionType()) != null
+                ? request.getAdmissionType().trim().toUpperCase()
+                : (linkedRequest != null ? linkedRequest.getAdmissionType() : "ROUTINE"));
         admission.setStatus(AdmissionStatus.ADMITTED.name());
         admission.setAdmittedAt(Instant.now());
+        UUID prior = postDischargeService.findPriorAdmissionForReadmit(
+                principal.getTenantId(), request.getHospitalId(), request.getPatientId());
+        if (prior != null) {
+            admission.setReadmittedFromAdmissionId(prior);
+        }
         admission.setCreatedBy(principal.getUserId());
         admission.setUpdatedBy(principal.getUserId());
 
         IpdAdmissionEntity savedAdmission = admissionRepository.save(admission);
+
+        if (request.getAdmissionRequestId() != null) {
+            admissionRequestService.markAdmitted(
+                    principal.getTenantId(),
+                    request.getAdmissionRequestId(),
+                    savedAdmission.getId(),
+                    principal.getUserId());
+        }
 
         IpdBedAssignmentEntity assignment = new IpdBedAssignmentEntity();
         assignment.setTenantId(principal.getTenantId());
@@ -132,7 +190,7 @@ public class IpdAdmissionService {
             String status,
             Pageable pageable) {
         accessService.assertCanReadAdmissions(principal);
-        accessService.assertHospitalScope(principal, hospitalId);
+        accessService.assertIpdModuleEnabled(principal, hospitalId);
 
         UUID tenantId = principal.getTenantId();
         Page<IpdAdmissionEntity> page;
@@ -155,6 +213,7 @@ public class IpdAdmissionService {
     public IpdAdmissionResponse getAdmission(UserPrincipal principal, UUID admissionId) {
         accessService.assertCanReadAdmissions(principal);
         IpdAdmissionEntity admission = requireAdmission(principal.getTenantId(), admissionId);
+        accessService.assertIpdModuleEnabled(principal, admission.getHospitalId());
         accessService.assertAdmissionScope(principal, admission);
         EncounterEntity encounter = requireEncounter(principal.getTenantId(), admission.getEncounterId());
         IpdBedEntity bed = resolveActiveBed(principal.getTenantId(), admission.getId());
@@ -166,6 +225,7 @@ public class IpdAdmissionService {
             UserPrincipal principal, UUID admissionId, CreateIpdRoundRequest request) {
         accessService.assertCanWriteRounds(principal);
         IpdAdmissionEntity admission = requireAdmission(principal.getTenantId(), admissionId);
+        accessService.assertIpdModuleEnabled(principal, admission.getHospitalId());
         accessService.assertAdmissionScope(principal, admission);
 
         if (!AdmissionStatus.ADMITTED.name().equals(admission.getStatus())) {
@@ -193,6 +253,7 @@ public class IpdAdmissionService {
     public List<IpdRoundResponse> listRounds(UserPrincipal principal, UUID admissionId) {
         accessService.assertCanReadRounds(principal);
         IpdAdmissionEntity admission = requireAdmission(principal.getTenantId(), admissionId);
+        accessService.assertIpdModuleEnabled(principal, admission.getHospitalId());
         accessService.assertAdmissionScope(principal, admission);
         return roundRepository
                 .findByTenantIdAndAdmissionIdAndDeletedAtIsNullOrderByRecordedAtDesc(
@@ -205,61 +266,7 @@ public class IpdAdmissionService {
     @Transactional
     public IpdDischargeResponse dischargePatient(
             UserPrincipal principal, UUID admissionId, DischargeIpdPatientRequest request) {
-        accessService.assertCanDischarge(principal);
-        UUID tenantId = principal.getTenantId();
-        IpdAdmissionEntity admission = requireAdmission(tenantId, admissionId);
-        accessService.assertAdmissionScope(principal, admission);
-
-        if (!AdmissionStatus.ADMITTED.name().equals(admission.getStatus())) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
-                    "Admission is not active");
-        }
-
-        if (dischargeSummaryRepository.findByAdmissionIdAndDeletedAtIsNull(admissionId).isPresent()) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
-                    "Patient already discharged");
-        }
-
-        IpdBedAssignmentEntity assignment = bedAssignmentRepository
-                .findByAdmissionIdAndActiveTrueAndDeletedAtIsNull(admissionId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
-                        "Active bed assignment not found"));
-
-        IpdBedEntity bed = facilityService.requireBed(tenantId, assignment.getBedId());
-
-        Instant now = Instant.now();
-        assignment.setActive(false);
-        assignment.setReleasedAt(now);
-        assignment.setUpdatedBy(principal.getUserId());
-        bedAssignmentRepository.save(assignment);
-        facilityService.releaseBed(bed, principal.getUserId());
-
-        IpdDischargeSummaryEntity summary = new IpdDischargeSummaryEntity();
-        summary.setTenantId(tenantId);
-        summary.setAdmissionId(admissionId);
-        summary.setEncounterId(admission.getEncounterId());
-        summary.setSummaryText(request.getSummaryText().trim());
-        summary.setFollowUpPlan(trimToNull(request.getFollowUpPlan()));
-        summary.setDischargedAt(now);
-        summary.setCreatedBy(principal.getUserId());
-        summary.setUpdatedBy(principal.getUserId());
-        IpdDischargeSummaryEntity savedSummary = dischargeSummaryRepository.save(summary);
-
-        admission.setStatus(AdmissionStatus.DISCHARGED.name());
-        admission.setDischargedAt(now);
-        admission.setUpdatedBy(principal.getUserId());
-        admissionRepository.save(admission);
-
-        UpdateEncounterStatusRequest completed = new UpdateEncounterStatusRequest();
-        completed.setStatus(EncounterStatus.COMPLETED.name());
-        encounterService.updateEncounterStatus(principal, admission.getEncounterId(), completed);
-
-        EncounterEntity encounter = requireEncounter(tenantId, admission.getEncounterId());
-
-        auditLogService.record(tenantId, principal.getUserId(), "IPD_PATIENT_DISCHARGED",
-                "IpdAdmission", admissionId, Map.of());
-
-        return mapper.toDischargeResponse(savedSummary, admission, encounter);
+        return dischargeService.completeDischarge(principal, admissionId, request);
     }
 
     @Transactional
@@ -268,6 +275,7 @@ public class IpdAdmissionService {
         accessService.assertCanManageAdmissions(principal);
         UUID tenantId = principal.getTenantId();
         IpdAdmissionEntity admission = requireAdmission(tenantId, admissionId);
+        accessService.assertIpdModuleEnabled(principal, admission.getHospitalId());
         accessService.assertAdmissionScope(principal, admission);
 
         if (!AdmissionStatus.ADMITTED.name().equals(admission.getStatus())) {

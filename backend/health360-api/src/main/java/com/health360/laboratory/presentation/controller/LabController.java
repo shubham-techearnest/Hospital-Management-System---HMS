@@ -175,6 +175,17 @@ public class LabController {
                 fulfillmentService.releaseReport(principal, labOrderId, request)));
     }
 
+    @PostMapping("/reports/{reportId}/acknowledge-critical")
+    @PreAuthorize("hasAnyAuthority('clinical:encounter:write', 'lab:order:read', 'lab:report:release')")
+    public ResponseEntity<ApiResponse<LabReportResponse>> acknowledgeCritical(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID reportId,
+            @RequestBody(required = false) AcknowledgeCriticalLabRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                fulfillmentService.acknowledgeCriticalReport(
+                        principal, reportId, request != null ? request : new AcknowledgeCriticalLabRequest())));
+    }
+
     @GetMapping("/encounters/{encounterId}/reports")
     @PreAuthorize("hasAnyAuthority('lab:order:read', 'clinical:encounter:read', 'clinical:encounter:write')")
     public ResponseEntity<ApiResponse<List<LabReportResponse>>> listEncounterReports(

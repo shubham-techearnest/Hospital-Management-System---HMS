@@ -4,5 +4,12 @@ public enum AdmissionStatus {
     ADMITTED,
     DISCHARGED,
     TRANSFERRED,
-    CANCELLED
+    TRANSFERRED_OUT,
+    LAMA,
+    DAMA,
+    DECEASED,
+    ABSCONDED,
+    CANCELLED,
+    FOLLOW_UP,
+    CLOSED
 }

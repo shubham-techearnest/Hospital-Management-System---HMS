@@ -45,4 +45,34 @@ public class IpdAdmissionEntity extends BaseAuditableEntity {
 
     @Column(name = "discharged_at")
     private Instant dischargedAt;
+
+    @Column(name = "admission_request_id")
+    private UUID admissionRequestId;
+
+    @Column(name = "admission_source", length = 40)
+    private String admissionSource;
+
+    @Column(name = "admission_type", length = 40)
+    private String admissionType;
+
+    @Column(name = "isolation_required", nullable = false)
+    private boolean isolationRequired;
+
+    @Column(name = "care_level", length = 40)
+    private String careLevel;
+
+    @Column(name = "active_icu_stay_id")
+    private UUID activeIcuStayId;
+
+    @Column(name = "follow_up_appointment_id")
+    private UUID followUpAppointmentId;
+
+    @Column(name = "closed_at")
+    private Instant closedAt;
+
+    @Column(name = "closed_by")
+    private UUID closedBy;
+
+    @Column(name = "readmitted_from_admission_id")
+    private UUID readmittedFromAdmissionId;
 }

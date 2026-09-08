@@ -7,6 +7,7 @@ import com.health360.ipd.infrastructure.persistence.repository.*;
 import com.health360.ipd.presentation.dto.request.CreateIpdBedRequest;
 import com.health360.ipd.presentation.dto.request.CreateIpdRoomRequest;
 import com.health360.ipd.presentation.dto.request.CreateIpdWardRequest;
+import com.health360.ipd.presentation.dto.request.UpdateIpdBedStatusRequest;
 import com.health360.ipd.presentation.dto.response.IpdBedResponse;
 import com.health360.ipd.presentation.dto.response.IpdRoomResponse;
 import com.health360.ipd.presentation.dto.response.IpdWardResponse;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -36,7 +38,7 @@ public class IpdFacilityService {
     @Transactional
     public IpdWardResponse createWard(UserPrincipal principal, CreateIpdWardRequest request) {
         accessService.assertCanManageWards(principal);
-        accessService.assertHospitalScope(principal, request.getHospitalId());
+        accessService.assertIpdModuleEnabled(principal, request.getHospitalId());
 
         if (wardRepository.existsByHospitalIdAndBranchIdAndCodeAndDeletedAtIsNull(
                 request.getHospitalId(), request.getBranchId(), request.getCode().trim())) {
@@ -64,7 +66,7 @@ public class IpdFacilityService {
     @Transactional(readOnly = true)
     public List<IpdWardResponse> listWards(UserPrincipal principal, UUID hospitalId, UUID branchId) {
         accessService.assertCanReadWards(principal);
-        accessService.assertHospitalScope(principal, hospitalId);
+        accessService.assertIpdModuleEnabled(principal, hospitalId);
         return wardRepository
                 .findByTenantIdAndHospitalIdAndBranchIdAndDeletedAtIsNullOrderByNameAsc(
                         principal.getTenantId(), hospitalId, branchId)
@@ -77,6 +79,7 @@ public class IpdFacilityService {
     public IpdRoomResponse createRoom(UserPrincipal principal, CreateIpdRoomRequest request) {
         accessService.assertCanManageWards(principal);
         IpdWardEntity ward = requireWard(principal.getTenantId(), request.getWardId());
+        accessService.assertIpdModuleEnabled(principal, ward.getHospitalId());
         accessService.assertWardScope(principal, ward);
 
         if (roomRepository.existsByWardIdAndCodeAndDeletedAtIsNull(ward.getId(), request.getCode().trim())) {
@@ -99,6 +102,7 @@ public class IpdFacilityService {
     public List<IpdRoomResponse> listRooms(UserPrincipal principal, UUID wardId) {
         accessService.assertCanReadWards(principal);
         IpdWardEntity ward = requireWard(principal.getTenantId(), wardId);
+        accessService.assertIpdModuleEnabled(principal, ward.getHospitalId());
         accessService.assertWardScope(principal, ward);
         return roomRepository.findByTenantIdAndWardIdAndDeletedAtIsNullOrderByCodeAsc(
                         principal.getTenantId(), wardId)
@@ -112,6 +116,7 @@ public class IpdFacilityService {
         accessService.assertCanManageBeds(principal);
         IpdRoomEntity room = requireRoom(principal.getTenantId(), request.getRoomId());
         IpdWardEntity ward = requireWard(principal.getTenantId(), room.getWardId());
+        accessService.assertIpdModuleEnabled(principal, ward.getHospitalId());
         accessService.assertWardScope(principal, ward);
 
         if (bedRepository.existsByRoomIdAndBedNumberAndDeletedAtIsNull(
@@ -136,7 +141,7 @@ public class IpdFacilityService {
     public List<IpdBedResponse> listBeds(
             UserPrincipal principal, UUID hospitalId, UUID branchId, String status) {
         accessService.assertCanReadBeds(principal);
-        accessService.assertHospitalScope(principal, hospitalId);
+        accessService.assertIpdModuleEnabled(principal, hospitalId);
 
         String normalizedStatus = status != null && !status.isBlank() ? status.trim().toUpperCase() : null;
         return bedRepository.findByHospitalBranch(
@@ -148,6 +153,36 @@ public class IpdFacilityService {
                     return mapper.toBedResponse(bed, room, ward);
                 })
                 .toList();
+    }
+
+    @Transactional
+    public IpdBedResponse updateBedStatus(
+            UserPrincipal principal, UUID bedId, UpdateIpdBedStatusRequest request) {
+        accessService.assertCanManageBeds(principal);
+        IpdBedEntity bed = requireBed(principal.getTenantId(), bedId);
+        IpdRoomEntity room = requireRoom(principal.getTenantId(), bed.getRoomId());
+        IpdWardEntity ward = requireWard(principal.getTenantId(), room.getWardId());
+        accessService.assertIpdModuleEnabled(principal, ward.getHospitalId());
+        accessService.assertWardScope(principal, ward);
+
+        BedStatus target;
+        try {
+            target = BedStatus.parse(request.getStatus());
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+        if (target == BedStatus.OCCUPIED) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Occupy a bed via admission / transfer, not status update");
+        }
+        applyStatusTransition(bed, target, principal.getUserId());
+        auditLogService.record(principal.getTenantId(), principal.getUserId(), "IPD_BED_STATUS_UPDATED",
+                "IpdBed", bed.getId(),
+                Map.of(
+                        "status", target.name(),
+                        "reason", request.getReason() != null ? request.getReason() : ""
+                ));
+        return mapper.toBedResponse(bed, room, ward);
     }
 
     IpdWardEntity requireWard(UUID tenantId, UUID wardId) {
@@ -168,25 +203,79 @@ public class IpdFacilityService {
                         "Bed not found"));
     }
 
-    IpdBedEntity requireAvailableBed(UUID tenantId, UUID bedId) {
-        IpdBedEntity bed = bedRepository.findByIdAndTenantIdAndDeletedAtIsNull(bedId, tenantId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
-                        "Bed not found"));
-        if (!BedStatus.AVAILABLE.name().equals(bed.getStatus())) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
-                    "Bed is not available");
+    /**
+     * Direct admit: AVAILABLE only.
+     * From request: AVAILABLE, or RESERVED when reserved for this request.
+     */
+    IpdBedEntity requireAdmitableBed(UUID tenantId, UUID bedId, UUID admissionRequestId, UUID reservedBedId) {
+        IpdBedEntity bed = requireBed(tenantId, bedId);
+        String status = bed.getStatus();
+        if (BedStatus.AVAILABLE.name().equals(status)) {
+            return bed;
         }
-        return bed;
+        if (BedStatus.RESERVED.name().equals(status)
+                && admissionRequestId != null
+                && reservedBedId != null
+                && reservedBedId.equals(bedId)) {
+            return bed;
+        }
+        throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                "Bed is not available for admission");
+    }
+
+    IpdBedEntity requireAvailableBed(UUID tenantId, UUID bedId) {
+        return requireAdmitableBed(tenantId, bedId, null, null);
     }
 
     void occupyBed(IpdBedEntity bed, UUID userId) {
-        bed.setStatus(BedStatus.OCCUPIED.name());
-        bed.setUpdatedBy(userId);
-        bedRepository.save(bed);
+        applyStatusTransition(bed, BedStatus.OCCUPIED, userId);
     }
 
+    /** Discharge / transfer out: bed goes to CLEANING (turnaround), not instantly AVAILABLE. */
     void releaseBed(IpdBedEntity bed, UUID userId) {
-        bed.setStatus(BedStatus.AVAILABLE.name());
+        BedStatus current = BedStatus.parse(bed.getStatus());
+        if (current == BedStatus.CLEANING || current == BedStatus.AVAILABLE) {
+            return;
+        }
+        if (current.canTransitionTo(BedStatus.CLEANING)) {
+            applyStatusTransition(bed, BedStatus.CLEANING, userId);
+        } else {
+            applyStatusTransition(bed, BedStatus.AVAILABLE, userId);
+        }
+    }
+
+    void reserveBed(IpdBedEntity bed, UUID userId) {
+        applyStatusTransition(bed, BedStatus.RESERVED, userId);
+    }
+
+    void clearReservation(IpdBedEntity bed, UUID userId) {
+        if (!BedStatus.RESERVED.name().equals(bed.getStatus())) {
+            return;
+        }
+        applyStatusTransition(bed, BedStatus.AVAILABLE, userId);
+    }
+
+    private void applyStatusTransition(IpdBedEntity bed, BedStatus target, UUID userId) {
+        BedStatus current = BedStatus.parse(bed.getStatus());
+        if (current == target) {
+            bed.setUpdatedBy(userId);
+            bedRepository.save(bed);
+            return;
+        }
+        if (!current.canTransitionTo(target)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                    "Cannot change bed from " + current + " to " + target);
+        }
+        Instant now = Instant.now();
+        if (target == BedStatus.CLEANING) {
+            bed.setCleaningStartedAt(now);
+            bed.setCleanedAt(null);
+            bed.setCleanedBy(null);
+        } else if (target == BedStatus.AVAILABLE && current == BedStatus.CLEANING) {
+            bed.setCleanedAt(now);
+            bed.setCleanedBy(userId);
+        }
+        bed.setStatus(target.name());
         bed.setUpdatedBy(userId);
         bedRepository.save(bed);
     }

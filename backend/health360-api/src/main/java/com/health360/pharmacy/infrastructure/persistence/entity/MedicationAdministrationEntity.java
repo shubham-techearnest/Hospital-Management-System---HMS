@@ -31,6 +31,15 @@ public class MedicationAdministrationEntity extends BaseAuditableEntity {
     @Column(name = "dose_given", nullable = false, length = 100)
     private String doseGiven;
 
+    @Column(nullable = false, length = 20)
+    private String outcome = "GIVEN";
+
+    @Column(name = "reason_code", length = 40)
+    private String reasonCode;
+
+    @Column(name = "reason_text", columnDefinition = "TEXT")
+    private String reasonText;
+
     @Column(length = 30)
     private String route;
 

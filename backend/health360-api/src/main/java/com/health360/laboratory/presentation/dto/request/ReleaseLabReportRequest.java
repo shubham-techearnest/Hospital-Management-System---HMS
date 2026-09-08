@@ -10,4 +10,7 @@ public class ReleaseLabReportRequest {
 
     @Size(max = 5000)
     private String summaryText;
+
+    /** Clinician/lab marks result as critical at release. */
+    private Boolean critical;
 }

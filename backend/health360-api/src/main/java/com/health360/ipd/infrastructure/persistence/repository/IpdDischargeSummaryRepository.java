@@ -10,5 +10,9 @@ public interface IpdDischargeSummaryRepository extends JpaRepository<IpdDischarg
 
     Optional<IpdDischargeSummaryEntity> findByAdmissionIdAndDeletedAtIsNull(UUID admissionId);
 
+    Optional<IpdDischargeSummaryEntity> findFirstByAdmissionIdAndDeletedAtIsNullOrderByVersionNoDesc(UUID admissionId);
+
+    int countByAdmissionIdAndDeletedAtIsNull(UUID admissionId);
+
     boolean existsByEncounterIdAndDeletedAtIsNull(UUID encounterId);
 }

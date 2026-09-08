@@ -13,4 +13,6 @@ public interface LabReportRepository extends JpaRepository<LabReportEntity, UUID
             UUID tenantId, UUID encounterId);
 
     Optional<LabReportEntity> findByLabOrderIdAndDeletedAtIsNull(UUID labOrderId);
+
+    Optional<LabReportEntity> findByIdAndTenantIdAndDeletedAtIsNull(UUID id, UUID tenantId);
 }

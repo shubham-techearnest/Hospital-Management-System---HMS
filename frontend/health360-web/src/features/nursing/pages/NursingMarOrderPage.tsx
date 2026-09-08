@@ -3,6 +3,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 import {
   Alert,
   Button,
+  MenuItem,
   Paper,
   Snackbar,
   Stack,
@@ -34,32 +35,56 @@ export function NursingMarOrderPage() {
   const { data: order, isLoading, isError } = useMedicationOrder(medicationOrderId || undefined);
   const mutations = usePharmacyMutations(hospitalId, branchId);
 
-  const [administerForm, setAdministerForm] = useState({ orderItemId: '', doseGiven: '', notes: '' });
+  const [administerForm, setAdministerForm] = useState({
+    orderItemId: '',
+    outcome: 'GIVEN',
+    doseGiven: '',
+    reasonText: '',
+    notes: '',
+  });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   const showError = (e: unknown) =>
     setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
 
   const handleAdminister = async (orderItemId: string) => {
-    if (!administerForm.doseGiven.trim()) return;
+    const outcome = administerForm.outcome;
+    if (outcome === 'GIVEN' && !administerForm.doseGiven.trim()) return;
+    if (outcome !== 'GIVEN' && !administerForm.reasonText.trim()) return;
     try {
       await mutations.administer.mutateAsync({
         orderItemId,
-        doseGiven: administerForm.doseGiven.trim(),
+        outcome,
+        doseGiven: outcome === 'GIVEN' ? administerForm.doseGiven.trim() : undefined,
+        reasonText: outcome !== 'GIVEN' ? administerForm.reasonText.trim() : undefined,
         notes: administerForm.notes || undefined,
       });
-      setAdministerForm({ orderItemId: '', doseGiven: '', notes: '' });
-      setSnackbar({ open: true, message: 'Medication administration recorded.', severity: 'success' });
+      setAdministerForm({ orderItemId: '', outcome: 'GIVEN', doseGiven: '', reasonText: '', notes: '' });
+      setSnackbar({
+        open: true,
+        message: outcome === 'GIVEN' ? 'Dose recorded.' : `${outcome} recorded with reason.`,
+        severity: 'success',
+      });
     } catch (e) {
       showError(e);
     }
+  };
+
+  const formFor = (orderItemId: string) =>
+    administerForm.orderItemId === orderItemId ? administerForm : null;
+
+  const canSubmit = (orderItemId: string) => {
+    const f = formFor(orderItemId);
+    if (!f || mutations.administer.isPending) return false;
+    if (f.outcome === 'GIVEN') return Boolean(f.doseGiven.trim());
+    return Boolean(f.reasonText.trim());
   };
 
   return (
     <AnimatedPage>
       <DashboardPageHeader
         title="Administer medication"
-        subtitle="Record doses for ready MAR items"
+        subtitle="Record given / omitted / refused — never auto-administered"
         actions={(
           <Button component={RouterLink} to="/nursing/mar" variant="outlined">
             Back to MAR
@@ -85,52 +110,93 @@ export function NursingMarOrderPage() {
 
           {order.items
             .filter((item) => item.status === 'READY')
-            .map((item) => (
-              <Paper key={item.orderItemId} variant="outlined" sx={{ p: 2, maxWidth: 520 }}>
-                <Typography variant="subtitle1" fontWeight={600} mb={1}>
-                  {item.medicineName}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" mb={2}>
-                  {[item.doseText, item.frequency, item.route].filter(Boolean).join(' · ') || 'No dispense plan'}
-                </Typography>
-                <Stack spacing={2}>
-                  <TextField
-                    label="Dose given"
-                    required
-                    fullWidth
-                    size="small"
-                    value={administerForm.orderItemId === item.orderItemId ? administerForm.doseGiven : ''}
-                    onChange={(e) => setAdministerForm({
-                      orderItemId: item.orderItemId,
-                      doseGiven: e.target.value,
-                      notes: administerForm.orderItemId === item.orderItemId ? administerForm.notes : '',
-                    })}
-                  />
-                  <TextField
-                    label="Notes (optional)"
-                    fullWidth
-                    size="small"
-                    value={administerForm.orderItemId === item.orderItemId ? administerForm.notes : ''}
-                    onChange={(e) => setAdministerForm((f) => ({
-                      ...f,
-                      orderItemId: item.orderItemId,
-                      notes: e.target.value,
-                    }))}
-                  />
-                  <Button
-                    variant="contained"
-                    onClick={() => handleAdminister(item.orderItemId)}
-                    disabled={
-                      mutations.administer.isPending
-                      || administerForm.orderItemId !== item.orderItemId
-                      || !administerForm.doseGiven.trim()
-                    }
-                  >
-                    Record administration
-                  </Button>
-                </Stack>
-              </Paper>
-            ))}
+            .map((item) => {
+              const f = formFor(item.orderItemId);
+              return (
+                <Paper key={item.orderItemId} variant="outlined" sx={{ p: 2, maxWidth: 520 }}>
+                  <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                    {item.medicineName}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    {[item.doseText, item.frequency, item.route].filter(Boolean).join(' · ') || 'No dispense plan'}
+                  </Typography>
+                  <Stack spacing={2}>
+                    <TextField
+                      select
+                      label="Outcome"
+                      size="small"
+                      fullWidth
+                      value={f?.outcome ?? 'GIVEN'}
+                      onChange={(e) => setAdministerForm({
+                        orderItemId: item.orderItemId,
+                        outcome: e.target.value,
+                        doseGiven: f?.doseGiven ?? '',
+                        reasonText: f?.reasonText ?? '',
+                        notes: f?.notes ?? '',
+                      })}
+                    >
+                      <MenuItem value="GIVEN">Given</MenuItem>
+                      <MenuItem value="OMITTED">Omitted</MenuItem>
+                      <MenuItem value="REFUSED">Refused</MenuItem>
+                    </TextField>
+                    {(f?.outcome ?? 'GIVEN') === 'GIVEN' ? (
+                      <TextField
+                        label="Dose given"
+                        required
+                        fullWidth
+                        size="small"
+                        value={f?.doseGiven ?? ''}
+                        onChange={(e) => setAdministerForm({
+                          orderItemId: item.orderItemId,
+                          outcome: 'GIVEN',
+                          doseGiven: e.target.value,
+                          reasonText: f?.reasonText ?? '',
+                          notes: f?.notes ?? '',
+                        })}
+                      />
+                    ) : (
+                      <TextField
+                        label="Reason (required)"
+                        required
+                        fullWidth
+                        size="small"
+                        multiline
+                        minRows={2}
+                        value={f?.reasonText ?? ''}
+                        onChange={(e) => setAdministerForm({
+                          orderItemId: item.orderItemId,
+                          outcome: f?.outcome ?? 'OMITTED',
+                          doseGiven: f?.doseGiven ?? '',
+                          reasonText: e.target.value,
+                          notes: f?.notes ?? '',
+                        })}
+                        placeholder="Patient NPO, held for procedure, patient refused…"
+                      />
+                    )}
+                    <TextField
+                      label="Notes (optional)"
+                      fullWidth
+                      size="small"
+                      value={f?.notes ?? ''}
+                      onChange={(e) => setAdministerForm({
+                        orderItemId: item.orderItemId,
+                        outcome: f?.outcome ?? 'GIVEN',
+                        doseGiven: f?.doseGiven ?? '',
+                        reasonText: f?.reasonText ?? '',
+                        notes: e.target.value,
+                      })}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={() => void handleAdminister(item.orderItemId)}
+                      disabled={!canSubmit(item.orderItemId)}
+                    >
+                      Record MAR event
+                    </Button>
+                  </Stack>
+                </Paper>
+              );
+            })}
 
           {order.items.every((item) => item.status !== 'READY') ? (
             <Alert severity="info">No items ready for administration on this order.</Alert>

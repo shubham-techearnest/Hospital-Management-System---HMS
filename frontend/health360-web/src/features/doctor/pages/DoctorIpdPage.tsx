@@ -20,6 +20,8 @@ import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { useHospitalAssociations } from '@/features/doctor/hooks/useDoctorQueries';
 import { useIpdAdmissions, useIpdWards } from '@/features/ipd/hooks/useIpdQueries';
+import { IpdOpsMetricsPanel } from '@/features/ipd/components/IpdOpsMetricsPanel';
+import { useIpdDashboard } from '@/features/dashboard/hooks/useDashboardQueries';
 import { patientDisplayLabel } from '@/shared/status/visitStatus';
 
 export function DoctorIpdPage() {
@@ -44,6 +46,10 @@ export function DoctorIpdPage() {
     : ['', ''];
   const scopeReady = Boolean(hospitalId && branchId);
 
+  const { data: ipdDash, isLoading: ipdDashLoading } = useIpdDashboard(
+    { hospitalId, branchId },
+    scopeReady,
+  );
   const { data: wards = [] } = useIpdWards(
     scopeReady ? hospitalId : undefined,
     scopeReady ? branchId : undefined,
@@ -72,6 +78,10 @@ export function DoctorIpdPage() {
         title="IPD rounds"
         subtitle="Active inpatients — open a bed to record doctor rounds and review nursing notes"
       />
+
+      {scopeReady ? (
+        <IpdOpsMetricsPanel data={ipdDash} loading={ipdDashLoading} opsTo="/doctor/ipd" compact />
+      ) : null}
 
       {assocLoading ? (
         <Typography color="text.secondary">Loading hospital associations…</Typography>

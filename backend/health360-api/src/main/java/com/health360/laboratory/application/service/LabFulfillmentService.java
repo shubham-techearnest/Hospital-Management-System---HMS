@@ -403,6 +403,7 @@ public class LabFulfillmentService {
         report.setLabOrderId(labOrderId);
         report.setEncounterId(order.getEncounterId());
         report.setSummaryText(trimToNull(request.getSummaryText()));
+        report.setCritical(Boolean.TRUE.equals(request.getCritical()));
         report.setReleasedAt(Instant.now());
         report.setReleasedBy(principal.getUserId());
         report.setCreatedBy(principal.getUserId());
@@ -443,12 +444,64 @@ public class LabFulfillmentService {
                     test.getName() + " results are available in your Labs section.",
                     "LabReport",
                     savedReport.getId());
+            if (savedReport.isCritical()) {
+                notificationService.send(
+                        tenantId,
+                        patient.getUserId(),
+                        NotificationType.LAB_CRITICAL_RESULT,
+                        "Critical lab result",
+                        test.getName() + " was flagged as critical. Contact your care team.",
+                        "LabReport",
+                        savedReport.getId());
+            }
         }
 
         auditLogService.record(tenantId, principal.getUserId(), "LAB_REPORT_RELEASED",
-                "LabReport", savedReport.getId(), Map.of("labOrderId", labOrderId.toString()));
+                "LabReport", savedReport.getId(),
+                Map.of(
+                        "labOrderId", labOrderId.toString(),
+                        "critical", String.valueOf(savedReport.isCritical())
+                ));
 
         return mapper.toReportResponse(savedReport, test, resultResponses);
+    }
+
+    @Transactional
+    public LabReportResponse acknowledgeCriticalReport(
+            UserPrincipal principal, UUID reportId, AcknowledgeCriticalLabRequest request) {
+        UUID tenantId = principal.getTenantId();
+        LabReportEntity report = reportRepository.findByIdAndTenantIdAndDeletedAtIsNull(reportId, tenantId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Lab report not found"));
+        LabOrderEntity order = requireLabOrder(tenantId, report.getLabOrderId());
+        accessService.assertHospitalScope(principal, order.getHospitalId());
+
+        EncounterEntity encounter = encounterRepository
+                .findByIdAndTenantIdAndDeletedAtIsNull(report.getEncounterId(), tenantId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Encounter not found"));
+        encounterAccessService.assertCanWriteEncounter(principal, encounter);
+
+        if (!report.isCritical()) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Report is not marked critical");
+        }
+        if (report.getCriticalAcknowledgedAt() != null) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                    "Critical result already acknowledged");
+        }
+
+        report.setCriticalAcknowledgedAt(Instant.now());
+        report.setCriticalAcknowledgedBy(principal.getUserId());
+        report.setCriticalAckNote(trimToNull(request != null ? request.getNote() : null));
+        report.setUpdatedBy(principal.getUserId());
+        reportRepository.save(report);
+
+        auditLogService.record(tenantId, principal.getUserId(), "LAB_CRITICAL_ACKNOWLEDGED",
+                "LabReport", report.getId(), Map.of("encounterId", report.getEncounterId().toString()));
+
+        LabTestEntity test = catalogService.requireTest(tenantId, order.getLabTestId());
+        return mapper.toReportResponse(report, test, loadResultResponses(tenantId, order.getId()));
     }
 
     @Transactional(readOnly = true)

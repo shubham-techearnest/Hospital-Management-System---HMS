@@ -17,4 +17,9 @@ public class IpdDischargeResponse {
     Instant dischargedAt;
     String admissionStatus;
     String encounterStatus;
+    String dischargeType;
+    int versionNo;
+    String diagnosisText;
+    String medicationsText;
+    String adviceText;
 }

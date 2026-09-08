@@ -79,6 +79,10 @@ public class LabMapper {
                 .testCode(test.getCode())
                 .summaryText(report.getSummaryText())
                 .releasedAt(report.getReleasedAt())
+                .critical(report.isCritical())
+                .criticalAcknowledgedAt(report.getCriticalAcknowledgedAt())
+                .criticalAcknowledgedBy(report.getCriticalAcknowledgedBy())
+                .criticalAckNote(report.getCriticalAckNote())
                 .results(results)
                 .build();
     }

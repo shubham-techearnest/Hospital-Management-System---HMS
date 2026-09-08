@@ -41,6 +41,9 @@ type Props = {
   modalities: ImagingModality[];
   canOrder: boolean;
   onOrdered?: () => void;
+  /** Hospital IPD service flags — gates diet/physio OTHER orders */
+  enabledServices?: Record<string, boolean>;
+  onOpenMedsTab?: () => void;
 };
 
 export function ClinicalOrdersQuickPanel({
@@ -50,6 +53,8 @@ export function ClinicalOrdersQuickPanel({
   modalities,
   canOrder,
   onOrdered,
+  enabledServices,
+  onOpenMedsTab,
 }: Props) {
   const actions = useEncounterActions(encounterId);
   const [selectedLabIds, setSelectedLabIds] = useState<string[]>([]);
@@ -58,8 +63,15 @@ export function ClinicalOrdersQuickPanel({
   const [imagingInstructions, setImagingInstructions] = useState('');
   const [procedureName, setProcedureName] = useState('');
   const [procedureInstructions, setProcedureInstructions] = useState('');
+  const [careType, setCareType] = useState('NURSING');
+  const [careName, setCareName] = useState('');
+  const [careInstructions, setCareInstructions] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const dietEnabled = enabledServices?.IPD_DIET !== false;
+  const physioEnabled = enabledServices?.IPD_PHYSIO !== false;
+  const otEnabled = enabledServices?.IPD_OT_INTEGRATION !== false;
 
   const toggleLab = (id: string) => {
     setSelectedLabIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -190,7 +202,7 @@ export function ClinicalOrdersQuickPanel({
         </Stack>
       ) : null}
 
-      {canOrder ? (
+      {canOrder && otEnabled ? (
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
           <TextField label="Procedure" size="small" sx={{ minWidth: 200 }}
             value={procedureName} onChange={(e) => setProcedureName(e.target.value)} />
@@ -205,6 +217,60 @@ export function ClinicalOrdersQuickPanel({
             Order
           </Button>
         </Stack>
+      ) : null}
+
+      {canOrder ? (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>Nursing / diet / physio</Typography>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+            <TextField
+              select
+              label="Type"
+              size="small"
+              sx={{ minWidth: 160 }}
+              value={careType}
+              onChange={(e) => setCareType(e.target.value)}
+            >
+              <MenuItem value="NURSING">Nursing</MenuItem>
+              {dietEnabled ? <MenuItem value="DIET">Diet</MenuItem> : null}
+              {physioEnabled ? <MenuItem value="PHYSIO">Physio</MenuItem> : null}
+            </TextField>
+            <TextField
+              label="Order"
+              size="small"
+              sx={{ minWidth: 200 }}
+              value={careName}
+              onChange={(e) => setCareName(e.target.value)}
+              placeholder={careType === 'DIET' ? 'Soft diet / diabetic…' : 'Order name'}
+            />
+            <TextField
+              label="Instructions"
+              size="small"
+              fullWidth
+              value={careInstructions}
+              onChange={(e) => setCareInstructions(e.target.value)}
+            />
+            <Button
+              variant="outlined"
+              disabled={!careName.trim() || actions.createOrder.isPending}
+              onClick={() => void runOrder(`${careType} order`, () => actions.createOrder.mutateAsync({
+                orderType: 'OTHER',
+                instructions: careInstructions || undefined,
+                items: [{
+                  itemCode: careType,
+                  itemName: `${careType}: ${careName.trim()}`,
+                }],
+              }))}
+            >
+              Order
+            </Button>
+          </Stack>
+          {onOpenMedsTab ? (
+            <Button size="small" sx={{ mt: 1 }} onClick={onOpenMedsTab}>
+              Medications → use Meds tab (e-Rx / recon)
+            </Button>
+          ) : null}
+        </Box>
       ) : null}
 
       <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Placed orders</Typography>

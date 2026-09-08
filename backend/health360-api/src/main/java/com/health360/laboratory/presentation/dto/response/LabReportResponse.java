@@ -17,5 +17,9 @@ public class LabReportResponse {
     String testCode;
     String summaryText;
     Instant releasedAt;
+    boolean critical;
+    Instant criticalAcknowledgedAt;
+    UUID criticalAcknowledgedBy;
+    String criticalAckNote;
     List<LabResultResponse> results;
 }

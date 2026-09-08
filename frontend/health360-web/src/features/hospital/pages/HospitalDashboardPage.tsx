@@ -14,10 +14,15 @@ import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { DashboardSection } from '@/shared/dashboard/DashboardSection';
 import { DashboardStatsGrid } from '@/features/dashboard/components/DashboardStatsGrid';
-import { useHospitalDashboard } from '@/features/dashboard/hooks/useDashboardQueries';
+import { IpdOpsMetricsPanel } from '@/features/ipd/components/IpdOpsMetricsPanel';
+import { useHospitalDashboard, useIpdDashboard } from '@/features/dashboard/hooks/useDashboardQueries';
 
 export function HospitalDashboardPage() {
   const { data: dashboard, isLoading } = useHospitalDashboard();
+  const { data: ipdDash, isLoading: ipdDashLoading } = useIpdDashboard(
+    { hospitalId: dashboard?.hospitalId, branchId: dashboard?.branchId },
+    Boolean(dashboard?.hospitalId && dashboard?.branchId),
+  );
 
   return (
     <AnimatedPage>
@@ -37,6 +42,8 @@ export function HospitalDashboardPage() {
           { label: 'Pending lab', value: dashboard?.pendingLabOrders ?? 0, hint: 'Orders awaiting results', icon: <ScienceIcon />, to: '/hospital/lab' },
         ]}
       />
+
+      <IpdOpsMetricsPanel data={ipdDash} loading={ipdDashLoading || isLoading} opsTo="/hospital/ipd" />
 
       <DashboardStatsGrid
         loading={isLoading}

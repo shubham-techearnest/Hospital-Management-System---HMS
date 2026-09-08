@@ -1,31 +1,44 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Alert, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Snackbar, Stack, Tab, Tabs,
+  Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Snackbar, Stack, Tab, Tabs,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   TextField, Typography,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { useBranches, useHospitalProfile } from '@/features/hospital/hooks/useHospitalQueries';
 import {
+  useAdmissionRequests,
   useIpdAdmissions,
   useIpdBeds,
   useIpdMutations,
   useIpdRooms,
   useIpdWards,
 } from '@/features/ipd/hooks/useIpdQueries';
+import { getIpdReadmissionAnalytics, type IpdAdmission, type IpdAdmissionRequest } from '@/features/ipd/api/ipdApi';
+import { IpdOpsMetricsPanel } from '@/features/ipd/components/IpdOpsMetricsPanel';
+import { useIpdDashboard } from '@/features/dashboard/hooks/useDashboardQueries';
 import { searchHospitalPatients, type HospitalPatientSummary } from '@/features/reception/api/patientRegistryApi';
 import { buildPatientSearchParams } from '@/features/reception/utils/patientSearchParams';
 import { PatientSearchMatchList, PatientSelectedSummary } from '@/features/reception/components/PatientSearchMatchList';
-import type { IpdAdmission } from '@/features/ipd/api/ipdApi';
 
 const BED_COLOR: Record<string, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
   AVAILABLE: 'success',
   OCCUPIED: 'warning',
   RESERVED: 'info',
+  CLEANING: 'default',
   MAINTENANCE: 'default',
   BLOCKED: 'error',
+};
+
+const BED_STATUS_ACTIONS: Record<string, string[]> = {
+  AVAILABLE: ['MAINTENANCE', 'BLOCKED'],
+  RESERVED: ['AVAILABLE', 'MAINTENANCE'],
+  CLEANING: ['AVAILABLE', 'MAINTENANCE', 'BLOCKED'],
+  MAINTENANCE: ['AVAILABLE', 'BLOCKED'],
+  BLOCKED: ['AVAILABLE', 'MAINTENANCE'],
 };
 
 function patientLabel(a: IpdAdmission) {
@@ -53,12 +66,19 @@ export function HospitalIpdPage() {
   const primaryBranch = useMemo(() => branches.find((b) => b.primary) ?? branches[0], [branches]);
   const hospitalId = profile?.id;
   const branchId = primaryBranch?.id;
+  const { data: ipdDash, isLoading: ipdDashLoading } = useIpdDashboard(
+    { hospitalId, branchId },
+    Boolean(hospitalId && branchId),
+  );
 
   const [tab, setTab] = useState(0);
   const [admissionPage, setAdmissionPage] = useState(0);
+  const [requestPage, setRequestPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState('');
+  const [requestStatusFilter, setRequestStatusFilter] = useState('');
   const [selectedWardId, setSelectedWardId] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [admitFromRequest, setAdmitFromRequest] = useState<IpdAdmissionRequest | null>(null);
 
   const { data: wards = [] } = useIpdWards(hospitalId, branchId);
   const { data: rooms = [] } = useIpdRooms(selectedWardId || undefined);
@@ -69,9 +89,23 @@ export function HospitalIpdPage() {
     admissionPage,
     statusFilter || undefined,
   );
+  const { data: requestsPage } = useAdmissionRequests(
+    hospitalId,
+    branchId,
+    requestPage,
+    requestStatusFilter || undefined,
+  );
   const admissions = admissionsPage?.content ?? [];
   const admissionTotalPages = admissionsPage?.totalPages ?? 0;
+  const requests = requestsPage?.content ?? [];
+  const requestTotalPages = requestsPage?.totalPages ?? 0;
   const activeAdmissions = admissions.filter((a) => a.status === 'ADMITTED');
+  const { data: readmissionAnalytics } = useQuery({
+    queryKey: ['ipd', 'readmission-analytics', hospitalId],
+    queryFn: () => getIpdReadmissionAnalytics(hospitalId!),
+    enabled: Boolean(hospitalId && tab === 1),
+    retry: false,
+  });
 
   const mutations = useIpdMutations(hospitalId ?? '', branchId ?? '');
 
@@ -134,12 +168,17 @@ export function HospitalIpdPage() {
         branchId,
         bedId: admitForm.bedId,
         admissionReason: admitForm.reason || undefined,
+        admissionRequestId: admitFromRequest?.admissionRequestId,
+        admissionSource: admitFromRequest?.admissionSource,
+        admissionType: admitFromRequest?.admissionType,
       });
       setAdmitForm({ bedId: '', reason: '' });
       setSelectedPatient(null);
       setPatientMatches([]);
       setPatientQuery('');
+      setAdmitFromRequest(null);
       setSnackbar({ open: true, message: 'Patient admitted and bed assigned.', severity: 'success' });
+      setTab(1);
     } catch (e) {
       showError(e);
     }
@@ -147,12 +186,26 @@ export function HospitalIpdPage() {
 
   const openDischargeFor = (admissionId: string) => {
     setDischargeForm({ admissionId, summary: '', followUp: '' });
-    setTab(4);
+    setTab(5);
   };
 
   const openTransferFor = (admissionId: string) => {
     setTransferForm({ admissionId, bedId: '', reason: '' });
-    setTab(3);
+    setTab(4);
+  };
+
+  const beginAdmitFromRequest = (req: IpdAdmissionRequest) => {
+    setAdmitFromRequest(req);
+    setSelectedPatient({
+      patientId: req.patientId,
+      uhid: req.uhid,
+      legalName: req.patientName ?? 'Patient',
+    });
+    setAdmitForm({
+      bedId: req.reservedBedId ?? '',
+      reason: req.reasonForAdmission ?? '',
+    });
+    setTab(1);
   };
 
   const confirmTransfer = async () => {
@@ -165,7 +218,7 @@ export function HospitalIpdPage() {
       });
       setTransferForm({ admissionId: '', bedId: '', reason: '' });
       setSnackbar({ open: true, message: 'Patient transferred to new bed.', severity: 'success' });
-      setTab(0);
+      setTab(1);
     } catch (e) {
       showError(e);
     }
@@ -191,7 +244,7 @@ export function HospitalIpdPage() {
         });
         return;
       }
-      setTab(0);
+      setTab(1);
     } catch (e) {
       setDischargeConfirmOpen(false);
       showError(e);
@@ -226,7 +279,10 @@ export function HospitalIpdPage() {
         {primaryBranch ? ` — ${primaryBranch.name}` : ''}
       </Typography>
 
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
+      <IpdOpsMetricsPanel data={ipdDash} loading={ipdDashLoading} opsTo="/hospital/ipd" />
+
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }} variant="scrollable" allowScrollButtonsMobile>
+        <Tab label="Requests" />
         <Tab label="Admissions" />
         <Tab label="Beds" />
         <Tab label="Setup" />
@@ -238,6 +294,172 @@ export function HospitalIpdPage() {
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField
+              select label="Request status" size="small" sx={{ minWidth: 200 }}
+              value={requestStatusFilter}
+              onChange={(e) => { setRequestStatusFilter(e.target.value); setRequestPage(0); }}
+            >
+              <MenuItem value="">All open + recent</MenuItem>
+              <MenuItem value="REQUESTED">Requested</MenuItem>
+              <MenuItem value="UNDER_REVIEW">Under review</MenuItem>
+              <MenuItem value="APPROVED">Approved</MenuItem>
+              <MenuItem value="SCHEDULED">Scheduled</MenuItem>
+              <MenuItem value="REJECTED">Rejected</MenuItem>
+              <MenuItem value="ADMITTED">Admitted</MenuItem>
+              <MenuItem value="CANCELLED">Cancelled</MenuItem>
+            </TextField>
+          </Stack>
+          <TableContainer component={Paper} variant="outlined">
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Request</TableCell>
+                  <TableCell>Patient</TableCell>
+                  <TableCell>Source</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {requests.map((req) => (
+                  <TableRow key={req.admissionRequestId}>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>{req.requestNumber}</Typography>
+                      {req.sourceEncounterNumber ? (
+                        <Typography variant="caption" color="text.secondary">
+                          Encounter {req.sourceEncounterNumber}
+                        </Typography>
+                      ) : null}
+                    </TableCell>
+                    <TableCell>{[req.patientName, req.uhid].filter(Boolean).join(' · ') || req.patientId.slice(0, 8)}</TableCell>
+                    <TableCell>{req.admissionSource}</TableCell>
+                    <TableCell>{req.admissionType} / {req.priority}</TableCell>
+                    <TableCell><Chip size="small" label={req.status} /></TableCell>
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={0.5} justifyContent="flex-end" flexWrap="wrap" useFlexGap>
+                        {req.status === 'REQUESTED' ? (
+                          <Button size="small" onClick={() => mutations.startReviewAdmissionRequest.mutateAsync(req.admissionRequestId).catch(showError)}>
+                            Review
+                          </Button>
+                        ) : null}
+                        {req.status === 'REQUESTED' || req.status === 'UNDER_REVIEW' ? (
+                          <>
+                            <Button size="small" color="success" onClick={() => mutations.approveAdmissionRequest.mutateAsync({ requestId: req.admissionRequestId }).then(() => setSnackbar({ open: true, message: 'Request approved', severity: 'success' })).catch(showError)}>
+                              Approve
+                            </Button>
+                            <Button size="small" color="error" onClick={() => {
+                              const reason = window.prompt('Rejection reason');
+                              if (!reason?.trim()) return;
+                              void mutations.rejectAdmissionRequest.mutateAsync({ requestId: req.admissionRequestId, rejectionReason: reason.trim() })
+                                .then(() => setSnackbar({ open: true, message: 'Request rejected', severity: 'success' }))
+                                .catch(showError);
+                            }}>
+                              Reject
+                            </Button>
+                          </>
+                        ) : null}
+                        {req.status === 'APPROVED' ? (
+                          <Button
+                            size="small"
+                            onClick={() => {
+                              const when = window.prompt('Schedule admit datetime (local), e.g. 2026-09-10 10:00');
+                              if (!when?.trim()) return;
+                              const parsed = new Date(when.trim());
+                              if (Number.isNaN(parsed.getTime())) {
+                                setSnackbar({ open: true, message: 'Invalid datetime', severity: 'error' });
+                                return;
+                              }
+                              void mutations.scheduleAdmissionRequest.mutateAsync({
+                                requestId: req.admissionRequestId,
+                                scheduledAdmitAt: parsed.toISOString(),
+                              })
+                                .then(() => setSnackbar({ open: true, message: 'Admission scheduled', severity: 'success' }))
+                                .catch(showError);
+                            }}
+                          >
+                            Schedule
+                          </Button>
+                        ) : null}
+                        {(req.status === 'APPROVED' || req.status === 'SCHEDULED') ? (
+                          <>
+                            <Button
+                              size="small"
+                              onClick={() => {
+                                const available = beds.filter((b) => b.status === 'AVAILABLE');
+                                if (available.length === 0) {
+                                  setSnackbar({ open: true, message: 'No available beds to reserve', severity: 'error' });
+                                  return;
+                                }
+                                const lines = available
+                                  .slice(0, 20)
+                                  .map((b, i) => `${i + 1}. ${b.wardCode}-${b.roomCode}-${b.bedNumber}`)
+                                  .join('\n');
+                                const pick = window.prompt(`Reserve bed — enter number:\n${lines}`);
+                                if (!pick?.trim()) return;
+                                const idx = Number(pick.trim()) - 1;
+                                const bed = available[idx];
+                                if (!bed) {
+                                  setSnackbar({ open: true, message: 'Invalid bed number', severity: 'error' });
+                                  return;
+                                }
+                                void mutations.reserveAdmissionBed.mutateAsync({
+                                  requestId: req.admissionRequestId,
+                                  bedId: bed.bedId,
+                                })
+                                  .then(() => setSnackbar({ open: true, message: `Reserved ${bed.wardCode}-${bed.roomCode}-${bed.bedNumber}`, severity: 'success' }))
+                                  .catch(showError);
+                              }}
+                            >
+                              Reserve bed
+                            </Button>
+                            <Button size="small" variant="contained" onClick={() => beginAdmitFromRequest(req)}>
+                              Allocate bed
+                            </Button>
+                          </>
+                        ) : null}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {requests.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <Typography color="text.secondary">No admission requests yet. Doctors can recommend admission from an OPD encounter.</Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : null}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          {requestTotalPages > 1 ? (
+            <Stack direction="row" spacing={1}>
+              <Button size="small" disabled={requestPage <= 0} onClick={() => setRequestPage((p) => p - 1)}>Prev</Button>
+              <Typography variant="body2" sx={{ alignSelf: 'center' }}>Page {requestPage + 1} / {requestTotalPages}</Typography>
+              <Button size="small" disabled={requestPage + 1 >= requestTotalPages} onClick={() => setRequestPage((p) => p + 1)}>Next</Button>
+            </Stack>
+          ) : null}
+        </Stack>
+      )}
+
+      {tab === 1 && (
+        <Stack spacing={2}>
+          {readmissionAnalytics ? (
+            <Alert severity="info">
+              Readmissions in window ({readmissionAnalytics.windowDays} days):{' '}
+              <strong>{readmissionAnalytics.readmissionCount}</strong>
+              {readmissionAnalytics.items.slice(0, 3).map((item) => (
+                <Chip
+                  key={item.admissionId}
+                  size="small"
+                  sx={{ ml: 1 }}
+                  label={item.admissionNumber}
+                  onClick={() => navigate(`/hospital/ipd/admissions/${item.admissionId}`)}
+                />
+              ))}
+            </Alert>
+          ) : null}
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <TextField
               select label="Status filter" size="small" sx={{ minWidth: 180 }}
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setAdmissionPage(0); }}
@@ -245,12 +467,31 @@ export function HospitalIpdPage() {
               <MenuItem value="">All</MenuItem>
               <MenuItem value="ADMITTED">Admitted</MenuItem>
               <MenuItem value="DISCHARGED">Discharged</MenuItem>
+              <MenuItem value="FOLLOW_UP">Follow-up</MenuItem>
+              <MenuItem value="CLOSED">Closed</MenuItem>
+              <MenuItem value="LAMA">LAMA</MenuItem>
+              <MenuItem value="DAMA">DAMA</MenuItem>
             </TextField>
           </Stack>
 
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="subtitle2" gutterBottom>New admission</Typography>
             <Stack spacing={2}>
+              {admitFromRequest ? (
+                <Alert
+                  severity="info"
+                  onClose={() => {
+                    setAdmitFromRequest(null);
+                    setSelectedPatient(null);
+                    setAdmitForm({ bedId: '', reason: '' });
+                  }}
+                >
+                  Allocating bed for request {admitFromRequest.requestNumber}
+                  {admitFromRequest.admissionType ? ` · ${admitFromRequest.admissionType}` : ''}
+                  {admitFromRequest.priority ? ` / ${admitFromRequest.priority}` : ''}.
+                  Choose an available bed and admit to complete the request.
+                </Alert>
+              ) : null}
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'flex-start' }}>
                 <TextField
                   label="Find patient (UHID / name / mobile / email)"
@@ -258,6 +499,7 @@ export function HospitalIpdPage() {
                   fullWidth
                   value={patientQuery}
                   onChange={(e) => setPatientQuery(e.target.value)}
+                  disabled={Boolean(admitFromRequest)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -267,7 +509,7 @@ export function HospitalIpdPage() {
                 />
                 <Button
                   variant="outlined"
-                  disabled={patientSearching}
+                  disabled={patientSearching || Boolean(admitFromRequest)}
                   onClick={() => void findPatient()}
                   sx={{ whiteSpace: 'nowrap' }}
                 >
@@ -279,7 +521,7 @@ export function HospitalIpdPage() {
               {!selectedPatient && patientMatches.length > 1 ? (
                 <PatientSearchMatchList
                   patients={patientMatches}
-                  selectedPatientId={selectedPatient?.patientId}
+                  selectedPatientId={undefined}
                   onSelect={setSelectedPatient}
                 />
               ) : null}
@@ -292,11 +534,17 @@ export function HospitalIpdPage() {
                   value={admitForm.bedId}
                   onChange={(e) => setAdmitForm({ ...admitForm, bedId: e.target.value })}
                 >
-                  {beds.filter((b) => b.status === 'AVAILABLE').map((b) => (
-                    <MenuItem key={b.bedId} value={b.bedId}>
-                      {b.wardCode}-{b.roomCode}-{b.bedNumber}
-                    </MenuItem>
-                  ))}
+                  {beds
+                    .filter((b) =>
+                      b.status === 'AVAILABLE'
+                      || (admitFromRequest?.reservedBedId != null && b.bedId === admitFromRequest.reservedBedId),
+                    )
+                    .map((b) => (
+                      <MenuItem key={b.bedId} value={b.bedId}>
+                        {b.wardCode}-{b.roomCode}-{b.bedNumber}
+                        {b.status === 'RESERVED' ? ' (reserved)' : ''}
+                      </MenuItem>
+                    ))}
                 </TextField>
                 <TextField
                   label="Reason"
@@ -309,7 +557,7 @@ export function HospitalIpdPage() {
                   disabled={!hospitalId || !branchId || !selectedPatient || !admitForm.bedId || mutations.admit.isPending}
                   onClick={() => void handleAdmit()}
                 >
-                  Admit
+                  {admitFromRequest ? 'Admit from request' : 'Admit'}
                 </Button>
               </Stack>
             </Stack>
@@ -336,16 +584,21 @@ export function HospitalIpdPage() {
                     <TableCell><Chip size="small" label={a.status} /></TableCell>
                     <TableCell>{a.encounterStatus}</TableCell>
                     <TableCell align="right">
-                      {a.status === 'ADMITTED' ? (
-                        <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <Button size="small" onClick={() => openTransferFor(a.admissionId)}>
-                            Transfer
-                          </Button>
-                          <Button size="small" onClick={() => openDischargeFor(a.admissionId)}>
-                            Discharge
-                          </Button>
-                        </Stack>
-                      ) : null}
+                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        <Button size="small" onClick={() => navigate(`/hospital/ipd/admissions/${a.admissionId}`)}>
+                          Chart
+                        </Button>
+                        {a.status === 'ADMITTED' ? (
+                          <>
+                            <Button size="small" onClick={() => openTransferFor(a.admissionId)}>
+                              Transfer
+                            </Button>
+                            <Button size="small" onClick={() => openDischargeFor(a.admissionId)}>
+                              Discharge
+                            </Button>
+                          </>
+                        ) : null}
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -365,37 +618,72 @@ export function HospitalIpdPage() {
         </Stack>
       )}
 
-      {tab === 1 && (
-        <TableContainer component={Paper} variant="outlined">
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Ward</TableCell>
-                <TableCell>Room</TableCell>
-                <TableCell>Bed</TableCell>
-                <TableCell>Status</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {beds.map((b) => (
-                <TableRow key={b.bedId}>
-                  <TableCell>{b.wardCode}</TableCell>
-                  <TableCell>{b.roomCode}</TableCell>
-                  <TableCell>{b.bedNumber}</TableCell>
-                  <TableCell>
-                    <Chip size="small" label={b.status} color={BED_COLOR[b.status] ?? 'default'} />
-                  </TableCell>
-                </TableRow>
-              ))}
-              {beds.length === 0 && (
-                <TableRow><TableCell colSpan={4}>No beds configured.</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+      {tab === 2 && (
+        <Stack spacing={2}>
+          <Alert severity="info">
+            After discharge/transfer, beds move to CLEANING until staff marks them AVAILABLE.
+            Status labels are shown with text (not color alone).
+          </Alert>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {['AVAILABLE', 'OCCUPIED', 'RESERVED', 'CLEANING', 'MAINTENANCE', 'BLOCKED'].map((s) => (
+              <Chip key={s} size="small" label={s} color={BED_COLOR[s] ?? 'default'} />
+            ))}
+          </Stack>
+          {wards.map((ward) => {
+            const wardBeds = beds.filter((b) => b.wardId === ward.wardId);
+            if (wardBeds.length === 0 && wards.length > 1) return null;
+            return (
+              <Paper key={ward.wardId} variant="outlined" sx={{ p: 2 }}>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                  {ward.name} ({ward.code})
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gap: 1,
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' },
+                  }}
+                >
+                  {wardBeds.map((b) => (
+                    <Paper key={b.bedId} variant="outlined" sx={{ p: 1.5 }}>
+                      <Stack spacing={1}>
+                        <Typography variant="body2" fontWeight={600}>
+                          {b.roomCode}-{b.bedNumber}
+                        </Typography>
+                        <Chip size="small" label={b.status} color={BED_COLOR[b.status] ?? 'default'} sx={{ alignSelf: 'flex-start' }} />
+                        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                          {(BED_STATUS_ACTIONS[b.status] ?? []).map((next) => (
+                            <Button
+                              key={next}
+                              size="small"
+                              disabled={mutations.updateBedStatus.isPending}
+                              onClick={() => {
+                                void mutations.updateBedStatus.mutateAsync({ bedId: b.bedId, status: next })
+                                  .then(() => setSnackbar({ open: true, message: `Bed → ${next}`, severity: 'success' }))
+                                  .catch(showError);
+                              }}
+                            >
+                              {next === 'AVAILABLE' ? 'Mark available' : next}
+                            </Button>
+                          ))}
+                        </Stack>
+                      </Stack>
+                    </Paper>
+                  ))}
+                  {wardBeds.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">No beds in this ward.</Typography>
+                  ) : null}
+                </Box>
+              </Paper>
+            );
+          })}
+          {beds.length === 0 ? (
+            <Typography color="text.secondary">No beds configured — use Setup to create wards/rooms/beds.</Typography>
+          ) : null}
+        </Stack>
       )}
 
-      {tab === 2 && (
+      {tab === 3 && (
         <Stack spacing={3}>
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="subtitle2" gutterBottom>Create ward</Typography>
@@ -462,7 +750,7 @@ export function HospitalIpdPage() {
         </Stack>
       )}
 
-      {tab === 3 && (
+      {tab === 4 && (
         <Paper variant="outlined" sx={{ p: 2, maxWidth: 560 }}>
           <Stack spacing={2}>
             <Typography variant="subtitle1" fontWeight={600}>Transfer bed</Typography>
@@ -517,7 +805,7 @@ export function HospitalIpdPage() {
         </Paper>
       )}
 
-      {tab === 4 && (
+      {tab === 5 && (
         <Paper variant="outlined" sx={{ p: 2, maxWidth: 560 }}>
           <Stack spacing={2}>
             <Typography variant="subtitle1" fontWeight={600}>Discharge patient</Typography>

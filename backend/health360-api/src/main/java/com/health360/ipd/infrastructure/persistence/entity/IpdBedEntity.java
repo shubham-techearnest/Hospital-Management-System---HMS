@@ -23,4 +23,13 @@ public class IpdBedEntity extends BaseAuditableEntity {
 
     @Column(nullable = false, length = 20)
     private String status = "AVAILABLE";
+
+    @Column(name = "cleaning_started_at")
+    private java.time.Instant cleaningStartedAt;
+
+    @Column(name = "cleaned_at")
+    private java.time.Instant cleanedAt;
+
+    @Column(name = "cleaned_by")
+    private UUID cleanedBy;
 }

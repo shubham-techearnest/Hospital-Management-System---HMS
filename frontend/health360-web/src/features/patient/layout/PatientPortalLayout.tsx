@@ -28,6 +28,7 @@ const navItems: PortalNavItem[] = [
   { section: 'CARE', label: VISIT_FLOW.request.patientNav, path: '/patient/request-opd', icon: <EventAvailableOutlinedIcon /> },
   { section: 'CARE', label: VISIT_FLOW.queue.patientNav, path: '/patient/opd', icon: <QueueOutlinedIcon /> },
   { section: 'CARE', label: 'Visits', path: '/patient/encounters', icon: <MedicalServicesOutlinedIcon /> },
+  { section: 'CARE', label: 'IPD stays', path: '/patient/ipd', icon: <LocalHospitalOutlinedIcon /> },
   { section: 'HEALTH', label: 'Analytics', path: '/patient/health-score', icon: <InsightsOutlinedIcon /> },
   { section: 'HEALTH', label: 'Profile', path: '/patient/profile', icon: <PersonOutlinedIcon /> },
   { section: 'HEALTH', label: 'Vitals', path: '/patient/vitals', icon: <MonitorHeartOutlinedIcon /> },

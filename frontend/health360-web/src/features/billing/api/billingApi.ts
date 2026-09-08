@@ -28,6 +28,8 @@ export interface Invoice {
   issuedAt?: string;
   paidAt?: string;
   notes?: string;
+  invoiceKind?: string;
+  admissionId?: string;
   lineItems: InvoiceLineItem[];
 }
 
@@ -140,6 +142,13 @@ export async function getInvoiceByEncounter(encounterId: string): Promise<Invoic
     `/billing/encounters/${encounterId}/invoice`,
   );
   return unwrap(data);
+}
+
+export async function listInvoicesByEncounter(encounterId: string): Promise<Invoice[]> {
+  const { data } = await apiClient.get<ApiEnvelope<Invoice[]>>(
+    `/billing/encounters/${encounterId}/invoices`,
+  );
+  return unwrap(data) ?? [];
 }
 
 export async function recordPayment(invoiceId: string, payload: RecordPaymentPayload): Promise<Payment> {

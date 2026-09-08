@@ -170,8 +170,9 @@ public class OtController {
     @PreAuthorize("hasAnyAuthority('ot:procedure:read', 'clinical:encounter:read', 'clinical:encounter:write')")
     public ResponseEntity<ApiResponse<List<OtProcedureResponse>>> listEncounterProcedures(
             @AuthenticationPrincipal UserPrincipal principal,
-            @PathVariable UUID encounterId) {
+            @PathVariable UUID encounterId,
+            @RequestParam(required = false, defaultValue = "false") boolean completedOnly) {
         return ResponseEntity.ok(ApiResponse.ok(
-                procedureService.listCompletedProceduresForEncounter(principal, encounterId)));
+                procedureService.listProceduresForEncounter(principal, encounterId, completedOnly)));
     }
 }

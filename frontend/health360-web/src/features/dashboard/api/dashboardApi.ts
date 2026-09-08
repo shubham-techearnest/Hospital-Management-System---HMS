@@ -49,7 +49,19 @@ export interface IpdDashboard {
   activeAdmissions: number;
   availableBeds: number;
   occupiedBeds: number;
+  cleaningBeds?: number;
+  reservedBeds?: number;
   totalBeds: number;
+  occupancyPercent?: number;
+  openAdmissionRequests?: number;
+  activeDischargeOrders?: number;
+  averageLosHours?: number | null;
+  averageTurnaroundHours?: number | null;
+  averageDischargeDelayHours?: number | null;
+  averageAuthDelayHours?: number | null;
+  metricsWindowDays?: number;
+  dischargesInWindow?: number;
+  readmissionsInWindow?: number;
 }
 
 export interface IcuDashboard {

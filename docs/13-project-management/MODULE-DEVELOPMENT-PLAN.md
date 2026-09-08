@@ -3,11 +3,11 @@
 | Attribute | Value |
 |-----------|-------|
 | **Document ID** | PM-MODULE-PLAN-001 |
-| **Status** | ACTIVE — Phase A–G COMPLETE (code); Phase H IN PROGRESS; G4/G5 deferred on hospital contracts |
+| **Status** | ACTIVE — Phase A–H code complete; **Phase I (Complete IPD)** PLANNED; G4/G5 deferred |
 | **Created** | 2026-09-03 |
-| **Last Updated** | 2026-09-07 |
+| **Last Updated** | 2026-09-08 |
 | **Owner** | Engineering |
-| **Related** | [feature-status-board.md](./feature-status-board.md), [PHASE-A-OPS-CHECKLIST.md](./PHASE-A-OPS-CHECKLIST.md), [PHASE-G-NOTES.md](./PHASE-G-NOTES.md), [PHASE-H-NOTES.md](./PHASE-H-NOTES.md), [HMS-ROADMAP.md](../hms/HMS-ROADMAP.md), [HOSPITAL-OPD-REALISM-BACKLOG.md](../hms/HOSPITAL-OPD-REALISM-BACKLOG.md) |
+| **Related** | [feature-status-board.md](./feature-status-board.md), [PHASE-A-OPS-CHECKLIST.md](./PHASE-A-OPS-CHECKLIST.md), [PHASE-G-NOTES.md](./PHASE-G-NOTES.md), [PHASE-H-NOTES.md](./PHASE-H-NOTES.md), [PHASE-I-IPD-ENTERPRISE-PLAN.md](./PHASE-I-IPD-ENTERPRISE-PLAN.md), [HMS-ROADMAP.md](../hms/HMS-ROADMAP.md), [HOSPITAL-OPD-REALISM-BACKLOG.md](../hms/HOSPITAL-OPD-REALISM-BACKLOG.md) |
 
 ---
 
@@ -128,7 +128,8 @@ flowchart TB
 | **E** | Staff portals depth | 3–4 weeks | **COMPLETE** | E1–E6 done (web + mobile light) |
 | **F** | Payments & SaaS | Phase 2 | **COMPLETE** (code) | Razorpay sandbox + patient/SaaS pay (keys optional) |
 | **G** | Advanced / integrations | Ongoing | **COMPLETE** (code) | G1 stub+MSG91 HTTP; G2–G3; G6–G10; G4/G5 deferred |
-| **H** | Experience polish / parity | Ongoing | **IN PROGRESS** | H1 display board; H3 mobile password reset |
+| **H** | Experience polish / parity | Ongoing | **COMPLETE** (code) | Display board; mobile password reset; docs sync |
+| **I** | Complete IPD enterprise | 16–22 w | **CODE COMPLETE** | I0–I9 core done — [plan](./PHASE-I-IPD-ENTERPRISE-PLAN.md) |
 
 ---
 
@@ -339,7 +340,7 @@ Patient requests OPD (or reception walk-in)
 
 | Attribute | Value |
 |-----------|-------|
-| **Status** | **IN PROGRESS** (code) |
+| **Status** | **COMPLETE** (code) |
 | **Started** | 2026-09-07 |
 | **Notes** | [PHASE-H-NOTES.md](./PHASE-H-NOTES.md) |
 
@@ -348,6 +349,33 @@ Patient requests OPD (or reception walk-in)
 | H1 | OPD waiting-room display board | OPD, Reception web | [x] |
 | H2 | Plan + feature board sync | Docs | [x] |
 | H3 | Mobile forgot / reset password | IAM, Mobile | [x] |
+
+---
+
+## 10c. Phase I — Complete IPD enterprise workflow
+
+| Attribute | Value |
+|-----------|-------|
+| **Status** | **PLANNED** |
+| **Started** | — |
+| **Master plan** | [PHASE-I-IPD-ENTERPRISE-PLAN.md](./PHASE-I-IPD-ENTERPRISE-PLAN.md) |
+| **Baseline** | HMS-3 + Phase D MVP (direct admit → rounds → discharge) |
+| **Key product rule** | Hospitals select IPD **services** (maternity, ICU, insurance, OT, …); core stays country-neutral |
+
+| Wave | Focus | Done |
+|------|-------|------|
+| I0 | FEATURE_IPD + hospital service catalog + presets | [x] code 2026-09-08 |
+| I1 | Admission request / OPD→IPD / types & sources | [x] code 2026-09-08 |
+| I2 | Enterprise beds (reserve, cleaning, rules, map) | [x] core 2026-09-08 (rules deferred) |
+| I3 | Unified IPD chart + assessments + consults + handover | [x] core 2026-09-08 |
+| I4 | Med recon + orders/MAR/lab/rad integration | [x] core 2026-09-08 |
+| I5 | ICU escalate / OT / isolation / procedures | [x] core 2026-09-08 |
+| I6 | Charges, deposit, interim bill, payer/TPA, clearance | [x] core 2026-09-08 |
+| I7 | Discharge planning, summary, LAMA/death, turnaround | [x] core 2026-09-08 |
+| I8 | Follow-up, readmission, episode close | [x] |
+| I9 | Dashboards, mobile nursing, E2E tests, docs | [x] |
+
+**Exit criteria:** Configurable multi-hospital-type IPD; OPD→IPD E2E; no duplicate Patient/UHID/billing/lab/pharmacy; regression OPD green.
 
 ---
 

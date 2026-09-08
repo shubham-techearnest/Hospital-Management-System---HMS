@@ -53,6 +53,7 @@ import { useDiagnosisCatalog } from '@/features/hospital/hooks/useClinicalCatalo
 import { encounterStatusColor, encounterStatusLabel } from '@/features/clinical/utils/encounterUtils';
 import { patientDisplayLabel, queueStatusLabel } from '@/shared/status/visitStatus';
 import { parseApiError } from '@/shared/api/errorUtils';
+import { RecommendIpdAdmissionPanel } from '@/features/doctor/components/RecommendIpdAdmissionPanel';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function DoctorEncounterDetailPage() {
@@ -276,6 +277,14 @@ export function DoctorEncounterDetailPage() {
                 <Typography>{encounter.visitReason}</Typography>
               </Box>
             ) : null}
+            <RecommendIpdAdmissionPanel
+              encounterId={encounterId}
+              patientId={encounter.patientId}
+              hospitalId={encounter.hospitalId}
+              branchId={encounter.branchId}
+              primaryDoctorId={encounter.primaryDoctorId}
+              encounterType={encounter.encounterType}
+            />
           </Stack>
         ) : null}
 
