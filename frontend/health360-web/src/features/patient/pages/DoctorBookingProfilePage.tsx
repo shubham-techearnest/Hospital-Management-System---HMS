@@ -1,7 +1,33 @@
-import { Navigate, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
+import { DoctorProfileView } from '@/features/public/components/DoctorProfileView';
+import { fetchPublicDoctorProfile } from '@/features/public/api/publicProfileApi';
+import { brand } from '@/shared/brand/brand';
 
-/** Legacy patient-portal doctor profile URL redirects to the public profile page. */
+/** Patient-portal doctor profile — stays inside the portal shell (sidebar preserved). */
 export function DoctorBookingProfilePage() {
   const { doctorId = '' } = useParams<{ doctorId: string }>();
-  return <Navigate to={`/doctors/${doctorId}`} replace />;
+
+  const { data: profile } = useQuery({
+    queryKey: ['public', 'doctor', doctorId],
+    queryFn: () => fetchPublicDoctorProfile(doctorId),
+    enabled: Boolean(doctorId),
+  });
+
+  useEffect(() => {
+    if (profile?.name) {
+      document.title = `${profile.name} — ${brand.name}`;
+    }
+    return () => {
+      document.title = brand.name;
+    };
+  }, [profile?.name]);
+
+  return (
+    <AnimatedPage>
+      <DoctorProfileView doctorId={doctorId} variant="portal" canBook />
+    </AnimatedPage>
+  );
 }

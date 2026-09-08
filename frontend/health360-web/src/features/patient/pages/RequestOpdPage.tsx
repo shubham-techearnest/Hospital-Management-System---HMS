@@ -20,6 +20,7 @@ import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import MedicalServicesOutlinedIcon from '@mui/icons-material/MedicalServicesOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
@@ -319,9 +320,9 @@ function DoctorProfileCard({
 
       <Button
         component={RouterLink}
-        to={`/doctors/${profile.id}`}
+        to={`/patient/doctors/${profile.id}`}
         size="small"
-        endIcon={<OpenInNewIcon sx={{ fontSize: '14px !important' }} />}
+        endIcon={<ChevronRightIcon sx={{ fontSize: '16px !important' }} />}
         sx={{ mt: 1.5, textTransform: 'none', fontWeight: 600 }}
       >
         View full doctor profile

@@ -309,13 +309,7 @@ export function DoctorSearchPage() {
 
       {!isLoading && !parsedError ? (
         <>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-              gap: 2,
-            }}
-          >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
             {results.map((doctor) => (
               <DoctorListCard key={doctor.doctorId} doctor={doctor} />
             ))}

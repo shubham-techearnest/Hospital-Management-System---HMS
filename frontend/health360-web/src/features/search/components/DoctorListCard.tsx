@@ -1,15 +1,13 @@
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Box, Button, Typography } from '@mui/material';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
-import VerifiedIcon from '@mui/icons-material/Verified';
-import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import type { DoctorSearchResult } from '@/features/search/api/searchApi';
-
-const PRIMARY = '#1D4ED8';
+import { brand } from '@/shared/brand/brand';
 
 interface DoctorListCardProps {
   doctor: DoctorSearchResult;
   travelTimeMinutes?: number;
+  profilePath?: (doctorId: string) => string;
 }
 
 function initials(name: string) {
@@ -32,149 +30,187 @@ function buildBookUrl(doctor: DoctorSearchResult) {
   return `/patient/request-opd?${params.toString()}`;
 }
 
-export function DoctorListCard({ doctor }: DoctorListCardProps) {
+export function DoctorListCard({
+  doctor,
+  profilePath = (id) => `/patient/doctors/${id}`,
+}: DoctorListCardProps) {
   const navigate = useNavigate();
   const specialty = doctor.specialization ?? 'General consultation';
   const locationLine = [doctor.hospitalName ?? doctor.branchName, doctor.city].filter(Boolean).join(' · ');
-  const langs = (doctor.languages ?? []).slice(0, 3);
+  const metaParts = [
+    doctor.yearsExperience != null ? `${doctor.yearsExperience} yrs` : null,
+    (doctor.languages ?? []).slice(0, 2).join(', ') || null,
+    doctor.availableToday ? 'Available today' : null,
+  ].filter(Boolean);
   const fee =
     doctor.minConsultationFee != null
       ? `${doctor.feeCurrency === 'USD' ? '$' : '₹'}${doctor.minConsultationFee}`
       : null;
-  const experienceLine = [
-    doctor.yearsExperience != null ? `${doctor.yearsExperience} years experience` : null,
-    langs.length ? langs.join(', ') : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
 
   return (
     <Box
       sx={{
-        bgcolor: '#fff',
-        border: '1px solid #E2E8F0',
-        borderRadius: '12px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-        p: 2.5,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1.75,
-        height: '100%',
-        transition: 'box-shadow 0.2s, border-color 0.2s',
+        display: 'grid',
+        gridTemplateColumns: {
+          xs: '56px 1fr',
+          sm: '64px minmax(0, 1fr) auto',
+        },
+        columnGap: { xs: 1.5, sm: 2 },
+        rowGap: { xs: 1.5, sm: 0 },
+        alignItems: 'center',
+        px: { xs: 1.75, sm: 2.25 },
+        py: { xs: 1.75, sm: 2 },
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 2,
+        transition: 'border-color 0.15s ease, background-color 0.15s ease',
         '&:hover': {
-          boxShadow: '0 4px 12px rgba(29,78,216,0.12)',
-          borderColor: '#BFDBFE',
+          borderColor: brand.colors.primaryLight,
+          bgcolor: brand.colors.canvas,
         },
       }}
     >
-      <Box sx={{ display: 'flex', gap: 1.75 }}>
-        <Box
-          sx={{
-            width: 64,
-            height: 64,
-            borderRadius: '10px',
-            bgcolor: PRIMARY,
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 700,
-            fontSize: 18,
-            flexShrink: 0,
-          }}
-        >
-          {initials(doctor.name)}
-        </Box>
-
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'flex-start' }}>
-            <Box sx={{ minWidth: 0 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
-                <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#0F172A', lineHeight: 1.3 }}>
-                  {doctor.name}
-                </Typography>
-                <VerifiedIcon sx={{ fontSize: 16, color: PRIMARY }} />
-              </Box>
-              <Typography sx={{ fontSize: 13, color: '#64748B', mt: 0.25 }}>{specialty}</Typography>
-            </Box>
-            {doctor.averageRating != null ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.35, flexShrink: 0 }}>
-                <StarRoundedIcon sx={{ fontSize: 16, color: '#F59E0B' }} />
-                <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
-                  {doctor.averageRating.toFixed(1)}
-                </Typography>
-                {doctor.reviewCount > 0 ? (
-                  <Typography sx={{ fontSize: 12, color: '#94A3B8' }}>({doctor.reviewCount})</Typography>
-                ) : null}
-              </Box>
-            ) : null}
-          </Box>
-
-          {locationLine ? (
-            <Typography sx={{ fontSize: 12, color: '#64748B', mt: 0.75 }} noWrap>
-              {locationLine}
-            </Typography>
-          ) : null}
-          {experienceLine ? (
-            <Typography sx={{ fontSize: 12, color: '#64748B', mt: 0.35 }}>{experienceLine}</Typography>
-          ) : null}
-        </Box>
+      <Box
+        aria-hidden
+        sx={{
+          width: { xs: 56, sm: 64 },
+          height: { xs: 56, sm: 64 },
+          borderRadius: '50%',
+          bgcolor: brand.colors.secondaryLight,
+          color: brand.colors.primaryDark,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 700,
+          fontSize: { xs: 15, sm: 17 },
+          letterSpacing: 0.3,
+          flexShrink: 0,
+          gridRow: { xs: '1 / 2', sm: 'auto' },
+        }}
+      >
+        {initials(doctor.name)}
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-        {fee ? (
-          <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
-            {fee}{' '}
-            <Typography component="span" sx={{ fontSize: 12, fontWeight: 500, color: '#94A3B8' }}>
-              / consultation
-            </Typography>
+      <Box sx={{ minWidth: 0, gridColumn: { xs: '2 / 3', sm: 'auto' } }}>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
+          <Typography
+            component={RouterLink}
+            to={profilePath(doctor.doctorId)}
+            sx={{
+              fontSize: { xs: 15, sm: 16 },
+              fontWeight: 600,
+              color: 'text.primary',
+              lineHeight: 1.3,
+              textDecoration: 'none',
+              '&:hover': { color: 'primary.main', textDecoration: 'underline', textUnderlineOffset: 3 },
+            }}
+          >
+            {doctor.name}
           </Typography>
-        ) : (
-          <Box />
-        )}
-        {doctor.availableToday ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <AccessTimeOutlinedIcon sx={{ fontSize: 14, color: '#16A34A' }} />
-            <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#16A34A' }}>Today</Typography>
-          </Box>
+          {doctor.averageRating != null ? (
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.35 }}>
+              <StarRoundedIcon sx={{ fontSize: 15, color: 'warning.main' }} />
+              <Typography component="span" sx={{ fontSize: 13, fontWeight: 600, color: 'text.primary' }}>
+                {doctor.averageRating.toFixed(1)}
+              </Typography>
+              {doctor.reviewCount > 0 ? (
+                <Typography component="span" sx={{ fontSize: 12.5, color: 'text.secondary' }}>
+                  ({doctor.reviewCount})
+                </Typography>
+              ) : null}
+            </Box>
+          ) : null}
+        </Box>
+
+        <Typography sx={{ mt: 0.35, fontSize: 13.5, color: 'primary.dark', fontWeight: 500 }}>
+          {specialty}
+        </Typography>
+
+        {locationLine ? (
+          <Typography
+            sx={{
+              mt: 0.4,
+              fontSize: 12.5,
+              color: 'text.secondary',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {locationLine}
+          </Typography>
+        ) : null}
+
+        {metaParts.length > 0 ? (
+          <Typography sx={{ mt: 0.45, fontSize: 12.5, color: 'text.secondary' }}>
+            {metaParts.join(' · ')}
+          </Typography>
         ) : null}
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
-        <Button
-          variant="contained"
-          fullWidth
-          onClick={() => navigate(buildBookUrl(doctor))}
-          sx={{
-            bgcolor: PRIMARY,
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: '8px',
-            boxShadow: 'none',
-            py: 1,
-            '&:hover': { bgcolor: '#1E40AF', boxShadow: 'none' },
-          }}
-        >
-          Book Appointment
-        </Button>
-        <Button
-          variant="outlined"
-          component={RouterLink}
-          to={`/doctors/${doctor.doctorId}`}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: '8px',
-            borderColor: '#E2E8F0',
-            color: '#374151',
-            bgcolor: '#F8FAFC',
-            whiteSpace: 'nowrap',
-            px: 2,
-            '&:hover': { borderColor: '#BFDBFE', bgcolor: '#EFF6FF' },
-          }}
-        >
-          View Profile
-        </Button>
+      <Box
+        sx={{
+          gridColumn: { xs: '1 / -1', sm: 'auto' },
+          display: 'flex',
+          flexDirection: { xs: 'row', sm: 'column' },
+          alignItems: { xs: 'center', sm: 'flex-end' },
+          justifyContent: { xs: 'space-between', sm: 'center' },
+          gap: { xs: 1.25, sm: 1.25 },
+          pt: { xs: 0.25, sm: 0 },
+          borderTop: { xs: '1px solid', sm: 'none' },
+          borderColor: 'divider',
+          mt: { xs: 0.25, sm: 0 },
+        }}
+      >
+        <Box sx={{ textAlign: { xs: 'left', sm: 'right' }, minWidth: 72 }}>
+          {fee ? (
+            <>
+              <Typography sx={{ fontSize: 16, fontWeight: 700, color: 'primary.main', lineHeight: 1.2 }}>
+                {fee}
+              </Typography>
+              <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.15 }}>
+                consultation
+              </Typography>
+            </>
+          ) : (
+            <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>Fee on request</Typography>
+          )}
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <Button
+            component={RouterLink}
+            to={profilePath(doctor.doctorId)}
+            size="small"
+            color="primary"
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 0.5,
+              minWidth: 0,
+              '&:hover': { bgcolor: 'transparent' },
+            }}
+          >
+            Profile
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            disableElevation
+            onClick={() => navigate(buildBookUrl(doctor))}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              borderRadius: 1.5,
+              px: 1.75,
+              py: 0.75,
+            }}
+          >
+            Book
+          </Button>
+        </Box>
       </Box>
     </Box>
   );
