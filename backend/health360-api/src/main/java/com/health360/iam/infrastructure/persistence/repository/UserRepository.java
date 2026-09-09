@@ -18,6 +18,16 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID>, JpaSpec
 
     @Query(value = """
             SELECT DISTINCT u.* FROM iam.users u
+            WHERE u.tenant_id = :tenantId
+              AND u.deleted_at IS NULL
+              AND right(regexp_replace(coalesce(u.phone, ''), '[^0-9]', '', 'g'), 10) = :phoneLast10
+            """, nativeQuery = true)
+    List<UserEntity> findUsersByPhoneLast10(
+            @Param("tenantId") UUID tenantId,
+            @Param("phoneLast10") String phoneLast10);
+
+    @Query(value = """
+            SELECT DISTINCT u.* FROM iam.users u
             INNER JOIN iam.user_roles ur ON ur.user_id = u.id
             INNER JOIN iam.roles r ON r.id = ur.role_id AND r.deleted_at IS NULL
             WHERE u.tenant_id = :tenantId

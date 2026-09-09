@@ -236,6 +236,12 @@ public class HospitalPatientRegistryService {
 
         PortalInviteResponse invite = portalInviteService.createInvite(principal, savedProfile.getId());
 
+        String realEmail = publicLoginEmailOrNull(user.getEmail());
+        String preferredLogin = realEmail != null ? realEmail : storedPhone;
+        String instructions = realEmail != null
+                ? "Patient can sign in with mobile or email + this temporary password. They can update email/password later in Settings."
+                : "Patient can sign in with mobile number + this temporary password (no email was provided). They can add an email later in Settings.";
+
         return RegisterHospitalPatientResponse.builder()
                 .patientId(savedProfile.getId())
                 .uhid(uhid)
@@ -243,8 +249,11 @@ public class HospitalPatientRegistryService {
                 .receiptPath("/api/v1/hospital/patients/" + savedProfile.getId() + "/registration-receipt")
                 .portalInviteLink(invite.getInviteLink())
                 .portalInviteMessage(invite.getMessage())
-                .temporaryLoginEmail(user.getEmail())
+                .temporaryLoginEmail(preferredLogin)
+                .loginMobile(storedPhone)
+                .loginEmail(realEmail)
                 .temporaryPassword(tempPassword)
+                .loginInstructions(instructions)
                 .build();
     }
 
@@ -357,6 +366,18 @@ public class HospitalPatientRegistryService {
         return saved;
     }
 
+    /** Returns real email, or null when the stored value is a system stub. */
+    static String publicLoginEmailOrNull(String storedEmail) {
+        if (storedEmail == null || storedEmail.isBlank()) {
+            return null;
+        }
+        String email = storedEmail.trim().toLowerCase();
+        if (email.endsWith("@patient.health360.local")) {
+            return null;
+        }
+        return email;
+    }
+
     private String resolveLoginEmail(RegisterHospitalPatientRequest request, UUID tenantId, String uhid) {
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             String email = request.getEmail().trim().toLowerCase();
@@ -366,6 +387,7 @@ public class HospitalPatientRegistryService {
             });
             return email;
         }
+        // System-only placeholder to satisfy NOT NULL + unique email; never shown to patients.
         return toDeskLoginEmail(uhid);
     }
 
@@ -385,17 +407,18 @@ public class HospitalPatientRegistryService {
 
     private void logDeskCredentials(String uhid, String loginEmail, String temporaryPassword, String phone) {
         org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HospitalPatientRegistryService.class);
+        String publicEmail = publicLoginEmailOrNull(loginEmail);
         log.info("""
                 
                 ===== PATIENT DESK CREDENTIALS (SMS deferred — verify manually) =====
                 UHID: {}
-                Phone: {}
-                Login email (username): {}
+                Phone (login): {}
+                Email (login): {}
                 Temporary password: {}
-                Login URL: /login  (patient should change password after first login)
+                Login URL: /login  (mobile or email + password; change password after first login)
                 ======================================================================
                 """,
-                uhid, phone, loginEmail, temporaryPassword);
+                uhid, phone, publicEmail != null ? publicEmail : "(none — mobile login)", temporaryPassword);
     }
 
     private void assignPatientRole(UUID tenantId, UUID userId, UUID assignedBy) {

@@ -18,6 +18,7 @@ export interface UserProfile {
 }
 
 export interface UpdateProfilePayload {
+  email?: string;
   firstName?: string;
   lastName?: string;
   phone?: string;

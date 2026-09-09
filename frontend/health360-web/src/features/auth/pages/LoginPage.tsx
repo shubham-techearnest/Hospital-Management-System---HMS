@@ -122,7 +122,7 @@ export function LoginPage() {
           <Typography color="text.secondary" mb={3}>
             {mfaToken
               ? 'Enter the 6-digit code from your authenticator app (or a backup code).'
-              : 'Access your Hospital Management System account'}
+              : 'Sign in with your email or mobile number and password'}
           </Typography>
 
           {successMessage && !mfaToken && (
@@ -161,13 +161,12 @@ export function LoginPage() {
             <Box component="form" onSubmit={handleSubmit(onSubmit)}>
               <Stack spacing={2}>
                 <TextField
-                  label="Email"
-                  type="email"
-                  autoComplete="email"
+                  label="Email or mobile number"
+                  autoComplete="username"
                   fullWidth
                   {...register('email')}
                   error={!!errors.email}
-                  helperText={errors.email?.message}
+                  helperText={errors.email?.message ?? 'Patients registered at the desk can use their mobile number'}
                 />
                 <PasswordField
                   label="Password"

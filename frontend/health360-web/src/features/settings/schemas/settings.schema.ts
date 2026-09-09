@@ -6,6 +6,14 @@ import {
 } from '@/shared/validation/inputSchemas';
 
 export const profileSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .refine((value) => !value || z.string().email().safeParse(value).success, {
+      message: 'Enter a valid email address',
+    }),
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
   phone: phoneRequiredSchema,

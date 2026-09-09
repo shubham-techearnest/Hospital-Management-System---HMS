@@ -39,6 +39,24 @@ public class UserAccountService {
     public UserProfileResponse updateCurrentUser(UUID userId, UUID tenantId, UpdateUserProfileRequest request) {
         UserEntity user = requireUser(userId, tenantId);
 
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            String newEmail = request.getEmail().trim().toLowerCase();
+            if (newEmail.endsWith("@patient.health360.local")) {
+                throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                        "Please enter a real email address");
+            }
+            if (!newEmail.equalsIgnoreCase(user.getEmail())) {
+                userRepository.findByTenantIdAndEmailIgnoreCase(tenantId, newEmail).ifPresent(existing -> {
+                    if (!existing.getId().equals(userId)) {
+                        throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                                "Email is already registered");
+                    }
+                });
+                user.setEmail(newEmail);
+                // Desk/patient portal accounts stay usable immediately after adding a real email.
+                user.setEmailVerified(true);
+            }
+        }
         if (request.getFirstName() != null) {
             user.setFirstName(request.getFirstName().trim());
         }

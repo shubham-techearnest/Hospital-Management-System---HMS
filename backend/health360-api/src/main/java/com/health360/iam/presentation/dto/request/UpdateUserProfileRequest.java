@@ -1,11 +1,16 @@
 package com.health360.iam.presentation.dto.request;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
 public class UpdateUserProfileRequest {
+
+    @Email
+    @Size(max = 255)
+    private String email;
 
     @Size(min = 1, max = 100)
     @Pattern(regexp = "^[\\p{L} .'-]+$", message = "First name contains invalid characters")

@@ -43,7 +43,17 @@ import { detectLocale } from '@/shared/timezone/timezones';
 import { detectTimezone } from '@/shared/timezone/timezones';
 import { PasswordField } from '@/shared/ui/PasswordField';
 
+const STUB_EMAIL_SUFFIX = '@patient.health360.local';
+
+function displayEmail(raw?: string | null) {
+  if (!raw || raw.toLowerCase().endsWith(STUB_EMAIL_SUFFIX)) {
+    return '';
+  }
+  return raw;
+}
+
 const profileDefaults: ProfileForm = {
+  email: '',
   firstName: '',
   lastName: '',
   phone: '',
@@ -62,6 +72,7 @@ function readCachedAuthUser(): RootState['auth']['user'] {
 
 function profileFromAuthUser(user: NonNullable<RootState['auth']['user']>): ProfileForm {
   return {
+    email: displayEmail(user.email),
     firstName: user.firstName ?? '',
     lastName: user.lastName ?? '',
     phone: user.phone ?? '',
@@ -79,7 +90,6 @@ export function AccountSettingsPage() {
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
-  const [email, setEmail] = useState(authUser?.email ?? '');
   const [profileLoading, setProfileLoading] = useState(!authUser);
   const [mfaEnabled, setMfaEnabled] = useState(Boolean(authUser?.mfaEnabled));
   const [mfaError, setMfaError] = useState<string | null>(null);
@@ -132,8 +142,8 @@ export function AccountSettingsPage() {
         if (cancelled) {
           return;
         }
-        setEmail(profile.email);
         resetProfileForm({
+          email: displayEmail(profile.email),
           firstName: profile.firstName ?? '',
           lastName: profile.lastName ?? '',
           phone: profile.phone ?? '',
@@ -142,6 +152,7 @@ export function AccountSettingsPage() {
         });
         dispatch(
           updateUser({
+            email: profile.email,
             firstName: profile.firstName,
             lastName: profile.lastName,
             phone: profile.phone,
@@ -191,9 +202,13 @@ export function AccountSettingsPage() {
     setProfileError(null);
     setProfileSuccess(null);
     try {
-      const profile = await updateProfile(values);
+      const profile = await updateProfile({
+        ...values,
+        email: values.email?.trim() || undefined,
+      });
       dispatch(
         updateUser({
+          email: profile.email,
           firstName: profile.firstName,
           lastName: profile.lastName,
           phone: profile.phone,
@@ -201,7 +216,15 @@ export function AccountSettingsPage() {
           locale: profile.locale,
         }),
       );
-      setProfileSuccess('Profile updated successfully');
+      resetProfileForm({
+        email: displayEmail(profile.email),
+        firstName: profile.firstName ?? '',
+        lastName: profile.lastName ?? '',
+        phone: profile.phone ?? '',
+        timezone: profile.timezone || detectTimezone(),
+        locale: profile.locale || detectLocale(),
+      });
+      setProfileSuccess('Profile updated successfully. You can sign in with mobile or email.');
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: { message?: string } } } };
       setProfileError(err.response?.data?.error?.message ?? 'Failed to update profile');
@@ -260,12 +283,23 @@ export function AccountSettingsPage() {
                 </Stack>
               ) : (
                 <Stack spacing={2}>
-                  <TextField
-                    label="Email"
-                    value={email}
-                    fullWidth
-                    disabled
-                    InputLabelProps={{ shrink: true }}
+                  <Controller
+                    name="email"
+                    control={profileControl}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Email (for login)"
+                        type="email"
+                        fullWidth
+                        error={!!profileErrors.email}
+                        helperText={
+                          profileErrors.email?.message
+                          ?? 'Optional. You can also sign in with your mobile number. Add or update email anytime.'
+                        }
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    )}
                   />
                   <Controller
                     name="firstName"

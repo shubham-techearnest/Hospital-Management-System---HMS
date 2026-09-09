@@ -1,14 +1,16 @@
 package com.health360.iam.presentation.dto.request;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class LoginRequest {
 
+    /**
+     * Login identifier: email address <strong>or</strong> mobile number.
+     * Field name kept as {@code email} for API compatibility with existing clients.
+     */
     @NotBlank
-    @Email
     private String email;
 
     @NotBlank

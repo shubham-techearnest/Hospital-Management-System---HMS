@@ -28,7 +28,20 @@ export const registerSchema = z
   });
 
 export const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z
+    .string()
+    .min(1, 'Email or mobile number is required')
+    .refine(
+      (value) => {
+        const trimmed = value.trim();
+        if (trimmed.includes('@')) {
+          return z.string().email().safeParse(trimmed).success;
+        }
+        const digits = trimmed.replace(/\D/g, '');
+        return digits.length >= 10;
+      },
+      { message: 'Enter a valid email or 10-digit mobile number' },
+    ),
   password: z.string().min(1, 'Password is required'),
 });
 

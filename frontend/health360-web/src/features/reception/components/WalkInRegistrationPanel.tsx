@@ -239,9 +239,16 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
         {error ? <Alert severity="error">{error}</Alert> : null}
         {credentialsNotice ? (
           <Alert severity="info">
-            <Typography variant="body2" fontWeight={600}>New patient portal credentials (also in server log)</Typography>
+            <Typography variant="body2" fontWeight={600}>New patient portal credentials</Typography>
             <Typography variant="body2">UHID: {credentialsNotice.uhid}</Typography>
-            <Typography variant="body2">Login: {credentialsNotice.temporaryLoginEmail}</Typography>
+            <Typography variant="body2">
+              Mobile (login): {credentialsNotice.loginMobile ?? credentialsNotice.temporaryLoginEmail}
+            </Typography>
+            {credentialsNotice.loginEmail ? (
+              <Typography variant="body2">Email (login): {credentialsNotice.loginEmail}</Typography>
+            ) : (
+              <Typography variant="body2">Email: not provided — patient signs in with mobile</Typography>
+            )}
             <Typography variant="body2">Temp password: {credentialsNotice.temporaryPassword}</Typography>
             {credentialsNotice.portalInviteLink ? (
               <Typography variant="body2" sx={{ wordBreak: 'break-all', mt: 0.5 }}>
@@ -249,7 +256,8 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
               </Typography>
             ) : null}
             <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-              Share with the patient. They can change the password after login. SMS is deferred — use the terminal log for manual verification.
+              {credentialsNotice.loginInstructions
+                ?? 'Tell the patient: sign in at /login with mobile (or email if given) + this password. They can add/update email and change password later in Settings.'}
             </Typography>
           </Alert>
         ) : null}
@@ -306,8 +314,8 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
             <Divider />
             <Typography variant="subtitle2">New patient — not found on Health360</Typography>
             <Typography variant="body2" color="text.secondary">
-              Creates a platform account with UHID and portal login (credentials in server log and below).
-              Patient can complete profile details after login.
+              Creates a platform account with UHID. Tell the patient they can sign in with
+              mobile (or email if entered) + the temporary password, and update details later in Settings.
             </Typography>
             <PhoneField
               label="Mobile"
@@ -316,11 +324,12 @@ export function WalkInRegistrationPanel({ hospitalId, branchId, desks, onSubmit,
               onChange={setNewPhone}
             />
             <TextField
-              label="Email (optional — used for portal login)"
+              label="Email (optional)"
               type="email"
               fullWidth
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
+              helperText="If provided, patient can sign in with email or mobile. If blank, they use mobile + temp password and can add email later in Settings."
             />
             <TextField
               select

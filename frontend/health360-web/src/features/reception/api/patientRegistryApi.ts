@@ -23,8 +23,12 @@ export interface RegisterHospitalPatientResult {
   receiptPath: string;
   portalInviteLink?: string;
   portalInviteMessage?: string;
+  /** Preferred login id to show (mobile or real email — never stub). */
   temporaryLoginEmail?: string;
+  loginMobile?: string;
+  loginEmail?: string;
   temporaryPassword?: string;
+  loginInstructions?: string;
 }
 
 export interface PortalInviteResult {

@@ -50,8 +50,7 @@ public class AuthenticationService {
     @Transactional
     public LoginResponse login(LoginRequest request) {
         UUID tenantId = properties.getDefaultTenantId();
-        UserEntity user = userRepository.findByTenantIdAndEmailIgnoreCase(tenantId, request.getEmail().trim())
-                .orElseThrow(() -> invalidCredentials());
+        UserEntity user = resolveLoginUser(tenantId, request.getEmail());
 
         if (UserStatus.DEACTIVATED.equals(user.getStatus())) {
             throw new BusinessException(ErrorCode.ACCOUNT_DEACTIVATED, HttpStatus.FORBIDDEN,
@@ -86,6 +85,37 @@ public class AuthenticationService {
         }
 
         return LoginResponse.tokens(issueTokenPair(user, request.getDeviceInfo()));
+    }
+
+    /**
+     * Resolves login by email address or mobile number (last 10 digits).
+     * Field name on the request remains {@code email} for client compatibility.
+     */
+    private UserEntity resolveLoginUser(UUID tenantId, String rawIdentifier) {
+        String identifier = rawIdentifier == null ? "" : rawIdentifier.trim();
+        if (identifier.isEmpty()) {
+            throw invalidCredentials();
+        }
+
+        if (identifier.contains("@")) {
+            return userRepository.findByTenantIdAndEmailIgnoreCase(tenantId, identifier)
+                    .orElseThrow(this::invalidCredentials);
+        }
+
+        String digits = identifier.replaceAll("[^0-9]", "");
+        if (digits.length() < 10) {
+            throw invalidCredentials();
+        }
+        String phoneLast10 = digits.substring(digits.length() - 10);
+        List<UserEntity> matches = userRepository.findUsersByPhoneLast10(tenantId, phoneLast10);
+        if (matches.isEmpty()) {
+            throw invalidCredentials();
+        }
+        if (matches.size() > 1) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                    "Multiple accounts use this mobile number. Sign in with email, or ask the hospital desk for help.");
+        }
+        return matches.get(0);
     }
 
     @Transactional

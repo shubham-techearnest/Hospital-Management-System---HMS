@@ -111,7 +111,8 @@ export function PatientRegisterPage() {
             helperText={phoneError || undefined}
           />
           <TextField
-            label="Email (optional — used for portal login)"
+            label="Email (optional)"
+            helperText="If provided, patient can sign in with email or mobile. Otherwise they use mobile + temp password and can add email later in Settings."
             type="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
