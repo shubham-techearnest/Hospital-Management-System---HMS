@@ -12,6 +12,8 @@ import {
   Typography,
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   useEncounterActions,
   useEncounterPrescriptions,
@@ -433,7 +435,7 @@ export function EPrescriptionPanel({
           <Typography variant="subtitle2" sx={{ mb: 1 }}>Signed prescriptions</Typography>
           <Stack spacing={1.5}>
             {signed.map((rx) => (
-              <SignedRxCard key={rx.prescriptionId} rx={rx} />
+              <SignedRxCard key={rx.prescriptionId} rx={rx} encounterId={encounterId} />
             ))}
           </Stack>
         </Box>
@@ -442,13 +444,22 @@ export function EPrescriptionPanel({
   );
 }
 
-function SignedRxCard({ rx }: { rx: Prescription }) {
+function SignedRxCard({ rx, encounterId }: { rx: Prescription; encounterId: string }) {
   const noMed = rx.notes?.includes('No medication required');
   return (
     <Box sx={{ p: 1.5, border: 1, borderColor: 'success.light', borderRadius: 1 }}>
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }} flexWrap="wrap">
         <Typography fontWeight={600}>{rx.prescriptionNumber}</Typography>
         <Chip size="small" color="success" label="SIGNED" />
+        <Button
+          size="small"
+          component={RouterLink}
+          to={`/documents/prescription/${encounterId}/${rx.prescriptionId}`}
+          startIcon={<PrintOutlinedIcon />}
+          sx={{ ml: 'auto' }}
+        >
+          Print
+        </Button>
       </Stack>
       {noMed ? (
         <Typography variant="body2" color="text.secondary">{rx.notes}</Typography>

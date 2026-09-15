@@ -18,6 +18,7 @@ import {
   listIpdRooms,
   listIpdRounds,
   listIpdWards,
+  reassignAttendingDoctor,
   rejectAdmissionRequest as rejectAdmissionRequestApi,
   reserveAdmissionBed as reserveAdmissionBedApi,
   scheduleAdmissionRequest as scheduleAdmissionRequestApi,
@@ -38,8 +39,15 @@ export const ipdKeys = {
   rooms: (wardId: string) => ['ipd', 'rooms', wardId] as const,
   beds: (hospitalId: string, branchId: string, status?: string) =>
     ['ipd', 'beds', hospitalId, branchId, status ?? 'ALL'] as const,
-  admissions: (hospitalId: string, branchId: string, page: number, status?: string, size = 20) =>
-    ['ipd', 'admissions', hospitalId, branchId, page, status ?? 'ALL', size] as const,
+  admissions: (
+    hospitalId: string,
+    branchId: string,
+    page: number,
+    status?: string,
+    size = 20,
+    primaryDoctorId?: string,
+  ) =>
+    ['ipd', 'admissions', hospitalId, branchId, page, status ?? 'ALL', size, primaryDoctorId ?? 'ALL'] as const,
   admission: (admissionId: string) => ['ipd', 'admission', admissionId] as const,
   rounds: (admissionId: string) => ['ipd', 'rounds', admissionId] as const,
   admissionRequests: (hospitalId: string, branchId: string, page: number, status?: string) =>
@@ -87,10 +95,19 @@ export function useIpdAdmissions(
   page = 0,
   status?: string,
   size = 20,
+  primaryDoctorId?: string,
 ) {
   return useQuery({
-    queryKey: ipdKeys.admissions(hospitalId ?? '', branchId ?? '', page, status, size),
-    queryFn: () => listIpdAdmissions(hospitalId!, branchId!, page, size, status),
+    queryKey: ipdKeys.admissions(
+      hospitalId ?? '',
+      branchId ?? '',
+      page,
+      status,
+      size,
+      primaryDoctorId,
+    ),
+    queryFn: () =>
+      listIpdAdmissions(hospitalId!, branchId!, page, size, status, primaryDoctorId),
     enabled: Boolean(hospitalId && branchId),
     retry: (_, error) => isRetryableError(error),
   });
@@ -185,6 +202,21 @@ export function useIpdMutations(hospitalId: string, branchId: string) {
     admit: useMutation({
       mutationFn: admitPatient,
       onSuccess: invalidateAll,
+    }),
+    reassignAttending: useMutation({
+      mutationFn: ({
+        admissionId,
+        primaryDoctorId,
+        reason,
+      }: {
+        admissionId: string;
+        primaryDoctorId: string;
+        reason?: string;
+      }) => reassignAttendingDoctor(admissionId, { primaryDoctorId, reason }),
+      onSuccess: (_data, vars) => {
+        invalidateAll();
+        qc.invalidateQueries({ queryKey: ipdKeys.admission(vars.admissionId) });
+      },
     }),
     createAdmissionRequest: useMutation({
       mutationFn: createAdmissionRequestApi,

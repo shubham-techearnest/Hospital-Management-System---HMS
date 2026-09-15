@@ -10,6 +10,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { useMyPrescriptions } from '@/features/clinical/hooks/useClinicalQueries';
@@ -76,6 +77,14 @@ export function PatientPrescriptionsPage() {
                 {request?.fulfillPartnerOrgId ? (
                   <Chip size="small" variant="outlined" label="Partner pharmacy" />
                 ) : null}
+                <Button
+                  size="small"
+                  component={RouterLink}
+                  to={`/documents/prescription/${rx.encounterId}/${rx.prescriptionId}`}
+                  sx={{ ml: { sm: 'auto' } }}
+                >
+                  Print
+                </Button>
               </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 Signed {rx.signedAt ? new Date(rx.signedAt).toLocaleString() : '—'}

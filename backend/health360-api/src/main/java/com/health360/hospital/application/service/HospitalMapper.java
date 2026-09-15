@@ -31,6 +31,14 @@ public class HospitalMapper {
                 .branchCount(branchCount)
                 .departmentCount(departmentCount)
                 .doctorCount(doctorCount)
+                .letterheadTagline(entity.getLetterheadTagline())
+                .letterheadFooterText(entity.getLetterheadFooterText())
+                .hasLetterheadLogo(entity.getLetterheadLogoStorageKey() != null
+                        && !entity.getLetterheadLogoStorageKey().isBlank())
+                .letterheadLogoUrl(entity.getLetterheadLogoStorageKey() != null
+                        && !entity.getLetterheadLogoStorageKey().isBlank()
+                        ? "/api/v1/hospitals/" + entity.getId() + "/letterhead/logo"
+                        : null)
                 .build();
     }
 

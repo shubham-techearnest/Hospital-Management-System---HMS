@@ -79,6 +79,9 @@ export const TIMEZONE_COUNTRY_HINTS: Record<string, string> = {
   'Africa/Johannesburg': 'ZA',
 };
 
+/** Product default when timezone/locale cannot be resolved. */
+export const DEFAULT_PHONE_COUNTRY_ISO = 'IN';
+
 export function getCountryByIso(iso: string): CountryDial | undefined {
   return COUNTRY_DIALS.find((c) => c.iso === iso.toUpperCase());
 }

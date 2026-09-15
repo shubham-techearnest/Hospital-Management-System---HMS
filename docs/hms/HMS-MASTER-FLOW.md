@@ -162,6 +162,7 @@ Order header statuses: `DRAFT` → `ORDERED` → `IN_PROGRESS` → `COMPLETED` |
 | **Token / queue slot** | OPD | Daily token sequence; queue entry statuses |
 | **Bed** | IPD, ICU | Bed status AVAILABLE → OCCUPIED; temporal `bed_assignments` |
 | **Equipment** | ICU | Equipment inventory + time-bound assignments |
+| **Fixed assets** | Asset Mgmt | Hospital registry + maintenance (`asset.*`); see [HMS-ASSET-MANAGEMENT.md](./HMS-ASSET-MANAGEMENT.md) |
 | **OT room** | OT | Theatre calendar + status AVAILABLE → IN_USE |
 | **Lab bench** | Lab | Implicit via sample processing queue (HMS-5) |
 

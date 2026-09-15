@@ -372,7 +372,25 @@ export function DoctorEncounterDetailPage() {
                 <Stack spacing={2}>
                   <ClinicalTimelinePanel patientId={encounter.patientId} title="Timeline" />
                   {labReports.length > 0 ? (
-                    <HistoryList title="Lab results" items={labReports.map((r) => `${r.testName}: ${r.summaryText ?? '—'}`)} />
+                    <Box>
+                      <Typography variant="subtitle2">Lab results</Typography>
+                      <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+                        {labReports.map((r) => (
+                          <Stack key={r.reportId} direction="row" spacing={1} alignItems="center">
+                            <Typography variant="body2">
+                              {r.testName}: {r.summaryText ?? '—'}
+                            </Typography>
+                            <Button
+                              size="small"
+                              component={RouterLink}
+                              to={`/documents/lab/${r.labOrderId}`}
+                            >
+                              Print
+                            </Button>
+                          </Stack>
+                        ))}
+                      </Stack>
+                    </Box>
                   ) : null}
                   {imagingReports.length > 0 ? (
                     <HistoryList title="Imaging" items={imagingReports.map((r) => r.modalityName)} />

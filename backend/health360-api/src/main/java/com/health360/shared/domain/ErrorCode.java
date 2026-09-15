@@ -2,6 +2,7 @@ package com.health360.shared.domain;
 
 public enum ErrorCode {
     VALIDATION_ERROR,
+    METHOD_NOT_ALLOWED,
     DUPLICATE_EMAIL,
     INVALID_CREDENTIALS,
     UNAUTHORIZED,

@@ -121,6 +121,7 @@ class IpdIntegrationTest {
         admissionRequest.setHospitalId(HOSPITAL_ID);
         admissionRequest.setBranchId(BRANCH_ID);
         admissionRequest.setBedId(UUID.fromString(bedId));
+        admissionRequest.setPrimaryDoctorId(UUID.fromString("00000000-0000-0000-0000-000000000060"));
         admissionRequest.setAdmissionReason("Observation");
 
         MvcResult admissionResult = mockMvc.perform(post("/api/v1/ipd/admissions")
@@ -130,10 +131,33 @@ class IpdIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.status").value("ADMITTED"))
                 .andExpect(jsonPath("$.data.encounterStatus").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.data.primaryDoctorId").value("00000000-0000-0000-0000-000000000060"))
+                .andExpect(jsonPath("$.data.attendingDoctorId").value("00000000-0000-0000-0000-000000000060"))
                 .andReturn();
 
         JsonNode admission = objectMapper.readTree(admissionResult.getResponse().getContentAsString()).path("data");
         String admissionId = admission.path("admissionId").asText();
+
+        mockMvc.perform(get("/api/v1/ipd/admissions")
+                        .header("Authorization", IntegrationTestAuth.bearer(token))
+                        .param("hospitalId", HOSPITAL_ID.toString())
+                        .param("branchId", BRANCH_ID.toString())
+                        .param("status", "ADMITTED")
+                        .param("primaryDoctorId", "00000000-0000-0000-0000-000000000060"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].admissionId").value(admissionId));
+
+        var reassign = new com.health360.ipd.presentation.dto.request.ReassignAttendingDoctorRequest();
+        reassign.setPrimaryDoctorId(UUID.fromString("00000000-0000-0000-0000-000000000061"));
+        reassign.setReason("Cardiology takeover");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .patch("/api/v1/ipd/admissions/" + admissionId + "/attending-doctor")
+                        .header("Authorization", IntegrationTestAuth.bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reassign)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.primaryDoctorId").value("00000000-0000-0000-0000-000000000061"));
 
         mockMvc.perform(get("/api/v1/ipd/beds")
                         .header("Authorization", IntegrationTestAuth.bearer(token))
@@ -153,6 +177,19 @@ class IpdIntegrationTest {
                         .content(objectMapper.writeValueAsString(roundRequest)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.roundType").value("NURSING"));
+
+        String doctorToken = IntegrationTestAuth.loginAndGetAccessToken(
+                mockMvc, objectMapper, "parmeshwar.doctor@health360.test");
+        CreateIpdRoundRequest doctorRound = new CreateIpdRoundRequest();
+        doctorRound.setRoundType("DOCTOR");
+        doctorRound.setNotes("Attending progress note — patient improving");
+
+        mockMvc.perform(post("/api/v1/ipd/admissions/" + admissionId + "/rounds")
+                        .header("Authorization", IntegrationTestAuth.bearer(doctorToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(doctorRound)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.roundType").value("DOCTOR"));
 
         CreateIpdBedRequest bed2Request = new CreateIpdBedRequest();
         bed2Request.setRoomId(UUID.fromString(roomId));

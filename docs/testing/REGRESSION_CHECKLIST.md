@@ -20,7 +20,9 @@ Mark: ☐ Pending · ☑ Pass · ✖ Fail · ◐ Partial · — N/A
 - [ ] Lab order → result release  
 - [ ] Pharmacy dispense  
 - [ ] OPD invoice / payment (manual lines OK)  
-- [ ] IPD admit → bed occupied  
+- [ ] IPD admit → attending doctor set + bed occupied  
+- [ ] Doctor My IPD shows attending’s patients; round note saves  
+- [ ] (Optional) Reassign attending → lists update  
 - [ ] Discharge → bed released  
 - [ ] Patient portal sees own records only  
 
@@ -36,7 +38,7 @@ Mark: ☐ Pending · ☑ Pass · ✖ Fail · ◐ Partial · — N/A
 | Lab | Status chain, patient/doctor visibility |
 | Pharmacy | Stock decrement, partial, zero stock |
 | Billing | Totals, no duplicate fee, pay statuses |
-| IPD / bed | Concurrent bed assign, transfer, discharge release |
+| IPD / bed / attending | Concurrent bed assign, transfer, discharge release, attending reassign |
 | RBAC / scope | Cross-hospital deny, role deny matrix samples |
 | Migrations | Fresh migrate V87 on clean DB |
 

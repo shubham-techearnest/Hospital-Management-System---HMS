@@ -17,7 +17,11 @@ public class IpdAdmissionResponse {
     String uhid;
     UUID hospitalId;
     UUID branchId;
+    /** Attending doctor (same as primaryDoctorId — clinical responsibility for rounds/care). */
     UUID primaryDoctorId;
+    /** Alias of primaryDoctorId for UI clarity. */
+    UUID attendingDoctorId;
+    String primaryDoctorName;
     UUID bedId;
     String wardCode;
     String roomCode;

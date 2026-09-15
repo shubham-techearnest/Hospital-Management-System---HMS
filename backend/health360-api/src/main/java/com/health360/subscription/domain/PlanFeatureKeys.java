@@ -13,4 +13,5 @@ public final class PlanFeatureKeys {
     public static final String FEATURE_API_ACCESS = "FEATURE_API_ACCESS";
     public static final String FEATURE_IPD = "FEATURE_IPD";
     public static final String FEATURE_ICU = "FEATURE_ICU";
+    public static final String FEATURE_ASSET_MANAGEMENT = "FEATURE_ASSET_MANAGEMENT";
 }

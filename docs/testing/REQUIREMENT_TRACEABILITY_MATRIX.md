@@ -20,7 +20,9 @@
 | REQ-12 | Pharmacy dispense | Pharmacy | `/pharmacy` | `/api/v1/pharmacy` | pharmacy_request | PHARMACIST | J2 | PENDING |
 | REQ-13 | OPD billing | Billing | checkout | `/api/v1/billing` | invoice | RECEPTIONIST | PHASE 9 | PENDING |
 | REQ-14 | Lab/Pharm auto-bill | Billing | — | enum only | invoice line | — | G-001/002 | NOT CONNECTED |
-| REQ-15 | IPD admit + bed | IPD | `/hospital/ipd` | `/api/v1/ipd` | admission, bed | ADMIN/RX | J3 | PENDING |
+| REQ-15 | IPD admit + bed + attending | IPD | `/hospital/ipd` | `/api/v1/ipd/admissions` | admission, bed, primaryDoctorId | ADMIN/RX | J3 / S3.5 | PENDING |
+| REQ-15a | Doctor My IPD (attending filter) | IPD | `/doctor/ipd` | `GET .../admissions?primaryDoctorId=` | admission | DOCTOR | J3 / S3.5b | PENDING |
+| REQ-15b | Reassign attending | IPD | IPD chart overview | `PATCH .../attending-doctor` | admission + encounter | HOSPITAL_ADMIN | J3 / S3.5c | PENDING |
 | REQ-16 | Nursing / MAR | Nursing | `/nursing` | ipd + clinical | vitals, MAR | NURSE | PHASE 11 | PENDING |
 | REQ-17 | Discharge + bed release | Discharge | IPD chart | `/api/v1/ipd` | admission | DOCTOR/ADMIN | PHASE 12 | PENDING |
 | REQ-18 | Patient portal records | Portal | `/patient/*` | various | scoped reads | PATIENT | PHASE 13 | PENDING |
@@ -37,4 +39,4 @@
 |---------|----------------|
 | J1 OPD | REQ-01…05, 08–10, 18–20 |
 | J2 Lab+Rx+Bill | REQ-06–07, 09–13 (14 PARTIAL), 18–20 |
-| J3 IPD | REQ-09–10, 15–18, 20, 23 |
+| J3 IPD | REQ-09–10, 15–15b, 16–18, 20, 23 |

@@ -70,6 +70,8 @@ Passwords: set at registration / desk temp password — record in [TEST_USERS.md
 | P1 Rx | Paracetamol 500mg TDS × 3 days |
 | P2 labs | CBC, RBS, Lipid Profile |
 | P3 admission reason | Unstable angina / observation (or GM admit) |
+| P3 attending doctor | **DR1** (Dr. Ananya Gupta) — seeded by OPD recommend; confirm/change at desk admit |
+| P3 reassign (optional) | Change attending to **DR3** (Cardiology) via hospital chart |
 | P3 transfer | General → Semi-Private |
 
 ## Billing workaround (known gap G-001/G-002)

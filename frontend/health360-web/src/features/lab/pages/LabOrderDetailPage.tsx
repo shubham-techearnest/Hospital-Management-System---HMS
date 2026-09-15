@@ -81,9 +81,20 @@ export function LabOrderDetailPage() {
         title="Lab order"
         subtitle="Collect sample, enter results, verify, and release"
         actions={(
-          <Button component={RouterLink} to="/lab/worklist" variant="outlined">
-            Back to worklist
-          </Button>
+          <Stack direction="row" spacing={1}>
+            {order?.status === 'RELEASED' ? (
+              <Button
+                component={RouterLink}
+                to={`/documents/lab/${labOrderId}`}
+                variant="contained"
+              >
+                Print report
+              </Button>
+            ) : null}
+            <Button component={RouterLink} to="/lab/worklist" variant="outlined">
+              Back to worklist
+            </Button>
+          </Stack>
         )}
       />
 

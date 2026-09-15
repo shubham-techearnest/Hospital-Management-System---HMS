@@ -1,20 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert, Box, Button, MenuItem, Paper, Snackbar, Stack, TextField, Typography,
 } from '@mui/material';
+import UploadIcon from '@mui/icons-material/Upload';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { HOSPITAL_TYPES } from '@/features/hospital/api/hospitalApi';
-import { useHospitalProfile, useUpdateHospitalProfile } from '@/features/hospital/hooks/useHospitalQueries';
+import {
+  useHospitalProfile,
+  useUpdateHospitalProfile,
+  useUpdateLetterhead,
+  useUploadLetterheadLogo,
+} from '@/features/hospital/hooks/useHospitalQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
+import { apiClient } from '@/shared/api/client';
 
 export function HospitalProfilePage() {
   const { data: profile, isLoading, isError, error } = useHospitalProfile();
   const updateProfile = useUpdateHospitalProfile();
+  const updateLetterhead = useUpdateLetterhead();
+  const uploadLogo = useUploadLetterheadLogo();
   const is404 = (error as { response?: { status?: number } })?.response?.status === 404;
+  const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: '', registrationNumber: '', hospitalType: 'PRIVATE',
     establishedYear: '', totalBedCount: '', accreditation: 'NONE', description: '',
   });
+  const [letterheadForm, setLetterheadForm] = useState({
+    letterheadTagline: '',
+    letterheadFooterText: '',
+  });
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   useEffect(() => {
@@ -28,7 +43,36 @@ export function HospitalProfilePage() {
       accreditation: profile.accreditation ?? 'NONE',
       description: profile.description ?? '',
     });
+    setLetterheadForm({
+      letterheadTagline: profile.letterheadTagline ?? '',
+      letterheadFooterText: profile.letterheadFooterText ?? '',
+    });
   }, [profile]);
+
+  useEffect(() => {
+    let revoked: string | null = null;
+    let cancelled = false;
+    async function loadLogo() {
+      if (!profile?.letterheadLogoUrl) {
+        setLogoPreview(null);
+        return;
+      }
+      try {
+        const path = profile.letterheadLogoUrl.replace(/^\/api\/v1/, '');
+        const res = await apiClient.get(path, { responseType: 'blob' });
+        const url = URL.createObjectURL(res.data);
+        revoked = url;
+        if (!cancelled) setLogoPreview(url);
+      } catch {
+        if (!cancelled) setLogoPreview(null);
+      }
+    }
+    void loadLogo();
+    return () => {
+      cancelled = true;
+      if (revoked) URL.revokeObjectURL(revoked);
+    };
+  }, [profile?.letterheadLogoUrl]);
 
   const handleSave = async () => {
     const payload = {
@@ -42,6 +86,27 @@ export function HospitalProfilePage() {
     try {
       await updateProfile.mutateAsync(payload);
       setSnackbar({ open: true, message: 'Profile saved.', severity: 'success' });
+    } catch (e) {
+      setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
+    }
+  };
+
+  const handleSaveLetterhead = async () => {
+    try {
+      await updateLetterhead.mutateAsync({
+        letterheadTagline: letterheadForm.letterheadTagline,
+        letterheadFooterText: letterheadForm.letterheadFooterText,
+      });
+      setSnackbar({ open: true, message: 'Letterhead settings saved.', severity: 'success' });
+    } catch (e) {
+      setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
+    }
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    try {
+      await uploadLogo.mutateAsync(file);
+      setSnackbar({ open: true, message: 'Letterhead logo uploaded.', severity: 'success' });
     } catch (e) {
       setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
     }
@@ -77,7 +142,7 @@ export function HospitalProfilePage() {
         </Stack>
       </Paper>
 
-      <Paper variant="outlined" sx={{ p: 3 }}>
+      <Paper variant="outlined" sx={{ p: 3, mb: 3 }}>
         <Stack spacing={2}>
           <TextField label="Hospital Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
           <TextField label="Registration Number" value={form.registrationNumber} disabled required />
@@ -93,6 +158,78 @@ export function HospitalProfilePage() {
           <Box>
             <Button variant="contained" onClick={handleSave} disabled={updateProfile.isPending}>
               Save Profile
+            </Button>
+          </Box>
+        </Stack>
+      </Paper>
+
+      <Paper variant="outlined" sx={{ p: 3 }}>
+        <Typography variant="h6" fontWeight={700} mb={0.5}>Letterhead & stationery</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Logo and text used on prescriptions, consultation summaries, lab reports, and pharmacy slips.
+        </Typography>
+        <Stack spacing={2}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-start">
+            <Box
+              sx={{
+                width: 96,
+                height: 96,
+                border: '1px dashed',
+                borderColor: 'divider',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                bgcolor: 'background.default',
+              }}
+            >
+              {logoPreview ? (
+                <Box component="img" src={logoPreview} alt="Letterhead logo" sx={{ maxWidth: '100%', maxHeight: '100%' }} />
+              ) : (
+                <Typography variant="caption" color="text.secondary">No logo</Typography>
+              )}
+            </Box>
+            <Box>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                hidden
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleLogoUpload(file);
+                }}
+              />
+              <Button
+                variant="outlined"
+                startIcon={<UploadIcon />}
+                disabled={uploadLogo.isPending}
+                onClick={() => fileRef.current?.click()}
+              >
+                Upload logo
+              </Button>
+              <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
+                PNG, JPG, or WebP. Shown on printed clinical documents.
+              </Typography>
+            </Box>
+          </Stack>
+          <TextField
+            label="Tagline (optional)"
+            value={letterheadForm.letterheadTagline}
+            onChange={(e) => setLetterheadForm({ ...letterheadForm, letterheadTagline: e.target.value })}
+            placeholder="Caring with excellence"
+          />
+          <TextField
+            label="Footer text (optional)"
+            value={letterheadForm.letterheadFooterText}
+            onChange={(e) => setLetterheadForm({ ...letterheadForm, letterheadFooterText: e.target.value })}
+            placeholder="Not for medico-legal use without stamp and signature"
+            multiline
+            minRows={2}
+          />
+          <Box>
+            <Button variant="contained" onClick={handleSaveLetterhead} disabled={updateLetterhead.isPending}>
+              Save letterhead
             </Button>
           </Box>
         </Stack>

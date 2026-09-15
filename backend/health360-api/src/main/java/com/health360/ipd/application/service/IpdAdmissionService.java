@@ -8,6 +8,11 @@ import com.health360.clinical.presentation.dto.request.CreateEncounterRequest;
 import com.health360.clinical.presentation.dto.request.UpdateEncounterStatusRequest;
 import com.health360.clinical.presentation.dto.response.EncounterResponse;
 import com.health360.config.security.UserPrincipal;
+import com.health360.doctor.infrastructure.persistence.entity.DoctorProfileEntity;
+import com.health360.doctor.infrastructure.persistence.repository.DoctorProfileRepository;
+import com.health360.doctor.infrastructure.persistence.repository.HospitalAssociationRepository;
+import com.health360.iam.infrastructure.persistence.entity.UserEntity;
+import com.health360.iam.infrastructure.persistence.repository.UserRepository;
 import com.health360.ipd.domain.AdmissionStatus;
 import com.health360.ipd.domain.RoundType;
 import com.health360.ipd.infrastructure.persistence.entity.*;
@@ -15,6 +20,7 @@ import com.health360.ipd.infrastructure.persistence.repository.*;
 import com.health360.ipd.presentation.dto.request.CreateIpdAdmissionRequest;
 import com.health360.ipd.presentation.dto.request.CreateIpdRoundRequest;
 import com.health360.ipd.presentation.dto.request.DischargeIpdPatientRequest;
+import com.health360.ipd.presentation.dto.request.ReassignAttendingDoctorRequest;
 import com.health360.ipd.presentation.dto.request.TransferIpdBedRequest;
 import com.health360.ipd.presentation.dto.response.IpdAdmissionResponse;
 import com.health360.ipd.presentation.dto.response.IpdDischargeResponse;
@@ -32,6 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -52,6 +59,9 @@ public class IpdAdmissionService {
     private final IpdPostDischargeService postDischargeService;
     private final IpdMapper mapper;
     private final PatientProfileRepository patientProfileRepository;
+    private final DoctorProfileRepository doctorProfileRepository;
+    private final HospitalAssociationRepository hospitalAssociationRepository;
+    private final UserRepository userRepository;
     private final AuditLogService auditLogService;
 
     @Transactional
@@ -89,6 +99,13 @@ public class IpdAdmissionService {
                 request.setAdmissionType(linkedRequest.getAdmissionType());
             }
         }
+
+        if (request.getPrimaryDoctorId() == null) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Attending doctor (primaryDoctorId) is required for IPD admission");
+        }
+        requireHospitalDoctor(
+                principal.getTenantId(), request.getPrimaryDoctorId(), request.getHospitalId());
 
         UUID reservedBedId = linkedRequest != null ? linkedRequest.getReservedBedId() : null;
         IpdBedEntity bed = facilityService.requireAdmitableBed(
@@ -132,8 +149,7 @@ public class IpdAdmissionService {
         admission.setHospitalId(request.getHospitalId());
         admission.setBranchId(request.getBranchId());
         admission.setPatientId(request.getPatientId());
-        admission.setPrimaryDoctorId(request.getPrimaryDoctorId() != null
-                ? request.getPrimaryDoctorId() : encounter.getPrimaryDoctorId());
+        admission.setPrimaryDoctorId(request.getPrimaryDoctorId());
         admission.setAdmissionNumber(encounter.getEncounterNumber());
         admission.setAdmissionReason(trimToNull(request.getAdmissionReason()));
         admission.setAdmissionRequestId(request.getAdmissionRequestId());
@@ -177,9 +193,57 @@ public class IpdAdmissionService {
 
         auditLogService.record(principal.getTenantId(), principal.getUserId(), "IPD_PATIENT_ADMITTED",
                 "IpdAdmission", savedAdmission.getId(),
-                Map.of("patientId", request.getPatientId().toString(), "bedId", bed.getId().toString()));
+                Map.of(
+                        "patientId", request.getPatientId().toString(),
+                        "bedId", bed.getId().toString(),
+                        "primaryDoctorId", request.getPrimaryDoctorId().toString()));
 
         return toAdmissionResponse(principal.getTenantId(), savedAdmission, encounter, bed);
+    }
+
+    @Transactional
+    public IpdAdmissionResponse reassignAttendingDoctor(
+            UserPrincipal principal, UUID admissionId, ReassignAttendingDoctorRequest request) {
+        accessService.assertCanManageAdmissions(principal);
+        UUID tenantId = principal.getTenantId();
+        IpdAdmissionEntity admission = requireAdmission(tenantId, admissionId);
+        accessService.assertIpdModuleEnabled(principal, admission.getHospitalId());
+        accessService.assertAdmissionScope(principal, admission);
+
+        if (!AdmissionStatus.ADMITTED.name().equals(admission.getStatus())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Attending doctor can only be changed for active admissions");
+        }
+
+        requireHospitalDoctor(tenantId, request.getPrimaryDoctorId(), admission.getHospitalId());
+
+        UUID previous = admission.getPrimaryDoctorId();
+        if (request.getPrimaryDoctorId().equals(previous)) {
+            EncounterEntity encounter = requireEncounter(tenantId, admission.getEncounterId());
+            IpdBedEntity bed = resolveActiveBed(tenantId, admission.getId());
+            return toAdmissionResponse(tenantId, admission, encounter, bed);
+        }
+
+        admission.setPrimaryDoctorId(request.getPrimaryDoctorId());
+        admission.setUpdatedBy(principal.getUserId());
+        admissionRepository.save(admission);
+
+        EncounterEntity encounter = requireEncounter(tenantId, admission.getEncounterId());
+        encounter.setPrimaryDoctorId(request.getPrimaryDoctorId());
+        encounter.setUpdatedBy(principal.getUserId());
+        encounterRepository.save(encounter);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("fromDoctorId", previous != null ? previous.toString() : "");
+        details.put("toDoctorId", request.getPrimaryDoctorId().toString());
+        if (trimToNull(request.getReason()) != null) {
+            details.put("reason", request.getReason().trim());
+        }
+        auditLogService.record(tenantId, principal.getUserId(), "IPD_ATTENDING_REASSIGNED",
+                "IpdAdmission", admissionId, details);
+
+        IpdBedEntity bed = resolveActiveBed(tenantId, admission.getId());
+        return toAdmissionResponse(tenantId, admission, encounter, bed);
     }
 
     @Transactional(readOnly = true)
@@ -188,13 +252,24 @@ public class IpdAdmissionService {
             UUID hospitalId,
             UUID branchId,
             String status,
+            UUID primaryDoctorId,
             Pageable pageable) {
         accessService.assertCanReadAdmissions(principal);
         accessService.assertIpdModuleEnabled(principal, hospitalId);
 
         UUID tenantId = principal.getTenantId();
         Page<IpdAdmissionEntity> page;
-        if (status != null && !status.isBlank()) {
+        boolean hasStatus = status != null && !status.isBlank();
+        boolean hasDoctor = primaryDoctorId != null;
+        if (hasStatus && hasDoctor) {
+            page = admissionRepository
+                    .findByTenantIdAndHospitalIdAndBranchIdAndStatusAndPrimaryDoctorIdAndDeletedAtIsNullOrderByAdmittedAtDesc(
+                            tenantId, hospitalId, branchId, status.trim().toUpperCase(), primaryDoctorId, pageable);
+        } else if (hasDoctor) {
+            page = admissionRepository
+                    .findByTenantIdAndHospitalIdAndBranchIdAndPrimaryDoctorIdAndDeletedAtIsNullOrderByAdmittedAtDesc(
+                            tenantId, hospitalId, branchId, primaryDoctorId, pageable);
+        } else if (hasStatus) {
             page = admissionRepository.findByTenantIdAndHospitalIdAndBranchIdAndStatusAndDeletedAtIsNullOrderByAdmittedAtDesc(
                     tenantId, hospitalId, branchId, status.trim().toUpperCase(), pageable);
         } else {
@@ -343,6 +418,36 @@ public class IpdAdmissionService {
         return toAdmissionResponse(tenantId, admission, encounter, targetBed);
     }
 
+    private DoctorProfileEntity requireHospitalDoctor(UUID tenantId, UUID doctorId, UUID hospitalId) {
+        DoctorProfileEntity doctor = doctorProfileRepository.findByIdAndTenantIdAndDeletedAtIsNull(doctorId, tenantId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Doctor not found"));
+        boolean associated = hospitalAssociationRepository
+                .existsByDoctorIdAndHospitalIdAndStatusAndDeletedAtIsNull(doctorId, hospitalId, "ACTIVE");
+        if (!associated) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Doctor is not actively associated with this hospital");
+        }
+        return doctor;
+    }
+
+    private String resolveDoctorName(UUID tenantId, UUID doctorId) {
+        if (doctorId == null) {
+            return null;
+        }
+        return doctorProfileRepository.findByIdAndTenantIdAndDeletedAtIsNull(doctorId, tenantId)
+                .flatMap(d -> userRepository.findById(d.getUserId()))
+                .map(this::formatUserName)
+                .orElse(null);
+    }
+
+    private String formatUserName(UserEntity user) {
+        String first = user.getFirstName() != null ? user.getFirstName().trim() : "";
+        String last = user.getLastName() != null ? user.getLastName().trim() : "";
+        String name = (first + " " + last).trim();
+        return name.isEmpty() ? null : name;
+    }
+
     private IpdAdmissionEntity requireAdmission(UUID tenantId, UUID admissionId) {
         return admissionRepository.findByIdAndTenantIdAndDeletedAtIsNull(admissionId, tenantId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
@@ -375,7 +480,8 @@ public class IpdAdmissionService {
         PatientProfileEntity patient = patientProfileRepository
                 .findByIdAndTenantIdAndDeletedAtIsNull(admission.getPatientId(), tenantId)
                 .orElse(null);
-        return mapper.toAdmissionResponse(admission, encounter, bed, room, ward, patient);
+        String doctorName = resolveDoctorName(tenantId, admission.getPrimaryDoctorId());
+        return mapper.toAdmissionResponse(admission, encounter, bed, room, ward, patient, doctorName);
     }
 
     private RoundType parseRoundType(String value) {

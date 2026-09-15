@@ -19,6 +19,10 @@ export interface HospitalProfile {
   totalBedCount?: number;
   accreditation?: string;
   description?: string;
+  letterheadTagline?: string;
+  letterheadFooterText?: string;
+  hasLetterheadLogo?: boolean;
+  letterheadLogoUrl?: string;
   emergencyInfo: EmergencyInfo;
   branchCount: number;
   departmentCount: number;
@@ -107,6 +111,23 @@ export async function updateHospitalProfile(payload: {
 
 export async function updateEmergencyInfo(payload: EmergencyInfo) {
   const { data } = await apiClient.put<ApiEnvelope<HospitalProfile>>('/hospitals/me/profile/emergency-info', payload);
+  return data.data;
+}
+
+export async function updateLetterhead(payload: {
+  letterheadTagline?: string;
+  letterheadFooterText?: string;
+}) {
+  const { data } = await apiClient.put<ApiEnvelope<HospitalProfile>>('/hospitals/me/profile/letterhead', payload);
+  return data.data;
+}
+
+export async function uploadLetterheadLogo(file: File) {
+  const form = new FormData();
+  form.append('file', file);
+  const { data } = await apiClient.post<ApiEnvelope<HospitalProfile>>('/hospitals/me/profile/letterhead/logo', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return data.data;
 }
 

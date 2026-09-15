@@ -17,6 +17,8 @@ import {
   updateDepartment,
   updateEmergencyInfo,
   updateHospitalProfile,
+  updateLetterhead,
+  uploadLetterheadLogo,
   listFacilities,
   createFacility,
   updateFacility,
@@ -69,6 +71,22 @@ export function useUpdateEmergencyInfo() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: updateEmergencyInfo,
+    onSuccess: (p) => qc.setQueryData(hospitalKeys.profile, p),
+  });
+}
+
+export function useUpdateLetterhead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: updateLetterhead,
+    onSuccess: (p) => qc.setQueryData(hospitalKeys.profile, p),
+  });
+}
+
+export function useUploadLetterheadLogo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: uploadLetterheadLogo,
     onSuccess: (p) => qc.setQueryData(hospitalKeys.profile, p),
   });
 }

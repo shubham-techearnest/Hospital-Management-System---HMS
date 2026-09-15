@@ -50,6 +50,7 @@ public class HospitalService {
     private final AuditLogService auditLogService;
     private final PlanLimitService planLimitService;
     private final HospitalSubscriptionService hospitalSubscriptionService;
+    private final com.health360.doctor.application.service.DocumentStorageService documentStorageService;
 
     @Transactional(readOnly = true)
     public HospitalProfileResponse getProfile(UUID adminUserId, UUID tenantId) {
@@ -133,6 +134,72 @@ public class HospitalService {
         entity.touch();
         entity = hospitalRepository.save(entity);
         return toProfileResponse(entity);
+    }
+
+    @Transactional
+    public HospitalProfileResponse updateLetterhead(UUID adminUserId, UUID tenantId, UpdateLetterheadRequest request) {
+        HospitalEntity entity = requireHospital(adminUserId, tenantId);
+        if (request.getLetterheadTagline() != null) {
+            String tagline = request.getLetterheadTagline().trim();
+            entity.setLetterheadTagline(tagline.isEmpty() ? null : tagline);
+        }
+        if (request.getLetterheadFooterText() != null) {
+            String footer = request.getLetterheadFooterText().trim();
+            entity.setLetterheadFooterText(footer.isEmpty() ? null : footer);
+        }
+        entity.setUpdatedBy(adminUserId);
+        entity.touch();
+        entity = hospitalRepository.save(entity);
+        return toProfileResponse(entity);
+    }
+
+    @Transactional
+    public HospitalProfileResponse uploadLetterheadLogo(
+            UUID adminUserId, UUID tenantId, org.springframework.web.multipart.MultipartFile file) {
+        HospitalEntity entity = requireHospital(adminUserId, tenantId);
+        if (entity.getLetterheadLogoStorageKey() != null) {
+            documentStorageService.delete(entity.getLetterheadLogoStorageKey());
+        }
+        var stored = documentStorageService.storeHospitalLetterheadLogo(tenantId, entity.getId(), file);
+        entity.setLetterheadLogoStorageKey(stored.storageKey());
+        entity.setLetterheadLogoMimeType(stored.contentType());
+        entity.setUpdatedBy(adminUserId);
+        entity.touch();
+        entity = hospitalRepository.save(entity);
+        auditLogService.record(tenantId, adminUserId, "HOSPITAL_LETTERHEAD_LOGO_UPLOADED",
+                "Hospital", entity.getId(), Map.of());
+        return toProfileResponse(entity);
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.core.io.Resource loadLetterheadLogo(UUID hospitalId, UUID tenantId) {
+        HospitalEntity hospital = hospitalRepository.findByIdAndTenantIdAndDeletedAtIsNull(hospitalId, tenantId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Hospital not found"));
+        if (hospital.getLetterheadLogoStorageKey() == null || hospital.getLetterheadLogoStorageKey().isBlank()) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Letterhead logo not found");
+        }
+        try {
+            java.nio.file.Path path = documentStorageService.resolvePath(hospital.getLetterheadLogoStorageKey());
+            org.springframework.core.io.Resource resource = new org.springframework.core.io.UrlResource(path.toUri());
+            if (!resource.exists()) {
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND, "Letterhead logo not found");
+            }
+            return resource;
+        } catch (BusinessException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unable to load letterhead logo");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public String letterheadLogoContentType(UUID hospitalId, UUID tenantId) {
+        HospitalEntity hospital = hospitalRepository.findByIdAndTenantIdAndDeletedAtIsNull(hospitalId, tenantId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
+                        "Hospital not found"));
+        return hospital.getLetterheadLogoMimeType() != null ? hospital.getLetterheadLogoMimeType() : "image/png";
     }
 
     @Transactional(readOnly = true)

@@ -6,6 +6,8 @@ import com.health360.ipd.presentation.dto.response.*;
 import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class IpdMapper {
 
@@ -54,6 +56,17 @@ public class IpdMapper {
             IpdRoomEntity room,
             IpdWardEntity ward,
             PatientProfileEntity patient) {
+        return toAdmissionResponse(admission, encounter, bed, room, ward, patient, null);
+    }
+
+    public IpdAdmissionResponse toAdmissionResponse(
+            IpdAdmissionEntity admission,
+            EncounterEntity encounter,
+            IpdBedEntity bed,
+            IpdRoomEntity room,
+            IpdWardEntity ward,
+            PatientProfileEntity patient,
+            String primaryDoctorName) {
         String patientName = null;
         String uhid = null;
         if (patient != null) {
@@ -66,6 +79,7 @@ public class IpdMapper {
             uhid = patient.getUhid();
         }
 
+        UUID attendingId = admission.getPrimaryDoctorId();
         return IpdAdmissionResponse.builder()
                 .admissionId(admission.getId())
                 .encounterId(admission.getEncounterId())
@@ -75,7 +89,9 @@ public class IpdMapper {
                 .uhid(uhid)
                 .hospitalId(admission.getHospitalId())
                 .branchId(admission.getBranchId())
-                .primaryDoctorId(admission.getPrimaryDoctorId())
+                .primaryDoctorId(attendingId)
+                .attendingDoctorId(attendingId)
+                .primaryDoctorName(primaryDoctorName)
                 .bedId(bed != null ? bed.getId() : null)
                 .wardCode(ward != null ? ward.getCode() : null)
                 .roomCode(room != null ? room.getCode() : null)

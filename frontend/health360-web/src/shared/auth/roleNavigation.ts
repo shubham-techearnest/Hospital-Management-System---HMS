@@ -9,7 +9,8 @@ export type AppRole =
   | 'LAB_TECHNICIAN'
   | 'RADIOLOGY_TECHNICIAN'
   | 'OT_COORDINATOR'
-  | 'PHARMACIST';
+  | 'PHARMACIST'
+  | 'ASSET_MANAGER';
 
 const ROLE_PRIORITY: AppRole[] = [
   'PLATFORM_ADMIN',
@@ -22,6 +23,7 @@ const ROLE_PRIORITY: AppRole[] = [
   'RADIOLOGY_TECHNICIAN',
   'OT_COORDINATOR',
   'PHARMACIST',
+  'ASSET_MANAGER',
   'PATIENT',
 ];
 
@@ -55,6 +57,8 @@ export function getRoleDashboardPath(role: AppRole): string {
       return '/ot/worklist';
     case 'PHARMACIST':
       return '/pharmacy/worklist';
+    case 'ASSET_MANAGER':
+      return '/assets';
     case 'RECEPTIONIST':
       return '/reception/dashboard';
     case 'NURSE':
@@ -89,6 +93,8 @@ export function getRoleSettingsBasePath(role: AppRole): string {
       return '/ot/settings';
     case 'PHARMACIST':
       return '/pharmacy/settings';
+    case 'ASSET_MANAGER':
+      return '/assets/settings';
     case 'RECEPTIONIST':
       return '/reception/settings';
     case 'NURSE':

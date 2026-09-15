@@ -20,7 +20,7 @@
 | G-012 | RBAC | Distinct Cashier / Ward Manager / Insurance-TPA roles not first-class | P3 | DEFERRED | Product decision | IAM seeds | N/A |
 | G-013 | Patient | Hard duplicate merge tooling limited | P2 | IDENTIFIED | Registry | Soft detection only | PENDING MANUAL |
 | G-014 | Ops | Large Phase G/H/I changes may be uncommitted — env must apply Flyway V79–V87 | P0 env | IDENTIFIED | Deploy/restart | `db/migration` | CHECK BEFORE UAT |
-| G-015 | Billing | Advanced tax/tariff configuration shallow | P2 | IDENTIFIED | Billing config | Billing module | PENDING MANUAL |
+| G-016 | IPD | Attending/primary doctor unclear at admit; doctor IPD list not filtered | P1 | VALIDATED | — | Attending required on admit; PATCH reassign; doctor My IPD filter | CODE COMPLETE |
 
 ### P0 note
 

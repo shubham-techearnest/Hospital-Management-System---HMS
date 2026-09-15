@@ -4,9 +4,11 @@ import {
   Alert,
   Button,
   Chip,
+  FormControlLabel,
   MenuItem,
   Paper,
   Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -18,13 +20,15 @@ import {
 } from '@mui/material';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
-import { useHospitalAssociations } from '@/features/doctor/hooks/useDoctorQueries';
+import { useDoctorProfile, useHospitalAssociations } from '@/features/doctor/hooks/useDoctorQueries';
 import { useIpdAdmissions, useIpdWards } from '@/features/ipd/hooks/useIpdQueries';
 import { IpdOpsMetricsPanel } from '@/features/ipd/components/IpdOpsMetricsPanel';
 import { useIpdDashboard } from '@/features/dashboard/hooks/useDashboardQueries';
 import { patientDisplayLabel } from '@/shared/status/visitStatus';
 
 export function DoctorIpdPage() {
+  const { data: profile } = useDoctorProfile();
+  const myDoctorId = profile?.id;
   const { data: associations = [], isLoading: assocLoading } = useHospitalAssociations();
   const activeAssocs = useMemo(
     () => associations.filter((a) => a.status === 'ACTIVE' && a.hospitalId && a.branchId),
@@ -34,6 +38,8 @@ export function DoctorIpdPage() {
   const [scopeKey, setScopeKey] = useState('');
   const [wardFilter, setWardFilter] = useState('ALL');
   const [page, setPage] = useState(0);
+  /** Default: only patients where this doctor is attending. */
+  const [showAllHospital, setShowAllHospital] = useState(false);
 
   useEffect(() => {
     if (!scopeKey && activeAssocs[0]) {
@@ -45,6 +51,7 @@ export function DoctorIpdPage() {
     ? scopeKey.split(':')
     : ['', ''];
   const scopeReady = Boolean(hospitalId && branchId);
+  const primaryDoctorFilter = !showAllHospital && myDoctorId ? myDoctorId : undefined;
 
   const { data: ipdDash, isLoading: ipdDashLoading } = useIpdDashboard(
     { hospitalId, branchId },
@@ -60,6 +67,7 @@ export function DoctorIpdPage() {
     page,
     'ADMITTED',
     50,
+    primaryDoctorFilter,
   );
 
   const admissions = useMemo(() => {
@@ -76,7 +84,7 @@ export function DoctorIpdPage() {
     <AnimatedPage>
       <DashboardPageHeader
         title="IPD rounds"
-        subtitle="Active inpatients — open a bed to record doctor rounds and review nursing notes"
+        subtitle="My inpatients (attending) — open a chart to record doctor rounds and review nursing notes"
       />
 
       {scopeReady ? (
@@ -95,7 +103,7 @@ export function DoctorIpdPage() {
 
       {activeAssocs.length > 0 ? (
         <Stack spacing={2}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }}>
             <TextField
               select
               label="Hospital / branch"
@@ -133,7 +141,27 @@ export function DoctorIpdPage() {
                 </MenuItem>
               ))}
             </TextField>
+            <FormControlLabel
+              control={(
+                <Switch
+                  checked={showAllHospital}
+                  onChange={(_, checked) => {
+                    setShowAllHospital(checked);
+                    setPage(0);
+                  }}
+                  disabled={!myDoctorId}
+                />
+              )}
+              label="Show all hospital inpatients"
+            />
           </Stack>
+
+          {!showAllHospital ? (
+            <Alert severity="info">
+              Showing patients where you are the <strong>attending doctor</strong>. Toggle “Show all hospital
+              inpatients” to browse the full ward list.
+            </Alert>
+          ) : null}
 
           {isError ? (
             <Alert severity="warning">
@@ -148,6 +176,7 @@ export function DoctorIpdPage() {
                   <TableCell>Bed</TableCell>
                   <TableCell>Patient</TableCell>
                   <TableCell>UHID</TableCell>
+                  <TableCell>Attending</TableCell>
                   <TableCell>Admission</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="right">Action</TableCell>
@@ -155,7 +184,7 @@ export function DoctorIpdPage() {
               </TableHead>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={6}>Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7}>Loading…</TableCell></TableRow>
                 ) : null}
                 {!isLoading && admissions.map((row) => (
                   <TableRow key={row.admissionId} hover>
@@ -166,6 +195,7 @@ export function DoctorIpdPage() {
                     </TableCell>
                     <TableCell>{patientDisplayLabel(row.patientName, undefined)}</TableCell>
                     <TableCell>{row.uhid ?? '—'}</TableCell>
+                    <TableCell>{row.primaryDoctorName ?? (row.primaryDoctorId === myDoctorId ? 'You' : '—')}</TableCell>
                     <TableCell>
                       <Typography variant="body2">{row.admissionNumber}</Typography>
                       <Typography variant="caption" color="text.secondary">{row.encounterNumber}</Typography>
@@ -187,7 +217,11 @@ export function DoctorIpdPage() {
                 ))}
                 {!isLoading && admissions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6}>No active IPD admissions for this scope.</TableCell>
+                    <TableCell colSpan={7}>
+                      {showAllHospital
+                        ? 'No active IPD admissions for this scope.'
+                        : 'No inpatients assigned to you as attending. Ask the admission desk to assign you, or show all hospital inpatients.'}
+                    </TableCell>
                   </TableRow>
                 ) : null}
               </TableBody>

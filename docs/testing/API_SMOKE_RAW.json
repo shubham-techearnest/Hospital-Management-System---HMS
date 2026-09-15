@@ -1,0 +1,140 @@
+﻿[
+    {
+        "id":  "ENV-HEALTH",
+        "ok":  true,
+        "status":  200,
+        "note":  null
+    },
+    {
+        "id":  "AUTH-PA-LOGIN",
+        "ok":  true,
+        "status":  200,
+        "note":  "token ok"
+    },
+    {
+        "id":  "AUTH-HA-LOGIN",
+        "ok":  true,
+        "status":  200,
+        "note":  "token ok"
+    },
+    {
+        "id":  "AUTH-WRONG-PW",
+        "ok":  true,
+        "status":  401,
+        "note":  "expect 401/400"
+    },
+    {
+        "id":  "AUTH-DR-LOGIN",
+        "ok":  true,
+        "status":  200,
+        "note":  "token ok"
+    },
+    {
+        "id":  "RBAC-DR-ADMIN-HOSP",
+        "ok":  true,
+        "status":  403,
+        "note":  "doctor deny admin hospitals"
+    },
+    {
+        "id":  "RBAC-HA-ADMIN-HOSP",
+        "ok":  true,
+        "status":  403,
+        "note":  "hospital admin vs platform list"
+    },
+    {
+        "id":  "ADM-LIST-HOSP",
+        "ok":  true,
+        "status":  200,
+        "note":  "count=1"
+    },
+    {
+        "id":  "IPD-LIST",
+        "ok":  true,
+        "status":  200,
+        "note":  "ok"
+    },
+    {
+        "id":  "IPD-LIST-FILTER",
+        "ok":  true,
+        "status":  200,
+        "note":  "primaryDoctorId filter"
+    },
+    {
+        "id":  "IPD-WARD",
+        "ok":  true,
+        "status":  201,
+        "note":  "e9a30ef8-7447-4700-a9eb-536f3e7f5b89"
+    },
+    {
+        "id":  "IPD-ROOM",
+        "ok":  true,
+        "status":  201,
+        "note":  "137b2861-53a2-47b0-9d57-21c35226a318"
+    },
+    {
+        "id":  "IPD-BED",
+        "ok":  true,
+        "status":  201,
+        "note":  "53c38f20-0acb-4633-827e-5066be9e38ba AVAILABLE"
+    },
+    {
+        "id":  "IPD-ADMIT-NO-ATTENDING",
+        "ok":  true,
+        "status":  400,
+        "note":  "unexpected success"
+    },
+    {
+        "id":  "IPD-ADMIT-WITH-ATTENDING",
+        "ok":  true,
+        "status":  201,
+        "note":  "adm=bd556b97-46d3-4f47-b549-7ffeee9cebec att=00000000-0000-0000-0000-000000000060 name=Parmeshwar Suryawansh"
+    },
+    {
+        "id":  "IPD-FILTER-FINDS",
+        "ok":  true,
+        "status":  200,
+        "note":  "found=True"
+    },
+    {
+        "id":  "IPD-ROUND",
+        "ok":  false,
+        "status":  403,
+        "note":  null
+    },
+    {
+        "id":  "IPD-REASSIGN",
+        "ok":  true,
+        "status":  200,
+        "note":  "new=00000000-0000-0000-0000-000000000061"
+    },
+    {
+        "id":  "IPD-REASSIGN-DR-DENY",
+        "ok":  true,
+        "status":  403,
+        "note":  "doctor reassign deny"
+    },
+    {
+        "id":  "IPD-DISCHARGE",
+        "ok":  true,
+        "status":  200,
+        "note":  "DISCHARGED"
+    },
+    {
+        "id":  "PAT-SEARCH",
+        "ok":  true,
+        "status":  400,
+        "note":  "search endpoint probe"
+    },
+    {
+        "id":  "LAB-LIST",
+        "ok":  true,
+        "status":  200,
+        "note":  "lab orders probe"
+    },
+    {
+        "id":  "PHARM-LIST",
+        "ok":  true,
+        "status":  200,
+        "note":  "pharmacy probe"
+    }
+]

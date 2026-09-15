@@ -8,7 +8,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { parseApiError } from '@/shared/api/errorUtils';
-import { useBranches, useHospitalProfile } from '@/features/hospital/hooks/useHospitalQueries';
+import { useBranches, useHospitalDoctors, useHospitalProfile } from '@/features/hospital/hooks/useHospitalQueries';
 import {
   useAdmissionRequests,
   useIpdAdmissions,
@@ -63,6 +63,11 @@ export function HospitalIpdPage() {
   const navigate = useNavigate();
   const { data: profile } = useHospitalProfile();
   const { data: branches = [] } = useBranches();
+  const { data: hospitalDoctors = [] } = useHospitalDoctors();
+  const activeDoctors = useMemo(
+    () => hospitalDoctors.filter((d) => d.status === 'ACTIVE'),
+    [hospitalDoctors],
+  );
   const primaryBranch = useMemo(() => branches.find((b) => b.primary) ?? branches[0], [branches]);
   const hospitalId = profile?.id;
   const branchId = primaryBranch?.id;
@@ -118,7 +123,7 @@ export function HospitalIpdPage() {
   const [selectedPatient, setSelectedPatient] = useState<HospitalPatientSummary | null>(null);
   const [patientSearchError, setPatientSearchError] = useState<string | null>(null);
   const [patientSearching, setPatientSearching] = useState(false);
-  const [admitForm, setAdmitForm] = useState({ bedId: '', reason: '' });
+  const [admitForm, setAdmitForm] = useState({ bedId: '', reason: '', primaryDoctorId: '' });
 
   const [dischargeForm, setDischargeForm] = useState({ admissionId: '', summary: '', followUp: '' });
   const [dischargeConfirmOpen, setDischargeConfirmOpen] = useState(false);
@@ -161,18 +166,23 @@ export function HospitalIpdPage() {
 
   const handleAdmit = async () => {
     if (!hospitalId || !branchId || !selectedPatient?.patientId || !admitForm.bedId) return;
+    if (!admitForm.primaryDoctorId) {
+      setSnackbar({ open: true, message: 'Select an attending doctor before admitting.', severity: 'error' });
+      return;
+    }
     try {
       await mutations.admit.mutateAsync({
         patientId: selectedPatient.patientId,
         hospitalId,
         branchId,
         bedId: admitForm.bedId,
+        primaryDoctorId: admitForm.primaryDoctorId,
         admissionReason: admitForm.reason || undefined,
         admissionRequestId: admitFromRequest?.admissionRequestId,
         admissionSource: admitFromRequest?.admissionSource,
         admissionType: admitFromRequest?.admissionType,
       });
-      setAdmitForm({ bedId: '', reason: '' });
+      setAdmitForm({ bedId: '', reason: '', primaryDoctorId: '' });
       setSelectedPatient(null);
       setPatientMatches([]);
       setPatientQuery('');
@@ -204,6 +214,7 @@ export function HospitalIpdPage() {
     setAdmitForm({
       bedId: req.reservedBedId ?? '',
       reason: req.reasonForAdmission ?? '',
+      primaryDoctorId: req.attendingDoctorId ?? '',
     });
     setTab(1);
   };
@@ -483,7 +494,7 @@ export function HospitalIpdPage() {
                   onClose={() => {
                     setAdmitFromRequest(null);
                     setSelectedPatient(null);
-                    setAdmitForm({ bedId: '', reason: '' });
+                    setAdmitForm({ bedId: '', reason: '', primaryDoctorId: '' });
                   }}
                 >
                   Allocating bed for request {admitFromRequest.requestNumber}
@@ -528,6 +539,27 @@ export function HospitalIpdPage() {
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap">
                 <TextField
                   select
+                  label="Attending doctor"
+                  size="small"
+                  required
+                  sx={{ minWidth: 220 }}
+                  value={admitForm.primaryDoctorId}
+                  onChange={(e) => setAdmitForm({ ...admitForm, primaryDoctorId: e.target.value })}
+                  helperText={
+                    admitFromRequest?.attendingDoctorId
+                      ? 'Pre-filled from admission request — change if needed'
+                      : 'Doctor responsible for IPD rounds and care'
+                  }
+                >
+                  {activeDoctors.map((d) => (
+                    <MenuItem key={d.doctorId} value={d.doctorId}>
+                      {d.doctorName}
+                      {d.specialization ? ` · ${d.specialization}` : ''}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
                   label="Bed"
                   size="small"
                   sx={{ minWidth: 180 }}
@@ -554,7 +586,14 @@ export function HospitalIpdPage() {
                 />
                 <Button
                   variant="contained"
-                  disabled={!hospitalId || !branchId || !selectedPatient || !admitForm.bedId || mutations.admit.isPending}
+                  disabled={
+                    !hospitalId
+                    || !branchId
+                    || !selectedPatient
+                    || !admitForm.bedId
+                    || !admitForm.primaryDoctorId
+                    || mutations.admit.isPending
+                  }
                   onClick={() => void handleAdmit()}
                 >
                   {admitFromRequest ? 'Admit from request' : 'Admit'}
@@ -569,6 +608,7 @@ export function HospitalIpdPage() {
                 <TableRow>
                   <TableCell>Admission #</TableCell>
                   <TableCell>Patient</TableCell>
+                  <TableCell>Attending</TableCell>
                   <TableCell>Bed</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Encounter</TableCell>
@@ -580,6 +620,7 @@ export function HospitalIpdPage() {
                   <TableRow key={a.admissionId}>
                     <TableCell>{a.admissionNumber}</TableCell>
                     <TableCell>{patientLabel(a)}</TableCell>
+                    <TableCell>{a.primaryDoctorName ?? (a.primaryDoctorId ? `${a.primaryDoctorId.slice(0, 8)}…` : '—')}</TableCell>
                     <TableCell>{bedLabel(a)}</TableCell>
                     <TableCell><Chip size="small" label={a.status} /></TableCell>
                     <TableCell>{a.encounterStatus}</TableCell>

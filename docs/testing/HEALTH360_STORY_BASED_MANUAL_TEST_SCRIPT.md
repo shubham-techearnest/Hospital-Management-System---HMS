@@ -44,7 +44,7 @@ Any **FAIL** → create entry in [BUG_TRACKER.md](./BUG_TRACKER.md) and put BUG-
 | S0 | This file (below) | App up → hospital created → configured → staff ready |
 | S1 | [STORY_01_OPD_RAHUL_SHARMA.md](./STORY_01_OPD_RAHUL_SHARMA.md) | Patient self-reg → appointment → OPD → Rx → portal |
 | S2 | [STORY_02_LAB_PHARMACY_PRIYA_PATIL.md](./STORY_02_LAB_PHARMACY_PRIYA_PATIL.md) | Desk reg → OPD → lab → Rx → pharmacy → bill |
-| S3 | [STORY_03_IPD_AMIT_KULKARNI.md](./STORY_03_IPD_AMIT_KULKARNI.md) | Admit → bed → nursing → transfer → discharge |
+| S3 | [STORY_03_IPD_AMIT_KULKARNI.md](./STORY_03_IPD_AMIT_KULKARNI.md) | Admit + **attending** → My IPD rounds → nursing → transfer → discharge |
 | S4 | [STORY_04_RBAC_AND_SECURITY.md](./STORY_04_RBAC_AND_SECURITY.md) | Wrong roles blocked · hospital isolation |
 
 Also see: [TEST_DATA.md](./TEST_DATA.md) · [TEST_USERS.md](./TEST_USERS.md) · master [HEALTH360_END_TO_END_SYSTEM_VALIDATION.md](./HEALTH360_END_TO_END_SYSTEM_VALIDATION.md)
@@ -199,8 +199,8 @@ Also see: [TEST_DATA.md](./TEST_DATA.md) · [TEST_USERS.md](./TEST_USERS.md) · 
 | Role | `HOSPITAL_ADMIN` + each `DOCTOR` |
 | Screen / URL | Hospital doctors + Doctor schedule |
 | Action | 1. Ensure DR1 General Medicine, DR2 Ortho, DR3 Cardio linked to hospital.<br>2. As DR1 (or admin), create **future** available slots for next 3–5 days (morning + afternoon). |
-| Look for / check | - Doctor visible for hospital in patient search later<br>- Slots show as available<br>- Consultation fee visible if field exists |
-| Expected outcome | Patient can later book DR1 |
+| Look for / check | - Doctor visible for hospital in patient search later<br>- Slots show as available<br>- Consultation fee visible if field exists<br>- Same doctors available in IPD **Attending doctor** dropdown at admit |
+| Expected outcome | Patient can later book DR1; IPD admit can assign DR1–DR3 as attending |
 | Actual outcome | |
 | Result | |
 | Bug ID | |

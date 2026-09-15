@@ -73,6 +73,37 @@ public class HospitalController {
                 hospitalService.updateEmergencyInfo(principal.getUserId(), principal.getTenantId(), request)));
     }
 
+    @PutMapping("/me/profile/letterhead")
+    @PreAuthorize("hasAuthority('hospital:profile:write')")
+    public ResponseEntity<ApiResponse<HospitalProfileResponse>> updateLetterhead(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody UpdateLetterheadRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                hospitalService.updateLetterhead(principal.getUserId(), principal.getTenantId(), request)));
+    }
+
+    @PostMapping(value = "/me/profile/letterhead/logo", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('hospital:profile:write')")
+    public ResponseEntity<ApiResponse<HospitalProfileResponse>> uploadLetterheadLogo(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                hospitalService.uploadLetterheadLogo(principal.getUserId(), principal.getTenantId(), file)));
+    }
+
+    @GetMapping("/{hospitalId}/letterhead/logo")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<org.springframework.core.io.Resource> getLetterheadLogo(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID hospitalId) {
+        org.springframework.core.io.Resource resource =
+                hospitalService.loadLetterheadLogo(hospitalId, principal.getTenantId());
+        String contentType = hospitalService.letterheadLogoContentType(hospitalId, principal.getTenantId());
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
+                .body(resource);
+    }
+
     @GetMapping("/me/branches")
     @PreAuthorize("hasAuthority('hospital:profile:read')")
     public ResponseEntity<ApiResponse<List<BranchResponse>>> listBranches(

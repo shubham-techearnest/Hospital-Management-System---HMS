@@ -24,9 +24,9 @@ Default QA password pattern (change if policy requires): `H360Qa!2026`
 | U-HA2 | Suresh Naik | ha2.h360test@example.com | 9100000002 | `HOSPITAL_ADMIN` | Admin | _fill_ | Same (backup) | Platform admin |
 | U-RX1 | Meera Joshi | rx1.h360test@example.com | 9100000003 | `RECEPTIONIST` | Front desk | _fill_ | OPD register, queue, checkout, admit requests | Hospital config, pharmacy stock write (unless granted), doctor consult write |
 | U-RX2 | Anil Pawar | rx2.h360test@example.com | 9100000004 | `RECEPTIONIST` | Front desk | _fill_ | Same | Same |
-| U-DR1 | Dr. Ananya Gupta | dr1.gm.h360test@example.com | 9100000005 | `DOCTOR` | General Medicine | _fill_ | OPD/IPD clinical for assigned hospital | Hospital admin settings |
-| U-DR2 | Dr. Rohan Mehta | dr2.ortho.h360test@example.com | 9100000006 | `DOCTOR` | Orthopedics | _fill_ | Ortho clinical | Admin / other hospital |
-| U-DR3 | Dr. Neha Kulkarni | dr3.card.h360test@example.com | 9100000007 | `DOCTOR` | Cardiology | _fill_ | Cardio clinical | Admin |
+| U-DR1 | Dr. Ananya Gupta | dr1.gm.h360test@example.com | 9100000005 | `DOCTOR` | General Medicine | _fill_ | OPD + **IPD attending** for P3 (My IPD / rounds) | Hospital admin settings |
+| U-DR2 | Dr. Rohan Mehta | dr2.ortho.h360test@example.com | 9100000006 | `DOCTOR` | Orthopedics | _fill_ | Ortho clinical; should **not** see P3 under My IPD unless reassigned | Admin / other hospital |
+| U-DR3 | Dr. Neha Kulkarni | dr3.card.h360test@example.com | 9100000007 | `DOCTOR` | Cardiology | _fill_ | Optional reassignment target for P3 attending | Admin |
 | U-NU1 | Pooja Sawant | nu1.h360test@example.com | 9100000008 | `NURSE` | Nursing | _fill_ | Ward board, vitals, MAR | Hospital config, prescribe as doctor |
 | U-NU2 | Vikram More | nu2.h360test@example.com | 9100000009 | `NURSE` | Nursing | _fill_ | Same | Same |
 | U-ICU | Fatima Shaikh | icu.h360test@example.com | 9100000010 | `ICU_NURSE` | ICU | _fill_ | ICU nursing | Hospital config |

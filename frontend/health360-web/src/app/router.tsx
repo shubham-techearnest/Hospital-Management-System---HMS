@@ -21,6 +21,7 @@ import { LabPortalLayout } from '@/features/lab/layout/LabPortalLayout';
 import { RadiologyPortalLayout } from '@/features/radiology/layout/RadiologyPortalLayout';
 import { OtPortalLayout } from '@/features/ot/layout/OtPortalLayout';
 import { PharmacyPortalLayout } from '@/features/pharmacy/layout/PharmacyPortalLayout';
+import { AssetPortalLayout } from '@/features/asset/layout/AssetPortalLayout';
 import { ReceptionPortalLayout } from '@/features/reception/layout/ReceptionPortalLayout';
 import { NursingPortalLayout } from '@/features/nursing/layout/NursingPortalLayout';
 import { IcuNursePortalLayout } from '@/features/icu-nurse/layout/IcuNursePortalLayout';
@@ -129,6 +130,9 @@ const HospitalIpdServicesPage = lazy(() =>
 const HospitalIcuPage = lazy(() =>
   import('@/features/hospital/pages/HospitalIcuPage').then((m) => ({ default: m.HospitalIcuPage })),
 );
+const HospitalAssetPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalAssetPage').then((m) => ({ default: m.HospitalAssetPage })),
+);
 const HospitalDashboardPage = lazy(() =>
   import('@/features/hospital/pages/HospitalDashboardPage').then((m) => ({ default: m.HospitalDashboardPage })),
 );
@@ -185,6 +189,14 @@ const PharmacyRequestsPage = lazy(() =>
 );
 const PharmacyCatalogPage = lazy(() =>
   import('@/features/pharmacy/pages/PharmacyCatalogPage').then((m) => ({ default: m.PharmacyCatalogPage })),
+);
+const AssetPortalPage = lazy(() =>
+  import('@/features/asset/pages/AssetPortalPage').then((m) => ({ default: m.AssetPortalPage })),
+);
+const ClinicalDocumentPrintPage = lazy(() =>
+  import('@/features/documents/pages/ClinicalDocumentPrintPage').then((m) => ({
+    default: m.ClinicalDocumentPrintPage,
+  })),
 );
 const HospitalStaffPage = lazy(() =>
   import('@/features/hospital/pages/HospitalStaffPage').then((m) => ({ default: m.HospitalStaffPage })),
@@ -506,6 +518,7 @@ export function AppRouter() {
           <Route path="ipd/admissions/:admissionId" element={<LazyPage><HospitalIpdAdmissionPage /></LazyPage>} />
           <Route path="ipd-services" element={<LazyPage><HospitalIpdServicesPage /></LazyPage>} />
           <Route path="icu" element={<LazyPage><HospitalIcuPage /></LazyPage>} />
+          <Route path="assets" element={<LazyPage><HospitalAssetPage /></LazyPage>} />
           <Route path="lab" element={<LazyPage><LabDashboardPage /></LazyPage>} />
           <Route path="lab/dashboard" element={<LazyPage><LabDashboardPage /></LazyPage>} />
           <Route path="radiology" element={<LazyPage><RadiologyDashboardPage /></LazyPage>} />
@@ -569,6 +582,42 @@ export function AppRouter() {
           <Route path="catalog" element={<LazyPage><PharmacyCatalogPage /></LazyPage>} />
           <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
         </Route>
+        <Route path="/assets" element={<ProtectedRoute><RoleRoute role="ASSET_MANAGER"><AssetPortalLayout /></RoleRoute></ProtectedRoute>}>
+          <Route index element={<LazyPage><AssetPortalPage /></LazyPage>} />
+          <Route path="settings/account" element={<LazyPage><AccountSettingsPage /></LazyPage>} />
+        </Route>
+        <Route
+          path="/documents/prescription/:encounterId/:prescriptionId"
+          element={(
+            <ProtectedRoute>
+              <LazyPage><ClinicalDocumentPrintPage kind="prescription" /></LazyPage>
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/documents/consultation/:encounterId/:noteId"
+          element={(
+            <ProtectedRoute>
+              <LazyPage><ClinicalDocumentPrintPage kind="consultation" /></LazyPage>
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/documents/lab/:labOrderId"
+          element={(
+            <ProtectedRoute>
+              <LazyPage><ClinicalDocumentPrintPage kind="lab" /></LazyPage>
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/documents/pharmacy/:requestId"
+          element={(
+            <ProtectedRoute>
+              <LazyPage><ClinicalDocumentPrintPage kind="pharmacy" /></LazyPage>
+            </ProtectedRoute>
+          )}
+        />
         <Route
           path="/reception/display"
           element={

@@ -40,7 +40,10 @@ export interface IpdAdmission {
   uhid?: string;
   hospitalId: string;
   branchId: string;
+  /** Attending doctor responsible for IPD care/rounds */
   primaryDoctorId?: string;
+  attendingDoctorId?: string;
+  primaryDoctorName?: string;
   bedId?: string;
   wardCode?: string;
   roomCode?: string;
@@ -121,9 +124,10 @@ export async function listIpdAdmissions(
   page = 0,
   size = 20,
   status?: string,
+  primaryDoctorId?: string,
 ): Promise<SpringPage<IpdAdmission>> {
   const { data } = await apiClient.get<ApiEnvelope<SpringPage<IpdAdmission>>>('/ipd/admissions', {
-    params: { hospitalId, branchId, page, size, status },
+    params: { hospitalId, branchId, page, size, status, primaryDoctorId },
   });
   return unwrap(data) ?? { content: [], totalElements: 0, totalPages: 0, number: 0, size };
 }
@@ -133,13 +137,24 @@ export async function admitPatient(payload: {
   hospitalId: string;
   branchId: string;
   bedId: string;
-  primaryDoctorId?: string;
+  primaryDoctorId: string;
   admissionReason?: string;
   admissionRequestId?: string;
   admissionSource?: string;
   admissionType?: string;
 }): Promise<IpdAdmission> {
   const { data } = await apiClient.post<ApiEnvelope<IpdAdmission>>('/ipd/admissions', payload);
+  return unwrap(data);
+}
+
+export async function reassignAttendingDoctor(
+  admissionId: string,
+  payload: { primaryDoctorId: string; reason?: string },
+): Promise<IpdAdmission> {
+  const { data } = await apiClient.patch<ApiEnvelope<IpdAdmission>>(
+    `/ipd/admissions/${admissionId}/attending-doctor`,
+    payload,
+  );
   return unwrap(data);
 }
 

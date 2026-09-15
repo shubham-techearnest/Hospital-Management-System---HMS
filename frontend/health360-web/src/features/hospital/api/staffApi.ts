@@ -10,6 +10,7 @@ export const STAFF_ROLES = [
   'RADIOLOGY_TECHNICIAN',
   'PHARMACIST',
   'OT_COORDINATOR',
+  'ASSET_MANAGER',
 ] as const;
 
 export type StaffRole = (typeof STAFF_ROLES)[number];

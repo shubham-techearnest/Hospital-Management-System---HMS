@@ -78,6 +78,7 @@ Status values: **IMPLEMENTED** · **PARTIALLY IMPLEMENTED** · **UI ONLY** · **
 | Pharmacy → Billing | Auto invoice | NOT CONNECTED | Manual lines (G-002) |
 | Billing | OPD checkout + IPD charges | PARTIALLY IMPLEMENTED | Auto lab/pharm missing |
 | IPD | Request→admit→bed→chart→discharge | PARTIALLY IMPLEMENTED | Code complete; UAT required |
+| IPD | Attending doctor (rounds responsibility) | IMPLEMENTED | Required on admit; PATCH reassign; doctor My IPD filter |
 | IPD | Blood/transfusion | PLACEHOLDER | Stub UI |
 | Discharge | Clearances / summary / bed release | PARTIALLY IMPLEMENTED | PDF deferred |
 | Nursing | Ward board / vitals / MAR via IPD+clinical | IMPLEMENTED | No `/api/v1/nursing` prefix |
@@ -343,9 +344,13 @@ Integrations checklist:
 
 ```
 P3 OPD/consult → doctor admission request (REQUESTED)
-→ desk APPROVED/ADMITTED → ward/room/bed → bed OCCUPIED
-→ nursing vitals/notes/MAR → doctor progress notes
+  [seeds attendingDoctorId = OPD doctor]
+→ desk APPROVED → Admit: select/confirm Attending doctor (required) + bed
+→ admission ADMITTED with primaryDoctorId; bed OCCUPIED
+→ Doctor My IPD shows patient (attending filter)
+→ nursing vitals/notes/MAR → doctor progress notes / rounds
 → IPD lab + pharmacy supply → charges / deposits
+→ (optional) HA reassigns attending → patient moves to other doctor’s My IPD
 → bed transfer (old AVAILABLE/CLEANING, new OCCUPIED)
 → discharge advice → clearances PENDING→CLEARED
 → final bill → discharge → admission DISCHARGED/FOLLOW_UP/CLOSED
@@ -353,6 +358,19 @@ P3 OPD/consult → doctor admission request (REQUESTED)
 ```
 
 Known stubs: blood bank UI; discharge PDF may be missing — mark **NOT IMPLEMENTED** / **PARTIAL**, not FAIL unless UI claims they work.
+
+### Attending doctor rules (test these)
+
+| Rule | Expected |
+|------|----------|
+| Admit without attending | Blocked (UI + API validation) |
+| Admit from OPD request | Attending pre-filled from request; desk may change |
+| Direct admit | Desk must pick attending from hospital doctors |
+| Doctor `/doctor/ipd` default | Only patients where doctor is attending |
+| Toggle “all hospital” | Broader list (permission permitting) |
+| Chart overview | Shows attending name |
+| Hospital chart “Change attending” | Updates admission + encounter; audited |
+| Doctor cannot reassign attending | Deny unless `ipd:admission:write` |
 
 ---
 
@@ -381,7 +399,9 @@ Double book same slot · past date · doctor leave/block · reschedule · multi-
 
 ## 18. Doctor module
 
-Profile, fees, schedule, OPD queue, Rx, lab orders, IPD chart access, discharge recommendation — hospital-scoped only.
+Profile, fees, schedule, OPD queue, Rx, lab orders, **IPD attending list** (`/doctor/ipd` My inpatients), IPD chart rounds, discharge recommendation — hospital-scoped only.
+
+Verify doctor sees IPD patients they attend by default; after reassignment, patient leaves their list.
 
 ---
 
@@ -415,7 +435,7 @@ Record HTTP codes in [API_TEST_MATRIX.md](./API_TEST_MATRIX.md).
 
 ## 22. Negative & Edge (PHASE 15)
 
-Invalid email/DOB · negative stock · expired dispense · occupy occupied bed · discharge without admit · double submit · concurrent slot/bed/last-unit stock · refresh/back button · large text / special chars.
+Invalid email/DOB · negative stock · expired dispense · occupy occupied bed · **admit without attending doctor** · discharge without admit · double submit · concurrent slot/bed/last-unit stock · refresh/back button · large text / special chars.
 
 ---
 
@@ -440,7 +460,7 @@ For each major transaction, spot-check DB (or API GET consistency):
 
 ## 25. Audit Log
 
-Where admin audit UI exists: create/update patient, book/cancel, prescribe, lab verify, admit, bed change, discharge, billing — who/when/what. Mark PARTIAL if missing.
+Where admin audit UI exists: create/update patient, book/cancel, prescribe, lab verify, admit, **attending reassignment**, bed change, discharge, billing — who/when/what. Mark PARTIAL if missing.
 
 ---
 
@@ -480,7 +500,7 @@ Append executed cases to [TEST_EXECUTION_SUMMARY.md](./TEST_EXECUTION_SUMMARY.md
 | 7 | Lab | J2 lab |
 | 8 | Pharmacy | J2 Rx |
 | 9 | Billing | Invoice settle (manual lines OK) |
-| 10 | IPD admission | Admit + bed |
+| 10 | IPD admission | Admit + **attending doctor** + bed |
 | 11 | Ward/Bed/Nursing | Care documented |
 | 12 | Discharge | Bed free + portal |
 | 13 | Patient portal | No IDOR |
@@ -509,40 +529,32 @@ No drive-by refactors. No major new features unless workflow blocked.
 
 ## 32. Final System Validation Report (fill after execution)
 
+**Filled:** [HEALTH360_SYSTEM_VALIDATION_REPORT.md](./HEALTH360_SYSTEM_VALIDATION_REPORT.md) (2026-09-15 API session).
+
 ### Executive Summary
 
-_TBD after PHASE 17_
-
-### Modules — Fully / Partially / Broken / Not Implemented
-
-_TBD_
-
-### Critical bugs / Security / Data / RBAC / Perf / UI / Integration
-
-_TBD_ → link BUG_TRACKER
+API smoke on local backend: attending-doctor IPD path verified; **BUG-001** doctor rounds 403; UI stories blocked (FE down). Recommendation: **READY WITH MINOR FIXES**.
 
 ### Scores (post-execution)
 
 | Area | % |
 |------|--:|
-| OPD Readiness | _TBD_ |
-| IPD Readiness | _TBD_ |
-| Hospital Admin | _TBD_ |
-| Patient Portal | _TBD_ |
-| Pharmacy | _TBD_ |
-| Lab | _TBD_ |
-| Security | _TBD_ |
-| Overall Stability | _TBD_ |
-| Overall Production Readiness | _TBD_ |
+| OPD Readiness | 55 |
+| IPD Readiness | 72 |
+| Hospital Admin | 80 |
+| Patient Portal | 20 |
+| Pharmacy | 50 |
+| Lab | 50 |
+| Security | 65 |
+| Overall Stability | 78 |
+| Overall Production Readiness | 55 |
 
 ### Final recommendation (choose one)
 
 - READY FOR NEXT DEVELOPMENT PHASE  
-- READY WITH MINOR FIXES  
+- **READY WITH MINOR FIXES** ← selected 2026-09-15  
 - MAJOR FIXES REQUIRED BEFORE DEVELOPMENT  
-- SYSTEM NOT STABLE ENOUGH TO CONTINUE  
-
-_Pre-execution expectation from readiness gate: system is **testable**; recommendation above is **outcome of this UAT**, not assumed._
+- SYSTEM NOT STABLE ENOUGH TO CONTINUE
 
 ---
 

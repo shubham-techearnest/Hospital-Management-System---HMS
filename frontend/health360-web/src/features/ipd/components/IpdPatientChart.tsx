@@ -38,6 +38,8 @@ import { IpdCareTransitionsPanel } from '@/features/ipd/components/IpdCareTransi
 import { IpdBillingPanel } from '@/features/ipd/components/IpdBillingPanel';
 import { IpdDischargeWorkflowPanel } from '@/features/ipd/components/IpdDischargeWorkflowPanel';
 import { useIpdAdmission, useIpdMutations, useIpdRounds } from '@/features/ipd/hooks/useIpdQueries';
+import { listHospitalDoctors } from '@/features/hospital/api/hospitalApi';
+import { hospitalKeys } from '@/features/hospital/hooks/useHospitalQueries';
 import { parseApiError } from '@/shared/api/errorUtils';
 import { patientDisplayLabel } from '@/shared/status/visitStatus';
 
@@ -94,12 +96,24 @@ export function IpdPatientChart({ portal, backTo, backLabel, title, subtitle }: 
   const [assessment, setAssessment] = useState('');
   const [handoverNotes, setHandoverNotes] = useState('');
   const [assessmentTemplate, setAssessmentTemplate] = useState('GENERAL');
+  const [attendingDoctorId, setAttendingDoctorId] = useState('');
+  const [attendingReason, setAttendingReason] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   const { data: admission, isLoading, isError } = useIpdAdmission(admissionId || undefined);
   const encounterId = admission?.encounterId ?? '';
   const { data: rounds = [], isLoading: roundsLoading } = useIpdRounds(admissionId || undefined);
   const mutations = useIpdMutations(admission?.hospitalId ?? '', admission?.branchId ?? '');
+  const { data: hospitalDoctors = [] } = useQuery({
+    queryKey: hospitalKeys.doctors,
+    queryFn: listHospitalDoctors,
+    enabled: portal === 'hospital',
+    staleTime: 60_000,
+  });
+  const activeDoctors = useMemo(
+    () => hospitalDoctors.filter((d) => d.status === 'ACTIVE'),
+    [hospitalDoctors],
+  );
 
   const { data: orders = [], refetch: refetchOrders } = useEncounterOrders(encounterId);
   const { data: labTests = [] } = useBranchLabTests(admission?.hospitalId, admission?.branchId);
@@ -144,6 +158,7 @@ export function IpdPatientChart({ portal, backTo, backLabel, title, subtitle }: 
   const canOrder = canWriteClinical;
   const canManageTransitions =
     (portal === 'doctor' || portal === 'hospital') && admission?.status === 'ADMITTED';
+  const canChangeAttending = portal === 'hospital' && admission?.status === 'ADMITTED';
   const otIntegrationOn = ipdServices?.enabledServices?.IPD_OT_INTEGRATION !== false;
 
   const showError = (e: unknown) =>
@@ -299,12 +314,77 @@ export function IpdPatientChart({ portal, backTo, backLabel, title, subtitle }: 
                 <Typography variant="body2">Encounter status: {admission.encounterStatus}</Typography>
                 <Typography variant="body2">Bed: {bedLabel}</Typography>
                 <Typography variant="body2">
+                  Attending doctor:{' '}
+                  <strong>
+                    {admission.primaryDoctorName
+                      ?? (admission.primaryDoctorId ? `${admission.primaryDoctorId.slice(0, 8)}…` : 'Not assigned')}
+                  </strong>
+                </Typography>
+                <Typography variant="body2">
                   Care level: {admission.careLevel ?? 'WARD'}
                   {admission.isolationRequired ? ' · Isolation required' : ''}
                 </Typography>
                 <Typography variant="body2">Doctor rounds: {doctorRounds.length} · Nursing entries: {nursingRounds.length}</Typography>
                 <Typography variant="body2">Open orders: {orders.length} · MAR events: {administrations.length}</Typography>
               </Paper>
+              {canChangeAttending ? (
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                    Change attending doctor
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                    Reassigns responsibility for rounds and ongoing IPD care. Does not change bed.
+                  </Typography>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'flex-start' }}>
+                    <TextField
+                      select
+                      size="small"
+                      label="New attending"
+                      sx={{ minWidth: 240 }}
+                      value={attendingDoctorId || admission.primaryDoctorId || ''}
+                      onChange={(e) => setAttendingDoctorId(e.target.value)}
+                    >
+                      {activeDoctors.map((d) => (
+                        <MenuItem key={d.doctorId} value={d.doctorId}>
+                          {d.doctorName}
+                          {d.specialization ? ` · ${d.specialization}` : ''}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      size="small"
+                      label="Reason (optional)"
+                      value={attendingReason}
+                      onChange={(e) => setAttendingReason(e.target.value)}
+                      sx={{ minWidth: 200 }}
+                    />
+                    <Button
+                      variant="outlined"
+                      disabled={
+                        !attendingDoctorId
+                        || attendingDoctorId === admission.primaryDoctorId
+                        || mutations.reassignAttending.isPending
+                      }
+                      onClick={async () => {
+                        if (!admissionId || !attendingDoctorId) return;
+                        try {
+                          await mutations.reassignAttending.mutateAsync({
+                            admissionId,
+                            primaryDoctorId: attendingDoctorId,
+                            reason: attendingReason.trim() || undefined,
+                          });
+                          setAttendingReason('');
+                          setSnackbar({ open: true, message: 'Attending doctor updated', severity: 'success' });
+                        } catch (e) {
+                          showError(e);
+                        }
+                      }}
+                    >
+                      Save attending
+                    </Button>
+                  </Stack>
+                </Paper>
+              ) : null}
               <IpdCareTransitionsPanel
                 admission={admission}
                 enabledServices={ipdServices?.enabledServices}
@@ -390,7 +470,10 @@ export function IpdPatientChart({ portal, backTo, backLabel, title, subtitle }: 
                 <Stack spacing={1.5} divider={<Divider flexItem />}>
                   {doctorRounds.map((round) => (
                     <Box key={round.roundId}>
-                      <Typography variant="caption" color="text.secondary">{formatWhen(round.recordedAt)}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {formatWhen(round.recordedAt)}
+                        {round.recordedBy ? ` · recorded by ${round.recordedBy.slice(0, 8)}…` : ''}
+                      </Typography>
                       <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{round.notes}</Typography>
                     </Box>
                   ))}

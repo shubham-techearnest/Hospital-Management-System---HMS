@@ -38,6 +38,8 @@ Each module has a dedicated flow document with actors, sequence diagrams, status
 | Operation theatre | [HMS-OT-FLOW.md](./HMS-OT-FLOW.md) | HMS-7 | ✅ |
 | Clinical pharmacy | [HMS-PHARM-FLOW.md](./HMS-PHARM-FLOW.md) | HMS-8 | ✅ |
 | Staff + RBAC | [HMS-STAFF-FLOW.md](./HMS-STAFF-FLOW.md) | HMS-9 | ✅ |
+| Asset management (v1) | [HMS-ASSET-MANAGEMENT.md](./HMS-ASSET-MANAGEMENT.md) | Post-HMS | ✅ |
+| Letterheaded clinical documents | [HMS-CLINICAL-DOCUMENTS.md](./HMS-CLINICAL-DOCUMENTS.md) | Post-HMS | ✅ |
 | Role dashboards | [HMS-DASHBOARD-FLOW.md](./HMS-DASHBOARD-FLOW.md) | HMS-10 | ✅ |
 | Hardening | [HMS-HARDENING-FLOW.md](./HMS-HARDENING-FLOW.md) | HMS-11 | ✅ |
 

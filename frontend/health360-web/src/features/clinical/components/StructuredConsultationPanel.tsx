@@ -1,5 +1,7 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
 import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
+import PrintOutlinedIcon from '@mui/icons-material/PrintOutlined';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   useEncounterActions,
   useEncounterDiagnoses,
@@ -318,9 +320,19 @@ export function StructuredConsultationPanel({
           </Button>
         </Stack>
       ) : active?.status === 'FINAL' ? (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-          Finalized — proceed to prescription.
-        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2 }} flexWrap="wrap">
+          <Typography variant="body2" color="text.secondary">
+            Finalized — proceed to prescription.
+          </Typography>
+          <Button
+            size="small"
+            component={RouterLink}
+            to={`/documents/consultation/${encounterId}/${active.noteId}`}
+            startIcon={<PrintOutlinedIcon />}
+          >
+            Print report
+          </Button>
+        </Stack>
       ) : null}
     </Box>
   );

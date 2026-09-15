@@ -27,7 +27,10 @@
 | Pharmacy dispense/stock | — | A | D | D | D | D | D | A | D |
 | OPD billing checkout | — | A | A | D | D | D | D | D | D (pay own) |
 | IPD admit / bed assign | — | A | A# | D | D | D | D | D | D |
-| IPD chart clinical write | — | A* | D | A | A (nursing) | A | D | D | D |
+| IPD set/confirm attending on admit | — | A | A# | D | D | D | D | D | D |
+| IPD reassign attending | — | A | A# | D | D | D | D | D | D |
+| IPD chart clinical write / rounds | — | A* | D | A | A (nursing) | A | D | D | D |
+| Doctor My IPD list (attending filter) | — | — | — | A | — | — | — | — | — |
 | Discharge / clearances | — | A | A# | A (clinical) | A (nursing clr) | A | D | A (pharm clr) | D |
 | Platform audit admin | A | D | D | D | D | D | D | D | D |
 | Other hospital data | D** | D | D | D | D | D | D | D | D |
@@ -54,6 +57,7 @@
 | RBAC-N08 | PHARMACIST | Hospital subscription/config | Deny | | |
 | RBAC-N09 | DOCTOR | Platform admin APIs | Deny | | |
 | RBAC-N10 | DOCTOR | Create staff / change roles | Deny | | |
+| RBAC-N10b | DOCTOR | PATCH attending-doctor / reassign | Deny | | |
 | RBAC-N11 | NURSE | Sign e-prescription | Deny | | |
 | RBAC-N12 | PATIENT | Access another patient's encounter by ID | Deny | | |
 | RBAC-N13 | HOSPITAL_ADMIN A | Read Hospital B patient | Deny | | |

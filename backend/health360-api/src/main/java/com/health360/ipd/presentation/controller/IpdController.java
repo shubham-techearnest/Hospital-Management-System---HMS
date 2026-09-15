@@ -216,9 +216,21 @@ public class IpdController {
             @RequestParam UUID hospitalId,
             @RequestParam UUID branchId,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) UUID primaryDoctorId,
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(
-                admissionService.listAdmissions(principal, hospitalId, branchId, status, pageable)));
+                admissionService.listAdmissions(
+                        principal, hospitalId, branchId, status, primaryDoctorId, pageable)));
+    }
+
+    @PatchMapping("/admissions/{admissionId}/attending-doctor")
+    @PreAuthorize("hasAuthority('ipd:admission:write')")
+    public ResponseEntity<ApiResponse<IpdAdmissionResponse>> reassignAttendingDoctor(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID admissionId,
+            @Valid @RequestBody ReassignAttendingDoctorRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                admissionService.reassignAttendingDoctor(principal, admissionId, request)));
     }
 
     @GetMapping("/admissions/{admissionId}")

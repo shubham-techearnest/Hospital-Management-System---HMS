@@ -2,7 +2,7 @@
 
 | Story ID | S3-IPD |
 | Patient | **Amit Kulkarni** · Mobile `9000000003` · Age 56 · Male |
-| Goal | OPD → admission request → admit + bed → nursing → doctor notes → IPD lab/meds → charges → transfer → discharge → bed free → portal history |
+| Goal | OPD → admission request (seeds attending) → admit + **confirm attending** + bed → Doctor My IPD rounds → nursing → IPD lab/meds → charges → transfer → discharge → bed free → portal history |
 | Cast | P3 · RX1 · DR1 (or DR3) · NU1 · LB1 · PH1 · HA1 |
 | Prerequisite | S0 beds AVAILABLE; IPD services enabled |
 | Notes | Blood bank UI may be **stub** — mark NOT IN UI / PARTIAL, not FAIL. Discharge PDF may be missing. |
@@ -46,9 +46,9 @@
 | Role | DR1 |
 | Screen / URL | OPD / IPD recommend admission control |
 | Action | Create **admission request** (reason, department, preferred ward if asked). |
-| Look for / check | - Request created<br>- Status **REQUESTED**<br>- Visible on hospital IPD **Requests** tab |
-| Expected outcome | Desk can see pending admission request |
-| Actual outcome | Request ID=____ · Status=____ |
+| Look for / check | - Request created<br>- Status **REQUESTED**<br>- Visible on hospital IPD **Requests** tab<br>- Request stores **attendingDoctorId** = DR1 (OPD doctor) — this pre-fills admit later |
+| Expected outcome | Desk can see pending admission request with attending pre-seeded |
+| Actual outcome | Request ID=____ · Status=____ · Attending on request=____ |
 | Result | |
 | Bug ID | |
 | Improve? | |
@@ -77,10 +77,38 @@
 |-------|-------|
 | Role | HA1 / RX1 |
 | Screen / URL | IPD admit flow |
-| Action | Select department, consultant **DR1**, **General Ward**, room, an **AVAILABLE** bed. Confirm admit. |
-| Look for / check | - Admission number / IPD number generated<br>- Admission status **ADMITTED**<br>- Patient shown on IPD list<br>- Selected bed → **OCCUPIED**<br>- Cannot pick already OCCUPIED bed |
-| Expected outcome | Amit admitted; bed occupied |
-| Actual outcome | Admission#=____ · Bed=____ · Bed status=____ |
+| Action | Select department if shown, **Attending doctor** (required — pre-filled from request if OPD doctor recommended), consultant **DR1**, **General Ward**, room, an **AVAILABLE** bed. Confirm admit. |
+| Look for / check | - Attending doctor dropdown present and required<br>- Pre-filled from `attendingDoctorId` when admitting from request<br>- Admission number / IPD number generated<br>- Admission status **ADMITTED**<br>- Patient shown on IPD list with attending name<br>- Selected bed → **OCCUPIED**<br>- Cannot pick already OCCUPIED bed<br>- Admit without attending doctor is blocked |
+| Expected outcome | Amit admitted; bed occupied; attending doctor stored as `primaryDoctorId` |
+| Actual outcome | Admission#=____ · Bed=____ · Bed status=____ · Attending=____ |
+| Result | |
+| Bug ID | |
+| Improve? | |
+
+### Step S3.5b — Doctor sees patient under My IPD
+
+| Field | Value |
+|-------|-------|
+| Role | DR1 (attending) |
+| Screen / URL | `/doctor/ipd` |
+| Action | Login as attending. Confirm Amit appears under **My inpatients** (default filter). Toggle “Show all hospital inpatients” and confirm broader list. |
+| Look for / check | - Default list filtered to attending doctor<br>- Chart shows Attending doctor name<br>- Can open Rounds and save a doctor note |
+| Expected outcome | Attending doctor owns the inpatient in their rounds list |
+| Actual outcome | |
+| Result | |
+| Bug ID | |
+| Improve? | |
+
+### Step S3.5c — Change attending (optional)
+
+| Field | Value |
+|-------|-------|
+| Role | HA1 |
+| Screen / URL | Hospital IPD chart overview |
+| Action | Change attending to another hospital doctor; save with reason. |
+| Look for / check | - Attending updates on snapshot<br>- Patient leaves previous doctor’s My IPD list<br>- Appears on new doctor’s list |
+| Expected outcome | Reassignment audited and reflected in doctor portals |
+| Actual outcome | |
 | Result | |
 | Bug ID | |
 | Improve? | |
@@ -303,8 +331,10 @@
 
 | Link | Result |
 |------|--------|
-| OPD → Admission request | |
-| Request → Admit → Bed OCCUPIED | |
+| OPD → Admission request (attending seeded) | |
+| Request → Admit → Attending required + Bed OCCUPIED | |
+| Doctor My IPD (attending filter) | |
+| Reassign attending (optional) | |
 | Nursing chart | |
 | Doctor IPD notes / orders | |
 | IPD → Lab | |
@@ -316,7 +346,10 @@
 
 ## S3 exit criteria
 
-- [ ] Admitted with number + occupied bed  
+- [ ] Admitted with number + occupied bed + **attending doctor**  
+- [ ] Attending appears on hospital list and chart  
+- [ ] DR1 sees patient under My IPD; can record round  
+- [ ] (Optional) Reassign attending verified  
 - [ ] Nursing + doctor documentation  
 - [ ] Transfer updates both beds  
 - [ ] Discharged + bed free/cleaning  

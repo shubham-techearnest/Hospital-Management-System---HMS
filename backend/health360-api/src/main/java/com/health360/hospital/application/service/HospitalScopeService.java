@@ -2,6 +2,9 @@ package com.health360.hospital.application.service;
 
 import com.health360.clinical.application.service.EncounterAccessService;
 import com.health360.config.security.UserPrincipal;
+import com.health360.doctor.infrastructure.persistence.entity.DoctorProfileEntity;
+import com.health360.doctor.infrastructure.persistence.repository.DoctorProfileRepository;
+import com.health360.doctor.infrastructure.persistence.repository.HospitalAssociationRepository;
 import com.health360.hospital.infrastructure.persistence.entity.StaffEntity;
 import com.health360.hospital.infrastructure.persistence.repository.StaffRepository;
 import com.health360.shared.domain.ErrorCode;
@@ -25,11 +28,14 @@ public class HospitalScopeService {
             "LAB_TECHNICIAN",
             "RADIOLOGY_TECHNICIAN",
             "PHARMACIST",
-            "OT_COORDINATOR"
+            "OT_COORDINATOR",
+            "ASSET_MANAGER"
     );
 
     private final EncounterAccessService encounterAccessService;
     private final StaffRepository staffRepository;
+    private final DoctorProfileRepository doctorProfileRepository;
+    private final HospitalAssociationRepository hospitalAssociationRepository;
 
     public void assertHospitalScope(UserPrincipal principal, UUID hospitalId) {
         assertHospitalScope(principal, hospitalId, null);
@@ -50,8 +56,21 @@ public class HospitalScopeService {
             return;
         }
 
-        // Doctors and patients use encounter-level checks elsewhere; deny hospital-wide ops by default.
+        if (principal.getRoles().contains("DOCTOR") && isAssociatedDoctor(principal, hospitalId)) {
+            return;
+        }
+
+        // Patients and unassociated users use encounter-level checks elsewhere.
         throw forbidden();
+    }
+
+    private boolean isAssociatedDoctor(UserPrincipal principal, UUID hospitalId) {
+        DoctorProfileEntity doctor = doctorProfileRepository
+                .findByTenantIdAndUserIdAndDeletedAtIsNull(principal.getTenantId(), principal.getUserId())
+                .orElse(null);
+        return doctor != null
+                && hospitalAssociationRepository.existsByDoctorIdAndHospitalIdAndStatusAndDeletedAtIsNull(
+                doctor.getId(), hospitalId, "ACTIVE");
     }
 
     public boolean isStaffScopedRole(UserPrincipal principal) {

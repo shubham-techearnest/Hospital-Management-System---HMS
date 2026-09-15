@@ -47,7 +47,8 @@ public class StaffService {
             "LAB_TECHNICIAN",
             "RADIOLOGY_TECHNICIAN",
             "PHARMACIST",
-            "OT_COORDINATOR"
+            "OT_COORDINATOR",
+            "ASSET_MANAGER"
     );
 
     private final StaffRepository staffRepository;

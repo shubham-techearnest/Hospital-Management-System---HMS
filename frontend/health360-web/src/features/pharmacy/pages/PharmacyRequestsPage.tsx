@@ -14,6 +14,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { parseApiError } from '@/shared/api/errorUtils';
@@ -174,6 +175,16 @@ export function PharmacyRequestsPage() {
                             }}
                           >
                             Dispense
+                          </Button>
+                        ) : null}
+                        {req.status === 'DISPENSED' || req.status === 'READY' ? (
+                          <Button
+                            size="small"
+                            component={RouterLink}
+                            to={`/documents/pharmacy/${req.pharmacyRequestId}`}
+                            variant="outlined"
+                          >
+                            Print slip
                           </Button>
                         ) : null}
                       </Stack>

@@ -24,6 +24,12 @@ public interface IpdAdmissionRepository extends JpaRepository<IpdAdmissionEntity
     Page<IpdAdmissionEntity> findByTenantIdAndHospitalIdAndBranchIdAndStatusAndDeletedAtIsNullOrderByAdmittedAtDesc(
             UUID tenantId, UUID hospitalId, UUID branchId, String status, Pageable pageable);
 
+    Page<IpdAdmissionEntity> findByTenantIdAndHospitalIdAndBranchIdAndPrimaryDoctorIdAndDeletedAtIsNullOrderByAdmittedAtDesc(
+            UUID tenantId, UUID hospitalId, UUID branchId, UUID primaryDoctorId, Pageable pageable);
+
+    Page<IpdAdmissionEntity> findByTenantIdAndHospitalIdAndBranchIdAndStatusAndPrimaryDoctorIdAndDeletedAtIsNullOrderByAdmittedAtDesc(
+            UUID tenantId, UUID hospitalId, UUID branchId, String status, UUID primaryDoctorId, Pageable pageable);
+
     boolean existsByEncounterIdAndDeletedAtIsNull(UUID encounterId);
 
     long countByTenantIdAndHospitalIdAndBranchIdAndStatusAndDeletedAtIsNull(

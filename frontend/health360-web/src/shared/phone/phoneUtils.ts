@@ -1,5 +1,6 @@
 import {
   COUNTRY_DIALS,
+  DEFAULT_PHONE_COUNTRY_ISO,
   TIMEZONE_COUNTRY_HINTS,
   getCountryByDialCode,
   getCountryByIso,
@@ -16,20 +17,12 @@ export function digitsOnly(value: string): string {
   return value.replace(/\D/g, '');
 }
 
+/**
+ * Default phone country for empty PhoneField values.
+ * Prefer device timezone (location proxy) over browser language — many Indian
+ * devices use en-US, which previously forced +1. Fall back to India (+91).
+ */
 export function detectCountryIso(): string {
-  try {
-    const locale =
-      (typeof navigator !== 'undefined' && (navigator.language || navigator.languages?.[0]))
-      || Intl.DateTimeFormat().resolvedOptions().locale
-      || 'en-IN';
-    const region = locale.split(/[-_]/)[1]?.toUpperCase();
-    if (region && getCountryByIso(region)) {
-      return region;
-    }
-  } catch {
-    // ignore
-  }
-
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (tz && TIMEZONE_COUNTRY_HINTS[tz]) {
@@ -39,7 +32,36 @@ export function detectCountryIso(): string {
     // ignore
   }
 
-  return 'IN';
+  try {
+    const languages =
+      typeof navigator !== 'undefined'
+        ? [...(navigator.languages ?? []), navigator.language].filter(Boolean)
+        : [Intl.DateTimeFormat().resolvedOptions().locale || 'en-IN'];
+
+    // Prefer an explicit India locale if present anywhere in the list
+    for (const lang of languages) {
+      const region = String(lang).split(/[-_]/)[1]?.toUpperCase();
+      if (region === 'IN' && getCountryByIso(region)) {
+        return 'IN';
+      }
+    }
+
+    for (const lang of languages) {
+      const region = String(lang).split(/[-_]/)[1]?.toUpperCase();
+      // Skip US/CA from language alone when timezone was unknown — too often
+      // en-US on non-US devices. Timezone already handled real US/CA locations.
+      if (region === 'US' || region === 'CA') {
+        continue;
+      }
+      if (region && getCountryByIso(region)) {
+        return region;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return DEFAULT_PHONE_COUNTRY_ISO;
 }
 
 export function detectDialCountry(): CountryDial {

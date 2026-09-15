@@ -66,4 +66,16 @@ public class HospitalEntity extends BaseAuditableEntity {
 
     @Column(nullable = false, length = 20)
     private String status = "ACTIVE";
+
+    @Column(name = "letterhead_logo_storage_key", length = 500)
+    private String letterheadLogoStorageKey;
+
+    @Column(name = "letterhead_logo_mime_type", length = 100)
+    private String letterheadLogoMimeType;
+
+    @Column(name = "letterhead_tagline", length = 200)
+    private String letterheadTagline;
+
+    @Column(name = "letterhead_footer_text", length = 500)
+    private String letterheadFooterText;
 }

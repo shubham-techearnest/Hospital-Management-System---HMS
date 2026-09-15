@@ -29,6 +29,7 @@ const ROLE_LABELS: Record<AppRole, string> = {
   RADIOLOGY_TECHNICIAN: 'Radiology portal',
   OT_COORDINATOR: 'Operation theatre portal',
   PHARMACIST: 'Pharmacy portal',
+  ASSET_MANAGER: 'Asset manager portal',
   RECEPTIONIST: 'Reception portal',
   NURSE: 'Nursing portal',
   ICU_NURSE: 'ICU nursing portal',

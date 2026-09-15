@@ -1,0 +1,37 @@
+[
+    {
+        "ok":  true,
+        "id":  "LH-UPDATE",
+        "note":  "tagline saved"
+    },
+    {
+        "ok":  true,
+        "id":  "LH-LOGO-UPLOAD",
+        "note":  "logo uploaded"
+    },
+    {
+        "ok":  true,
+        "id":  "LH-LOGO-GET",
+        "note":  "70 bytes"
+    },
+    {
+        "ok":  true,
+        "id":  "DOC-RX",
+        "note":  "hasLogo=true"
+    },
+    {
+        "ok":  true,
+        "id":  "DOC-CONSULT",
+        "note":  "CONSULTATION SUMMARY"
+    },
+    {
+        "ok":  true,
+        "id":  "DOC-PHARM",
+        "note":  "MEDICINE DISPENSE SLIP"
+    },
+    {
+        "ok":  false,
+        "id":  "DOC-LAB",
+        "note":  "no released lab data in seed; endpoint wired (404 on missing)"
+    }
+]

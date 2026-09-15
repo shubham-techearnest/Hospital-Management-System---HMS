@@ -79,6 +79,18 @@ public class DocumentStorageService {
         return storeFile(storageKey, file);
     }
 
+    public StoredDocument storeHospitalLetterheadLogo(UUID tenantId, UUID hospitalId, MultipartFile file) {
+        validateFile(file, GALLERY_IMAGE_MAX_BYTES, GALLERY_ALLOWED_CONTENT_TYPES,
+                "File exceeds maximum size of 5 MB",
+                "File type not allowed. Use JPEG or PNG");
+
+        String extension = extensionFor(file.getOriginalFilename(), file.getContentType());
+        String storageKey = tenantId + "/hospitals/" + hospitalId + "/letterhead/"
+                + UUID.randomUUID() + extension;
+
+        return storeFile(storageKey, file);
+    }
+
     private StoredDocument storeFile(String storageKey, MultipartFile file) {
         Path target = resolvePath(storageKey);
         try {

@@ -106,6 +106,20 @@ Use accounts from [TEST_USERS.md](./TEST_USERS.md). Full matrix: [RBAC_MATRIX.md
 | Bug ID | |
 | Improve? | |
 
+### Step S4.7b — DR1 cannot reassign IPD attending
+
+| Field | Value |
+|-------|-------|
+| Role | DR1 |
+| Screen / URL | Doctor IPD chart (or API `PATCH .../attending-doctor`) |
+| Action | Attempt to change attending doctor on an admission. |
+| Look for / check | - No Change attending UI on doctor portal<br>- API 403 if forced |
+| Expected outcome | Only admission-write roles (e.g. HOSPITAL_ADMIN) reassign |
+| Actual outcome | |
+| Result | |
+| Bug ID | |
+| Improve? | |
+
 ---
 
 ## Scene 3 — Patient isolation (IDOR)

@@ -20,6 +20,10 @@ public class HospitalProfileResponse {
     int branchCount;
     int departmentCount;
     int doctorCount;
+    String letterheadTagline;
+    String letterheadFooterText;
+    boolean hasLetterheadLogo;
+    String letterheadLogoUrl;
 
     @Value
     @Builder
