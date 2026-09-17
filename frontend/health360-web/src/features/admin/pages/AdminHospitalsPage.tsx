@@ -58,6 +58,10 @@ export function AdminHospitalsPage() {
         <Typography variant="h4" fontWeight={700}>Hospitals</Typography>
         <Button variant="contained" onClick={() => setCreateOpen(true)}>Create hospital</Button>
       </Stack>
+      <Typography color="text.secondary" sx={{ mb: 2, maxWidth: 720 }}>
+        Platform admins create hospitals and hospital-admin accounts here. Public users only submit an onboarding
+        request. After approval, each hospital invites its own staff from the hospital portal.
+      </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
         Manage hospital accounts, subscriptions, and doctor invitations.
       </Typography>

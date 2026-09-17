@@ -1,10 +1,12 @@
 import { lazy, Suspense, type PropsWithChildren } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { LandingPage } from '@/features/public/pages/LandingPage';
+import { HospitalLandingPage } from '@/features/public/pages/HospitalLandingPage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
+import { RequestAccessPage } from '@/features/auth/pages/RequestAccessPage';
 import { VerifyEmailPage } from '@/features/auth/pages/VerifyEmailPage';
 import { GuestOnlyRoute } from '@/features/auth/components/GuestOnlyRoute';
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
@@ -319,6 +321,11 @@ const AdminPlansPage = lazy(() =>
 const AdminAuditLogsPage = lazy(() =>
   import('@/features/admin/pages/AdminAuditLogsPage').then((m) => ({ default: m.AdminAuditLogsPage })),
 );
+const AdminOnboardingRequestsPage = lazy(() =>
+  import('@/features/admin/pages/AdminOnboardingRequestsPage').then((m) => ({
+    default: m.AdminOnboardingRequestsPage,
+  })),
+);
 const HospitalSubscriptionPage = lazy(() =>
   import('@/features/hospital/pages/HospitalSubscriptionPage').then((m) => ({ default: m.HospitalSubscriptionPage })),
 );
@@ -375,11 +382,13 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/for-hospitals" element={<HospitalLandingPage />} />
         <Route path="/brand" element={<BrandIdentityPage />} />
         <Route path="/login" element={<GuestOnlyRoute><LoginPage /></GuestOnlyRoute>} />
         <Route path="/forgot-password" element={<GuestOnlyRoute><ForgotPasswordPage /></GuestOnlyRoute>} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/register" element={<GuestOnlyRoute><RegisterPage /></GuestOnlyRoute>} />
+        <Route path="/request-access" element={<GuestOnlyRoute><RequestAccessPage /></GuestOnlyRoute>} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/complete-patient-account" element={<CompletePatientAccountPage />} />
         <Route path="/doctors/:doctorId" element={<LazyPage><PublicDoctorProfilePage /></LazyPage>} />
@@ -586,6 +595,7 @@ export function AppRouter() {
           <Route path="users" element={<LazyPage><AdminUsersPage /></LazyPage>} />
           <Route path="hospitals" element={<LazyPage><AdminHospitalsPage /></LazyPage>} />
           <Route path="hospitals/:hospitalId" element={<LazyPage><AdminHospitalDetailPage /></LazyPage>} />
+          <Route path="onboarding-requests" element={<LazyPage><AdminOnboardingRequestsPage /></LazyPage>} />
           <Route path="partners" element={<LazyPage><AdminPartnersPage /></LazyPage>} />
           <Route path="partners/:partnerOrgId" element={<LazyPage><AdminPartnerDetailPage /></LazyPage>} />
           <Route path="plans" element={<LazyPage><AdminPlansPage /></LazyPage>} />

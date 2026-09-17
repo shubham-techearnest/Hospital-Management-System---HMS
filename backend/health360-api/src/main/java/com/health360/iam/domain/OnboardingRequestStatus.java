@@ -1,0 +1,8 @@
+package com.health360.iam.domain;
+
+public enum OnboardingRequestStatus {
+    PENDING,
+    CONTACTED,
+    APPROVED,
+    REJECTED
+}

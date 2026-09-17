@@ -31,7 +31,9 @@ export function PublicProfileLayout({ children }: PublicProfileLayoutProps) {
           ) : (
             <>
               <Button component={RouterLink} to="/login" sx={{ mr: 1 }}>Log in</Button>
-              <Button component={RouterLink} to="/register" variant="contained" size="small">Register</Button>
+              <Button component={RouterLink} to="/register" variant="contained" size="small">
+                User signup
+              </Button>
             </>
           )}
         </Toolbar>

@@ -56,7 +56,8 @@ public class RegistrationService {
 
         if (registrationRole != RegistrationRole.PATIENT) {
             throw new BusinessException(ErrorCode.DOCTOR_REGISTRATION_DISABLED, HttpStatus.FORBIDDEN,
-                    "Only patient self-registration is allowed. Hospitals and doctors are created by platform administrators.");
+                    "Only patient self-registration is allowed. Request hospital or doctor access from the public form; "
+                            + "platform admins provision hospitals and doctors. Hospital staff are invited by their hospital.");
         }
 
         UserEntity savedUser = createUser(request, tenantId);

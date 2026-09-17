@@ -7,11 +7,13 @@ import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import CardMembershipOutlinedIcon from '@mui/icons-material/CardMembershipOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 
 const navItems: PortalNavItem[] = [
   { section: 'Navigation', label: 'Dashboard', path: '/admin/dashboard', icon: <DashboardOutlinedIcon /> },
   { section: 'Directory', label: 'Hospitals', path: '/admin/hospitals', icon: <LocalHospitalOutlinedIcon /> },
+  { section: 'Directory', label: 'Onboarding', path: '/admin/onboarding-requests', icon: <AssignmentOutlinedIcon /> },
   { section: 'Directory', label: 'Partners', path: '/admin/partners', icon: <StorefrontOutlinedIcon /> },
   { section: 'Directory', label: 'Users', path: '/admin/users', icon: <PeopleOutlinedIcon /> },
   { section: 'Quality', label: 'Verifications', path: '/admin/verifications', icon: <VerifiedUserOutlinedIcon /> },

@@ -1,14 +1,19 @@
 import { Box } from '@mui/material';
-import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
 import { AppNavbar } from './AppNavbar';
 import { SkipLink } from './SkipLink';
 import { APP_NAVBAR_HEIGHT } from './PortalTopBar';
 
-export function AppLayout({ children }: PropsWithChildren) {
+interface AppLayoutProps extends PropsWithChildren {
+  /** Replace the default app navbar (e.g. marketing megamenu). */
+  navbar?: ReactNode;
+}
+
+export function AppLayout({ children, navbar }: AppLayoutProps) {
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <SkipLink />
-      <AppNavbar />
+      {navbar ?? <AppNavbar />}
       <Box
         component="main"
         id="main-content"

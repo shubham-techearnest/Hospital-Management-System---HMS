@@ -137,12 +137,12 @@ export function AppNavbar({ portalRole, onOpenNav }: AppNavbarProps) {
                 color: 'primary.dark',
                 boxShadow: 'none',
                 fontWeight: 700,
+                px: { xs: 1.25, sm: 1.75 },
                 borderRadius: 999,
-                px: { xs: 1.5, sm: 2 },
-                '&:hover': { bgcolor: 'primary.light', boxShadow: 'none' },
+                '&:hover': { bgcolor: 'grey.100', boxShadow: 'none' },
               }}
             >
-              {isCompact ? 'Join' : 'Create account'}
+              {isCompact ? 'Join' : 'User signup'}
             </Button>
           </Box>
         )}
