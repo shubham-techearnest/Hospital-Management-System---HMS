@@ -35,6 +35,8 @@ Read: [01-PRODUCT/PRODUCT-VISION.md](./01-PRODUCT/PRODUCT-VISION.md)
 | One-page status | [PROJECT-DASHBOARD.md](./PROJECT-DASHBOARD.md) |
 | Modules & workflows | [MODULES-AND-WORKFLOWS.md](./MODULES-AND-WORKFLOWS.md) |
 | Features matrix | [FEATURE-INVENTORY.md](./FEATURE-INVENTORY.md) |
+| **Complete user stories (Excel)** | [Health360_Complete_User_Stories.xlsx](./Health360_Complete_User_Stories.xlsx) — single sheet master backlog |
+| **User stories — execution order** | [Health360_Complete_User_Stories_Execution_Ordered.xlsx](./Health360_Complete_User_Stories_Execution_Ordered.xlsx) — same stories, sorted by dependency-safe module → status |
 | Requirements | [03-REQUIREMENTS/MASTER-REQUIREMENTS.md](./03-REQUIREMENTS/MASTER-REQUIREMENTS.md) |
 | Open conflicts/decisions | [REQUIREMENT-CONFLICT-REGISTER.md](./REQUIREMENT-CONFLICT-REGISTER.md) |
 | Architecture (now) | [architecture/SYSTEM-ARCHITECTURE.md](./architecture/SYSTEM-ARCHITECTURE.md) |

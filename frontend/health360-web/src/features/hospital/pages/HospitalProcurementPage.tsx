@@ -38,7 +38,7 @@ import {
   useRejectPurchaseRequest,
   useSubmitPurchaseRequest,
 } from '@/features/procurement/hooks/useProcurementQueries';
-import { parseApiError } from '@/shared/api/parseApiError';
+import { parseApiError } from '@/shared/api/errorUtils';
 
 export function HospitalProcurementPage() {
   const { data: profile, isLoading: profileLoading } = useHospitalProfile();
@@ -122,7 +122,7 @@ export function HospitalProcurementPage() {
       setPrOpen(false);
       setPrForm({ title: '', notes: '', itemId: '', quantity: '10', unitPrice: '0' });
     } catch (err) {
-      setFormError(parseApiError(err));
+      setFormError(parseApiError(err).message);
     }
   };
 
@@ -131,7 +131,7 @@ export function HospitalProcurementPage() {
     try {
       await fn();
     } catch (err) {
-      setActionError(parseApiError(err));
+      setActionError(parseApiError(err).message);
     }
   };
 
@@ -160,7 +160,7 @@ export function HospitalProcurementPage() {
       setGrnOpen(false);
       setGrnForm({ purchaseOrderId: '', locationId: '', quantity: '' });
     } catch (err) {
-      setFormError(parseApiError(err));
+      setFormError(parseApiError(err).message);
     }
   };
 

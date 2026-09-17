@@ -27,7 +27,7 @@ import { AnimatedPage } from '@/features/patient/components/AnimatedPage';
 import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { useBranches, useHospitalProfile } from '@/features/hospital/hooks/useHospitalQueries';
 import { useBloodMutations, useBloodRequests, useBloodUnits } from '@/features/blood/hooks/useBloodQueries';
-import { parseApiError } from '@/shared/api/parseApiError';
+import { parseApiError } from '@/shared/api/errorUtils';
 
 const GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const PRODUCTS = ['PRBC', 'FFP', 'PLATELETS', 'CRYO', 'WHOLE_BLOOD'];
@@ -75,7 +75,7 @@ export function HospitalBloodBankPage() {
     try {
       await fn();
     } catch (err) {
-      setError(parseApiError(err));
+      setError(parseApiError(err).message);
     }
   };
 

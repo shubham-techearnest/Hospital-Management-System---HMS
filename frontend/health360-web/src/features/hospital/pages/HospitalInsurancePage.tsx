@@ -33,7 +33,7 @@ import {
   useInsurancePolicies,
   usePreAuthorizations,
 } from '@/features/insurance/hooks/useInsuranceQueries';
-import { parseApiError } from '@/shared/api/parseApiError';
+import { parseApiError } from '@/shared/api/errorUtils';
 
 export function HospitalInsurancePage() {
   const { data: profile, isLoading: profileLoading } = useHospitalProfile();
@@ -78,7 +78,7 @@ export function HospitalInsurancePage() {
     try {
       await fn();
     } catch (err) {
-      setError(parseApiError(err));
+      setError(parseApiError(err).message);
     }
   };
 

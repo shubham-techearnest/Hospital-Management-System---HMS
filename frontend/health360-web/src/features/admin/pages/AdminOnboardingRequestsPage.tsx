@@ -217,7 +217,10 @@ export function AdminOnboardingRequestsPage() {
         <Button disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
           Previous
         </Button>
-        <Button disabled={data?.last ?? true} onClick={() => setPage((p) => p + 1)}>
+        <Button
+          disabled={!data || data.number >= Math.max(data.totalPages, 1) - 1}
+          onClick={() => setPage((p) => p + 1)}
+        >
           Next
         </Button>
       </Stack>

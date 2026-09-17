@@ -34,7 +34,7 @@ import {
   useStaffRoster,
   useStaffShifts,
 } from '@/features/staffops/hooks/useStaffOpsQueries';
-import { parseApiError } from '@/shared/api/parseApiError';
+import { parseApiError } from '@/shared/api/errorUtils';
 
 export function HospitalStaffOpsPage() {
   const { data: profile, isLoading: profileLoading } = useHospitalProfile();
@@ -86,7 +86,7 @@ export function HospitalStaffOpsPage() {
     try {
       await fn();
     } catch (err) {
-      setError(parseApiError(err));
+      setError(parseApiError(err).message);
     }
   };
 

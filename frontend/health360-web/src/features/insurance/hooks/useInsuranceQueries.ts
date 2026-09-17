@@ -46,7 +46,7 @@ export function useInsuranceClaims(hospitalId?: string, branchId?: string, statu
   });
 }
 
-export function useInsuranceMutations(hospitalId: string, branchId: string) {
+export function useInsuranceMutations(_hospitalId: string, _branchId: string) {
   const qc = useQueryClient();
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ['insurance'] });

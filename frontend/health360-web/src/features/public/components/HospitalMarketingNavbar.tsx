@@ -276,7 +276,7 @@ export function HospitalMarketingNavbar({ onBookDemo }: HospitalMarketingNavbarP
           </Stack>
 
           {isMdUp ? (
-            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flex: 1, justifyContent: 'center', justifyContent: 'center' }}>
+            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flex: 1, justifyContent: 'center' }}>
               {MENUS.map((menu) => {
                 const isOpen = openMenu === menu.id;
                 return (

@@ -26,7 +26,7 @@ import { DashboardPageHeader } from '@/shared/dashboard/DashboardPageHeader';
 import { useBranches, useHospitalProfile } from '@/features/hospital/hooks/useHospitalQueries';
 import { FACILITY_WORK_TYPES } from '@/features/facility/api/facilityApi';
 import { useFacilityMutations, useFacilityWorkOrders } from '@/features/facility/hooks/useFacilityQueries';
-import { parseApiError } from '@/shared/api/parseApiError';
+import { parseApiError } from '@/shared/api/errorUtils';
 
 const STATUS_COLOR: Record<string, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
   OPEN: 'warning',
@@ -89,7 +89,7 @@ export function HospitalFacilityPage() {
       setCreateOpen(false);
       setForm({ workType: 'HOUSEKEEPING', title: '', description: '', locationLabel: '', priority: 'NORMAL' });
     } catch (err) {
-      setFormError(parseApiError(err));
+      setFormError(parseApiError(err).message);
     }
   };
 
@@ -98,7 +98,7 @@ export function HospitalFacilityPage() {
     try {
       await fn();
     } catch (err) {
-      setActionError(parseApiError(err));
+      setActionError(parseApiError(err).message);
     }
   };
 

@@ -33,7 +33,7 @@ import {
   useReceiveInventoryStock,
   useStockBalances,
 } from '@/features/inventory/hooks/useInventoryQueries';
-import { parseApiError } from '@/shared/api/parseApiError';
+import { parseApiError } from '@/shared/api/errorUtils';
 
 const CATEGORIES = ['GENERAL', 'GLOVES', 'SYRINGE', 'REAGENT', 'LINEN', 'OTHER'] as const;
 

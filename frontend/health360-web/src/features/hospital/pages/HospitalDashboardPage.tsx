@@ -15,7 +15,6 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import BloodtypeIcon from '@mui/icons-material/Bloodtype';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
-import EventBusyIcon from '@mui/icons-material/EventBusy';
 import BedIcon from '@mui/icons-material/Bed';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 import { useMemo, useState } from 'react';
@@ -28,7 +27,7 @@ import { useHospitalDashboard, useIpdDashboard } from '@/features/dashboard/hook
 import { useCommandCenterSnapshot } from '@/features/commandcenter/hooks/useCommandCenterQueries';
 import { usePredictiveInsights, usePredictiveMutations } from '@/features/predictive/hooks/usePredictiveQueries';
 import { useBranches } from '@/features/hospital/hooks/useHospitalQueries';
-import { parseApiError } from '@/shared/api/parseApiError';
+import { parseApiError } from '@/shared/api/errorUtils';
 
 function severityColor(severity: string): 'default' | 'info' | 'warning' | 'error' {
   if (severity === 'CRITICAL') return 'error';
@@ -120,7 +119,7 @@ export function HospitalDashboardPage() {
               onClick={() => {
                 setPredError(null);
                 predictive.refresh.mutate(undefined, {
-                  onError: (err) => setPredError(parseApiError(err)),
+                  onError: (err) => setPredError(parseApiError(err).message),
                 });
               }}
             >
@@ -159,7 +158,7 @@ export function HospitalDashboardPage() {
                     disabled={predictive.acknowledge.isPending}
                     onClick={() =>
                       predictive.acknowledge.mutate(insight.insightId, {
-                        onError: (err) => setPredError(parseApiError(err)),
+                        onError: (err) => setPredError(parseApiError(err).message),
                       })
                     }
                   >

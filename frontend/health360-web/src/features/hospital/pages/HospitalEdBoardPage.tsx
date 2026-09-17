@@ -34,7 +34,7 @@ import { useIcuBeds } from '@/features/icu/hooks/useIcuQueries';
 import { searchHospitalPatients, type HospitalPatientSummary } from '@/features/reception/api/patientRegistryApi';
 import { buildPatientSearchParams } from '@/features/reception/utils/patientSearchParams';
 import { PatientSearchMatchList, PatientSelectedSummary } from '@/features/reception/components/PatientSearchMatchList';
-import { parseApiError } from '@/shared/api/parseApiError';
+import { parseApiError } from '@/shared/api/errorUtils';
 import type { EdVisit } from '@/features/emergency/api/emergencyApi';
 
 const ARRIVAL_MODES = ['WALK_IN', 'AMBULANCE', 'POLICE', 'TRANSFER_IN', 'OTHER'] as const;
@@ -216,7 +216,7 @@ export function HospitalEdBoardPage() {
               </Button>
             </Stack>
           ) : (
-            <PatientSearchMatchList matches={matches} onSelect={setSelected} />
+            <PatientSearchMatchList patients={matches} onSelect={setSelected} />
           )}
         </Paper>
 

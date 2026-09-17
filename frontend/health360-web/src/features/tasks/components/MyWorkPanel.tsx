@@ -14,10 +14,10 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import type { WorkItem } from '../api/tasksApi';
+import type { MyWorkSummary, WorkItem } from '../api/tasksApi';
 import { useMyWork, useMyWorkSummary, useUpdateWorkItemStatus } from '../hooks/useTaskQueries';
 
-const QUEUES: { value: string; label: string; key: keyof NonNullable<ReturnType<typeof useMyWorkSummary>['data']> | null }[] = [
+const QUEUES: { value: string; label: string; key: keyof MyWorkSummary }[] = [
   { value: '', label: 'All open', key: 'openTotal' },
   { value: 'URGENT', label: 'Urgent', key: 'urgent' },
   { value: 'TODAY', label: 'Today', key: 'today' },
@@ -86,7 +86,7 @@ export function MyWorkPanel({
 
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
         {QUEUES.map((q) => {
-          const count = q.key && summary ? summary[q.key] : undefined;
+          const count = summary ? summary[q.key] : undefined;
           const selected = queue === q.value || (q.value === '' && queue === '');
           return (
             <Chip
