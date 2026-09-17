@@ -1,12 +1,18 @@
 package com.health360.asset.presentation.controller;
 
+import com.health360.asset.application.service.AssetEamService;
 import com.health360.asset.application.service.AssetService;
+import com.health360.asset.presentation.dto.request.CompleteAssetTicketRequest;
 import com.health360.asset.presentation.dto.request.CreateAssetMaintenanceRequest;
 import com.health360.asset.presentation.dto.request.CreateAssetRequest;
+import com.health360.asset.presentation.dto.request.CreateAssetScheduleRequest;
+import com.health360.asset.presentation.dto.request.ReportAssetBreakdownRequest;
 import com.health360.asset.presentation.dto.request.UpdateAssetRequest;
 import com.health360.asset.presentation.dto.request.UpdateAssetStatusRequest;
 import com.health360.asset.presentation.dto.response.AssetCategoryResponse;
 import com.health360.asset.presentation.dto.response.AssetMaintenanceResponse;
+import com.health360.asset.presentation.dto.response.AssetMaintenanceScheduleResponse;
+import com.health360.asset.presentation.dto.response.AssetMaintenanceTicketResponse;
 import com.health360.asset.presentation.dto.response.AssetResponse;
 import com.health360.config.security.UserPrincipal;
 import com.health360.shared.dto.ApiResponse;
@@ -37,12 +43,22 @@ import java.util.UUID;
 public class AssetController {
 
     private final AssetService assetService;
+    private final AssetEamService assetEamService;
 
     @GetMapping("/categories")
     @PreAuthorize("hasAuthority('asset:read')")
     public ResponseEntity<ApiResponse<List<AssetCategoryResponse>>> listCategories(
             @AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(ApiResponse.ok(assetService.listCategories(principal)));
+    }
+
+    @GetMapping("/lookup")
+    @PreAuthorize("hasAuthority('asset:read')")
+    public ResponseEntity<ApiResponse<AssetResponse>> lookupByQr(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam UUID hospitalId,
+            @RequestParam String qr) {
+        return ResponseEntity.ok(ApiResponse.ok(assetEamService.lookupByQr(principal, hospitalId, qr)));
     }
 
     @PostMapping
@@ -68,6 +84,47 @@ public class AssetController {
                 assetService.listAssets(principal, hospitalId, branchId, status, categoryId, q, pageable)));
     }
 
+    @GetMapping("/tickets")
+    @PreAuthorize("hasAuthority('asset:read')")
+    public ResponseEntity<ApiResponse<Page<AssetMaintenanceTicketResponse>>> listTickets(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam UUID hospitalId,
+            @RequestParam UUID branchId,
+            @RequestParam(required = false) String status,
+            @PageableDefault(size = 50) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                assetEamService.listTickets(principal, hospitalId, branchId, status, pageable)));
+    }
+
+    @PostMapping("/tickets/{ticketId}/complete")
+    @PreAuthorize("hasAuthority('asset:ticket:write') or hasAuthority('asset:maintenance:write') or hasAuthority('asset:write')")
+    public ResponseEntity<ApiResponse<AssetMaintenanceTicketResponse>> completeTicket(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID ticketId,
+            @RequestBody(required = false) CompleteAssetTicketRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(assetEamService.completeTicket(
+                principal, ticketId, request != null ? request : new CompleteAssetTicketRequest())));
+    }
+
+    @PostMapping("/schedules")
+    @PreAuthorize("hasAuthority('asset:maintenance:write') or hasAuthority('asset:write')")
+    public ResponseEntity<ApiResponse<AssetMaintenanceScheduleResponse>> createSchedule(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody CreateAssetScheduleRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(assetEamService.createSchedule(principal, request)));
+    }
+
+    @PostMapping("/schedules/generate-due")
+    @PreAuthorize("hasAuthority('asset:maintenance:write') or hasAuthority('asset:write')")
+    public ResponseEntity<ApiResponse<List<AssetMaintenanceTicketResponse>>> generateDue(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam UUID hospitalId,
+            @RequestParam UUID branchId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                assetEamService.generateDueTickets(principal, hospitalId, branchId)));
+    }
+
     @GetMapping("/{assetId}")
     @PreAuthorize("hasAuthority('asset:read')")
     public ResponseEntity<ApiResponse<AssetResponse>> getAsset(
@@ -86,12 +143,46 @@ public class AssetController {
     }
 
     @PostMapping("/{assetId}/status")
-    @PreAuthorize("hasAuthority('asset:write')")
+    @PreAuthorize("hasAuthority('asset:write') or hasAuthority('asset:dispose')")
     public ResponseEntity<ApiResponse<AssetResponse>> updateStatus(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable UUID assetId,
             @Valid @RequestBody UpdateAssetStatusRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(assetService.updateStatus(principal, assetId, request)));
+    }
+
+    @PostMapping("/{assetId}/commission")
+    @PreAuthorize("hasAuthority('asset:write')")
+    public ResponseEntity<ApiResponse<AssetResponse>> commission(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID assetId) {
+        return ResponseEntity.ok(ApiResponse.ok(assetEamService.commission(principal, assetId)));
+    }
+
+    @PostMapping("/{assetId}/breakdown")
+    @PreAuthorize("hasAuthority('asset:ticket:write') or hasAuthority('asset:maintenance:write') or hasAuthority('asset:write')")
+    public ResponseEntity<ApiResponse<AssetMaintenanceTicketResponse>> reportBreakdown(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID assetId,
+            @Valid @RequestBody ReportAssetBreakdownRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(assetEamService.reportBreakdown(principal, assetId, request)));
+    }
+
+    @GetMapping("/{assetId}/tickets")
+    @PreAuthorize("hasAuthority('asset:read')")
+    public ResponseEntity<ApiResponse<List<AssetMaintenanceTicketResponse>>> listAssetTickets(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID assetId) {
+        return ResponseEntity.ok(ApiResponse.ok(assetEamService.listTicketsForAsset(principal, assetId)));
+    }
+
+    @GetMapping("/{assetId}/schedules")
+    @PreAuthorize("hasAuthority('asset:read')")
+    public ResponseEntity<ApiResponse<List<AssetMaintenanceScheduleResponse>>> listSchedules(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID assetId) {
+        return ResponseEntity.ok(ApiResponse.ok(assetEamService.listSchedules(principal, assetId)));
     }
 
     @PostMapping("/{assetId}/maintenance")

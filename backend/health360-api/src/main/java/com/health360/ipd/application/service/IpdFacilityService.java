@@ -244,6 +244,26 @@ public class IpdFacilityService {
         }
     }
 
+    /**
+     * Facility housekeeping completion: CLEANING → AVAILABLE.
+     * Invoked from facility work orders without requiring separate bed-manage UI step.
+     */
+    @Transactional
+    public void markCleanedAvailable(UUID tenantId, UUID bedId, UUID userId) {
+        IpdBedEntity bed = requireBed(tenantId, bedId);
+        BedStatus current = BedStatus.parse(bed.getStatus());
+        if (current == BedStatus.AVAILABLE) {
+            return;
+        }
+        if (current != BedStatus.CLEANING) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.CONFLICT,
+                    "Bed is not in CLEANING status (current=" + current + ")");
+        }
+        applyStatusTransition(bed, BedStatus.AVAILABLE, userId);
+        auditLogService.record(tenantId, userId, "IPD_BED_CLEANED_AVAILABLE",
+                "IpdBed", bed.getId(), Map.of("from", "CLEANING", "to", "AVAILABLE"));
+    }
+
     void reserveBed(IpdBedEntity bed, UUID userId) {
         applyStatusTransition(bed, BedStatus.RESERVED, userId);
     }

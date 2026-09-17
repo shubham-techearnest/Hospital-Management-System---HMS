@@ -1,5 +1,7 @@
 package com.health360.pharmacy.application.service;
 
+import com.health360.automation.application.service.EventPublisher;
+import com.health360.automation.domain.HospitalEventTypes;
 import com.health360.clinical.domain.PrescriptionStatus;
 import com.health360.clinical.infrastructure.persistence.entity.PrescriptionEntity;
 import com.health360.clinical.infrastructure.persistence.entity.PrescriptionItemEntity;
@@ -50,6 +52,7 @@ public class PharmacyRequestService {
     private final AuditLogService auditLogService;
     private final TransactionalNotificationService notificationService;
     private final PartnerNearbySearchService partnerNearbySearchService;
+    private final EventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<PharmacyRequestResponse> listMyRequests(UserPrincipal principal) {
@@ -226,6 +229,23 @@ public class PharmacyRequestService {
                 .orElse(null);
         if (saved != null) {
             inventoryService.decrementForDispense(principal, saved);
+            eventPublisher.publish(EventPublisher.PublishRequest.builder()
+                    .tenantId(principal.getTenantId())
+                    .hospitalId(saved.getHospitalId())
+                    .branchId(saved.getBranchId())
+                    .eventType(HospitalEventTypes.MEDICATION_DISPENSED)
+                    .patientId(saved.getPatientId())
+                    .encounterId(saved.getEncounterId())
+                    .userId(principal.getUserId())
+                    .entityType("PharmacyRequest")
+                    .entityId(saved.getId())
+                    .correlationId(saved.getId())
+                    .sourceModule("PHARMACY")
+                    .payload(Map.of(
+                            "pharmacyRequestId", saved.getId().toString(),
+                            "requestNumber", saved.getRequestNumber(),
+                            "prescriptionId", saved.getPrescriptionId().toString()))
+                    .build());
         }
         return response;
     }

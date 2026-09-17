@@ -133,6 +133,30 @@ const HospitalIcuPage = lazy(() =>
 const HospitalAssetPage = lazy(() =>
   import('@/features/hospital/pages/HospitalAssetPage').then((m) => ({ default: m.HospitalAssetPage })),
 );
+const HospitalMyWorkPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalMyWorkPage').then((m) => ({ default: m.HospitalMyWorkPage })),
+);
+const HospitalEdBoardPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalEdBoardPage').then((m) => ({ default: m.HospitalEdBoardPage })),
+);
+const HospitalInventoryPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalInventoryPage').then((m) => ({ default: m.HospitalInventoryPage })),
+);
+const HospitalProcurementPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalProcurementPage').then((m) => ({ default: m.HospitalProcurementPage })),
+);
+const HospitalFacilityPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalFacilityPage').then((m) => ({ default: m.HospitalFacilityPage })),
+);
+const HospitalInsurancePage = lazy(() =>
+  import('@/features/hospital/pages/HospitalInsurancePage').then((m) => ({ default: m.HospitalInsurancePage })),
+);
+const HospitalBloodBankPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalBloodBankPage').then((m) => ({ default: m.HospitalBloodBankPage })),
+);
+const HospitalStaffOpsPage = lazy(() =>
+  import('@/features/hospital/pages/HospitalStaffOpsPage').then((m) => ({ default: m.HospitalStaffOpsPage })),
+);
 const HospitalDashboardPage = lazy(() =>
   import('@/features/hospital/pages/HospitalDashboardPage').then((m) => ({ default: m.HospitalDashboardPage })),
 );
@@ -221,6 +245,11 @@ const HospitalInvoicesPage = lazy(() =>
 const HospitalInvoiceDetailPage = lazy(() =>
   import('@/features/billing/pages/HospitalInvoiceDetailPage').then((m) => ({ default: m.HospitalInvoiceDetailPage })),
 );
+const HospitalChargeExceptionsPage = lazy(() =>
+  import('@/features/billing/pages/HospitalChargeExceptionsPage').then((m) => ({
+    default: m.HospitalChargeExceptionsPage,
+  })),
+);
 const PatientSearchPage = lazy(() =>
   import('@/features/reception/pages/PatientSearchPage').then((m) => ({ default: m.PatientSearchPage })),
 );
@@ -235,6 +264,9 @@ const PatientReceiptPage = lazy(() =>
 );
 const NursingDashboardPage = lazy(() =>
   import('@/features/nursing/pages/NursingDashboardPage').then((m) => ({ default: m.NursingDashboardPage })),
+);
+const NursingMyWorkPage = lazy(() =>
+  import('@/features/nursing/pages/NursingMyWorkPage').then((m) => ({ default: m.NursingMyWorkPage })),
 );
 const NursingWardBoardPage = lazy(() =>
   import('@/features/nursing/pages/NursingWardBoardPage').then((m) => ({ default: m.NursingWardBoardPage })),
@@ -292,6 +324,9 @@ const HospitalSubscriptionPage = lazy(() =>
 );
 const DoctorOpdPage = lazy(() =>
   import('@/features/doctor/pages/DoctorOpdPage').then((m) => ({ default: m.DoctorOpdPage })),
+);
+const DoctorMyWorkPage = lazy(() =>
+  import('@/features/doctor/pages/DoctorMyWorkPage').then((m) => ({ default: m.DoctorMyWorkPage })),
 );
 const DoctorIpdPage = lazy(() =>
   import('@/features/doctor/pages/DoctorIpdPage').then((m) => ({ default: m.DoctorIpdPage })),
@@ -463,6 +498,7 @@ export function AppRouter() {
         >
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<LazyPage><DoctorDashboardPage /></LazyPage>} />
+          <Route path="my-work" element={<LazyPage><DoctorMyWorkPage /></LazyPage>} />
           <Route path="profile" element={<LazyPage><DoctorProfilePage /></LazyPage>} />
           <Route
             path="verification"
@@ -513,12 +549,21 @@ export function AppRouter() {
           <Route path="catalogs" element={<LazyPage><HospitalClinicalCatalogsPage /></LazyPage>} />
           <Route path="billing/invoices" element={<LazyPage><HospitalInvoicesPage /></LazyPage>} />
           <Route path="billing/invoices/:invoiceId" element={<LazyPage><HospitalInvoiceDetailPage /></LazyPage>} />
+          <Route path="billing/charge-exceptions" element={<LazyPage><HospitalChargeExceptionsPage /></LazyPage>} />
           <Route path="billing/checkout/:encounterId" element={<LazyPage><ReceptionCheckoutPage /></LazyPage>} />
           <Route path="ipd" element={<LazyPage><HospitalIpdPage /></LazyPage>} />
           <Route path="ipd/admissions/:admissionId" element={<LazyPage><HospitalIpdAdmissionPage /></LazyPage>} />
           <Route path="ipd-services" element={<LazyPage><HospitalIpdServicesPage /></LazyPage>} />
           <Route path="icu" element={<LazyPage><HospitalIcuPage /></LazyPage>} />
           <Route path="assets" element={<LazyPage><HospitalAssetPage /></LazyPage>} />
+          <Route path="my-work" element={<LazyPage><HospitalMyWorkPage /></LazyPage>} />
+          <Route path="ed" element={<LazyPage><HospitalEdBoardPage /></LazyPage>} />
+          <Route path="inventory" element={<LazyPage><HospitalInventoryPage /></LazyPage>} />
+          <Route path="procurement" element={<LazyPage><HospitalProcurementPage /></LazyPage>} />
+          <Route path="facility" element={<LazyPage><HospitalFacilityPage /></LazyPage>} />
+          <Route path="insurance" element={<LazyPage><HospitalInsurancePage /></LazyPage>} />
+          <Route path="blood-bank" element={<LazyPage><HospitalBloodBankPage /></LazyPage>} />
+          <Route path="staff-ops" element={<LazyPage><HospitalStaffOpsPage /></LazyPage>} />
           <Route path="lab" element={<LazyPage><LabDashboardPage /></LazyPage>} />
           <Route path="lab/dashboard" element={<LazyPage><LabDashboardPage /></LazyPage>} />
           <Route path="radiology" element={<LazyPage><RadiologyDashboardPage /></LazyPage>} />
@@ -643,6 +688,7 @@ export function AppRouter() {
         <Route path="/nursing" element={<ProtectedRoute><RoleRoute role="NURSE"><NursingPortalLayout /></RoleRoute></ProtectedRoute>}>
           <Route index element={<Navigate to="ward" replace />} />
           <Route path="ward" element={<LazyPage><NursingWardBoardPage /></LazyPage>} />
+          <Route path="my-work" element={<LazyPage><NursingMyWorkPage /></LazyPage>} />
           <Route path="admissions/:admissionId" element={<LazyPage><NursingAdmissionPage /></LazyPage>} />
           <Route path="mar" element={<LazyPage><NursingMarPage /></LazyPage>} />
           <Route path="mar/:medicationOrderId" element={<LazyPage><NursingMarOrderPage /></LazyPage>} />

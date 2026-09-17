@@ -24,9 +24,17 @@ export interface HospitalAsset {
   manufacturer?: string;
   model?: string;
   purchaseDate?: string;
+  purchaseCost?: number;
+  supplierName?: string;
   warrantyExpiry?: string;
+  amcExpiry?: string;
   locationLabel?: string;
   status: string;
+  criticality?: string;
+  qrPayload?: string;
+  nextPmAt?: string;
+  nextCalibrationAt?: string;
+  commissionedAt?: string;
   notes?: string;
   updatedAt?: string;
 }
@@ -42,7 +50,41 @@ export interface AssetMaintenance {
   costAmount?: number;
 }
 
-export const ASSET_STATUSES = ['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'RETIRED', 'DISPOSED'] as const;
+export interface AssetTicket {
+  ticketId: string;
+  assetId: string;
+  scheduleId?: string;
+  ticketNumber: string;
+  ticketType: string;
+  status: string;
+  priority: string;
+  title: string;
+  description?: string;
+  openedAt: string;
+  completedAt?: string;
+  resolutionNotes?: string;
+}
+
+export interface AssetSchedule {
+  scheduleId: string;
+  assetId: string;
+  scheduleType: string;
+  cadence: string;
+  intervalDays?: number;
+  nextDueAt: string;
+  lastGeneratedAt?: string;
+  active: boolean;
+  notes?: string;
+}
+
+export const ASSET_STATUSES = [
+  'AVAILABLE',
+  'IN_USE',
+  'MAINTENANCE',
+  'UNDER_REPAIR',
+  'RETIRED',
+  'DISPOSED',
+] as const;
 export const MAINTENANCE_TYPES = ['PREVENTIVE', 'CORRECTIVE', 'CALIBRATION', 'INSPECTION'] as const;
 
 function unwrap<T>(envelope: ApiEnvelope<T>): T {
@@ -151,5 +193,81 @@ export async function addAssetMaintenance(
     `/api/v1/assets/${assetId}/maintenance`,
     payload,
   );
+  return unwrap(data);
+}
+
+export async function commissionAsset(assetId: string): Promise<HospitalAsset> {
+  const { data } = await apiClient.post<ApiEnvelope<HospitalAsset>>(`/api/v1/assets/${assetId}/commission`);
+  return unwrap(data);
+}
+
+export async function reportAssetBreakdown(
+  assetId: string,
+  payload: { description: string; priority?: string },
+): Promise<AssetTicket> {
+  const { data } = await apiClient.post<ApiEnvelope<AssetTicket>>(
+    `/api/v1/assets/${assetId}/breakdown`,
+    payload,
+  );
+  return unwrap(data);
+}
+
+export async function listAssetTickets(params: {
+  hospitalId: string;
+  branchId: string;
+  status?: string;
+}): Promise<SpringPage<AssetTicket>> {
+  const { data } = await apiClient.get<ApiEnvelope<SpringPage<AssetTicket>>>('/api/v1/assets/tickets', {
+    params,
+  });
+  return unwrap(data);
+}
+
+export async function listAssetTicketsForAsset(assetId: string): Promise<AssetTicket[]> {
+  const { data } = await apiClient.get<ApiEnvelope<AssetTicket[]>>(`/api/v1/assets/${assetId}/tickets`);
+  return unwrap(data);
+}
+
+export async function completeAssetTicket(
+  ticketId: string,
+  payload?: { resolutionNotes?: string; restoreAvailable?: boolean },
+): Promise<AssetTicket> {
+  const { data } = await apiClient.post<ApiEnvelope<AssetTicket>>(
+    `/api/v1/assets/tickets/${ticketId}/complete`,
+    payload ?? {},
+  );
+  return unwrap(data);
+}
+
+export async function createAssetSchedule(payload: {
+  assetId: string;
+  scheduleType: string;
+  cadence: string;
+  intervalDays?: number;
+  nextDueAt?: string;
+  notes?: string;
+}): Promise<AssetSchedule> {
+  const { data } = await apiClient.post<ApiEnvelope<AssetSchedule>>('/api/v1/assets/schedules', payload);
+  return unwrap(data);
+}
+
+export async function listAssetSchedules(assetId: string): Promise<AssetSchedule[]> {
+  const { data } = await apiClient.get<ApiEnvelope<AssetSchedule[]>>(`/api/v1/assets/${assetId}/schedules`);
+  return unwrap(data);
+}
+
+export async function generateDueAssetTickets(hospitalId: string, branchId: string): Promise<AssetTicket[]> {
+  const { data } = await apiClient.post<ApiEnvelope<AssetTicket[]>>(
+    '/api/v1/assets/schedules/generate-due',
+    null,
+    { params: { hospitalId, branchId } },
+  );
+  return unwrap(data);
+}
+
+export async function lookupAssetByQr(hospitalId: string, qr: string): Promise<HospitalAsset> {
+  const { data } = await apiClient.get<ApiEnvelope<HospitalAsset>>('/api/v1/assets/lookup', {
+    params: { hospitalId, qr },
+  });
   return unwrap(data);
 }

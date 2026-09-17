@@ -27,6 +27,9 @@ import {
   useAssetCategories,
   useAssetMaintenance,
   useAssetMutations,
+  useAssetSchedules,
+  useAssetTickets,
+  useAssetTicketsForAsset,
   useAssets,
 } from '@/features/asset/hooks/useAssetQueries';
 
@@ -34,6 +37,7 @@ const STATUS_COLOR: Record<string, 'default' | 'success' | 'warning' | 'error' |
   AVAILABLE: 'success',
   IN_USE: 'info',
   MAINTENANCE: 'warning',
+  UNDER_REPAIR: 'error',
   RETIRED: 'default',
   DISPOSED: 'error',
 };
@@ -49,13 +53,15 @@ export function AssetManagementPanel({
   hospitalId,
   branchId,
   title = 'Asset management',
-  subtitle = 'Register hospital fixed assets and medical equipment, update status, and log maintenance.',
+  subtitle = 'Register assets, commission, schedule PM, report breakdowns, and close tickets.',
 }: AssetManagementPanelProps) {
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [search, setSearch] = useState('');
   const [selectedAssetId, setSelectedAssetId] = useState('');
+  const [qrLookup, setQrLookup] = useState('');
+  const [breakdownNotes, setBreakdownNotes] = useState('');
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -75,6 +81,10 @@ export function AssetManagementPanel({
   const totalPages = assetsPage?.totalPages ?? 0;
   const selectedAsset = assets.find((a) => a.assetId === selectedAssetId) ?? null;
   const { data: maintenance = [] } = useAssetMaintenance(selectedAssetId || undefined);
+  const { data: assetTickets = [] } = useAssetTicketsForAsset(selectedAssetId || undefined);
+  const { data: schedules = [] } = useAssetSchedules(selectedAssetId || undefined);
+  const { data: openTicketsPage } = useAssetTickets(hospitalId, branchId);
+  const openTickets = openTicketsPage?.content ?? [];
   const mutations = useAssetMutations(hospitalId ?? '', branchId ?? '');
 
   const [form, setForm] = useState({
@@ -89,6 +99,7 @@ export function AssetManagementPanel({
   });
   const [statusTarget, setStatusTarget] = useState('AVAILABLE');
   const [maintForm, setMaintForm] = useState({ maintenanceType: 'PREVENTIVE', notes: '' });
+  const [scheduleForm, setScheduleForm] = useState({ scheduleType: 'PREVENTIVE', cadence: 'MONTHLY' });
 
   const showError = (e: unknown) =>
     setSnackbar({ open: true, message: parseApiError(e).message, severity: 'error' });
@@ -152,6 +163,71 @@ export function AssetManagementPanel({
       });
       setMaintForm({ maintenanceType: 'PREVENTIVE', notes: '' });
       setSnackbar({ open: true, message: 'Maintenance logged', severity: 'success' });
+    } catch (e) {
+      showError(e);
+    }
+  };
+
+  const handleCommission = async () => {
+    if (!selectedAssetId) return;
+    try {
+      await mutations.commission.mutateAsync(selectedAssetId);
+      setSnackbar({ open: true, message: 'Asset commissioned', severity: 'success' });
+    } catch (e) {
+      showError(e);
+    }
+  };
+
+  const handleBreakdown = async () => {
+    if (!selectedAssetId) return;
+    if (!breakdownNotes.trim()) {
+      setSnackbar({ open: true, message: 'Describe the breakdown', severity: 'error' });
+      return;
+    }
+    try {
+      await mutations.breakdown.mutateAsync({ assetId: selectedAssetId, description: breakdownNotes.trim() });
+      setBreakdownNotes('');
+      setSnackbar({ open: true, message: 'Breakdown ticket opened', severity: 'success' });
+    } catch (e) {
+      showError(e);
+    }
+  };
+
+  const handleCreateSchedule = async () => {
+    if (!selectedAssetId) return;
+    try {
+      await mutations.createSchedule.mutateAsync({
+        assetId: selectedAssetId,
+        scheduleType: scheduleForm.scheduleType,
+        cadence: scheduleForm.cadence,
+        nextDueAt: new Date().toISOString(),
+      });
+      setSnackbar({ open: true, message: 'PM schedule created (due now)', severity: 'success' });
+    } catch (e) {
+      showError(e);
+    }
+  };
+
+  const handleGenerateDue = async () => {
+    try {
+      const tickets = await mutations.generateDue.mutateAsync();
+      setSnackbar({
+        open: true,
+        message: `Generated ${tickets.length} due ticket(s)`,
+        severity: 'success',
+      });
+    } catch (e) {
+      showError(e);
+    }
+  };
+
+  const handleQrLookup = async () => {
+    if (!qrLookup.trim()) return;
+    try {
+      const asset = await mutations.lookupQr.mutateAsync(qrLookup.trim());
+      setSelectedAssetId(asset.assetId);
+      setSearch(asset.assetTag);
+      setSnackbar({ open: true, message: `Found ${asset.assetTag}`, severity: 'success' });
     } catch (e) {
       showError(e);
     }
@@ -241,13 +317,25 @@ export function AssetManagementPanel({
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
             <TextField
               size="small"
-              label="Search tag / name"
+              label="Search tag / name / QR"
               value={search}
               onChange={(e) => {
                 setPage(0);
                 setSearch(e.target.value);
               }}
             />
+            <TextField
+              size="small"
+              label="QR lookup (AST:uuid)"
+              value={qrLookup}
+              onChange={(e) => setQrLookup(e.target.value)}
+            />
+            <Button size="small" variant="outlined" onClick={handleQrLookup}>
+              Lookup QR
+            </Button>
+            <Button size="small" variant="outlined" onClick={handleGenerateDue} disabled={mutations.generateDue.isPending}>
+              Generate due PM tickets
+            </Button>
             <TextField
               select
               size="small"
@@ -292,6 +380,7 @@ export function AssetManagementPanel({
                 <TableRow>
                   <TableCell>Tag</TableCell>
                   <TableCell>Name</TableCell>
+                  <TableCell>QR</TableCell>
                   <TableCell>Category</TableCell>
                   <TableCell>Location</TableCell>
                   <TableCell>Status</TableCell>
@@ -309,6 +398,11 @@ export function AssetManagementPanel({
                   >
                     <TableCell>{a.assetTag}</TableCell>
                     <TableCell>{a.name}</TableCell>
+                    <TableCell>
+                      <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
+                        {a.qrPayload ?? '—'}
+                      </Typography>
+                    </TableCell>
                     <TableCell>{a.categoryName ?? a.categoryCode ?? '—'}</TableCell>
                     <TableCell>{a.locationLabel ?? '—'}</TableCell>
                     <TableCell>
@@ -338,7 +432,7 @@ export function AssetManagementPanel({
                 ))}
                 {assets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6}>
+                    <TableCell colSpan={7}>
                       <Typography variant="body2" color="text.secondary">
                         No assets found for this branch.
                       </Typography>
@@ -364,7 +458,128 @@ export function AssetManagementPanel({
         {selectedAsset && (
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle1" gutterBottom>
-              Maintenance — {selectedAsset.assetTag} ({selectedAsset.name})
+              Detail — {selectedAsset.assetTag} ({selectedAsset.name})
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              QR: <span style={{ fontFamily: 'monospace' }}>{selectedAsset.qrPayload ?? '—'}</span>
+              {selectedAsset.commissionedAt
+                ? ` · Commissioned ${new Date(selectedAsset.commissionedAt).toLocaleString()}`
+                : ' · Not commissioned'}
+            </Typography>
+            <Stack direction="row" spacing={1} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
+              <Button size="small" variant="outlined" onClick={handleCommission}>
+                Commission
+              </Button>
+              <TextField
+                size="small"
+                label="Breakdown notes"
+                value={breakdownNotes}
+                onChange={(e) => setBreakdownNotes(e.target.value)}
+                sx={{ minWidth: 240 }}
+              />
+              <Button size="small" color="error" variant="contained" onClick={handleBreakdown}>
+                Report breakdown
+              </Button>
+            </Stack>
+
+            <Typography variant="subtitle2" gutterBottom>
+              PM schedules
+            </Typography>
+            <Stack direction="row" spacing={1} sx={{ mb: 1 }} flexWrap="wrap" useFlexGap>
+              <TextField
+                select
+                size="small"
+                label="Type"
+                value={scheduleForm.scheduleType}
+                onChange={(e) => setScheduleForm((f) => ({ ...f, scheduleType: e.target.value }))}
+                sx={{ minWidth: 140 }}
+              >
+                {['PREVENTIVE', 'CALIBRATION', 'INSPECTION'].map((t) => (
+                  <MenuItem key={t} value={t}>
+                    {t}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select
+                size="small"
+                label="Cadence"
+                value={scheduleForm.cadence}
+                onChange={(e) => setScheduleForm((f) => ({ ...f, cadence: e.target.value }))}
+                sx={{ minWidth: 140 }}
+              >
+                {['WEEKLY', 'MONTHLY', 'QUARTERLY', 'ANNUAL'].map((c) => (
+                  <MenuItem key={c} value={c}>
+                    {c}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <Button size="small" variant="outlined" onClick={handleCreateSchedule}>
+                Add schedule (due now)
+              </Button>
+            </Stack>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {schedules.length === 0
+                ? 'No schedules.'
+                : schedules.map((s) => `${s.scheduleType}/${s.cadence} next ${new Date(s.nextDueAt).toLocaleDateString()}`).join(' · ')}
+            </Typography>
+
+            <Typography variant="subtitle2" gutterBottom>
+              Tickets
+            </Typography>
+            <TableContainer sx={{ mb: 2 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Number</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {assetTickets.map((t) => (
+                    <TableRow key={t.ticketId}>
+                      <TableCell>{t.ticketNumber}</TableCell>
+                      <TableCell>{t.ticketType}</TableCell>
+                      <TableCell>{t.status}</TableCell>
+                      <TableCell>
+                        {(t.status === 'OPEN' || t.status === 'IN_PROGRESS') && (
+                          <Button
+                            size="small"
+                            onClick={async () => {
+                              try {
+                                await mutations.completeTicket.mutateAsync({
+                                  ticketId: t.ticketId,
+                                  notes: 'Repaired / completed from UI',
+                                });
+                                setSnackbar({ open: true, message: 'Ticket completed', severity: 'success' });
+                              } catch (e) {
+                                showError(e);
+                              }
+                            }}
+                          >
+                            Complete
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {assetTickets.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4}>
+                        <Typography variant="body2" color="text.secondary">
+                          No tickets for this asset.
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            <Typography variant="subtitle1" gutterBottom>
+              Maintenance log
             </Typography>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
               <TextField
@@ -423,6 +638,43 @@ export function AssetManagementPanel({
             </TableContainer>
           </Paper>
         )}
+
+        <Paper sx={{ p: 2 }}>
+          <Typography variant="subtitle1" gutterBottom>
+            Open / recent tickets (branch)
+          </Typography>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Ticket</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Title</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {openTickets.slice(0, 10).map((t) => (
+                  <TableRow key={t.ticketId}>
+                    <TableCell>{t.ticketNumber}</TableCell>
+                    <TableCell>{t.ticketType}</TableCell>
+                    <TableCell>{t.status}</TableCell>
+                    <TableCell>{t.title}</TableCell>
+                  </TableRow>
+                ))}
+                {openTickets.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4}>
+                      <Typography variant="body2" color="text.secondary">
+                        No tickets yet.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       </Stack>
 
       <Snackbar

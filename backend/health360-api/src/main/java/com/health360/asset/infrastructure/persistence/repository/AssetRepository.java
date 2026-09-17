@@ -20,6 +20,12 @@ public interface AssetRepository extends JpaRepository<AssetEntity, UUID> {
     boolean existsByHospitalIdAndBranchIdAndAssetTagAndIdNotAndDeletedAtIsNull(
             UUID hospitalId, UUID branchId, String assetTag, UUID id);
 
+    Optional<AssetEntity> findByTenantIdAndHospitalIdAndQrPayloadAndDeletedAtIsNull(
+            UUID tenantId, UUID hospitalId, String qrPayload);
+
+    Optional<AssetEntity> findByTenantIdAndHospitalIdAndBranchIdAndAssetTagAndDeletedAtIsNull(
+            UUID tenantId, UUID hospitalId, UUID branchId, String assetTag);
+
     @Query("""
             SELECT a FROM AssetEntity a
             WHERE a.tenantId = :tenantId
@@ -30,7 +36,8 @@ public interface AssetRepository extends JpaRepository<AssetEntity, UUID> {
               AND (:categoryId IS NULL OR a.categoryId = :categoryId)
               AND (:q IS NULL OR LOWER(a.name) LIKE LOWER(CONCAT('%', :q, '%'))
                    OR LOWER(a.assetTag) LIKE LOWER(CONCAT('%', :q, '%'))
-                   OR LOWER(COALESCE(a.serialNumber, '')) LIKE LOWER(CONCAT('%', :q, '%')))
+                   OR LOWER(COALESCE(a.serialNumber, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+                   OR LOWER(COALESCE(a.qrPayload, '')) LIKE LOWER(CONCAT('%', :q, '%')))
             ORDER BY a.updatedAt DESC
             """)
     Page<AssetEntity> search(

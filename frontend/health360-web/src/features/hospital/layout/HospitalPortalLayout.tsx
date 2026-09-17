@@ -16,15 +16,23 @@ import MedicalInformationOutlinedIcon from '@mui/icons-material/MedicalInformati
 import HealingOutlinedIcon from '@mui/icons-material/HealingOutlined';
 import LocalPharmacyOutlinedIcon from '@mui/icons-material/LocalPharmacyOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import WarehouseOutlinedIcon from '@mui/icons-material/WarehouseOutlined';
+import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
+import CleaningServicesOutlinedIcon from '@mui/icons-material/CleaningServicesOutlined';
+import BloodtypeOutlinedIcon from '@mui/icons-material/BloodtypeOutlined';
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import { PortalShellLayout, type PortalNavItem } from '@/shared/layout/PortalShellLayout';
 
 const navItems: PortalNavItem[] = [
-  { label: 'Overview', path: '/hospital/dashboard', icon: <DashboardOutlinedIcon /> },
+  { label: 'Command Center', path: '/hospital/dashboard', icon: <DashboardOutlinedIcon /> },
   { section: 'Clinical', label: 'OPD', path: '/hospital/opd', icon: <QueueOutlinedIcon /> },
+  { section: 'Clinical', label: 'ED', path: '/hospital/ed', icon: <EmergencyOutlinedIcon /> },
   { section: 'Clinical', label: 'IPD', path: '/hospital/ipd', icon: <HotelOutlinedIcon /> },
   { section: 'Clinical', label: 'IPD services', path: '/hospital/ipd-services', icon: <TuneOutlinedIcon /> },
   { section: 'Clinical', label: 'ICU', path: '/hospital/icu', icon: <MonitorHeartOutlinedIcon /> },
@@ -33,7 +41,14 @@ const navItems: PortalNavItem[] = [
   { section: 'Clinical', label: 'Theatre', path: '/hospital/ot', icon: <HealingOutlinedIcon /> },
   { section: 'Clinical', label: 'Pharmacy', path: '/hospital/pharmacy', icon: <LocalPharmacyOutlinedIcon /> },
   { section: 'Clinical', label: 'Invoices', path: '/hospital/billing/invoices', icon: <ReceiptLongOutlinedIcon /> },
+  { section: 'Clinical', label: 'Charge exceptions', path: '/hospital/billing/charge-exceptions', icon: <ReportProblemOutlinedIcon /> },
+  { section: 'Clinical', label: 'Insurance', path: '/hospital/insurance', icon: <CardMembershipOutlinedIcon /> },
+  { section: 'Clinical', label: 'Blood Bank', path: '/hospital/blood-bank', icon: <BloodtypeOutlinedIcon /> },
   { section: 'Clinical', label: 'Catalogs', path: '/hospital/catalogs', icon: <MenuBookOutlinedIcon /> },
+  { section: 'Operations', label: 'My Work', path: '/hospital/my-work', icon: <AssignmentOutlinedIcon /> },
+  { section: 'Operations', label: 'Facility', path: '/hospital/facility', icon: <CleaningServicesOutlinedIcon /> },
+  { section: 'Operations', label: 'Inventory', path: '/hospital/inventory', icon: <WarehouseOutlinedIcon /> },
+  { section: 'Operations', label: 'Procurement', path: '/hospital/procurement', icon: <ShoppingCartOutlinedIcon /> },
   { section: 'Operations', label: 'Assets', path: '/hospital/assets', icon: <Inventory2OutlinedIcon /> },
   { section: 'Navigation', label: 'Profile', path: '/hospital/profile', icon: <LocalHospitalOutlinedIcon /> },
   { section: 'Navigation', label: 'Branches', path: '/hospital/branches', icon: <AccountTreeOutlinedIcon /> },
@@ -44,6 +59,7 @@ const navItems: PortalNavItem[] = [
   { section: 'Navigation', label: 'Plan', path: '/hospital/subscription', icon: <CardMembershipOutlinedIcon /> },
   { section: 'People', label: 'Doctors', path: '/hospital/doctors', icon: <GroupsOutlinedIcon /> },
   { section: 'People', label: 'Staff', path: '/hospital/staff', icon: <BadgeOutlinedIcon /> },
+  { section: 'People', label: 'Staff ops', path: '/hospital/staff-ops', icon: <EventAvailableOutlinedIcon /> },
   { section: 'Account', label: 'Settings', path: '/hospital/settings/account', icon: <SettingsOutlinedIcon /> },
 ];
 

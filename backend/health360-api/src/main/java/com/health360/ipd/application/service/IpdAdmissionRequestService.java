@@ -1,5 +1,9 @@
 package com.health360.ipd.application.service;
 
+import com.health360.automation.application.service.ApprovalService;
+import com.health360.automation.application.service.EventPublisher;
+import com.health360.automation.domain.HospitalEventTypes;
+import com.health360.automation.domain.TaskTypes;
 import com.health360.clinical.infrastructure.persistence.entity.EncounterEntity;
 import com.health360.clinical.infrastructure.persistence.repository.EncounterRepository;
 import com.health360.config.security.UserPrincipal;
@@ -18,6 +22,7 @@ import com.health360.patient.infrastructure.persistence.repository.PatientProfil
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
+import com.health360.tasks.application.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -50,6 +56,9 @@ public class IpdAdmissionRequestService {
     private final IpdAccessService accessService;
     private final IpdFacilityService facilityService;
     private final AuditLogService auditLogService;
+    private final EventPublisher eventPublisher;
+    private final ApprovalService approvalService;
+    private final TaskService taskService;
 
     @Transactional
     public IpdAdmissionRequestResponse create(UserPrincipal principal, CreateAdmissionRequestPayload request) {
@@ -157,6 +166,34 @@ public class IpdAdmissionRequestService {
         auditLogService.record(principal.getTenantId(), principal.getUserId(), "IPD_ADMISSION_REQUEST_CREATED",
                 "IpdAdmissionRequest", saved.getId(),
                 Map.of("requestNumber", saved.getRequestNumber(), "source", source));
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("requestNumber", saved.getRequestNumber());
+        payload.put("admissionSource", source);
+        payload.put("admissionType", type);
+        payload.put("priority", priority);
+        approvalService.create(
+                principal.getTenantId(),
+                saved.getHospitalId(),
+                "IPD_ADMISSION",
+                "IpdAdmissionRequest",
+                saved.getId(),
+                principal.getUserId(),
+                payload);
+        eventPublisher.publish(EventPublisher.PublishRequest.builder()
+                .tenantId(principal.getTenantId())
+                .hospitalId(saved.getHospitalId())
+                .branchId(saved.getBranchId())
+                .eventType(HospitalEventTypes.ADMISSION_REQUESTED)
+                .patientId(saved.getPatientId())
+                .encounterId(saved.getSourceEncounterId())
+                .userId(principal.getUserId())
+                .entityType("IpdAdmissionRequest")
+                .entityId(saved.getId())
+                .correlationId(saved.getId())
+                .sourceModule("IPD")
+                .payload(payload)
+                .build());
 
         return toResponse(principal.getTenantId(), saved, patient, sourceEncounter);
     }
@@ -338,6 +375,49 @@ public class IpdAdmissionRequestService {
                 "IPD_ADMISSION_REQUEST_" + target.name(),
                 "IpdAdmissionRequest", saved.getId(),
                 Map.of("from", current.name(), "to", target.name()));
+
+        if (target == AdmissionRequestStatus.APPROVED) {
+            Map<String, Object> eventPayload = new HashMap<>();
+            eventPayload.put("requestNumber", saved.getRequestNumber());
+            eventPayload.put("from", current.name());
+            eventPayload.put("to", target.name());
+            eventPublisher.publish(EventPublisher.PublishRequest.builder()
+                    .tenantId(principal.getTenantId())
+                    .hospitalId(saved.getHospitalId())
+                    .branchId(saved.getBranchId())
+                    .eventType(HospitalEventTypes.ADMISSION_APPROVED)
+                    .patientId(saved.getPatientId())
+                    .encounterId(saved.getSourceEncounterId())
+                    .userId(principal.getUserId())
+                    .entityType("IpdAdmissionRequest")
+                    .entityId(saved.getId())
+                    .correlationId(saved.getId())
+                    .sourceModule("IPD")
+                    .payload(eventPayload)
+                    .build());
+        }
+
+        if (target == AdmissionRequestStatus.APPROVED
+                || target == AdmissionRequestStatus.REJECTED
+                || target == AdmissionRequestStatus.CANCELLED) {
+            String decision = target == AdmissionRequestStatus.CANCELLED ? "CANCELLED" : target.name();
+            String note = payload != null
+                    ? (payload.getReviewNotes() != null ? payload.getReviewNotes() : payload.getRejectionReason())
+                    : null;
+            approvalService.syncPendingDecision(
+                    principal.getTenantId(),
+                    "IpdAdmissionRequest",
+                    saved.getId(),
+                    decision,
+                    principal.getUserId(),
+                    note);
+            taskService.completeOpenTasksForEntity(
+                    principal.getTenantId(),
+                    "IpdAdmissionRequest",
+                    saved.getId(),
+                    TaskTypes.REVIEW_ADMISSION_REQUEST,
+                    principal.getUserId());
+        }
 
         return toResponse(principal.getTenantId(), saved, null, null);
     }

@@ -5,9 +5,9 @@ export function HospitalIpdAdmissionPage() {
     <IpdPatientChart
       portal="hospital"
       backTo="/hospital/ipd"
-      backLabel="Back to IPD ops"
+      backLabel="Back to IPD patients"
       title="IPD patient chart"
-      subtitle="Admission overview, billing, and discharge for this inpatient stay"
+      subtitle="Rounds, clinical notes, orders, billing, and discharge for this stay"
     />
   );
 }

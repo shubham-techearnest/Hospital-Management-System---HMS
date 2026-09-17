@@ -27,6 +27,8 @@ import com.health360.ipd.presentation.dto.response.IpdDischargeResponse;
 import com.health360.ipd.presentation.dto.response.IpdRoundResponse;
 import com.health360.patient.infrastructure.persistence.entity.PatientProfileEntity;
 import com.health360.patient.infrastructure.persistence.repository.PatientProfileRepository;
+import com.health360.automation.application.service.EventPublisher;
+import com.health360.automation.domain.HospitalEventTypes;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
 import com.health360.shared.exception.BusinessException;
@@ -63,6 +65,7 @@ public class IpdAdmissionService {
     private final HospitalAssociationRepository hospitalAssociationRepository;
     private final UserRepository userRepository;
     private final AuditLogService auditLogService;
+    private final EventPublisher eventPublisher;
 
     @Transactional
     public IpdAdmissionResponse admitPatient(UserPrincipal principal, CreateIpdAdmissionRequest request) {
@@ -197,6 +200,41 @@ public class IpdAdmissionService {
                         "patientId", request.getPatientId().toString(),
                         "bedId", bed.getId().toString(),
                         "primaryDoctorId", request.getPrimaryDoctorId().toString()));
+
+        Map<String, Object> admitPayload = new HashMap<>();
+        admitPayload.put("admissionId", savedAdmission.getId().toString());
+        admitPayload.put("bedId", bed.getId().toString());
+        admitPayload.put("primaryDoctorId", request.getPrimaryDoctorId().toString());
+        eventPublisher.publish(EventPublisher.PublishRequest.builder()
+                .tenantId(principal.getTenantId())
+                .hospitalId(savedAdmission.getHospitalId())
+                .branchId(savedAdmission.getBranchId())
+                .eventType(HospitalEventTypes.PATIENT_ADMITTED)
+                .patientId(savedAdmission.getPatientId())
+                .encounterId(savedAdmission.getEncounterId())
+                .userId(principal.getUserId())
+                .entityType("IpdAdmission")
+                .entityId(savedAdmission.getId())
+                .correlationId(savedAdmission.getId())
+                .sourceModule("IPD")
+                .payload(admitPayload)
+                .build());
+        eventPublisher.publish(EventPublisher.PublishRequest.builder()
+                .tenantId(principal.getTenantId())
+                .hospitalId(savedAdmission.getHospitalId())
+                .branchId(savedAdmission.getBranchId())
+                .eventType(HospitalEventTypes.BED_ASSIGNED)
+                .patientId(savedAdmission.getPatientId())
+                .encounterId(savedAdmission.getEncounterId())
+                .userId(principal.getUserId())
+                .entityType("IpdBed")
+                .entityId(bed.getId())
+                .correlationId(savedAdmission.getId())
+                .sourceModule("IPD")
+                .payload(Map.of(
+                        "admissionId", savedAdmission.getId().toString(),
+                        "bedId", bed.getId().toString()))
+                .build());
 
         return toAdmissionResponse(principal.getTenantId(), savedAdmission, encounter, bed);
     }
@@ -414,6 +452,29 @@ public class IpdAdmissionService {
                         "fromBedId", currentBed.getId().toString(),
                         "toBedId", targetBed.getId().toString(),
                         "reason", trimToNull(request.getReason()) != null ? request.getReason().trim() : ""));
+
+        Map<String, Object> transferPayload = new HashMap<>();
+        transferPayload.put("admissionId", admissionId.toString());
+        transferPayload.put("fromBedId", currentBed.getId().toString());
+        transferPayload.put("toBedId", targetBed.getId().toString());
+        transferPayload.put("bedId", currentBed.getId().toString());
+        if (trimToNull(request.getReason()) != null) {
+            transferPayload.put("reason", request.getReason().trim());
+        }
+        eventPublisher.publish(EventPublisher.PublishRequest.builder()
+                .tenantId(tenantId)
+                .hospitalId(admission.getHospitalId())
+                .branchId(admission.getBranchId())
+                .eventType(HospitalEventTypes.PATIENT_TRANSFERRED)
+                .patientId(admission.getPatientId())
+                .encounterId(admission.getEncounterId())
+                .userId(principal.getUserId())
+                .entityType("IpdAdmission")
+                .entityId(admissionId)
+                .correlationId(admissionId)
+                .sourceModule("IPD")
+                .payload(transferPayload)
+                .build());
 
         return toAdmissionResponse(tenantId, admission, encounter, targetBed);
     }

@@ -15,6 +15,8 @@ import com.health360.asset.presentation.dto.request.UpdateAssetStatusRequest;
 import com.health360.asset.presentation.dto.response.AssetCategoryResponse;
 import com.health360.asset.presentation.dto.response.AssetMaintenanceResponse;
 import com.health360.asset.presentation.dto.response.AssetResponse;
+import com.health360.automation.application.service.EventPublisher;
+import com.health360.automation.domain.HospitalEventTypes;
 import com.health360.config.security.UserPrincipal;
 import com.health360.hospital.infrastructure.persistence.entity.BranchEntity;
 import com.health360.hospital.infrastructure.persistence.entity.DepartmentEntity;
@@ -33,7 +35,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -53,6 +57,8 @@ public class AssetService {
     private final AssetAccessService accessService;
     private final AssetMapper mapper;
     private final AuditLogService auditLogService;
+    private final EventPublisher eventPublisher;
+    private final AssetEamService assetEamService;
 
     @Transactional(readOnly = true)
     public List<AssetCategoryResponse> listCategories(UserPrincipal principal) {
@@ -94,14 +100,39 @@ public class AssetService {
         asset.setManufacturer(trimToNull(request.getManufacturer()));
         asset.setModel(trimToNull(request.getModel()));
         asset.setPurchaseDate(request.getPurchaseDate());
+        asset.setPurchaseCost(request.getPurchaseCost());
+        asset.setSupplierName(trimToNull(request.getSupplierName()));
         asset.setWarrantyExpiry(request.getWarrantyExpiry());
+        asset.setAmcExpiry(request.getAmcExpiry());
         asset.setLocationLabel(trimToNull(request.getLocationLabel()));
         asset.setStatus(AssetStatus.AVAILABLE.name());
+        asset.setCriticality(normalizeCriticality(request.getCriticality()));
         asset.setNotes(trimToNull(request.getNotes()));
         asset.setCreatedBy(principal.getUserId());
         asset.setUpdatedBy(principal.getUserId());
 
         AssetEntity saved = assetRepository.save(asset);
+        saved.setQrPayload("AST:" + saved.getId());
+        saved = assetRepository.save(saved);
+
+        assetEamService.recordStatusHistory(principal, saved, null, saved.getStatus(), "Asset registered");
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("assetTag", saved.getAssetTag());
+        payload.put("qrPayload", saved.getQrPayload());
+        eventPublisher.publish(EventPublisher.PublishRequest.builder()
+                .tenantId(principal.getTenantId())
+                .hospitalId(saved.getHospitalId())
+                .branchId(saved.getBranchId())
+                .eventType(HospitalEventTypes.ASSET_CREATED)
+                .userId(principal.getUserId())
+                .entityType("Asset")
+                .entityId(saved.getId())
+                .correlationId(saved.getId())
+                .sourceModule("ASSET")
+                .payload(payload)
+                .build());
+
         auditLogService.record(principal.getTenantId(), principal.getUserId(), "ASSET_CREATED",
                 "Asset", saved.getId(), Map.of("assetTag", saved.getAssetTag()));
         return mapper.toAssetResponse(saved, category);
@@ -198,7 +229,12 @@ public class AssetService {
 
     @Transactional
     public AssetResponse updateStatus(UserPrincipal principal, UUID assetId, UpdateAssetStatusRequest request) {
-        accessService.assertCanWrite(principal);
+        if (AssetStatus.DISPOSED.name().equalsIgnoreCase(request.getStatus().trim())
+                || AssetStatus.RETIRED.name().equalsIgnoreCase(request.getStatus().trim())) {
+            accessService.assertCanDispose(principal);
+        } else {
+            accessService.assertCanWrite(principal);
+        }
         AssetEntity asset = requireAsset(principal.getTenantId(), assetId);
         accessService.assertModuleEnabled(principal, asset.getHospitalId());
 
@@ -210,6 +246,26 @@ public class AssetService {
         asset.setUpdatedBy(principal.getUserId());
         asset.touch();
         AssetEntity saved = assetRepository.save(asset);
+        assetEamService.recordStatusHistory(principal, saved, from.name(), to.name(), "Status change");
+
+        if (to == AssetStatus.DISPOSED) {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("assetTag", saved.getAssetTag());
+            payload.put("from", from.name());
+            eventPublisher.publish(EventPublisher.PublishRequest.builder()
+                    .tenantId(principal.getTenantId())
+                    .hospitalId(saved.getHospitalId())
+                    .branchId(saved.getBranchId())
+                    .eventType(HospitalEventTypes.ASSET_DISPOSED)
+                    .userId(principal.getUserId())
+                    .entityType("Asset")
+                    .entityId(saved.getId())
+                    .correlationId(saved.getId())
+                    .sourceModule("ASSET")
+                    .payload(payload)
+                    .build());
+        }
+
         auditLogService.record(principal.getTenantId(), principal.getUserId(), "ASSET_STATUS_CHANGED",
                 "Asset", saved.getId(), Map.of("from", from.name(), "to", to.name()));
         return mapper.toAssetResponse(saved, categoryRepository.findById(saved.getCategoryId()).orElse(null));
@@ -283,11 +339,13 @@ public class AssetService {
         }
         boolean allowed = switch (from) {
             case AVAILABLE -> to == AssetStatus.IN_USE || to == AssetStatus.MAINTENANCE
-                    || to == AssetStatus.RETIRED || to == AssetStatus.DISPOSED;
+                    || to == AssetStatus.UNDER_REPAIR || to == AssetStatus.RETIRED || to == AssetStatus.DISPOSED;
             case IN_USE -> to == AssetStatus.AVAILABLE || to == AssetStatus.MAINTENANCE
-                    || to == AssetStatus.RETIRED;
+                    || to == AssetStatus.UNDER_REPAIR || to == AssetStatus.RETIRED;
             case MAINTENANCE -> to == AssetStatus.AVAILABLE || to == AssetStatus.IN_USE
-                    || to == AssetStatus.RETIRED || to == AssetStatus.DISPOSED;
+                    || to == AssetStatus.UNDER_REPAIR || to == AssetStatus.RETIRED || to == AssetStatus.DISPOSED;
+            case UNDER_REPAIR -> to == AssetStatus.AVAILABLE || to == AssetStatus.IN_USE
+                    || to == AssetStatus.MAINTENANCE || to == AssetStatus.RETIRED || to == AssetStatus.DISPOSED;
             case RETIRED -> to == AssetStatus.DISPOSED;
             case DISPOSED -> false;
         };
@@ -353,6 +411,18 @@ public class AssetService {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
                     "Invalid maintenance type: " + raw);
         }
+    }
+
+    private String normalizeCriticality(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "NORMAL";
+        }
+        String value = raw.trim().toUpperCase(Locale.ROOT);
+        if (!Set.of("LOW", "NORMAL", "HIGH", "CRITICAL").contains(value)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, HttpStatus.BAD_REQUEST,
+                    "Invalid criticality: " + raw);
+        }
+        return value;
     }
 
     private String trimToNull(String value) {

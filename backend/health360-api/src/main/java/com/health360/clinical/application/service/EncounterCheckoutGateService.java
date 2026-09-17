@@ -26,6 +26,7 @@ public class EncounterCheckoutGateService {
     private static final String FINAL_NOTE = "FINAL";
     private static final String IPD = "IPD";
     private static final String ICU = "ICU";
+    private static final String EMERGENCY = "EMERGENCY";
 
     private final ClinicalNoteRepository noteRepository;
     private final PrescriptionRepository prescriptionRepository;
@@ -38,6 +39,11 @@ public class EncounterCheckoutGateService {
         EncounterEntity encounter = encounterRepository.findById(encounterId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND,
                         "Encounter not found"));
+
+        // ED disposition (home / ADT admit / transfer) closes the encounter without OPD consult/Rx gates.
+        if (EMERGENCY.equalsIgnoreCase(encounter.getEncounterType())) {
+            return;
+        }
 
         if (IPD.equalsIgnoreCase(encounter.getEncounterType())) {
             if (dischargeSummaryRepository.existsByEncounterIdAndDeletedAtIsNull(encounterId)) {

@@ -8,7 +8,7 @@ This guide covers the Health360 **patient** mobile app built with React Native (
 
 ### 1.1 Install and run (development)
 
-See [docs/phase-1/mobile/MOBILE_SETUP.md](../docs/phase-1/mobile/MOBILE_SETUP.md) for environment setup.
+See [docs/ssot/mobile/MOBILE-ARCHITECTURE.md](../docs/ssot/mobile/MOBILE-ARCHITECTURE.md) for environment setup.
 
 1. Start the backend API (`localhost:8080`).
 2. Start the mobile app with Expo.

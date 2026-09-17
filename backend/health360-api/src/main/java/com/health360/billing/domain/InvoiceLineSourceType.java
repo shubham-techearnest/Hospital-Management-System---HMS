@@ -9,5 +9,6 @@ public enum InvoiceLineSourceType {
     BED_DAY,
     NURSING,
     PROCEDURE,
-    DEPOSIT
+    DEPOSIT,
+    CHARGE_ENGINE
 }

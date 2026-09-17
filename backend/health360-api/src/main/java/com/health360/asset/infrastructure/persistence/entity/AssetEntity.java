@@ -7,6 +7,8 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -46,14 +48,41 @@ public class AssetEntity extends BaseAuditableEntity {
     @Column(name = "purchase_date")
     private LocalDate purchaseDate;
 
+    @Column(name = "purchase_cost")
+    private BigDecimal purchaseCost;
+
+    @Column(name = "supplier_name", length = 200)
+    private String supplierName;
+
     @Column(name = "warranty_expiry")
     private LocalDate warrantyExpiry;
+
+    @Column(name = "amc_expiry")
+    private LocalDate amcExpiry;
 
     @Column(name = "location_label", length = 200)
     private String locationLabel;
 
     @Column(nullable = false, length = 20)
     private String status = "AVAILABLE";
+
+    @Column(nullable = false, length = 20)
+    private String criticality = "NORMAL";
+
+    @Column(name = "qr_payload", length = 120)
+    private String qrPayload;
+
+    @Column(name = "next_pm_at")
+    private Instant nextPmAt;
+
+    @Column(name = "next_calibration_at")
+    private Instant nextCalibrationAt;
+
+    @Column(name = "commissioned_at")
+    private Instant commissionedAt;
+
+    @Column(name = "parent_asset_id")
+    private UUID parentAssetId;
 
     @Column(columnDefinition = "TEXT")
     private String notes;

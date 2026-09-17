@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -43,10 +44,20 @@ public class CreateAssetRequest {
 
     private LocalDate purchaseDate;
 
+    private BigDecimal purchaseCost;
+
+    @Size(max = 200)
+    private String supplierName;
+
     private LocalDate warrantyExpiry;
+
+    private LocalDate amcExpiry;
 
     @Size(max = 200)
     private String locationLabel;
+
+    @Size(max = 20)
+    private String criticality;
 
     @Size(max = 2000)
     private String notes;

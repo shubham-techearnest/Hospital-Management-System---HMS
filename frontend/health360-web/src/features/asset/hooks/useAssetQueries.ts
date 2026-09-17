@@ -2,10 +2,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import {
   addAssetMaintenance,
+  commissionAsset,
+  completeAssetTicket,
   createAsset,
+  createAssetSchedule,
+  generateDueAssetTickets,
   listAssetCategories,
   listAssetMaintenance,
+  listAssetSchedules,
+  listAssetTickets,
+  listAssetTicketsForAsset,
   listAssets,
+  lookupAssetByQr,
+  reportAssetBreakdown,
   updateAsset,
   updateAssetStatus,
 } from '../api/assetApi';
@@ -21,6 +30,9 @@ export const assetKeys = {
     q?: string,
   ) => ['asset', 'list', hospitalId, branchId, page, status ?? 'ALL', categoryId ?? 'ALL', q ?? ''] as const,
   maintenance: (assetId: string) => ['asset', 'maintenance', assetId] as const,
+  tickets: (hospitalId: string, branchId: string) => ['asset', 'tickets', hospitalId, branchId] as const,
+  assetTickets: (assetId: string) => ['asset', 'asset-tickets', assetId] as const,
+  schedules: (assetId: string) => ['asset', 'schedules', assetId] as const,
 };
 
 function isRetryableError(error: unknown): boolean {
@@ -70,10 +82,38 @@ export function useAssetMaintenance(assetId?: string) {
   });
 }
 
+export function useAssetTickets(hospitalId?: string, branchId?: string) {
+  return useQuery({
+    queryKey: assetKeys.tickets(hospitalId ?? '', branchId ?? ''),
+    queryFn: () => listAssetTickets({ hospitalId: hospitalId!, branchId: branchId! }),
+    enabled: Boolean(hospitalId && branchId),
+    retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function useAssetTicketsForAsset(assetId?: string) {
+  return useQuery({
+    queryKey: assetKeys.assetTickets(assetId ?? ''),
+    queryFn: () => listAssetTicketsForAsset(assetId!),
+    enabled: Boolean(assetId),
+    retry: (_, error) => isRetryableError(error),
+  });
+}
+
+export function useAssetSchedules(assetId?: string) {
+  return useQuery({
+    queryKey: assetKeys.schedules(assetId ?? ''),
+    queryFn: () => listAssetSchedules(assetId!),
+    enabled: Boolean(assetId),
+    retry: (_, error) => isRetryableError(error),
+  });
+}
+
 export function useAssetMutations(hospitalId: string, branchId: string) {
   const qc = useQueryClient();
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['asset', 'list', hospitalId, branchId] });
+    void qc.invalidateQueries({ queryKey: ['asset', 'list', hospitalId, branchId] });
+    void qc.invalidateQueries({ queryKey: assetKeys.tickets(hospitalId, branchId) });
   };
 
   return {
@@ -91,7 +131,7 @@ export function useAssetMutations(hospitalId: string, branchId: string) {
         updateAssetStatus(assetId, status),
       onSuccess: (_data, vars) => {
         invalidate();
-        qc.invalidateQueries({ queryKey: assetKeys.maintenance(vars.assetId) });
+        void qc.invalidateQueries({ queryKey: assetKeys.maintenance(vars.assetId) });
       },
     }),
     addMaintenance: useMutation({
@@ -104,8 +144,39 @@ export function useAssetMutations(hospitalId: string, branchId: string) {
       }) => addAssetMaintenance(assetId, payload),
       onSuccess: (_data, vars) => {
         invalidate();
-        qc.invalidateQueries({ queryKey: assetKeys.maintenance(vars.assetId) });
+        void qc.invalidateQueries({ queryKey: assetKeys.maintenance(vars.assetId) });
       },
+    }),
+    commission: useMutation({
+      mutationFn: commissionAsset,
+      onSuccess: invalidate,
+    }),
+    breakdown: useMutation({
+      mutationFn: ({ assetId, description }: { assetId: string; description: string }) =>
+        reportAssetBreakdown(assetId, { description }),
+      onSuccess: (_data, vars) => {
+        invalidate();
+        void qc.invalidateQueries({ queryKey: assetKeys.assetTickets(vars.assetId) });
+      },
+    }),
+    completeTicket: useMutation({
+      mutationFn: ({ ticketId, notes }: { ticketId: string; notes?: string }) =>
+        completeAssetTicket(ticketId, { resolutionNotes: notes }),
+      onSuccess: invalidate,
+    }),
+    createSchedule: useMutation({
+      mutationFn: createAssetSchedule,
+      onSuccess: (_data, vars) => {
+        invalidate();
+        void qc.invalidateQueries({ queryKey: assetKeys.schedules(vars.assetId) });
+      },
+    }),
+    generateDue: useMutation({
+      mutationFn: () => generateDueAssetTickets(hospitalId, branchId),
+      onSuccess: invalidate,
+    }),
+    lookupQr: useMutation({
+      mutationFn: (qr: string) => lookupAssetByQr(hospitalId, qr),
     }),
   };
 }

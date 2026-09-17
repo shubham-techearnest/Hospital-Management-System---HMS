@@ -1,5 +1,7 @@
 package com.health360.ipd.application.service;
 
+import com.health360.automation.application.service.EventPublisher;
+import com.health360.automation.domain.HospitalEventTypes;
 import com.health360.clinical.application.service.EncounterService;
 import com.health360.clinical.domain.EncounterStatus;
 import com.health360.clinical.infrastructure.persistence.entity.EncounterEntity;
@@ -28,11 +30,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @RequiredArgsConstructor
@@ -65,6 +69,7 @@ public class IpdDischargeService {
     private final IpdServiceCatalogService catalogService;
     private final IpdMapper mapper;
     private final AuditLogService auditLogService;
+    private final EventPublisher eventPublisher;
 
     @Transactional
     public IpdDischargePlanResponse upsertPlan(
@@ -273,6 +278,7 @@ public class IpdDischargeService {
         billingService.assertReadyForDischarge(principal, admission);
 
         Instant now = Instant.now();
+        AtomicReference<UUID> releasedBedId = new AtomicReference<>();
         bedAssignmentRepository.findByAdmissionIdAndActiveTrueAndDeletedAtIsNull(admissionId)
                 .ifPresent(assignment -> {
                     IpdBedEntity bed = facilityService.requireBed(principal.getTenantId(), assignment.getBedId());
@@ -281,6 +287,7 @@ public class IpdDischargeService {
                     assignment.setUpdatedBy(principal.getUserId());
                     bedAssignmentRepository.save(assignment);
                     facilityService.releaseBed(bed, principal.getUserId());
+                    releasedBedId.set(bed.getId());
                 });
 
         int nextVersion = dischargeSummaryRepository.countByAdmissionIdAndDeletedAtIsNull(admissionId) + 1;
@@ -334,6 +341,29 @@ public class IpdDischargeService {
 
         auditLogService.record(principal.getTenantId(), principal.getUserId(), "IPD_PATIENT_DISCHARGED",
                 "IpdAdmission", admissionId, Map.of("dischargeType", dischargeType, "status", admissionStatus));
+
+        Map<String, Object> dischargePayload = new HashMap<>();
+        dischargePayload.put("admissionId", admissionId.toString());
+        dischargePayload.put("dischargeType", dischargeType);
+        dischargePayload.put("status", admissionStatus);
+        if (releasedBedId.get() != null) {
+            dischargePayload.put("bedId", releasedBedId.get().toString());
+        }
+        eventPublisher.publish(EventPublisher.PublishRequest.builder()
+                .tenantId(principal.getTenantId())
+                .hospitalId(admission.getHospitalId())
+                .branchId(admission.getBranchId())
+                .eventType(HospitalEventTypes.PATIENT_DISCHARGED)
+                .patientId(admission.getPatientId())
+                .encounterId(admission.getEncounterId())
+                .userId(principal.getUserId())
+                .entityType("IpdAdmission")
+                .entityId(admissionId)
+                .correlationId(admissionId)
+                .sourceModule("IPD")
+                .payload(dischargePayload)
+                .occurredAt(now)
+                .build());
 
         return mapper.toDischargeResponse(savedSummary, admission, encounter);
     }

@@ -1,5 +1,7 @@
 package com.health360.laboratory.application.service;
 
+import com.health360.automation.application.service.EventPublisher;
+import com.health360.automation.domain.HospitalEventTypes;
 import com.health360.clinical.application.service.EncounterAccessService;
 import com.health360.clinical.domain.ClinicalOrderStatus;
 import com.health360.clinical.infrastructure.persistence.entity.ClinicalOrderEntity;
@@ -35,6 +37,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -63,6 +66,7 @@ public class LabFulfillmentService {
     private final AuditLogService auditLogService;
     private final TransactionalNotificationService notificationService;
     private final LabValueService labValueService;
+    private final EventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<LabWorklistItemResponse> listPendingWorklist(
@@ -462,6 +466,42 @@ public class LabFulfillmentService {
                         "labOrderId", labOrderId.toString(),
                         "critical", String.valueOf(savedReport.isCritical())
                 ));
+
+        Map<String, Object> labPayload = new HashMap<>();
+        labPayload.put("labOrderId", labOrderId.toString());
+        labPayload.put("labReportId", savedReport.getId().toString());
+        labPayload.put("critical", savedReport.isCritical());
+        labPayload.put("testName", test.getName());
+        eventPublisher.publish(EventPublisher.PublishRequest.builder()
+                .tenantId(tenantId)
+                .hospitalId(order.getHospitalId())
+                .branchId(order.getBranchId())
+                .eventType(HospitalEventTypes.LAB_RESULT_RELEASED)
+                .patientId(order.getPatientId())
+                .encounterId(order.getEncounterId())
+                .userId(principal.getUserId())
+                .entityType("LabReport")
+                .entityId(savedReport.getId())
+                .correlationId(labOrderId)
+                .sourceModule("LAB")
+                .payload(labPayload)
+                .build());
+        if (savedReport.isCritical()) {
+            eventPublisher.publish(EventPublisher.PublishRequest.builder()
+                    .tenantId(tenantId)
+                    .hospitalId(order.getHospitalId())
+                    .branchId(order.getBranchId())
+                    .eventType(HospitalEventTypes.CRITICAL_RESULT)
+                    .patientId(order.getPatientId())
+                    .encounterId(order.getEncounterId())
+                    .userId(principal.getUserId())
+                    .entityType("LabReport")
+                    .entityId(savedReport.getId())
+                    .correlationId(labOrderId)
+                    .sourceModule("LAB")
+                    .payload(labPayload)
+                    .build());
+        }
 
         return mapper.toReportResponse(savedReport, test, resultResponses);
     }

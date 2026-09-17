@@ -38,6 +38,20 @@ public class AssetAccessService {
         }
     }
 
+    public void assertCanWriteTicket(UserPrincipal principal) {
+        if (!principal.hasPermission("asset:ticket:write")
+                && !principal.hasPermission("asset:maintenance:write")
+                && !principal.hasPermission("asset:write")) {
+            throw forbidden();
+        }
+    }
+
+    public void assertCanDispose(UserPrincipal principal) {
+        if (!principal.hasPermission("asset:dispose") && !principal.hasPermission("asset:write")) {
+            throw forbidden();
+        }
+    }
+
     public void assertHospitalScope(UserPrincipal principal, UUID hospitalId) {
         hospitalScopeService.assertHospitalScope(principal, hospitalId);
     }

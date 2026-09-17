@@ -56,6 +56,13 @@ class EncounterCheckoutGateServiceTest {
     }
 
     @Test
+    void allowsEmergencyCheckoutWithoutOpdArtifacts() {
+        when(encounterRepository.findById(encounterId)).thenReturn(Optional.of(encounter("EMERGENCY")));
+
+        assertDoesNotThrow(() -> gateService.assertReadyForCheckout(encounterId));
+    }
+
+    @Test
     void allowsCheckoutWhenConsultFinalAndRxSigned() {
         when(encounterRepository.findById(encounterId)).thenReturn(Optional.of(encounter("OPD")));
         when(noteRepository.existsByEncounterIdAndNoteTypeAndStatusAndDeletedAtIsNull(
