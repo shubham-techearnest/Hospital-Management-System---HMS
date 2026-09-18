@@ -3,7 +3,8 @@ package com.health360.config.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.health360.iam.application.service.JwtTokenService;
 import com.health360.iam.application.service.TokenBlacklistService;
-import com.health360.shared.domain.ErrorCode;import com.health360.shared.dto.ErrorResponse;
+import com.health360.shared.domain.ErrorCode;
+import com.health360.shared.dto.ErrorResponse;
 import com.health360.shared.filter.CorrelationIdFilter;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -55,7 +56,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 List<String> roles = JwtClaimUtils.getStringList(claims, "roles");
                 List<String> permissions = JwtClaimUtils.getStringList(claims, "permissions");
 
-                UserPrincipal principal = new UserPrincipal(userId, tenantId, email, jti, roles, permissions);
+                UUID actorUserId = null;
+                UUID impersonationSessionId = null;
+                Boolean imp = claims.get("imp", Boolean.class);
+                if (Boolean.TRUE.equals(imp)) {
+                    String actorRaw = claims.get("actorId", String.class);
+                    String sessionRaw = claims.get("impSessionId", String.class);
+                    if (actorRaw != null && sessionRaw != null) {
+                        actorUserId = UUID.fromString(actorRaw);
+                        impersonationSessionId = UUID.fromString(sessionRaw);
+                    }
+                }
+
+                UserPrincipal principal = new UserPrincipal(
+                        userId, tenantId, email, jti, roles, permissions, actorUserId, impersonationSessionId);
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authentication);

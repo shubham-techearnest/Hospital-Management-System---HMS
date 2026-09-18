@@ -22,4 +22,12 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity
     @Modifying
     @Query("UPDATE RefreshTokenEntity r SET r.revoked = true, r.revokedAt = CURRENT_TIMESTAMP WHERE r.tokenHash = :tokenHash")
     int revokeByTokenHash(@Param("tokenHash") String tokenHash);
+
+    @Modifying
+    @Query("""
+            UPDATE RefreshTokenEntity r
+            SET r.revoked = true, r.revokedAt = CURRENT_TIMESTAMP
+            WHERE r.impersonationSessionId = :sessionId AND r.revoked = false
+            """)
+    int revokeAllByImpersonationSessionId(@Param("sessionId") UUID sessionId);
 }

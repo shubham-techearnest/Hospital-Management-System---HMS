@@ -62,4 +62,10 @@ public class AuditLogEntity {
 
     @Column(name = "occurred_at", nullable = false)
     private Instant occurredAt;
+
+    @Column(name = "actor_user_id")
+    private UUID actorUserId;
+
+    @Column(name = "impersonation_session_id")
+    private UUID impersonationSessionId;
 }

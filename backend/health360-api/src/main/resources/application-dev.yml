@@ -7,3 +7,7 @@ spring:
 logging:
   level:
     com.health360: DEBUG
+
+health360:
+  impersonation:
+    enabled: ${IMPERSONATION_ENABLED:true}

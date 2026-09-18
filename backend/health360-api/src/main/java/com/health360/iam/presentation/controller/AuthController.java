@@ -121,11 +121,7 @@ public class AuthController {
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestHeader(value = "X-Refresh-Token", required = false) String refreshToken) {
         long remainingTtl = properties.getJwt().getAccessTokenTtlSeconds();
-        authenticationService.logout(
-                principal.getUserId(),
-                principal.getJti(),
-                remainingTtl,
-                refreshToken);
+        authenticationService.logout(principal, remainingTtl, refreshToken);
         return ResponseEntity.noContent().build();
     }
 

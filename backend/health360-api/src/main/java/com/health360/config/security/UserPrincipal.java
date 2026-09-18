@@ -19,20 +19,35 @@ public class UserPrincipal implements UserDetails {
     private final String jti;
     private final List<String> roles;
     private final List<String> permissions;
+    /** Present when this principal is an impersonated subject. */
+    private final UUID actorUserId;
+    private final UUID impersonationSessionId;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public UserPrincipal(UUID userId, UUID tenantId, String email, String jti,
                          List<String> roles, List<String> permissions) {
+        this(userId, tenantId, email, jti, roles, permissions, null, null);
+    }
+
+    public UserPrincipal(UUID userId, UUID tenantId, String email, String jti,
+                         List<String> roles, List<String> permissions,
+                         UUID actorUserId, UUID impersonationSessionId) {
         this.userId = userId;
         this.tenantId = tenantId;
         this.email = email;
         this.jti = jti;
         this.roles = roles != null ? List.copyOf(roles) : List.of();
         this.permissions = permissions != null ? List.copyOf(permissions) : List.of();
+        this.actorUserId = actorUserId;
+        this.impersonationSessionId = impersonationSessionId;
         this.authorities = Stream.concat(
                 this.roles.stream().map(r -> new SimpleGrantedAuthority("ROLE_" + r)),
                 this.permissions.stream().map(SimpleGrantedAuthority::new)
         ).toList();
+    }
+
+    public boolean isImpersonating() {
+        return impersonationSessionId != null && actorUserId != null;
     }
 
     public boolean hasPermission(String permission) {

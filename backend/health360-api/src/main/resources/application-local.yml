@@ -23,6 +23,8 @@ logging:
 
 health360:
   app-base-url: ${APP_BASE_URL:http://localhost:5173}
+  impersonation:
+    enabled: ${IMPERSONATION_ENABLED:true}
   # Razorpay keys come from env / root .env (see .env.example). Blank = sandbox mock.
   payments:
     razorpay:

@@ -21,16 +21,32 @@ public class RefreshTokenService {
 
     @Transactional
     public String issueRefreshToken(UUID userId, UUID tenantId, String deviceInfo) {
+        return issueRefreshToken(userId, tenantId, deviceInfo, null);
+    }
+
+    @Transactional
+    public String issueRefreshToken(UUID userId, UUID tenantId, String deviceInfo, UUID impersonationSessionId) {
         String rawToken = HashUtils.newToken();
         RefreshTokenEntity entity = new RefreshTokenEntity();
         entity.setUserId(userId);
         entity.setTenantId(tenantId);
         entity.setTokenHash(HashUtils.sha256(rawToken));
         entity.setDeviceInfo(deviceInfo);
-        entity.setExpiresAt(Instant.now().plusSeconds(properties.getJwt().getRefreshTokenTtlSeconds()));
+        long ttlSeconds = properties.getJwt().getRefreshTokenTtlSeconds();
+        if (impersonationSessionId != null) {
+            long maxImpSeconds = Math.max(60, properties.getImpersonation().getMaxDurationMinutes() * 60);
+            ttlSeconds = Math.min(ttlSeconds, maxImpSeconds);
+        }
+        entity.setExpiresAt(Instant.now().plusSeconds(ttlSeconds));
         entity.setRevoked(false);
+        entity.setImpersonationSessionId(impersonationSessionId);
         refreshTokenRepository.save(entity);
         return rawToken;
+    }
+
+    @Transactional
+    public void revokeAllForImpersonationSession(UUID sessionId) {
+        refreshTokenRepository.revokeAllByImpersonationSessionId(sessionId);
     }
 
     @Transactional(readOnly = true)

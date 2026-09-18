@@ -19,6 +19,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '@/app/store';
 import { clearCredentials } from '@/features/auth/store/authSlice';
 import { logout as logoutApi } from '@/features/auth/api/authApi';
+import { endImpersonation } from '@/features/admin/api/impersonationApi';
 import { displayName, initials } from '@/shared/auth/userDisplay';
 
 function readStoredUser(): RootState['auth']['user'] {
@@ -56,7 +57,15 @@ export function NavbarAccount({
 
   const handleLogout = async () => {
     setMenuAnchor(null);
+    const wasImpersonating = Boolean(auth.impersonation);
     try {
+      if (wasImpersonating) {
+        try {
+          await endImpersonation();
+        } catch {
+          // continue with full logout
+        }
+      }
       if (accessToken) {
         await logoutApi(accessToken, auth.refreshToken ?? localStorage.getItem('refreshToken') ?? undefined);
       }

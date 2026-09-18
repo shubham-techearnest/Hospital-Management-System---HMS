@@ -37,6 +37,8 @@ interface PortalTopBarProps {
   portalTitle: string;
   navItems: Array<{ label: string; path: string }>;
   onOpenNav?: () => void;
+  /** Offset when a fixed banner sits above the app bar (e.g. impersonation). */
+  topOffset?: number;
 }
 
 export function PortalTopBar({
@@ -44,6 +46,7 @@ export function PortalTopBar({
   portalTitle,
   navItems,
   onOpenNav,
+  topOffset = 0,
 }: PortalTopBarProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -76,6 +79,7 @@ export function PortalTopBar({
       position="fixed"
       elevation={0}
       sx={{
+        top: topOffset,
         left: 0,
         width: '100%',
         bgcolor: 'background.paper',

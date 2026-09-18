@@ -1,6 +1,7 @@
 package com.health360.iam.application.service;
 
 import com.health360.config.Health360Properties;
+import com.health360.config.security.UserPrincipal;
 import com.health360.hospital.infrastructure.persistence.repository.HospitalRepository;
 import com.health360.iam.domain.UserStatus;
 import com.health360.iam.infrastructure.persistence.entity.RefreshTokenEntity;
@@ -12,6 +13,7 @@ import com.health360.iam.infrastructure.persistence.repository.UserRoleRepositor
 import com.health360.iam.presentation.dto.request.LoginRequest;
 import com.health360.iam.presentation.dto.request.MfaVerifyRequest;
 import com.health360.iam.presentation.dto.response.AuthTokenResponse;
+import com.health360.iam.presentation.dto.response.ImpersonationStartResponse;
 import com.health360.iam.presentation.dto.response.LoginResponse;
 import com.health360.shared.application.AuditLogService;
 import com.health360.shared.domain.ErrorCode;
@@ -46,6 +48,7 @@ public class AuthenticationService {
     private final HospitalRepository hospitalRepository;
     private final MfaPendingTokenService mfaPendingTokenService;
     private final MfaService mfaService;
+    private final ImpersonationService impersonationService;
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
@@ -173,7 +176,27 @@ public class AuthenticationService {
                         "User not found"));
 
         refreshTokenService.rotateToken(existing);
+
+        if (existing.getImpersonationSessionId() != null) {
+            ImpersonationStartResponse refreshed = impersonationService.refreshImpersonation(existing, user);
+            return AuthTokenResponse.builder()
+                    .accessToken(refreshed.getAccessToken())
+                    .refreshToken(refreshed.getRefreshToken())
+                    .expiresIn(refreshed.getExpiresIn())
+                    .tokenType(refreshed.getTokenType())
+                    .user(refreshed.getUser())
+                    .build();
+        }
+
         return issueTokenPair(user, existing.getDeviceInfo());
+    }
+
+    @Transactional
+    public void logout(UserPrincipal principal, long accessTokenRemainingSeconds, String refreshToken) {
+        if (principal != null) {
+            impersonationService.endIfImpersonatingOnLogout(principal);
+            logout(principal.getUserId(), principal.getJti(), accessTokenRemainingSeconds, refreshToken);
+        }
     }
 
     @Transactional

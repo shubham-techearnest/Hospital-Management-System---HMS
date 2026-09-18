@@ -23,11 +23,21 @@ public class JwtTokenService {
 
     public TokenPair generateAccessToken(UUID userId, UUID tenantId, String email,
                                          List<String> roles, List<String> permissions) {
+        return generateAccessToken(userId, tenantId, email, roles, permissions, null, null);
+    }
+
+    public TokenPair generateAccessToken(UUID userId, UUID tenantId, String email,
+                                         List<String> roles, List<String> permissions,
+                                         UUID actorUserId, UUID impersonationSessionId) {
         Instant now = Instant.now();
         long ttl = properties.getJwt().getAccessTokenTtlSeconds();
+        if (impersonationSessionId != null) {
+            long maxImpSeconds = Math.max(60, properties.getImpersonation().getMaxDurationMinutes() * 60);
+            ttl = Math.min(ttl, maxImpSeconds);
+        }
         String jti = UUID.randomUUID().toString();
 
-        String token = Jwts.builder()
+        var builder = Jwts.builder()
                 .header().keyId("health360-1").and()
                 .issuer(properties.getJwt().getIssuer())
                 .audience().add(properties.getJwt().getAudience()).and()
@@ -38,7 +48,15 @@ public class JwtTokenService {
                 .claim("roles", roles)
                 .claim("permissions", permissions)
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusSeconds(ttl)))
+                .expiration(Date.from(now.plusSeconds(ttl)));
+
+        if (actorUserId != null && impersonationSessionId != null) {
+            builder.claim("imp", true)
+                    .claim("actorId", actorUserId.toString())
+                    .claim("impSessionId", impersonationSessionId.toString());
+        }
+
+        String token = builder
                 .signWith(keyProvider.getKeyPair().getPrivate())
                 .compact();
 

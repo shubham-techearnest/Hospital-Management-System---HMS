@@ -23,6 +23,9 @@ import { Health360Logo } from '@/shared/brand/Health360Logo';
 import { APP_NAVBAR_HEIGHT, PortalTopBar } from '@/shared/layout/PortalTopBar';
 import { SkipLink } from '@/shared/layout/SkipLink';
 import { pageSpacing } from '@/shared/layout/pageSpacing';
+import { ImpersonationBanner, IMPERSONATION_BANNER_HEIGHT } from '@/features/auth/components/ImpersonationBanner';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/app/store';
 
 export const PORTAL_DRAWER_WIDTH = 272;
 export const PORTAL_DRAWER_COLLAPSED_WIDTH = 80;
@@ -294,6 +297,8 @@ export function PortalShellLayout({
 }: PortalShellLayoutProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isImpersonating = useSelector((state: RootState) => Boolean(state.auth.impersonation));
+  const topOffset = APP_NAVBAR_HEIGHT + (isImpersonating ? IMPERSONATION_BANNER_HEIGHT : 0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === 'undefined') {
@@ -320,13 +325,15 @@ export function PortalShellLayout({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <SkipLink />
+      <ImpersonationBanner />
       <PortalTopBar
         portalRole={portalRole}
         portalTitle={portalTitle}
         navItems={navItems}
         onOpenNav={isMobile ? () => setMobileOpen(true) : undefined}
+        topOffset={isImpersonating ? IMPERSONATION_BANNER_HEIGHT : 0}
       />
-      <Box sx={{ display: 'flex', flex: 1, pt: `${APP_NAVBAR_HEIGHT}px` }}>
+      <Box sx={{ display: 'flex', flex: 1, pt: `${topOffset}px` }}>
         {!isMobile && (
           <Drawer
             variant="permanent"
@@ -335,8 +342,8 @@ export function PortalShellLayout({
               flexShrink: 0,
               [`& .MuiDrawer-paper`]: {
                 width: railWidth,
-                top: APP_NAVBAR_HEIGHT,
-                height: `calc(100% - ${APP_NAVBAR_HEIGHT}px)`,
+                top: topOffset,
+                height: `calc(100% - ${topOffset}px)`,
                 borderRightColor: 'divider',
                 bgcolor: 'background.paper',
                 overflowX: 'hidden',
@@ -359,8 +366,8 @@ export function PortalShellLayout({
             sx={{
               [`& .MuiDrawer-paper`]: {
                 width: PORTAL_DRAWER_WIDTH,
-                top: APP_NAVBAR_HEIGHT,
-                height: `calc(100% - ${APP_NAVBAR_HEIGHT}px)`,
+                top: topOffset,
+                height: `calc(100% - ${topOffset}px)`,
                 bgcolor: 'background.paper',
               },
             }}

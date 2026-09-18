@@ -45,4 +45,7 @@ public class RefreshTokenEntity {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
+
+    @Column(name = "impersonation_session_id")
+    private UUID impersonationSessionId;
 }

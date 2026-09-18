@@ -22,6 +22,7 @@ public class Health360Properties {
     private Push push = new Push();
     private Payments payments = new Payments();
     private Sms sms = new Sms();
+    private Impersonation impersonation = new Impersonation();
 
     @Getter
     @Setter
@@ -94,5 +95,23 @@ public class Health360Properties {
         private String apiBaseUrl = "https://control.msg91.com/api/v5";
         /** Legacy sendhttp endpoint when template-id is blank. */
         private String sendHttpUrl = "https://api.msg91.com/api/sendhttp.php";
+    }
+
+    /**
+     * User impersonation for DEV/UAT only. Fail-closed: requires explicit enablement
+     * AND an active Spring profile in {@code allowedProfiles}. Never allow {@code production}.
+     */
+    @Getter
+    @Setter
+    public static class Impersonation {
+        /** Must be explicitly true. Default false. */
+        private boolean enabled = false;
+        /** Bounded lifetime for an impersonation session. */
+        private long maxDurationMinutes = 60;
+        /**
+         * Comma-separated Spring profiles that may enable impersonation when {@code enabled=true}.
+         * Production must never appear here.
+         */
+        private String allowedProfiles = "local,dev,test";
     }
 }

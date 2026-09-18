@@ -17,3 +17,9 @@ spring:
 logging:
   level:
     root: WARN
+
+health360:
+  impersonation:
+    enabled: true
+    max-duration-minutes: 60
+    allowed-profiles: local,dev,test
